@@ -11,4 +11,4 @@ dataset/
 
 # 대용량 모델 파일 (100MB 넘으면 에러 날 수 있음)
 # 나중에 팀원에게는 따로 전달하거나 Git LFS를 써야 합니다.
-# cataract_v2.pth
+cataract_v2.pth
