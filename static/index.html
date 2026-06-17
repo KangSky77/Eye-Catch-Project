@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eye-Catch | Premium Eye Care</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css?v=20260616d">
+</head>
+<body class="text-slate-800 min-h-screen pb-24 md:pb-0">
+
+    <svg width="0" height="0"><filter id="wavy"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg>
+
+    <nav class="bg-white/75 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-5 py-3.5 flex justify-between items-center">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="location.reload()">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg" style="background:linear-gradient(145deg,#5B78FF,#3B53D6);box-shadow:0 6px 16px rgba(66,99,235,.35);">EC</div>
+                <span class="text-xl font-black text-slate-800 tracking-tight">Eye-Catch</span>
+            </div>
+
+            <div class="flex items-center gap-5">
+                <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
+                    <div onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</div>
+                    <div onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</div>
+                    <div onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</div>
+                    <div onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</div>
+                </div>
+
+                <select id="lang-selector" onchange="changeLanguage(this.value)" class="bg-slate-100 text-slate-700 font-bold text-xs py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer border-none shadow-sm">
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="zh">🇨🇳 中文</option>
+                </select>
+            </div>
+        </div>
+    </nav>
+
+    <main id="tab-test" class="tab-content active max-w-3xl mx-auto px-4 py-12">
+        <div id="step-intro" class="step-content active text-center">
+            <div class="glass-card p-10 rounded-[2.5rem]">
+                <div class="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6 text-white" style="background:linear-gradient(150deg,#6E86FF,#3D55D9);box-shadow:0 16px 36px rgba(66,99,235,.4);">✨</div>
+                <h2 class="text-3xl font-black mb-4 tracking-tight leading-snug" data-i18n="intro_title">당신의 눈 건강,<br>AI가 지켜드립니다</h2>
+                <p class="text-slate-500 mb-10 text-sm font-medium leading-relaxed" data-i18n="intro_desc">안구 사진 자동 분석과 전문 문진을 통해 백내장 및 주요 안질환 위험도를 체크합니다.</p>
+                <button onclick="nextStep('step-guide')" class="w-full max-w-sm mx-auto block py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl btn-pop" data-i18n="start_btn">분석 시작하기</button>
+            </div>
+        </div>
+
+        <div id="step-guide" class="step-content text-center">
+            <div class="glass-card p-8 rounded-[2.5rem] max-w-md mx-auto">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-3xl">💡</span>
+                </div>
+                <h2 class="text-2xl font-black mb-6" data-i18n="tips_title">정확한 분석을 위한<br>촬영 꿀팁</h2>
+
+                <div class="space-y-4 text-left mb-8">
+                    <div class="flex items-start gap-3 p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-xl">🤳</span>
+                        <div>
+                            <p class="font-bold text-sm" data-i18n="tip1_t">전면보다는 후면 카메라!</p>
+                            <p class="text-[11px] text-slate-500" data-i18n="tip1_d">후면 카메라가 화질이 좋고 빛 반사가 적어요.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-xl">🔦</span>
+                        <div>
+                            <p class="font-bold text-sm" data-i18n="tip2_t">플래시를 켜주세요</p>
+                            <p class="text-[11px] text-slate-500" data-i18n="tip2_d">어두운 곳보다는 밝은 곳에서 플래시를 쓰면 더 정확해요.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-xl">📏</span>
+                        <div>
+                            <p class="font-bold text-sm" data-i18n="tip3_t">30cm 거리를 유지하세요</p>
+                            <p class="text-[11px] text-slate-500" data-i18n="tip3_d">너무 가까우면 초점이 흐려질 수 있어요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="nextStep('step-photo')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg btn-pop" data-i18n="tips_btn">이해했습니다!</button>
+            </div>
+        </div>
+
+        <div id="step-photo" class="step-content text-center">
+            <div class="glass-card p-10 rounded-[2.5rem] max-w-md mx-auto border-2 border-dashed border-blue-300">
+                <div class="text-6xl mb-6">📸</div>
+                <h2 class="text-2xl font-black mb-2" data-i18n="upload_title">사진 업로드</h2>
+                <div class="mt-4 mb-8 text-left bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm">
+                    <p class="text-amber-800 font-bold text-sm mb-1" data-i18n="guide_title">⚠️ 정확한 분석 가이드</p>
+                    <ul class="text-[11px] text-amber-700 space-y-1 list-disc list-inside" data-i18n="guide_list">
+                        <li>정면에서 촬영하세요.</li>
+                        <li>빛 반사에 주의하세요.</li>
+                    </ul>
+                </div>
+                <input type="file" id="cataract-file" class="hidden" accept="image/*" onchange="runAIAnalysis()">
+                <button onclick="document.getElementById('cataract-file').click()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-xl btn-pop" data-i18n="upload_btn">사진 선택 및 전송</button>
+            </div>
+        </div>
+
+        <div id="step-ai-loading" class="step-content text-center py-20">
+            <img id="preview-image" class="w-32 h-32 object-cover rounded-full mx-auto mb-6 shadow-md border-4 border-white hidden">
+            <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 class="text-xl font-black mb-2" data-i18n="loading_title">AI 딥러닝 분석 중...</h2>
+        </div>
+
+        <div id="step-ai-result" class="step-content text-center max-w-md mx-auto">
+            <div class="glass-card p-8 rounded-[2rem] border border-blue-100">
+                <h2 class="text-2xl font-black mb-4 text-slate-800" data-i18n="ai_res_title">백내장 판별 결과</h2>
+                <div id="ai-result-display" class="p-5 bg-slate-50 rounded-2xl mb-8"></div>
+                <button onclick="nextStep('step-amsler')" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="next_amsler">황반변성 정밀 테스트</button>
+            </div>
+        </div>
+
+        <div id="step-amsler" class="step-content text-center max-w-md mx-auto">
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h2 class="text-xl font-black mb-6" data-i18n="ams_title">황반변성 자가진단</h2>
+                <div id="amsler-box" class="amsler-grid mb-6"><div class="amsler-dot"></div></div>
+                <div class="space-y-3">
+                    <button onclick="recordAmsler(false)" class="w-full py-3.5 bg-slate-100 text-slate-700 rounded-2xl font-bold btn-pop" data-i18n="ams_ok">정상 (곧게 보임)</button>
+                    <button onclick="recordAmsler(true)" class="w-full py-3.5 bg-rose-50 text-rose-600 rounded-2xl font-bold border border-rose-100 btn-pop"
+                            onmouseover="document.getElementById('amsler-box').classList.add('amsler-distorted')"
+                            onmouseout="document.getElementById('amsler-box').classList.remove('amsler-distorted')" data-i18n="ams_bad">휘어보임/암점</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-chat" class="step-content max-w-md mx-auto">
+            <div class="glass-card rounded-[2rem] flex flex-col h-[60vh] overflow-hidden">
+                <div id="chat-box" class="flex-1 p-5 overflow-y-auto space-y-5 bg-slate-50/50 no-scrollbar"></div>
+                <div id="chat-controls" class="p-4 bg-white/80 border-t grid grid-cols-2 gap-3 backdrop-blur-md">
+                    <button onclick="handleChatAnswer(true)" class="py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm btn-pop" data-i18n="chat_yes">네</button>
+                    <button onclick="handleChatAnswer(false)" class="py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm btn-pop" data-i18n="chat_no">아니오</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="tab-disease" class="tab-content max-w-3xl mx-auto px-4 py-12">
+        <h1 class="text-3xl font-black text-center mb-3 text-slate-800 tracking-tight" data-i18n="dis_main_title">4대 주요 안질환 안내</h1>
+        <p class="text-center text-slate-500 text-sm font-medium mb-10" data-i18n="dis_card_hint">카드를 누르면 자세한 설명을 확인할 수 있어요.</p>
+        <div id="disease-list" class="disease-grid"></div>
+    </main>
+
+    <main id="tab-report" class="tab-content max-w-md mx-auto px-4 py-12">
+        <div id="report-content" class="glass-card p-8 rounded-[2rem] mb-6">
+            <div class="text-center mb-6 pb-6 border-b border-slate-100">
+                <h1 class="text-2xl font-black text-slate-800" data-i18n="rep_title">Eye-Catch 진단 리포트</h1>
+                <p class="text-[10px] text-slate-400 font-bold mt-2" id="report-date"></p>
+            </div>
+            <div class="space-y-4" id="report-body">
+                <div class="bg-blue-50 p-4 rounded-2xl">
+                    <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="rep_l1">1. 백내장 AI 결과</p>
+                    <p id="pdf-ai-result" class="font-black text-blue-800">-</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <p class="text-[10px] font-black text-slate-400 mb-1" data-i18n="rep_l2">2. 황반변성 결과</p>
+                    <p id="pdf-amsler-result" class="font-black text-slate-700">-</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <p class="text-[10px] font-black text-slate-400 mb-1" data-i18n="rep_l3">3. 문진 소견</p>
+                    <p id="pdf-chat-result" class="font-black text-slate-700">-</p>
+                </div>
+
+                <div class="bg-gradient-to-tr from-indigo-50 to-blue-50 p-5 rounded-2xl border border-blue-100 mt-4">
+                    <p class="text-[10px] font-black text-indigo-400 mb-2" data-i18n="rep_l4">4. Gemma AI 맞춤 소견 ✨</p>
+
+                    <div id="gemma-loading-container" class="mt-2">
+                        <p id="gemma-loading-text" class="text-xs font-medium text-slate-400 leading-relaxed" data-i18n="gemma_idle">먼저 'AI 검사'를 진행하면 맞춤 소견이 여기에 표시됩니다.</p>
+                    </div>
+
+                    <p id="gemma-opinion-text" class="text-xs font-bold text-slate-700 leading-relaxed italic hidden"></p>
+                </div>
+            </div>
+            <div class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold text-slate-400 mb-2" data-i18n="rep_followup_title">🤖 AI에게 더 궁금한 점 물어보기</p>
+                <div class="flex gap-2">
+                    <input type="text" id="user-followup-input" class="flex-1 min-w-0 bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="예: 관리 방법 알려줘" data-i18n-ph="rep_followup_ph">
+                    <button onclick="askGemmaMore()" class="shrink-0 px-3 bg-blue-600 text-white rounded-xl shadow-md btn-pop">
+                        <span class="text-lg">🚀</span>
+                    </button>
+                </div>
+                <p id="followup-response" class="mt-4 text-xs text-slate-600 leading-relaxed italic hidden"></p>
+            </div>
+        </div>
+
+        <div class="space-y-3 px-2">
+            <button onclick="downloadPDF()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold flex justify-center items-center gap-2 btn-pop shadow-xl" data-i18n="pdf_btn">📄 PDF 다운로드</button>
+            <button onclick="showTab('tab-map')" id="dynamic-map-btn" class="w-full py-4 bg-yellow-400 text-slate-900 rounded-2xl font-bold btn-pop shadow-lg">🏥 Kakao Maps</button>
+        </div>
+    </main>
+
+    <!-- 병원 찾기 (페이지 내 임베디드 지도 · 실시간 위치 기반) -->
+    <main id="tab-map" class="tab-content max-w-3xl mx-auto px-4 py-12">
+        <h1 class="text-3xl font-black text-center mb-3 text-slate-800 tracking-tight" data-i18n="map_page_title">내 주변 안과 찾기</h1>
+        <p id="map-status" class="text-center text-slate-500 text-sm font-medium mb-8" data-i18n="map_status_idle">아래 버튼을 눌러 가까운 안과를 찾아보세요.</p>
+
+        <div class="glass-card rounded-[2rem] overflow-hidden mb-6">
+            <div class="map-embed">
+                <iframe id="map-frame" title="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=127.018%2C37.490%2C127.060%2C37.512&layer=mapnik&marker=37.501%2C127.039"></iframe>
+                <div class="map-pin">📍</div>
+            </div>
+            <div class="p-4 flex gap-2">
+                <button onclick="findNearbyClinics()" id="map-locate-btn" class="flex-1 py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop shadow-md flex items-center justify-center gap-2" data-i18n="map_locate">📍 내 위치로 찾기</button>
+                <button onclick="openMap()" id="map-full-btn" class="flex-1 py-3.5 bg-yellow-400 text-slate-900 rounded-2xl font-bold btn-pop shadow-md" data-i18n="map_open_full">카카오맵에서 전체 보기</button>
+            </div>
+        </div>
+
+        <div id="clinic-list" class="space-y-3"></div>
+    </main>
+
+    <!-- 질환 상세 모달 -->
+    <div id="disease-modal" class="dm-overlay" onclick="closeDisease(event)">
+        <div id="dm-card" class="dm-card" onclick="event.stopPropagation()">
+            <div class="dm-head">
+                <button class="dm-close" onclick="closeDisease()">✕</button>
+                <div id="dm-icon" class="dm-icon-lg"></div>
+                <h2 id="dm-title" class="dm-title"></h2>
+            </div>
+            <div class="dm-body">
+                <div id="dm-detail"></div>
+            </div>
+            <div class="dm-foot">
+                <button id="dm-btn" class="dm-btn" onclick="closeDisease()" data-i18n="dm_close">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t flex justify-around py-2 z-50 pb-safe shadow-lg">
+        <div onclick="showTab('tab-test')" data-tab="tab-test" class="bnav-item">
+            <span class="text-2xl bnav-ico">💬</span><span class="text-[10px] font-bold" data-i18n="nav_test">AI 검사</span>
+        </div>
+        <div onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
+            <span class="text-2xl bnav-ico">📖</span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 소개</span>
+        </div>
+        <div onclick="showTab('tab-report')" data-tab="tab-report" class="bnav-item">
+            <span class="text-2xl bnav-ico">📄</span><span class="text-[10px] font-bold" data-i18n="nav_report">리포트</span>
+        </div>
+        <div onclick="showTab('tab-map')" data-tab="tab-map" class="bnav-item">
+            <span class="text-2xl bnav-ico">📍</span><span class="text-[10px] font-bold" data-i18n="nav_map">병원 찾기</span>
+        </div>
+    </nav>
+
+    <script src="/static/data.js?v=20260616d"></script>
+    <script src="/static/app.js?v=20260616d"></script>
+</body>
+</html>

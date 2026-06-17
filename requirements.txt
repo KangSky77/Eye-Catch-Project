@@ -1,0 +1,27 @@
+# Eye-Catch 의존성
+# 설치:  uv pip install -r requirements.txt
+#   (또는)  pip install -r requirements.txt
+# torch는 CUDA 13.0 빌드를 PyTorch 공식 인덱스에서 받습니다.
+--extra-index-url https://download.pytorch.org/whl/cu130
+
+torch==2.12.0+cu130
+torchvision==0.27.0+cu130
+
+fastapi
+uvicorn[standard]
+python-multipart   # FastAPI 파일 업로드(UploadFile)에 필요
+pydantic-settings  # app/core/config.py
+httpx              # Ollama 스트리밍 호출
+pillow             # 이미지 처리
+numpy
+
+# 선택: PostgreSQL 진단 저장 (없어도 앱은 동작)
+asyncpg
+
+# 얼굴→눈 검출용 MTCNN (없어도 앱은 동작 — 눈 크롭 기능만 비활성화)
+# ⚠️ 반드시 --no-deps로 설치할 것! (구버전 torch를 강제로 끌고와서
+#    설치된 torch 2.12+cu130을 다운그레이드하려고 함)
+#   uv pip install facenet-pytorch --no-deps --python .venv
+#   uv pip install requests tqdm --python .venv
+requests
+tqdm   # facenet-pytorch가 import 시점에 요구
