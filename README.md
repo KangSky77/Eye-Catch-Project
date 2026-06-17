@@ -13,21 +13,29 @@
 
 ## 🎯 주요 기능
 
-### 1️⃣ **백내장 AI 자동 진단**
+### 1️⃣ **백내장 AI 자동 진단 (눈별 판정)**
 - **전이학습 ResNet18** 모델 (ImageNet 사전학습)
 - 테스트셋 정확도: **99.9%** | 민감도: **100%** (FN=0)
 - 정상 14,993장 + 백내장 1,823장으로 학습
 - 임계값 50% (운영 최적화)
+- 🆕 **좌/우 눈 개별 분석** — 얼굴 사진에서 양쪽 눈을 따로 판정하고,
+  한쪽만 위험하면 **"편측 의심" 배지** 표시 (편측 백내장 대응)
+- MTCNN 얼굴→눈 크롭 (얼굴 사진/눈 클로즈업 모두 지원)
 
 ### 2️⃣ **멀티모달 안구질환 검사**
 - 🖼️ **백내장 AI 분석** — 이미지 기반
 - 📊 **황반변성 자가진단** — Amsler Grid 테스트
 - 📋 **문진 기반 스크리닝** — 녹내장·당뇨망막병증 의심 질문
 
-### 3️⃣ **Gemma LLM 맞춤형 소견서**
+### 3️⃣ **Gemma LLM 맞춤형 소견서 (RAG 그라운딩)**
 - 환자의 검사 결과를 분석해 **개인화된 의료 조언** 생성
-- 수치 직접 인용 + 검사 안내 + 생활팁 포함
-- 로컬 Ollama 서버로 개인정보 보호
+- 🆕 **RAG (Retrieval-Augmented Generation)** — 안과 4대 질환 참고지식
+  베이스에서 환자 결과에 맞는 내용을 검색해 프롬프트에 주입 →
+  모델이 **검증된 의학 정보에 근거**해 답변 (환각 위험↓, 전문성↑)
+- 수치 직접 인용 + 검사 안내(세극등·OCT 등) + 생활팁 포함
+- 🆕 **하트비트 스트리밍** — 생성 지연 시에도 연결을 유지해 모바일·ngrok
+  환경에서 답변이 중간에 끊기지 않음
+- 로컬 Ollama 서버로 개인정보 보호 (모델: `gemma4:e4b-it-qat`)
 
 ### 4️⃣ **6개국어 지원** 🌍
 - 🇰🇷 한국어 | 🇺🇸 English | 🇪🇸 Español
@@ -61,9 +69,10 @@ Eye-Catch (C:\eye_catch_claude)
 │   │   ├── models/
 │   │   │   └── cataract_model.py  # ResNet18 신경망
 │   │   └── services/
-│   │       ├── vision.py        # AI 추론 + 임계값 로직
-│   │       ├── eye_detector.py  # MTCNN 얼굴→눈 크롭
-│   │       ├── llm.py           # Gemma 프롬프트
+│   │       ├── vision.py        # AI 추론 + 임계값 + 눈별/편측 판정
+│   │       ├── eye_detector.py  # MTCNN 얼굴→눈 크롭 (좌/우)
+│   │       ├── llm.py           # Gemma 프롬프트 + RAG + 하트비트 스트리밍
+│   │       ├── knowledge.py     # 🆕 RAG 안과 참고지식 베이스 + 검색
 │   │       └── database.py      # 진단 기록 저장
 │   ├── train_ai.py              # 모델 학습 스크립트
 │   ├── eval_v2.py               # 모델 평가 (v2 검증용)
@@ -133,9 +142,9 @@ DB_NAME=eyecatch_db
 DB_USER=postgres
 DB_PASSWORD=your_password
 
-# LLM (Ollama)
+# LLM (Ollama) — GPU(8GB급)에 잘 맞는 QAT 모델 권장
 OLLAMA_URL=http://localhost:11434/api/generate
-OLLAMA_MODEL=gemma4:e4b
+OLLAMA_MODEL=gemma4:e4b-it-qat
 OLLAMA_TIMEOUT_SECONDS=120
 ```
 
@@ -154,7 +163,7 @@ python train_ai.py
 ollama serve
 
 # Gemma 모델 다운로드 (최초 1회)
-ollama pull gemma4:e4b
+ollama pull gemma4:e4b-it-qat
 ```
 
 ### 6️⃣ FastAPI 서버 실행
@@ -195,17 +204,22 @@ ngrok http 8000
 
 ### 📸 백내장 AI 분석
 ```bash
-POST /api/predict-cataract
+POST /api/analyze-eye
 Content-Type: multipart/form-data
 
 # 응답
 {
-  "probability": 72.5,           # 백내장 확률 (%)
+  "probability": 72.5,           # 전체 판정 확률(높은 쪽 눈 기준, %)
   "result": "백내장 위험 단계",
   "result_code": "risk",         # "normal" | "risk"
   "mode": "face",                # "face" 얼굴 크롭 | "eye" 원본
   "eyes_detected": 2,            # 감지된 눈 개수
-  "eye_probs": [72.5, 65.3]      # 각 눈별 확률
+  "eye_probs": [72.5, 12.3],     # 각 눈별 확률
+  "eyes": [                      # 🆕 눈별 상세 (좌/우)
+    {"side": "left",  "probability": 72.5, "code": "risk"},
+    {"side": "right", "probability": 12.3, "code": "normal"}
+  ],
+  "asymmetric": true             # 🆕 편측(한쪽만 위험) 여부
 }
 ```
 
@@ -270,8 +284,12 @@ Content-Type: application/json
 |------|------|------|
 | 백내장 분석이 멈춤 | AI 모델 가중치 미로드 | `eval_v2.py` 실행 후 검증 |
 | LLM 소견서 안 나옴 | Ollama 서버 미실행 | `ollama serve` 실행 |
+| 소견서가 중간에 끊김 | 생성 지연 중 모바일/ngrok 연결 끊김 | 하트비트 스트리밍(`stream_with_keepalive`)으로 연결 유지 |
+| 소견서 첫 글자 느림 | Ollama 콜드스타트(모델 로딩) | `keep_alive:-1` + 서버 시작 시 워밍업으로 VRAM 상주 |
+| LLM 응답 너무 느림 | 모델이 GPU 메모리에 안 맞음 | GPU에 맞는 QAT 모델 사용 (`gemma4:e4b-it-qat`) |
 | 폰에서 버튼 삐져나감 | flex 입력칸 `min-width:auto` 버그 | `min-w-0` 클래스 추가 |
-| 영어로 깨져 보임 | 캐시된 구 버전 | 시크릿창 또는 `Ctrl+Shift+R` 하드리프레시 |
+| 일반 모드만 안 뜸/깨짐 | 옛 `index.html` 캐시 잔존 | 사이트 데이터 1회 삭제 → 이후 `no-cache` 헤더로 자동 갱신 |
+| 영어로 깨져 보임 | 캐시된 구 버전 | 정적 파일 `?v=` 버전 쿼리 + 시크릿창/하드리프레시 |
 | PDF 2페이지 공백 | 소견서 한 줄이 페이지 경계에서 잘림 | `toAvoidBreakParagraphs()` 로 문단 분할 |
 
 ---

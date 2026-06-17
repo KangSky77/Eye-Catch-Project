@@ -19,12 +19,20 @@ async def analyze_eye(file: UploadFile = File(...)):
         "mode": result["mode"],                    # "face"면 얼굴에서 눈을 찾아 분석한 것
         "eyes_detected": result["eyes_detected"],
         "eye_probs": result["eye_probs"],
+        "eyes": result["eyes"],                    # 눈별 [{side, probability, code}]
+        "asymmetric": result["asymmetric"],        # 편측만 위험이면 True
     }
 
 @router.post("/api/get-ai-opinion")
 async def get_ai_opinion(req: GemmaRequest):
     return StreamingResponse(
-        get_gemma_opinion_stream(req.cataract_res, req.amsler_res, req.chat_symptoms, req.lang),
+        get_gemma_opinion_stream(
+            req.cataract_res, req.amsler_res, req.chat_symptoms, req.lang,
+            cataract_code=req.cataract_code,
+            amsler_abnormal=req.amsler_abnormal,
+            symptom_codes=req.symptom_codes,
+            eye_asymmetric=req.eye_asymmetric,
+        ),
         media_type="text/plain"
     )
 

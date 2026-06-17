@@ -26,3 +26,6 @@ train_log_v2.txt
 _*.jpg
 _*.png
 _*.pdf
+
+# 런타임 로그
+*.log

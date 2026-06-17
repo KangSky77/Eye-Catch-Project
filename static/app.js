@@ -6,8 +6,12 @@ const state = {
     lang: 'ko',              // 현재 언어
     stepIdx: 0,              // 고정 질문 인덱스
     aiResult: "",            // 백내장 분석 결과
+    aiResultCode: "",        // 백내장 판독 코드 'risk'/'normal' (RAG 검색용)
+    eyeBreakdown: [],        // 눈별 결과 [{side, probability, code}]
+    asymmetric: false,       // 편측(한쪽 눈만) 위험 여부
     hasAmsler: false,        // 황반변성 이상 여부
     chatSymptoms: [],        // 수집된 증상들 (리포트용)
+    symptomCodes: [],        // 증상 언어 중립 코드 (RAG 검색용)
     dynamicCount: 0,         // 젬마가 질문한 횟수
     maxDynamic: 1,           // 젬마 질문 최대 횟수
     chatHistory: []          // 젬마에게 넘길 전체 대화 기록
@@ -106,8 +110,23 @@ async function runAIAnalysis() {
         }
         
         // 백내장 결과를 선택 언어로 표시 (result_code 기반)
-        const resultText = translations[state.lang]['ai_' + d.result_code] || d.result;
-        state.aiResult = `${resultText} (${d.probability}%)`;
+        const t = translations[state.lang];
+        const resultText = t['ai_' + d.result_code] || d.result;
+        state.aiResultCode = d.result_code;   // 언어 중립 코드 저장 (RAG 검색용)
+        state.eyeBreakdown = d.eyes || [];
+        state.asymmetric = !!d.asymmetric;
+
+        // 얼굴 모드(눈 2개)면 좌/우 분리 결과를, 아니면 단일 결과를 리포트/소견서 문자열에 반영
+        const twoEyes = d.mode === 'face' && Array.isArray(d.eyes) && d.eyes.length === 2;
+        if (twoEyes) {
+            const bySide = {}; d.eyes.forEach(e => bySide[e.side] = e);
+            const lp = bySide.left ? bySide.left.probability : '-';
+            const rp = bySide.right ? bySide.right.probability : '-';
+            // 좌/우 수치 자체가 비대칭을 드러내므로 문자열은 간결하게(스키마 길이 제한 대비)
+            state.aiResult = `${resultText} (${t.eye_left} ${lp}%, ${t.eye_right} ${rp}%)`;
+        } else {
+            state.aiResult = `${resultText} (${d.probability}%)`;
+        }
 
         const disp = document.getElementById('ai-result-display');
         disp.innerHTML = '';
@@ -120,11 +139,13 @@ async function runAIAnalysis() {
         disp.appendChild(pProb);
         disp.appendChild(pRes);
 
-        // 얼굴 사진에서 눈을 검출해 분석한 경우 안내 표시
-        if (d.mode === 'face' && d.eyes_detected > 0) {
+        // 눈별 분석 카드 (얼굴 모드 + 눈 2개일 때만)
+        if (twoEyes) {
+            renderEyeBreakdown(disp, d.eyes);
+        } else if (d.mode === 'face' && d.eyes_detected > 0) {
             const pFace = document.createElement('p');
             pFace.className = 'text-[11px] text-slate-500 font-bold mt-2';
-            const tmpl = translations[state.lang].face_mode_note || "👁 얼굴 사진에서 눈 {n}곳을 찾아 분석했어요.";
+            const tmpl = t.face_mode_note || "👁 얼굴 사진에서 눈 {n}곳을 찾아 분석했어요.";
             pFace.textContent = tmpl.replace('{n}', d.eyes_detected);
             disp.appendChild(pFace);
         }
@@ -136,7 +157,50 @@ async function runAIAnalysis() {
     }
 }
 
-function recordAmsler(bad) { 
+// 눈별(좌/우) 분석 결과 카드를 그린다 (얼굴 모드 + 눈 2개일 때).
+function renderEyeBreakdown(container, eyes) {
+    const t = translations[state.lang];
+    const sideLabel = { left: t.eye_left, right: t.eye_right };
+
+    const wrap = document.createElement('div');
+    wrap.className = 'mt-4 pt-4 border-t border-slate-200 text-left';
+
+    const title = document.createElement('p');
+    title.className = 'text-[11px] font-black text-slate-400 mb-2';
+    title.textContent = t.eye_breakdown_title || '눈별 분석';
+    wrap.appendChild(title);
+
+    eyes.forEach(e => {
+        const risk = e.code === 'risk';
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between py-1.5';
+        const label = document.createElement('span');
+        label.className = 'text-sm font-bold text-slate-600';
+        label.textContent = `👁 ${sideLabel[e.side] || e.side}`;
+        const val = document.createElement('span');
+        val.className = `text-sm font-black px-2.5 py-0.5 rounded-full ${risk ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`;
+        val.textContent = `${e.probability}%`;
+        row.appendChild(label);
+        row.appendChild(val);
+        wrap.appendChild(row);
+    });
+
+    if (state.asymmetric) {
+        const badge = document.createElement('p');
+        badge.className = 'mt-2 text-[11px] font-black text-rose-600 bg-rose-50 rounded-lg px-3 py-2';
+        badge.textContent = t.eye_unilateral || '⚠️ 편측 의심';
+        wrap.appendChild(badge);
+    }
+
+    const note = document.createElement('p');
+    note.className = 'mt-2 text-[10px] text-slate-400 leading-relaxed';
+    note.textContent = t.eye_ref_note || '';
+    wrap.appendChild(note);
+
+    container.appendChild(wrap);
+}
+
+function recordAmsler(bad) {
     state.hasAmsler = bad; // 상태 업데이트
     nextStep('step-chat'); 
     startChat(); 
@@ -149,10 +213,11 @@ function startChat() {
     document.getElementById('chat-box').innerHTML = ''; 
     
     // 챗봇 관련 상태 초기화
-    state.stepIdx = 0; 
+    state.stepIdx = 0;
     state.dynamicCount = 0;
-    state.chatSymptoms = []; 
-    state.chatHistory = []; 
+    state.chatSymptoms = [];
+    state.symptomCodes = [];
+    state.chatHistory = [];
     
     addMsg('bot', questions[state.lang][state.stepIdx].t); 
 }
@@ -279,8 +344,8 @@ async function handleChatAnswer(yes) {
     // [1단계] 고정 질문 구간
     if (state.stepIdx < questions[state.lang].length) {
         const currentQ = questions[state.lang][state.stepIdx];
-        if (yes) state.chatSymptoms.push(currentQ.type); 
-        
+        if (yes) { state.chatSymptoms.push(currentQ.type); state.symptomCodes.push(currentQ.code); }
+
         state.chatHistory.push({ q: currentQ.t, a: answerText });
         state.stepIdx++;
         
@@ -296,7 +361,7 @@ async function handleChatAnswer(yes) {
     // [2단계] Gemma 맞춤형 질문 구간
     else {
         state.chatHistory[state.chatHistory.length - 1].a = answerText;
-        if (yes) state.chatSymptoms.push(translations[state.lang].symptom_extra || "기타 의심 증상 추가 발견");
+        if (yes) { state.chatSymptoms.push(translations[state.lang].symptom_extra || "기타 의심 증상 추가 발견"); state.symptomCodes.push('other'); }
 
         state.dynamicCount++;
 
@@ -364,7 +429,12 @@ async function finish() {
                 lang: state.lang,
                 cataract_res: cataractRes,
                 amsler_res: amslerRes,
-                chat_symptoms: symptoms
+                chat_symptoms: symptoms,
+                // RAG용 언어 중립 신호
+                cataract_code: state.aiResultCode,
+                amsler_abnormal: state.hasAmsler,
+                symptom_codes: state.symptomCodes,
+                eye_asymmetric: state.asymmetric   // 편측(한쪽 눈만) 위험 여부
             })
         });
         
@@ -376,8 +446,11 @@ async function finish() {
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            stopOpinionLoader();   // 첫 토큰 도착 → 로더 제거, 본문 표시 시작
-            opinionText.innerText += decoder.decode(value, { stream: true });
+            // 하트비트(제로폭 공백 U+200B)는 무시 → 생성 대기 중엔 로더 유지
+            const chunk = decoder.decode(value, { stream: true }).replace(/​/g, '');
+            if (!chunk) continue;
+            stopOpinionLoader();   // 첫 실제 토큰 도착 → 로더 제거, 본문 표시 시작
+            opinionText.innerText += chunk;
         }
         stopOpinionLoader();       // 빈 응답이어도 로더는 정리
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리
@@ -438,12 +511,15 @@ async function askGemmaMore() {
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            if (firstChunk) {       // 첫 토큰 도착 → 로더 제거 후 답변 표시 시작
+            // 하트비트(제로폭 공백 U+200B)는 무시 → 생성 대기 중엔 로더 유지
+            const chunk = decoder.decode(value, { stream: true }).replace(/​/g, '');
+            if (!chunk) continue;
+            if (firstChunk) {       // 첫 실제 토큰 도착 → 로더 제거 후 답변 표시 시작
                 loader.stop();
                 responseEl.innerText = `Q: ${userMsg}\nA: `;
                 firstChunk = false;
             }
-            responseEl.innerText += decoder.decode(value, { stream: true });
+            responseEl.innerText += chunk;
         }
         loader.stop();              // 빈 응답이어도 로더는 정리
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리

@@ -16,6 +16,7 @@ const translations = {
         map_status_idle: "아래 버튼을 눌러 가까운 안과를 찾아보세요.", map_status_loading: "위치를 확인하는 중...", map_status_done: "현재 위치 기준 가까운 안과예요.", map_status_denied: "위치 권한이 거부되었어요. 전체 지도에서 검색해 주세요.", map_status_unsupported: "이 브라우저는 위치 기능을 지원하지 않아요.",
         ai_normal: "특이 소견 없음 (정상)", ai_risk: "백내장 위험 단계 (정밀 검사 권장)", ai_hold: "판독 보류 (강한 조명 반사 감지됨)",
         face_mode_note: "👁 얼굴 사진에서 눈 {n}곳을 찾아 분석했어요.",
+        eye_breakdown_title: "눈별 분석 (사진 기준)", eye_left: "왼쪽 눈", eye_right: "오른쪽 눈", eye_unilateral: "⚠️ 편측 의심 — 한쪽 눈만 위험 신호", eye_ref_note: "※ 얼굴 사진의 눈별 수치는 참고용이며, 정확도는 눈 클로즈업 촬영이 더 높습니다.",
         loading_elapsed: "{s}초 경과",
         gemma_idle: "먼저 'AI 검사'를 진행하면 맞춤 소견이 여기에 표시됩니다.", rep_followup_title: "🤖 AI에게 더 궁금한 점 물어보기", rep_followup_ph: "예: 관리 방법 알려줘",
         srv_err: "⚠️ 서버와 연결할 수 없습니다.", nextq_fallback: "추가적으로 눈이 불편하신 곳이 있나요?",
@@ -42,6 +43,7 @@ const translations = {
         map_status_idle: "Tap the button below to find nearby eye clinics.", map_status_loading: "Locating you...", map_status_done: "Eye clinics near your current location.", map_status_denied: "Location denied. Please search on the full map.", map_status_unsupported: "This browser does not support geolocation.",
         ai_normal: "No significant findings (Normal)", ai_risk: "Cataract risk stage (Detailed exam recommended)", ai_hold: "Analysis on hold (Strong glare detected)",
         face_mode_note: "👁 Detected {n} eye(s) in the face photo and analyzed them.",
+        eye_breakdown_title: "Per-eye analysis (as in photo)", eye_left: "Left eye", eye_right: "Right eye", eye_unilateral: "⚠️ Possible one-sided (unilateral) — only one eye flagged", eye_ref_note: "※ Per-eye values from a face photo are for reference; a close-up of the eye is more accurate.",
         loading_elapsed: "{s}s elapsed",
         gemma_idle: "Complete the AI analysis first to see your personalized opinion here.", rep_followup_title: "🤖 Ask the AI more questions", rep_followup_ph: "e.g. How should I care for my eyes?",
         srv_err: "⚠️ Unable to connect to the server.", nextq_fallback: "Is there anything else bothering your eyes?",
@@ -68,6 +70,7 @@ const translations = {
         map_status_idle: "Pulse el botón para encontrar clínicas cercanas.", map_status_loading: "Localizando...", map_status_done: "Clínicas cerca de su ubicación.", map_status_denied: "Ubicación denegada. Busque en el mapa completo.", map_status_unsupported: "Este navegador no admite geolocalización.",
         ai_normal: "Sin hallazgos significativos (Normal)", ai_risk: "Riesgo de cataratas (Se recomienda examen detallado)", ai_hold: "Análisis en espera (Reflejo de luz fuerte detectado)",
         face_mode_note: "👁 Se detectaron {n} ojo(s) en la foto del rostro y se analizaron.",
+        eye_breakdown_title: "Análisis por ojo (según la foto)", eye_left: "Ojo izquierdo", eye_right: "Ojo derecho", eye_unilateral: "⚠️ Posible unilateral — solo un ojo con señal de riesgo", eye_ref_note: "※ Los valores por ojo de una foto del rostro son orientativos; un primer plano del ojo es más preciso.",
         loading_elapsed: "{s} s transcurridos",
         gemma_idle: "Completa primero el análisis de IA para ver aquí tu opinión personalizada.", rep_followup_title: "🤖 Haz más preguntas a la IA", rep_followup_ph: "ej. ¿Cómo cuido mis ojos?",
         srv_err: "⚠️ No se puede conectar con el servidor.", nextq_fallback: "¿Hay algo más que le moleste en los ojos?",
@@ -94,6 +97,7 @@ const translations = {
         map_status_idle: "Appuyez sur le bouton pour trouver des cliniques proches.", map_status_loading: "Localisation...", map_status_done: "Cliniques près de votre position.", map_status_denied: "Position refusée. Recherchez sur la carte complète.", map_status_unsupported: "Ce navigateur ne prend pas en charge la géolocalisation.",
         ai_normal: "Aucune anomalie notable (Normal)", ai_risk: "Stade de risque de cataracte (Examen approfondi recommandé)", ai_hold: "Analyse en attente (Fort reflet lumineux détecté)",
         face_mode_note: "👁 {n} œil/yeux détecté(s) sur la photo du visage et analysé(s).",
+        eye_breakdown_title: "Analyse par œil (selon la photo)", eye_left: "Œil gauche", eye_right: "Œil droit", eye_unilateral: "⚠️ Possiblement unilatéral — un seul œil signalé", eye_ref_note: "※ Les valeurs par œil issues d'une photo du visage sont indicatives ; un gros plan de l'œil est plus précis.",
         loading_elapsed: "{s} s écoulées",
         gemma_idle: "Effectuez d'abord l'analyse IA pour voir votre avis personnalisé ici.", rep_followup_title: "🤖 Posez plus de questions à l'IA", rep_followup_ph: "ex. Comment prendre soin de mes yeux ?",
         srv_err: "⚠️ Impossible de se connecter au serveur.", nextq_fallback: "Y a-t-il autre chose qui vous gêne aux yeux ?",
@@ -120,6 +124,7 @@ const translations = {
         map_status_idle: "下のボタンを押して近くの眼科を探しましょう。", map_status_loading: "現在地を確認中...", map_status_done: "現在地周辺の眼科です。", map_status_denied: "位置情報が拒否されました。地図全体で検索してください。", map_status_unsupported: "このブラウザは位置情報に対応していません。",
         ai_normal: "特記所見なし（正常）", ai_risk: "白内障リスク段階（精密検査を推奨）", ai_hold: "判読保留（強い光の反射を検出）",
         face_mode_note: "👁 顔写真から目を{n}箇所検出して分析しました。",
+        eye_breakdown_title: "目ごとの分析（写真基準）", eye_left: "左目", eye_right: "右目", eye_unilateral: "⚠️ 片側の疑い — 片方の目だけ危険信号", eye_ref_note: "※ 顔写真の目ごとの数値は参考用で、目のクローズアップ撮影の方が精度が高いです。",
         loading_elapsed: "{s}秒経過",
         gemma_idle: "先にAI検査を完了すると、ここにカスタム所見が表示されます。", rep_followup_title: "🤖 AIにもっと質問する", rep_followup_ph: "例：ケア方法を教えて",
         srv_err: "⚠️ サーバーに接続できません。", nextq_fallback: "他に目で気になるところはありますか？",
@@ -146,6 +151,7 @@ const translations = {
         map_status_idle: "点击下方按钮查找附近的眼科。", map_status_loading: "正在确认位置...", map_status_done: "您当前位置附近的眼科。", map_status_denied: "位置权限被拒绝，请在完整地图中搜索。", map_status_unsupported: "此浏览器不支持定位功能。",
         ai_normal: "无明显异常（正常）", ai_risk: "白内障风险阶段（建议精密检查）", ai_hold: "判读暂缓（检测到强光反射）",
         face_mode_note: "👁 已从面部照片中检测到{n}处眼睛并进行分析。",
+        eye_breakdown_title: "逐眼分析（以照片为准）", eye_left: "左眼", eye_right: "右眼", eye_unilateral: "⚠️ 疑似单侧 — 仅一只眼出现风险信号", eye_ref_note: "※ 面部照片的逐眼数值仅供参考，眼部特写拍摄的准确度更高。",
         loading_elapsed: "已用时 {s} 秒",
         gemma_idle: "请先完成 AI 检测，个性化意见将显示在这里。", rep_followup_title: "🤖 向 AI 提出更多问题", rep_followup_ph: "例：如何护理眼睛？",
         srv_err: "⚠️ 无法连接到服务器。", nextq_fallback: "您的眼睛还有其他不适吗？",
@@ -157,13 +163,14 @@ const translations = {
     }
 };
 
+// code: 언어 중립 질환 키 (백엔드 RAG 검색용 — 0=녹내장, 1=당뇨망막병증)
 const questions = {
-    ko: [{t:'주변 시야가 답답하게 좁아진 느낌인가요?',type:'녹내장 의심'},{t:'눈앞에 실오라기 같은 것들이 떠다니나요?',type:'당뇨망막병증 의심'}],
-    en: [{t:'Does your peripheral vision feel restricted?',type:'Glaucoma Suspect'},{t:'Do you see floaters in your vision?',type:'Retinopathy Suspect'}],
-    es: [{t:'¿Siente que su visión periférica está restringida?',type:'Sospecha de Glaucoma'},{t:'¿Ve moscas volantes (manchas) en su visión?',type:'Sospecha de Retinopatía'}],
-    fr: [{t:'Votre vision périphérique vous semble-t-elle restreinte?',type:'Suspicion de Glaucome'},{t:'Voyez-vous des corps flottants dans votre vision?',type:'Suspicion de Rétinopathie'}],
-    ja: [{t:'周辺の視野が狭く感じますか？',type:'緑内障の疑い'},{t:'目の前に糸くずのようなものが飛んで見えますか？',type:'糖尿病網膜症の疑い'}],
-    zh: [{t:'您感觉周边视野变窄了吗？',type:'疑似青光眼'},{t:'您眼前有像线头一样飘动的东西吗？',type:'疑似糖尿病视网膜病变'}]
+    ko: [{t:'주변 시야가 답답하게 좁아진 느낌인가요?',type:'녹내장 의심',code:'glaucoma'},{t:'눈앞에 실오라기 같은 것들이 떠다니나요?',type:'당뇨망막병증 의심',code:'retinopathy'}],
+    en: [{t:'Does your peripheral vision feel restricted?',type:'Glaucoma Suspect',code:'glaucoma'},{t:'Do you see floaters in your vision?',type:'Retinopathy Suspect',code:'retinopathy'}],
+    es: [{t:'¿Siente que su visión periférica está restringida?',type:'Sospecha de Glaucoma',code:'glaucoma'},{t:'¿Ve moscas volantes (manchas) en su visión?',type:'Sospecha de Retinopatía',code:'retinopathy'}],
+    fr: [{t:'Votre vision périphérique vous semble-t-elle restreinte?',type:'Suspicion de Glaucome',code:'glaucoma'},{t:'Voyez-vous des corps flottants dans votre vision?',type:'Suspicion de Rétinopathie',code:'retinopathy'}],
+    ja: [{t:'周辺の視野が狭く感じますか？',type:'緑内障の疑い',code:'glaucoma'},{t:'目の前に糸くずのようなものが飛んで見えますか？',type:'糖尿病網膜症の疑い',code:'retinopathy'}],
+    zh: [{t:'您感觉周边视野变窄了吗？',type:'疑似青光眼',code:'glaucoma'},{t:'您眼前有像线头一样飘动的东西吗？',type:'疑似糖尿病视网膜病变',code:'retinopathy'}]
 };
 
 // ==========================================

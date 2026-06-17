@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.api.routes import router
 from app.services.vision import load_trained_weights
+from app.services.llm import warmup_ollama
 from app.services.database import init_db_pool, close_db_pool
+import asyncio
 import os
 
 @asynccontextmanager
@@ -13,6 +15,11 @@ async def lifespan(app: FastAPI):
     # AI 모델 로드
     load_trained_weights()
     print("✅ AI 모델 로드 완료!")
+
+    # Gemma(Ollama) 모델 백그라운드 워밍업 — 첫 소견서 콜드스타트 제거
+    # (서버 기동을 막지 않도록 백그라운드 태스크로 실행)
+    asyncio.create_task(warmup_ollama())
+    print("🔥 Gemma 워밍업 시작(백그라운드)")
 
     # DB 풀 초기화 (실패해도 서버는 정상 기동)
     try:

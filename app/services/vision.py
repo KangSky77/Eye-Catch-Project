@@ -60,6 +60,9 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
     except Exception:
         raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
 
+# 위험 판정 임계값(%) — 눈 전체/눈 개별 판정에 동일 적용
+RISK_THRESHOLD = 50.0
+
 def _predict_single(img: Image.Image) -> float:
     """이미지 1장의 백내장 확률(%)을 반환."""
     input_tensor = preprocess(img).unsqueeze(0).to(device)
@@ -67,6 +70,13 @@ def _predict_single(img: Image.Image) -> float:
         output = model(input_tensor)
         probs = torch.nn.functional.softmax(output, dim=1)[0]
     return probs[1].item() * 100
+
+
+def _classify(prob: float):
+    """확률(%) → (언어중립 코드, 한국어 기본 문구). 임계값 일관 적용."""
+    if prob >= RISK_THRESHOLD:
+        return "risk", "백내장 위험 단계 (정밀 검사 권장)"
+    return "normal", "특이 소견 없음 (정상)"
 
 
 def predict_cataract(img: Image.Image):
@@ -93,12 +103,22 @@ def predict_cataract(img: Image.Image):
     #       오히려 정확한 백내장 검출이므로 해당 규칙을 제거함.
     # 임계값 50%: v2 모델 테스트셋 기준 75%에서는 FN=2(백내장 놓침),
     #             50%에서는 FN=0 / FP 2→3. 스크리닝은 FN 최소화가 우선이라 50% 채택.
-    if cat_p >= 50.0:
-        code = "risk"
-        res = "백내장 위험 단계 (정밀 검사 권장)"
+    code, res = _classify(cat_p)
+
+    # 눈별 결과: 얼굴 모드(눈 2개)면 [왼쪽, 오른쪽](사진 기준) 라벨, 아니면 단일 눈.
+    # 크롭 순서는 eye_detector가 [왼눈, 오른눈]으로 보장.
+    if mode == "face" and len(eye_probs) == 2:
+        sides = ["left", "right"]
     else:
-        code = "normal"
-        res = "특이 소견 없음 (정상)"
+        sides = ["single"] * len(eye_probs)
+    eyes = []
+    for side, p in zip(sides, eye_probs):
+        eye_code, _ = _classify(p)
+        eyes.append({"side": side, "probability": round(p, 1), "code": eye_code})
+
+    # 편측(비대칭) 의심: 얼굴 모드에서 한 눈만 위험 단계인 경우
+    risk_count = sum(1 for e in eyes if e["code"] == "risk")
+    asymmetric = mode == "face" and len(eyes) == 2 and risk_count == 1
 
     # 백내장 확률만 표시 (max 사용 시 정상이어도 높은 숫자 표시되는 혼란 방지)
     return {
@@ -108,4 +128,6 @@ def predict_cataract(img: Image.Image):
         "mode": mode,                              # "face"=눈 크롭 분석 / "eye"=원본 그대로
         "eyes_detected": len(eye_crops),           # 얼굴에서 찾은 눈 개수 (0이면 클로즈업 경로)
         "eye_probs": [round(p, 1) for p in eye_probs],
+        "eyes": eyes,                              # 눈별 [{side, probability, code}]
+        "asymmetric": asymmetric,                  # 편측만 위험이면 True
     }
