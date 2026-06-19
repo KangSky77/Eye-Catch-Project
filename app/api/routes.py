@@ -2,10 +2,17 @@ from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import StreamingResponse
 from app.services.vision import predict_cataract, validate_and_read_image
 from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_next_question
+from app.services.clinics import search_eye_clinics
 from app.services.database import save_diagnosis
 from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, SaveDiagnosisRequest
 
 router = APIRouter()
+
+
+@router.get("/api/nearby-clinics")
+async def nearby_clinics(lat: float, lng: float):
+    """현재 위치 주변 안과 검색 (카카오 로컬 REST API, 키 없으면 빈 목록)."""
+    return await search_eye_clinics(lat, lng)
 
 @router.post("/api/analyze-eye")
 async def analyze_eye(file: UploadFile = File(...)):

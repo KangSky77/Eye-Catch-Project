@@ -8,7 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260617b">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="/static/style.css?v=20260617e">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -201,9 +203,7 @@
 
         <div class="glass-card rounded-[2rem] overflow-hidden mb-6">
             <div class="map-embed">
-                <iframe id="map-frame" title="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=127.018%2C37.490%2C127.060%2C37.512&layer=mapnik&marker=37.501%2C127.039"></iframe>
-                <div class="map-pin">📍</div>
+                <div id="leaflet-map"></div>
             </div>
             <div class="p-4 flex gap-2">
                 <button onclick="findNearbyClinics()" id="map-locate-btn" class="flex-1 py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop shadow-md flex items-center justify-center gap-2" data-i18n="map_locate">📍 내 위치로 찾기</button>
@@ -246,7 +246,7 @@
         </div>
     </nav>
 
-    <script src="/static/data.js?v=20260617b"></script>
-    <script src="/static/app.js?v=20260617b"></script>
+    <script src="/static/data.js?v=20260617e"></script>
+    <script src="/static/app.js?v=20260617e"></script>
 </body>
 </html>

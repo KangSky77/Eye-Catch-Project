@@ -225,12 +225,21 @@ body {
     height: 360px;
     background: #e2e8f0;
 }
-.map-embed iframe {
+.map-embed iframe,
+.map-embed #leaflet-map {
     width: 100%;
     height: 100%;
     border: 0;
     display: block;
 }
+/* 안과 목록 거리 뱃지 */
+.clinic-item .ci-dist {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #2563eb;
+    white-space: nowrap;
+}
+.clinic-item .ci-dist + a { margin-left: 10px; }
 .map-pin {
     position: absolute;
     top: 50%;

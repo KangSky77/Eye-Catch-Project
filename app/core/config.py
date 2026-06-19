@@ -8,8 +8,9 @@ class Settings(BaseSettings):
     db_port: int = 5432
     model_path: str = "cataract_resnet18.pth"  # train_ai.py가 생성하는 전이학습 가중치
     ollama_url: str = "http://localhost:11434/api/generate"
-    ollama_model: str = "gemma4:e4b"
+    ollama_model: str = "gemma4:e4b-it-qat"
     ollama_timeout_seconds: float = 120.0
+    kakao_rest_key: str = ""   # 카카오 로컬 REST API 키(.env의 KAKAO_REST_KEY) — 안과 검색용
     max_upload_size_bytes: int = 10 * 1024 * 1024  # .env의 MAX_UPLOAD_SIZE_BYTES로 덮어쓰기 가능
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

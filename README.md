@@ -42,13 +42,19 @@
 - 🇫🇷 Français | 🇯🇵 日本語 | 🇨🇳 中文
 - 브라우저 언어 자동 감지 + 사용자 선택 저장
 
-### 5️⃣ **고품질 PDF 리포트**
+### 5️⃣ **주변 안과 찾기 (인터랙티브 지도)** 🗺️
+- **Leaflet 지도**(OSM) 위에 내 위치 + 주변 안과를 **마커**로 표시
+- 🆕 **카카오 로컬 API**로 한국 안과 검색 (이름·주소·거리·길찾기) — 서버에서
+  호출하므로 **사이트 도메인 등록 불필요** (REST 키만 `.env`에)
+- 🆕 해외는 **OSM Overpass**로 폴백 → 전 세계 best-effort, 실패 시 외부 검색 링크
+- 목록 탭 → 지도 이동, 마커 클릭 → 팝업
+
+### 6️⃣ **고품질 PDF 리포트**
 - 4섹션 진단 리포트 (AI·황반·문진·소견서)
 - 다국어 자동 번역
 - 페이지 경계 깔끔하게 분할
-- 병원 근처 안과 찾기 링크 포함
 
-### 6️⃣ **외부 공유** (ngrok)
+### 7️⃣ **외부 공유** (ngrok)
 ```bash
 ngrok http 8000
 # 공개 HTTPS URL 자동 생성 → 모바일·원격 공유 가능
@@ -73,6 +79,7 @@ Eye-Catch (C:\eye_catch_claude)
 │   │       ├── eye_detector.py  # MTCNN 얼굴→눈 크롭 (좌/우)
 │   │       ├── llm.py           # Gemma 프롬프트 + RAG + 하트비트 스트리밍
 │   │       ├── knowledge.py     # 🆕 RAG 안과 참고지식 베이스 + 검색
+│   │       ├── clinics.py       # 🆕 주변 안과 검색 (카카오/Overpass)
 │   │       └── database.py      # 진단 기록 저장
 │   ├── train_ai.py              # 모델 학습 스크립트
 │   ├── eval_v2.py               # 모델 평가 (v2 검증용)
@@ -146,6 +153,11 @@ DB_PASSWORD=your_password
 OLLAMA_URL=http://localhost:11434/api/generate
 OLLAMA_MODEL=gemma4:e4b-it-qat
 OLLAMA_TIMEOUT_SECONDS=120
+
+# 주변 안과 검색 (선택) — 카카오 로컬 REST API 키
+# developers.kakao.com → 내 앱 → REST API 키, 그리고 [제품 설정 → 카카오맵] 활성화 필수
+# 비워두면 해외는 OSM Overpass, 그것도 없으면 외부 검색 링크로 폴백
+KAKAO_REST_KEY=
 ```
 
 ### 4️⃣ AI 모델 학습 (또는 사전학습 가중치 다운로드)
@@ -251,6 +263,22 @@ Content-Type: application/json
 }
 ```
 
+### 🗺️ 주변 안과 검색
+```bash
+GET /api/nearby-clinics?lat=37.4979&lng=127.0276
+
+# 응답 (source: "kakao" | "overpass" | "none")
+{
+  "source": "kakao",
+  "clinics": [
+    {"name": "지에스안과의원", "lat": 37.4977, "lng": 127.0285,
+     "dist": 83.0, "phone": "02-3469-0900",
+     "address": "서울 강남구 강남대로 390", "url": "http://place.map.kakao.com/..."}
+  ]
+}
+# 한국 → 카카오, 결과 없으면(해외 등) → Overpass(OSM), 둘 다 실패 → 빈 목록
+```
+
 ---
 
 ## 🛠️ 개발 팁
@@ -286,7 +314,8 @@ Content-Type: application/json
 | LLM 소견서 안 나옴 | Ollama 서버 미실행 | `ollama serve` 실행 |
 | 소견서가 중간에 끊김 | 생성 지연 중 모바일/ngrok 연결 끊김 | 하트비트 스트리밍(`stream_with_keepalive`)으로 연결 유지 |
 | 소견서 첫 글자 느림 | Ollama 콜드스타트(모델 로딩) | `keep_alive:-1` + 서버 시작 시 워밍업으로 VRAM 상주 |
-| LLM 응답 너무 느림 | 모델이 GPU 메모리에 안 맞음 | GPU에 맞는 QAT 모델 사용 (`gemma4:e4b-it-qat`) |
+| LLM 응답 너무 느림 | 긴 RAG 프롬프트 prefill (모델 크기 무관) | 프롬프트 단축 또는 그대로 수용(하트비트가 끊김 방지). GPU에 맞는 QAT 모델 권장 |
+| 안과 검색 403 `disabled OPEN_MAP_AND_LOCAL` | 카카오 앱에서 카카오맵 서비스 비활성화 | developers.kakao.com → 제품 설정 → 카카오맵 **활성화** |
 | 폰에서 버튼 삐져나감 | flex 입력칸 `min-width:auto` 버그 | `min-w-0` 클래스 추가 |
 | 일반 모드만 안 뜸/깨짐 | 옛 `index.html` 캐시 잔존 | 사이트 데이터 1회 삭제 → 이후 `no-cache` 헤더로 자동 갱신 |
 | 영어로 깨져 보임 | 캐시된 구 버전 | 정적 파일 `?v=` 버전 쿼리 + 시크릿창/하드리프레시 |
