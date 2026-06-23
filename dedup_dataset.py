@@ -78,9 +78,16 @@ class UnionFind:
         self.parent = {x: x for x in items}
 
     def find(self, x):
-        while self.parent[x] != x:
-            x = self.parent[x]
-        return x
+        root = x
+        while self.parent[root] != root:
+            root = self.parent[root]
+        # 경로 압축 (Path Compression)
+        curr = x
+        while curr != root:
+            nxt = self.parent[curr]
+            self.parent[curr] = root
+            curr = nxt
+        return root
 
     def union(self, a, b):
         ra, rb = self.find(a), self.find(b)
@@ -122,12 +129,13 @@ def main():
     if not DATA_DIR.is_dir():
         raise SystemExit(f"❌ 데이터 폴더가 없습니다: {DATA_DIR}")
 
+    IMG_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
     all_paths = []
     label_of = {}
     for cls in CLASSES:
         cls_dir = DATA_DIR / cls
         for f in sorted(cls_dir.iterdir()):
-            if f.is_file():
+            if f.is_file() and f.suffix.lower() in IMG_EXTENSIONS:
                 rel = str(f.as_posix())
                 all_paths.append(rel)
                 label_of[rel] = cls

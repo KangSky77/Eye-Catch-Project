@@ -362,8 +362,10 @@ def main():
 
     counts = np.bincount(train_targets)
     class_weights = torch.tensor(counts.sum() / (len(counts) * counts), dtype=torch.float32).to(device)
-    print(f"클래스 가중치(불균형 보정 손실): {class_weights.cpu().numpy().round(3)}")
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    print(f"클래스 가중치(참고용): {class_weights.cpu().numpy().round(3)}")
+    # WeightedRandomSampler가 이미 배치 내 클래스 비율을 50:50으로 맞춰 공급하므로,
+    # 손실 함수 가중치까지 이중 적용(Double weighting)하지 않도록 일반 CrossEntropyLoss를 사용합니다.
+    criterion = nn.CrossEntropyLoss()
 
     model = build_model(pretrained=True).to(device)
     best_state = {"score": -1.0, "metrics": {}, "model": None}
