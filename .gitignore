@@ -29,3 +29,9 @@ _*.pdf
 
 # 런타임 로그
 *.log
+
+# Node (Tailwind 빌드용) — 빌드 결과물(static/tailwind.css)은 추적, 의존성 폴더는 제외
+node_modules/
+
+# Codex/Antigravity 버전 비교용 참고자료 (실제 앱 코드 아님, 로컬 보관용)
+compare/

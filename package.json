@@ -1,0 +1,12 @@
+{
+  "name": "eye-catch-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/tailwind-src.css -o ./static/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./static/tailwind-src.css -o ./static/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

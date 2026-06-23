@@ -4,7 +4,7 @@
     {
       "name": "eye-catch-api",
       "runtimeExecutable": "C:\\eye_catch_claude\\.venv\\Scripts\\python.exe",
-      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"],
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload", "--reload-dir", "app", "--reload-dir", "static"],
       "port": 8001
     }
   ]

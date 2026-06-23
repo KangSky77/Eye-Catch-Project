@@ -1,0 +1,62 @@
+{
+  "7795": {
+    "count": 6,
+    "labels": {
+      "0": 5,
+      "1": 1
+    },
+    "paths": [
+      "dataset\\0_normal\\img (11498).jpg",
+      "dataset\\0_normal\\img (5915).jpg",
+      "dataset\\0_normal\\img (6034).jpg",
+      "dataset\\0_normal\\img (6037).jpg",
+      "dataset\\0_normal\\img (6953).jpg",
+      "dataset\\1_cataract\\img (495).jpg"
+    ]
+  },
+  "7831": {
+    "count": 21,
+    "labels": {
+      "0": 19,
+      "1": 2
+    },
+    "paths": [
+      "dataset\\0_normal\\img (10093).jpg",
+      "dataset\\0_normal\\img (10345).jpg",
+      "dataset\\0_normal\\img (11432).jpg",
+      "dataset\\0_normal\\img (11456).jpg",
+      "dataset\\0_normal\\img (12552).jpg",
+      "dataset\\0_normal\\img (6596).jpg",
+      "dataset\\0_normal\\img (6612).jpg",
+      "dataset\\0_normal\\img (7671).jpg",
+      "dataset\\0_normal\\img (7957).jpg",
+      "dataset\\0_normal\\img (8009).jpg",
+      "dataset\\0_normal\\img (8367).jpg",
+      "dataset\\0_normal\\img (8431).jpg",
+      "dataset\\0_normal\\img (8442).jpg",
+      "dataset\\0_normal\\img (8953).jpg",
+      "dataset\\0_normal\\img (9360).jpg",
+      "dataset\\0_normal\\img (9393).jpg",
+      "dataset\\0_normal\\img (9404).jpg",
+      "dataset\\0_normal\\img (9760).jpg",
+      "dataset\\0_normal\\img (9836).jpg",
+      "dataset\\1_cataract\\img (1439).jpg",
+      "dataset\\1_cataract\\img (528).jpg"
+    ]
+  },
+  "7933": {
+    "count": 6,
+    "labels": {
+      "0": 1,
+      "1": 5
+    },
+    "paths": [
+      "dataset\\0_normal\\img (11906).jpg",
+      "dataset\\1_cataract\\img (1147).jpg",
+      "dataset\\1_cataract\\img (1426).jpg",
+      "dataset\\1_cataract\\img (1488).jpg",
+      "dataset\\1_cataract\\img (505).jpg",
+      "dataset\\1_cataract\\img (618).jpg"
+    ]
+  }
+}

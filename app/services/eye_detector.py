@@ -14,9 +14,11 @@
   (--no-deps 이유: facenet-pytorch가 구버전 torch를 고정해서
    이미 설치된 torch 2.12+cu130을 다운그레이드하려는 것을 방지)
 """
+import threading
 import numpy as np
 import torch
 from PIL import Image
+from app.core.config import settings
 
 try:
     from facenet_pytorch import MTCNN
@@ -25,8 +27,6 @@ except ImportError:
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# 얼굴 검출 확신도 하한 — 눈 클로즈업 사진을 얼굴로 오인하는 것을 방지
-FACE_PROB_THRESHOLD = 0.95
 # 눈 사이 거리 대비 크롭 반변 비율 (0.45 → 눈+주변 흰자/눈꺼풀까지 포함)
 EYE_CROP_RATIO = 0.45
 # 크롭이 이보다 작으면 해상도가 부족해 분석 불가로 간주
@@ -39,14 +39,24 @@ def is_available() -> bool:
     return MTCNN is not None
 
 
+_detector_lock = threading.Lock()
+
 def _get_mtcnn():
     global _mtcnn
     if MTCNN is None:
         return None
     if _mtcnn is None:
-        # keep_all=True: 모든 얼굴 검출 후 가장 확실한 얼굴 선택
-        _mtcnn = MTCNN(keep_all=True, device=device)
+        with _detector_lock:
+            if _mtcnn is None:
+                # keep_all=True: 모든 얼굴 검출 후 가장 확실한 얼굴 선택
+                _mtcnn = MTCNN(keep_all=True, device=device)
     return _mtcnn
+
+
+def warmup() -> bool:
+    """서버 시작 시 호출하여 MTCNN 가중치 로딩 및 초기 오버헤드 제거"""
+    return _get_mtcnn() is not None
+
 
 
 def extract_eye_crops(img: Image.Image) -> list[Image.Image]:
@@ -68,7 +78,7 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image]:
 
     # 가장 확신도 높은 얼굴 1개 선택
     best = int(np.argmax(probs))
-    if probs[best] < FACE_PROB_THRESHOLD:
+    if probs[best] < settings.face_prob_threshold:
         return []
 
     # 랜드마크 순서: [왼눈, 오른눈, 코, 입왼쪽, 입오른쪽]

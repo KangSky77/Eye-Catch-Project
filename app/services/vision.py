@@ -1,4 +1,5 @@
 import io
+import logging
 import torch
 from PIL import Image, ImageOps
 from fastapi import UploadFile, HTTPException
@@ -6,11 +7,18 @@ from torchvision import transforms
 from app.models.cataract_model import build_model
 from app.core.config import settings
 from app.services import eye_detector
+from app.services import eye_validator
+
+logger = logging.getLogger(__name__)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = build_model().to(device)
 
 MAX_FILE_SIZE = settings.max_upload_size_bytes
+# 디코딩 후 픽셀 수 상한 — 작은 압축파일이 거대한 비트맵으로 풀리는 '압축 폭탄' 방어
+MAX_IMAGE_PIXELS = 24_000_000   # 약 24MP (예: 6000x4000). 일반 폰 사진은 충분히 통과
+# PIL 자체 안전장치도 보수적으로 설정 (이 값 초과 시 디코딩 단계에서 거부)
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 # 가중치 로드 성공 여부 — False면 학습 안 된 모델이므로 예측을 거부해야 함
 weights_loaded = False
@@ -29,7 +37,7 @@ def load_trained_weights() -> bool:
     global weights_loaded
     import os
     if not os.path.exists(settings.model_path):
-        print(f"⚠️  가중치 파일이 없습니다: {settings.model_path} — train_ai.py로 먼저 학습하세요.")
+        logger.warning(f"⚠️  가중치 파일이 없습니다: {settings.model_path} — train_ai.py로 먼저 학습하세요.")
         model.eval()
         weights_loaded = False
         return False
@@ -38,8 +46,8 @@ def load_trained_weights() -> bool:
         model.eval()
         weights_loaded = True
         return True
-    except Exception as e:
-        print(f"⚠️  가중치 로드 실패(아키텍처 불일치 가능): {e}")
+    except Exception:
+        logger.error("⚠️  가중치 로드 실패(아키텍처 불일치 가능)", exc_info=True)
         model.eval()
         weights_loaded = False
         return False
@@ -55,13 +63,29 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
         raise HTTPException(status_code=413, detail="파일 크기는 10MB 이하여야 합니다.")
 
     try:
-        # EXIF 회전 정보 반영해서 이미지 오픈
-        return ImageOps.exif_transpose(Image.open(io.BytesIO(contents)).convert("RGB"))
+        # 헤더만 먼저 읽어 크기 확인(이 시점엔 전체 픽셀 디코딩 전)
+        img = Image.open(io.BytesIO(contents))
+        w, h = img.size
+    except Image.DecompressionBombError:
+        # Pillow가 open/size 단계에서도 폭탄을 던질 수 있음 → 413으로 정확히 분류
+        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
     except Exception:
         raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
 
-# 위험 판정 임계값(%) — 눈 전체/눈 개별 판정에 동일 적용
-RISK_THRESHOLD = 50.0
+    # 픽셀 수 상한 검사 — 디코딩으로 메모리 폭주하기 전에 거부
+    if w * h > MAX_IMAGE_PIXELS:
+        raise HTTPException(
+            status_code=413,
+            detail=f"이미지 해상도가 너무 큽니다. ({w}x{h}) 더 작은 사진을 올려주세요."
+        )
+
+    try:
+        # EXIF 회전 정보 반영 + RGB 변환 (여기서 실제 픽셀 디코딩)
+        return ImageOps.exif_transpose(img.convert("RGB"))
+    except Image.DecompressionBombError:
+        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
+    except Exception:
+        raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
 
 def _predict_single(img: Image.Image) -> float:
     """이미지 1장의 백내장 확률(%)을 반환."""
@@ -74,7 +98,7 @@ def _predict_single(img: Image.Image) -> float:
 
 def _classify(prob: float):
     """확률(%) → (언어중립 코드, 한국어 기본 문구). 임계값 일관 적용."""
-    if prob >= RISK_THRESHOLD:
+    if prob >= settings.risk_threshold:
         return "risk", "백내장 위험 단계 (정밀 검사 권장)"
     return "normal", "특이 소견 없음 (정상)"
 
@@ -88,9 +112,34 @@ def predict_cataract(img: Image.Image):
         )
 
     # 얼굴 사진이면 눈 부위만 크롭해서 분석 (모델이 눈 클로즈업으로 학습됐기 때문)
-    # 얼굴이 안 잡히면 기존처럼 원본을 눈 클로즈업으로 간주
+    # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주
     eye_crops = eye_detector.extract_eye_crops(img)
     mode = "face" if eye_crops else "eye"
+
+    # [검증] 얼굴(MTCNN)이 안 잡힌 'eye 모드'는 눈 클로즈업인지 확신할 수 없으므로,
+    # 임베딩 OOD 게이트로 '진짜 눈 사진인가'를 확인. 비-눈이면 의료 결과 대신 거부.
+    # (얼굴 모드는 MTCNN가 눈 위치를 이미 확인했으므로 생략)
+    if mode == "eye":
+        is_eye, score = eye_validator.check_eye(img)
+        if is_eye is None:
+            # 검증기 사용 불가 → fail-CLOSED: 검증 없이 의료 결과를 내지 않고 명시적으로 차단
+            raise HTTPException(
+                status_code=503,
+                detail="눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            )
+        if not is_eye:
+            return {
+                "probability": 0.0,
+                "result": "눈 사진이 아닌 것 같습니다",
+                "result_code": "invalid",      # 프론트가 '눈 사진을 올려주세요'로 안내
+                "mode": mode,
+                "eyes_detected": 0,
+                "eye_probs": [],
+                "eyes": [],
+                "asymmetric": False,
+                "eye_score": round(score, 3),
+            }
+
     targets = eye_crops if eye_crops else [img]
 
     eye_probs = [_predict_single(t) for t in targets]
@@ -99,8 +148,8 @@ def predict_cataract(img: Image.Image):
 
     # result_code: 프론트엔드에서 언어별로 번역할 수 있도록 언어 중립적 코드 제공
     # 참고: 과거 'cat_p>=99 → 조명 반사 보류' 규칙은 약한 모델의 오탐을 막으려던
-    #       임시방편이었음. 전이학습 모델(AUC~0.999)은 잘 보정돼 있어, 높은 확신도는
-    #       오히려 정확한 백내장 검출이므로 해당 규칙을 제거함.
+    #       임시방편이었음. 현재는 높은 확률을 별도 보류로 뒤집지 않고, 동일 임계값으로
+    #       일관되게 판정한다. 단, 공개 성능 수치는 중복 제거/그룹 분할 재평가 후 갱신해야 한다.
     # 임계값 50%: v2 모델 테스트셋 기준 75%에서는 FN=2(백내장 놓침),
     #             50%에서는 FN=0 / FP 2→3. 스크리닝은 FN 최소화가 우선이라 50% 채택.
     code, res = _classify(cat_p)

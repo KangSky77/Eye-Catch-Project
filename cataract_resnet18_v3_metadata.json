@@ -1,0 +1,129 @@
+{
+  "architecture": "resnet18_transfer",
+  "class_to_idx": {
+    "0_normal": 0,
+    "1_cataract": 1
+  },
+  "seed": 42,
+  "image_size": 224,
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "dedup_source": "dataset_group_map.json",
+  "split_unit": "dedup_group (near-duplicate-safe)",
+  "duplicates_are_grouped_not_dropped": true,
+  "excluded_label_conflict_images": 33,
+  "label_conflict_report": "label_conflicts.json",
+  "counts": {
+    "train": {
+      "0": 10395,
+      "1": 1283
+    },
+    "val": {
+      "0": 2305,
+      "1": 260
+    },
+    "test": {
+      "0": 2268,
+      "1": 272
+    },
+    "excluded_label_conflicts": {
+      "0": 25,
+      "1": 8
+    }
+  },
+  "selection_metric": "balanced_accuracy + 0.25*cataract_f1",
+  "best_val_metrics": {
+    "loss": 0.007836767241944124,
+    "accuracy": 0.9988304093567252,
+    "sensitivity": 0.9923076923076923,
+    "specificity": 0.9995661605206074,
+    "cataract_precision": 0.9961389961389961,
+    "cataract_f1": 0.9942196531791908,
+    "balanced_accuracy": 0.9959369264141499,
+    "auc": 0.9996545970298681,
+    "cm": {
+      "tn": 2304,
+      "fp": 1,
+      "fn": 2,
+      "tp": 258
+    }
+  },
+  "test_metrics_at_0.5": {
+    "loss": 0.03295748722145983,
+    "accuracy": 0.9929133858267717,
+    "sensitivity": 0.9779411764705882,
+    "specificity": 0.9947089947089947,
+    "cataract_precision": 0.9568345323741008,
+    "cataract_f1": 0.9672727272727273,
+    "balanced_accuracy": 0.9863250855897914,
+    "auc": 0.999111681709721,
+    "cm": {
+      "tn": 2256,
+      "fp": 12,
+      "fn": 6,
+      "tp": 266
+    }
+  },
+  "test_metrics_at_prod_threshold": {
+    "loss": 0.03295748722145983,
+    "accuracy": 0.9929133858267717,
+    "sensitivity": 0.9779411764705882,
+    "specificity": 0.9947089947089947,
+    "cataract_precision": 0.9568345323741008,
+    "cataract_f1": 0.9672727272727273,
+    "balanced_accuracy": 0.9863250855897914,
+    "auc": 0.999111681709721,
+    "cm": {
+      "tn": 2256,
+      "fp": 12,
+      "fn": 6,
+      "tp": 266
+    }
+  },
+  "prod_threshold": 0.5,
+  "val_selected_threshold": 0.68,
+  "val_selected_threshold_target_sensitivity": 0.99,
+  "val_selected_threshold_metrics": {
+    "loss": 0.007836767241944124,
+    "accuracy": 0.9988304093567252,
+    "sensitivity": 0.9923076923076923,
+    "specificity": 0.9995661605206074,
+    "cataract_precision": 0.9961389961389961,
+    "cataract_f1": 0.9942196531791908,
+    "balanced_accuracy": 0.9959369264141499,
+    "auc": 0.9996545970298681,
+    "cm": {
+      "tn": 2304,
+      "fp": 1,
+      "fn": 2,
+      "tp": 258
+    },
+    "selection_reason": "max specificity with sensitivity >= 0.99 on validation"
+  },
+  "test_metrics_at_val_selected_threshold": {
+    "loss": 0.03295748722145983,
+    "accuracy": 0.9921259842519685,
+    "sensitivity": 0.9705882352941176,
+    "specificity": 0.9947089947089947,
+    "cataract_precision": 0.9565217391304348,
+    "cataract_f1": 0.9635036496350365,
+    "balanced_accuracy": 0.9826486150015561,
+    "auc": 0.999111681709721,
+    "cm": {
+      "tn": 2256,
+      "fp": 12,
+      "fn": 8,
+      "tp": 264
+    }
+  }
+}

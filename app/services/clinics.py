@@ -72,7 +72,7 @@ async def search_eye_clinics(lat: float, lng: float, radius: int = 5000, size: i
     """
     if not settings.kakao_rest_key:
         # 키 없음 → 바로 Overpass(해외/한국 모두 시도)
-        osm = await _search_overpass(lat, lng)
+        osm = await _search_overpass(lat, lng, radius=radius, size=size)
         if osm:
             return {"source": "overpass", "clinics": osm}
         return {"source": "none", "clinics": [], "reason": "no_key"}
@@ -112,7 +112,7 @@ async def search_eye_clinics(lat: float, lng: float, radius: int = 5000, size: i
         return {"source": "kakao", "clinics": clinics}
 
     # 카카오 결과 없음(해외 등) → Overpass(OSM) 폴백
-    osm = await _search_overpass(lat, lng)
+    osm = await _search_overpass(lat, lng, radius=radius, size=size)
     if osm:
         return {"source": "overpass", "clinics": osm}
     return {"source": "none", "clinics": [], "reason": "no_results"}

@@ -1,13 +1,19 @@
 import json
+import logging
 import asyncio
 import httpx
 from app.core.config import settings
 from app.services import knowledge
 
+logger = logging.getLogger(__name__)
+
 # 하트비트 문자: 생성이 느려도(Ollama 콜드스타트/CPU) 스트림 연결이 끊기지 않도록
 # 첫 토큰 전까지 주기적으로 보낸다. 폭이 0인 제로폭 공백이라 프론트가 무시/제거.
 KEEPALIVE = chr(0x200B)     # zero-width space (U+200B)
 KEEPALIVE_INTERVAL = 5.0    # 초
+# 오류 마커: 스트림 중 발생한 오류를 '정상 소견'과 구분하기 위한 접두사.
+# 프론트가 이 마커를 감지하면 에러로 처리(알림·DB저장 건너뜀). 일반 텍스트엔 안 나오는 시퀀스.
+ERROR_MARKER = "⛔__ECERR__"   # ⛔__ECERR__
 
 # 언어 코드 → LLM에게 지시할 언어 이름
 LANG_NAMES = {
@@ -24,13 +30,14 @@ def _lang_name(lang: str) -> str:
 
 def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang: str,
                           reference: str = "", eye_asymmetric: bool = False) -> str:
-    symptom_text = ", ".join(symptoms) if symptoms else "없음"
+    symptom_text = ", ".join(symptoms) if symptoms else "없음" if lang == "ko" else "None"
     lang_name = _lang_name(lang)
     reference_block = f"\n{reference}\n" if reference else ""
-    asym_line = ("\n- 양쪽 눈의 백내장 위험도가 다릅니다(편측). 어느 쪽 눈이 더 위험한지 짚고, "
-                 "한쪽 눈에만 진행된 백내장일 가능성과 양안 비교 검진의 필요성을 언급하세요."
-                 if eye_asymmetric else "")
-    return f"""당신은 경험 많은 안과 전문의의 조수 AI 'Eye-Catch'입니다.
+    if lang == "ko":
+        asym_line = ("\n- 양쪽 눈의 백내장 위험도가 다릅니다(편측). 어느 쪽 눈이 더 위험한지 짚고, "
+                     "한쪽 눈에만 진행된 백내장일 가능성과 양안 비교 검진의 필요성을 언급하세요."
+                     if eye_asymmetric else "")
+        return f"""당신은 경험 많은 안과 전문의의 조수 AI 'Eye-Catch'입니다.
 [가장 중요] 답변 전체를 반드시 {lang_name}로만 작성하세요. (Write your ENTIRE response ONLY in {lang_name}.)
 다음 검사 결과를 바탕으로 환자에게 줄 맞춤형 소견서를 작성해주세요.
 [검사 결과]
@@ -48,11 +55,34 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 - "눈은 소중하니 잘 관리하세요" 같은 뻔한 일반론과 인사치레는 금지합니다. 모든 문장이 이 환자의 결과에 근거해야 합니다.
 - 6~9문장으로 작성하세요. 의료적 확정 진단처럼 말하지 말고 '~가능성', '~의심' 수준으로 표현하세요.
 - 마크다운 문법(**, ##, 목록 기호)을 쓰지 말고 자연스러운 평문 문단으로 작성하세요.""".strip()
+    else:
+        asym_line = ("\n- Left and right eye cataract risk levels differ (asymmetric). Mention which eye is at higher risk, "
+                     "explain the possibility of unilateral cataract, and suggest a bilateral comparative examination."
+                     if eye_asymmetric else "")
+        return f"""You are 'Eye-Catch', an expert assistant to an ophthalmologist.
+[CRITICAL] Write your entire response ONLY in {lang_name}. Do NOT use English or other languages.
+
+Based on the following test results, write a personalized screening opinion for the patient.
+[Screening Results]
+1. Cataract AI analysis: {cataract}
+2. Macular Degeneration (Amsler Grid): {amsler}
+3. Patient survey symptoms: {symptom_text}
+{reference_block}[Guidelines]
+- Start naturally with a polite, patient-facing greeting in {lang_name}.
+- Base your advice strictly on the provided [Reference Medical Information] if available. Do not make up any medical facts or details that are not in the reference information.
+- Quote the specific findings/numbers from the [Screening Results] in your text, and explain what they mean for the patient's eye health. (e.g. high cataract probability points to lens cloudiness, Amsler grid distortion implies macular issues, narrow field of vision implies glaucoma connection, etc.){asym_line}
+- Distinguish the urgency of findings: which items require prompt medical attention vs. those that can just be monitored.
+- Mention 1-2 specific clinical exams the patient might undergo at an ophthalmology clinic (e.g., Slit-lamp exam, OCT, intraocular pressure measurement, fundus exam) depending on their findings.
+- Conclude with 1-2 personalized lifestyle or management tips directly related to these findings.
+- Do not write generic advice like "eyes are precious, take care." Every sentence must relate to this patient's results.
+- Keep the length between 6 to 9 sentences. Write in natural paragraphs without markdown formatting like bolding (**) or headings (##).""".strip()
+
 
 def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = "") -> str:
     lang_name = _lang_name(lang)
     reference_block = f"\n{reference}\n" if reference else ""
-    return f"""당신은 안과 전문 상담 AI입니다.
+    if lang == "ko":
+        return f"""당신은 안과 전문 상담 AI입니다.
 [가장 중요] 답변 전체를 반드시 {lang_name}로만 작성하세요. (Write your ENTIRE response ONLY in {lang_name}.)
 [진단결과 요약]
 {context}
@@ -63,10 +93,25 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
 - 단, 확정 진단·약 처방은 하지 말고, 정확한 진단을 위해 안과 방문도 함께 권하세요.
 - 마크다운 문법(**, ##, 번호 목록 기호)을 쓰지 말고 자연스러운 평문 문장으로 3~6문장 작성하세요.
 환자 질문: {user_msg}""".strip()
+    else:
+        return f"""You are an ophthalmology consultation assistant.
+[CRITICAL] Write your entire response ONLY in {lang_name}. Do NOT use English or other languages.
+
+[Patient Diagnosis Summary]
+{context}
+{reference_block}[Response Guidelines]
+- If [Reference Medical Information] is provided, base your answer strictly on those facts. Do not make up any facts or details that are not in the reference information.
+- Answer the patient's question kindly, professionally, and directly. Do not use evasive phrases like "I cannot help with this."
+- Actively share general eye health care tips related to the question (e.g., UV sunglasses, smoking cessation, blood sugar/pressure management, resting eyes, avoiding reading in the dark, regular eye checks).
+- Do not provide a final medical diagnosis or prescribe medications. Suggest visiting an ophthalmologist for a formal diagnosis.
+- Keep the length between 3 to 6 sentences. Write in natural paragraphs without markdown formatting like bolding (**) or headings (##).
+Patient Question: {user_msg}""".strip()
+
 
 def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, history_text: str) -> str:
     lang_name = _lang_name(lang)
-    return f"""당신은 안과 전문의 조수 AI입니다.
+    if lang == "ko":
+        return f"""당신은 안과 전문의 조수 AI입니다.
 [가장 중요] 응답 언어는 반드시 {lang_name}로만 하세요. (Write your question ONLY in {lang_name}.)
 현재 환자 상태:
 - 백내장 AI 판독: {cataract_res}
@@ -74,6 +119,17 @@ def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, h
 [지금까지의 문진 내역]
 {history_text}
 위 상태와 문진 내역을 바탕으로, 환자의 눈 건강 상태를 더 자세히 파악하기 위한 새로운 맞춤형 질문을 딱 1개만 생성해주세요. 부가 설명 없이 질문 한 문장만 출력하세요.""".strip()
+    else:
+        return f"""You are an assistant to an ophthalmologist.
+[CRITICAL] Write your question ONLY in {lang_name}. Do NOT use English or other languages.
+
+Current Patient State:
+- Cataract AI result: {cataract_res}
+- Macular Degeneration (Amsler Grid): {amsler_res}
+[Ophthalmology Screening History]
+{history_text}
+
+Based on the patient's state and history, generate exactly one new personalized question to better understand their eye health. Output ONLY the friendly question sentence itself, with no explanations, greetings, or extra words.""".strip()
 
 async def stream_ollama(prompt: str):
     timeout = httpx.Timeout(connect=10.0, read=settings.ollama_timeout_seconds, write=30.0, pool=10.0)
@@ -99,8 +155,11 @@ async def stream_with_keepalive(prompt: str):
         try:
             async for tok in stream_ollama(prompt):
                 await q.put(("tok", tok))
-        except Exception as e:
-            await q.put(("err", f"AI 서버 통신 오류: {str(e)}"))
+        except Exception:
+            # 내부 예외 메시지(호스트·포트 등)는 서버 로그에만 남기고, 클라이언트에는
+            # 일반 코드만 전달한다 (네트워크 응답에 내부 정보가 노출되지 않도록).
+            logger.error("⚠️  Ollama 스트리밍 오류", exc_info=True)
+            await q.put(("err", "AI_SERVER_ERROR"))
         finally:
             await q.put(("end", None))
 
@@ -114,9 +173,10 @@ async def stream_with_keepalive(prompt: str):
                 continue
             if kind == "end":
                 break
-            yield val                    # 실제 토큰 또는 에러 메시지
             if kind == "err":
+                yield ERROR_MARKER + val   # 오류는 마커를 붙여 정상 토큰과 구분
                 break
+            yield val                      # 실제 토큰
     finally:
         task.cancel()
 
@@ -137,8 +197,8 @@ async def warmup_ollama():
                 "model": settings.ollama_model, "prompt": "ok", "stream": False, "keep_alive": -1,
             })
         return True
-    except Exception as e:
-        print(f"⚠️  Gemma 워밍업 실패(Ollama 미실행 가능): {e}")
+    except Exception:
+        logger.warning("⚠️  Gemma 워밍업 실패(Ollama 미실행 가능)", exc_info=True)
         return False
 
 async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[str], lang: str = "ko",
@@ -151,14 +211,18 @@ async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[st
     prompt = _build_opinion_prompt(cataract, amsler, symptoms, lang, reference, eye_asymmetric)
     try:
         async for chunk in stream_with_keepalive(prompt): yield chunk
-    except Exception as e: yield f"AI 서버 통신 오류: {str(e)}"
+    except Exception:
+        logger.error("⚠️  소견서 스트리밍 오류", exc_info=True)
+        yield ERROR_MARKER + "AI_SERVER_ERROR"
 
 async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko"):
     # RAG: 질문 키워드로 관련 참고지식을 검색해 주입
     reference = knowledge.format_reference(knowledge.retrieve_for_chat(user_msg))
     try:
         async for chunk in stream_with_keepalive(_build_chat_prompt(user_msg, context, lang, reference)): yield chunk
-    except Exception as e: yield f"챗봇 응답 오류: {str(e)}"
+    except Exception:
+        logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
+        yield ERROR_MARKER + "AI_SERVER_ERROR"
 
 async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, chat_history: list) -> str:
     # ChatHistoryItem은 Pydantic 모델이므로 .q / .a 속성으로 접근

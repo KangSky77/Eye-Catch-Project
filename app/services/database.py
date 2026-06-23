@@ -23,6 +23,20 @@ async def init_db_pool() -> None:
         min_size=1,
         max_size=5,
     )
+    # 테이블이 없으면 자동 생성 (서버 시작 시 1회만 실행)
+    async with _pool.acquire() as conn:
+        await conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS diagnoses (
+                id          SERIAL PRIMARY KEY,
+                cataract_result  TEXT NOT NULL,
+                amsler_result    TEXT NOT NULL,
+                symptoms         TEXT NOT NULL,
+                gemma_opinion    TEXT,
+                created_at       TIMESTAMPTZ DEFAULT NOW()
+            )
+            """
+        )
 
 
 async def close_db_pool() -> None:
@@ -43,19 +57,6 @@ async def save_diagnosis(
         raise RuntimeError("DB 풀이 초기화되지 않았습니다.")
 
     async with _pool.acquire() as conn:
-        # 테이블이 없으면 자동 생성
-        await conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS diagnoses (
-                id          SERIAL PRIMARY KEY,
-                cataract_result  TEXT NOT NULL,
-                amsler_result    TEXT NOT NULL,
-                symptoms         TEXT NOT NULL,
-                gemma_opinion    TEXT,
-                created_at       TIMESTAMPTZ DEFAULT NOW()
-            )
-            """
-        )
         row = await conn.fetchrow(
             """
             INSERT INTO diagnoses (cataract_result, amsler_result, symptoms, gemma_opinion)

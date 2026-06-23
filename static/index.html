@@ -2,15 +2,24 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eye-Catch | Premium Eye Care</title>
+    <meta name="description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단·문진·맞춤 소견서까지 한 번에 받아보는 눈 건강 스크리닝 서비스">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Eye-Catch">
+    <meta property="og:title" content="Eye-Catch | Premium Eye Care">
+    <meta property="og:description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단까지 한 번에 받아보세요.">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Eye-Catch | Premium Eye Care">
+    <meta name="twitter:description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단까지 한 번에 받아보세요.">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/tailwind.css?v=20260623a">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260617e">
+    <link rel="stylesheet" href="/static/style.css?v=20260618b">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -246,7 +255,13 @@
         </div>
     </nav>
 
-    <script src="/static/data.js?v=20260617e"></script>
-    <script src="/static/app.js?v=20260617e"></script>
+    <script src="/static/data.js?v=20260618b"></script>
+    <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
+    <script src="/static/app-core.js?v=20260623a"></script>
+    <script src="/static/app-vision.js?v=20260623a"></script>
+    <script src="/static/app-chat.js?v=20260623a"></script>
+    <script src="/static/app-report.js?v=20260623a"></script>
+    <script src="/static/app-disease.js?v=20260623a"></script>
+    <script src="/static/app-map.js?v=20260623a"></script>
 </body>
 </html>
