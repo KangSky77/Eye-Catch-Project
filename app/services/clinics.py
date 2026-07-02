@@ -8,6 +8,7 @@
 - 키가 없으면 빈 목록 + reason 반환 → 프론트가 외부 검색 링크로 폴백
 """
 import httpx
+from math import radians, sin, cos, asin, sqrt
 from app.core.config import settings
 
 KAKAO_KEYWORD_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
@@ -17,7 +18,6 @@ _UA = {"User-Agent": "Eye-Catch/1.0 (eye clinic finder)"}
 
 
 def _haversine(a_lat, a_lng, b_lat, b_lng):
-    from math import radians, sin, cos, asin, sqrt
     d_lat = radians(b_lat - a_lat); d_lng = radians(b_lng - a_lng)
     h = sin(d_lat / 2) ** 2 + cos(radians(a_lat)) * cos(radians(b_lat)) * sin(d_lng / 2) ** 2
     return 2 * 6371000 * asin(sqrt(h))   # meters

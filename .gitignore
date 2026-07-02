@@ -35,3 +35,9 @@ node_modules/
 
 # Codex/Antigravity 버전 비교용 참고자료 (실제 앱 코드 아님, 로컬 보관용)
 compare/
+
+# AI 코딩 도구 로컬 설정/백업 (개인 환경 전용)
+.claude/
+.claude-memory-backup/
+.codex/
+.agents/

@@ -62,6 +62,8 @@ async function fetchNextQuestion() {
         ? (translations[state.lang].res_ams_bad || "이상 있음")
         : (translations[state.lang].res_ams_ok || "정상");
 
+    // 서버 실패·빈 응답이면 선택 언어의 기본 질문으로 폴백 (백엔드도 실패 시 ""를 반환)
+    let q = translations[state.lang].nextq_fallback || "추가적으로 눈이 불편하신 곳이 있나요?";
     try {
         const response = await fetch('/api/generate-next-question', {
             method: 'POST',
@@ -74,20 +76,13 @@ async function fetchNextQuestion() {
             })
         });
         const result = await response.json();
-
+        if (result.question) q = result.question;
+    } catch (e) {
+        // 네트워크 오류 → 위의 폴백 질문 그대로 사용
+    } finally {
         removeLoadingMsg(); // "생성 중..." 메시지 제거
-
-        const fallbackQ = translations[state.lang].nextq_fallback || "추가적으로 눈이 불편하신 곳이 있나요?";
-        const q = result.question || fallbackQ;
         addMsg('bot', q);
         state.chatHistory.push({ q: q, a: "" });
-
-    } catch (e) {
-        removeLoadingMsg();
-        const fallbackQ = translations[state.lang].nextq_fallback || "추가적으로 눈이 불편하신 곳이 있나요?";
-        addMsg('bot', fallbackQ);
-        state.chatHistory.push({ q: fallbackQ, a: "" });
-    } finally {
         state.chatBusy = false;   // 새 질문 표시 완료 → 답변 잠금 해제
     }
 }

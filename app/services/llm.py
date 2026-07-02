@@ -131,11 +131,18 @@ Current Patient State:
 
 Based on the patient's state and history, generate exactly one new personalized question to better understand their eye health. Output ONLY the friendly question sentence itself, with no explanations, greetings, or extra words.""".strip()
 
-async def stream_ollama(prompt: str):
-    timeout = httpx.Timeout(connect=10.0, read=settings.ollama_timeout_seconds, write=30.0, pool=10.0)
+def _ollama_timeout() -> httpx.Timeout:
+    return httpx.Timeout(connect=10.0, read=settings.ollama_timeout_seconds, write=30.0, pool=10.0)
+
+
+def _ollama_payload(prompt: str, stream: bool) -> dict:
     # keep_alive=-1: 모델을 VRAM에 영구 상주시켜 콜드스타트(최초 로딩 ~45초) 제거
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        async with client.stream("POST", settings.ollama_url, json={"model": settings.ollama_model, "prompt": prompt, "stream": True, "keep_alive": -1}) as response:
+    return {"model": settings.ollama_model, "prompt": prompt, "stream": stream, "keep_alive": -1}
+
+
+async def stream_ollama(prompt: str):
+    async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
+        async with client.stream("POST", settings.ollama_url, json=_ollama_payload(prompt, stream=True)) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line: continue
@@ -181,9 +188,8 @@ async def stream_with_keepalive(prompt: str):
         task.cancel()
 
 async def generate_ollama(prompt: str) -> str:
-    timeout = httpx.Timeout(connect=10.0, read=settings.ollama_timeout_seconds, write=30.0, pool=10.0)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        response = await client.post(settings.ollama_url, json={"model": settings.ollama_model, "prompt": prompt, "stream": False, "keep_alive": -1})
+    async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
+        response = await client.post(settings.ollama_url, json=_ollama_payload(prompt, stream=False))
         response.raise_for_status()
         return response.json().get("response", "").strip()
 
@@ -193,9 +199,7 @@ async def warmup_ollama():
     Ollama가 꺼져 있어도 서버는 정상 기동하도록 실패는 조용히 무시."""
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
-            await client.post(settings.ollama_url, json={
-                "model": settings.ollama_model, "prompt": "ok", "stream": False, "keep_alive": -1,
-            })
+            await client.post(settings.ollama_url, json=_ollama_payload("ok", stream=False))
         return True
     except Exception:
         logger.warning("⚠️  Gemma 워밍업 실패(Ollama 미실행 가능)", exc_info=True)
@@ -203,7 +207,7 @@ async def warmup_ollama():
 
 async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[str], lang: str = "ko",
                                    cataract_code: str = "", amsler_abnormal: bool = False,
-                                   symptom_codes: list[str] = None, eye_asymmetric: bool = False):
+                                   symptom_codes: list[str] | None = None, eye_asymmetric: bool = False):
     # RAG: 환자 결과에 맞는 안과 참고지식을 검색해 프롬프트에 주입
     reference = knowledge.format_reference(
         knowledge.retrieve_for_opinion(cataract_code, amsler_abnormal, symptom_codes)
@@ -228,6 +232,10 @@ async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, 
     # ChatHistoryItem은 Pydantic 모델이므로 .q / .a 속성으로 접근
     history_text = "\n".join([f"- 의사: {item.q}\n- 환자: {item.a}" for item in chat_history]).strip() or "아직 진행된 문진 대화가 없습니다."
     try:
-        return await generate_ollama(_build_next_question_prompt(lang, cataract_res, amsler_res, history_text)) or "추가적으로 눈이 불편하신 곳이 있나요?"
+        # 실패/빈 응답이면 빈 문자열 반환 → 프론트(app-chat.js)가 선택 언어의
+        # 기본 질문(nextq_fallback)으로 대체한다. 여기서 한국어 문장을 고정 반환하면
+        # 영어 등 다른 언어 사용자에게 한국어 질문이 나가므로 폴백은 프론트에 위임.
+        return await generate_ollama(_build_next_question_prompt(lang, cataract_res, amsler_res, history_text))
     except Exception:
-        return "추가적으로 눈이 불편하신 곳이 있나요?"
+        logger.warning("⚠️  동적 문진 질문 생성 실패 — 프론트 기본 질문으로 폴백", exc_info=True)
+        return ""

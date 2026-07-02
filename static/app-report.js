@@ -60,24 +60,14 @@ async function finish() {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-
-        // 누적 버퍼에서 마커를 검사 — 마커가 청크 경계에 걸쳐 쪼개져도 안전하게 감지
-        let fullText = '';
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            // 하트비트(제로폭 공백 U+200B)는 무시 → 생성 대기 중엔 로더 유지
-            const piece = decoder.decode(value, { stream: true }).replace(/​/g, '');
-            if (!piece) continue;
+        // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
+        const { text, hasError } = await readAiStream(response, disp => {
             stopOpinionLoader();   // 첫 실제 토큰 도착 → 로더 제거, 본문 표시 시작
-            fullText += piece;
-            opinionText.innerText = safeStreamDisplay(fullText, ERROR_MARKER);
-        }
+            opinionText.innerText = disp;
+        });
         stopOpinionLoader();       // 빈 응답이어도 로더는 정리
-        opinionText.innerText = fullText.split(ERROR_MARKER).join('');  // 보류됐던 마지막 일부까지 포함해 최종 확정
-        const streamError = fullText.includes(ERROR_MARKER);
+        opinionText.innerText = text;
+        const streamError = hasError;
 
         // AI 오류면 의료 소견이 아님 → 에러로 표시하고 완료 알림·DB저장을 건너뜀
         if (streamError) {
@@ -138,27 +128,17 @@ async function askGemmaMore() {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-
-        // 누적 버퍼에서 마커 검사 — 마커가 청크 경계에 쪼개져도 안전하게 감지
-        let answer = '';
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            // 하트비트(제로폭 공백 U+200B)는 무시 → 생성 대기 중엔 로더 유지
-            const piece = decoder.decode(value, { stream: true }).replace(/​/g, '');
-            if (!piece) continue;
+        // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
+        const { text, hasError } = await readAiStream(response, disp => {
             if (firstChunk) {       // 첫 실제 토큰 도착 → 로더 제거 후 답변 표시 시작
                 loader.stop();
                 firstChunk = false;
             }
-            answer += piece;
-            responseEl.innerText = `Q: ${userMsg}\nA: ` + safeStreamDisplay(answer, ERROR_MARKER);
-        }
+            responseEl.innerText = `Q: ${userMsg}\nA: ` + disp;
+        });
         loader.stop();              // 빈 응답이어도 로더는 정리
-        responseEl.innerText = `Q: ${userMsg}\nA: ` + answer.split(ERROR_MARKER).join('');  // 보류됐던 마지막 일부까지 포함해 최종 확정
-        const streamError = answer.includes(ERROR_MARKER);
+        responseEl.innerText = `Q: ${userMsg}\nA: ` + text;
+        const streamError = hasError;
         if (streamError) {          // AI 오류 → 에러 메시지로 대체
             responseEl.innerText = translations[state.lang].srv_err || "⚠️ 서버와 연결할 수 없습니다.";
             responseEl.classList.add('text-rose-600');

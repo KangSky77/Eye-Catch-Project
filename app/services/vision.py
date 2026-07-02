@@ -1,5 +1,6 @@
 import io
 import logging
+import os
 import torch
 from PIL import Image, ImageOps
 from fastapi import UploadFile, HTTPException
@@ -35,7 +36,6 @@ def load_trained_weights() -> bool:
     """학습된 가중치를 로드합니다. 파일이 없거나 호환되지 않으면
     경고만 출력하고 서버는 계속 기동합니다 (train_ai.py로 먼저 학습 필요)."""
     global weights_loaded
-    import os
     if not os.path.exists(settings.model_path):
         logger.warning(f"⚠️  가중치 파일이 없습니다: {settings.model_path} — train_ai.py로 먼저 학습하세요.")
         model.eval()

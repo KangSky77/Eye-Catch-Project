@@ -39,6 +39,30 @@ function safeStreamDisplay(text, marker) {
     return text.split(marker).join('');
 }
 
+// AI 스트리밍 응답(fetch Response)을 끝까지 읽는 공용 리더.
+// app-report.js의 소견서/추가질문 두 곳에서 같은 루프가 중복되던 것을 추출.
+// - 하트비트(제로폭 공백 U+200B)는 제거 → 실제 토큰이 올 때까지 로더 유지 가능
+// - onUpdate(displayText): 실제 토큰이 도착할 때마다 화면 표시용 텍스트 전달
+//   (마커가 청크 경계에 걸쳐 쪼개져도 safeStreamDisplay로 안전하게 가림)
+// 반환: { text: 마커 제거된 최종 텍스트, hasError: ERROR_MARKER 감지 여부 }
+async function readAiStream(response, onUpdate) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let fullText = '';
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const piece = decoder.decode(value, { stream: true }).replace(/\u200B/g, '');
+        if (!piece) continue;
+        fullText += piece;
+        onUpdate(safeStreamDisplay(fullText, ERROR_MARKER));
+    }
+    return {
+        text: fullText.split(ERROR_MARKER).join(''),   // 보류됐던 마지막 일부까지 포함해 최종 확정
+        hasError: fullText.includes(ERROR_MARKER)
+    };
+}
+
 // ------------------------------------------
 // 2. 초기화 및 UI 제어 (UI & Navigation)
 // ------------------------------------------
