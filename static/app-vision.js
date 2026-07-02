@@ -96,15 +96,20 @@ function renderEyeBreakdown(container, eyes) {
     title.textContent = t.eye_breakdown_title || '눈별 분석';
     wrap.appendChild(title);
 
+    // 판정 코드별 배지 색: 위험=장미색 / 경계=호박색 / 정상=에메랄드
+    const codeStyle = {
+        risk: 'bg-rose-100 text-rose-600',
+        borderline: 'bg-amber-100 text-amber-600',
+        normal: 'bg-emerald-100 text-emerald-600'
+    };
     eyes.forEach(e => {
-        const risk = e.code === 'risk';
         const row = document.createElement('div');
         row.className = 'flex items-center justify-between py-1.5';
         const label = document.createElement('span');
         label.className = 'text-sm font-bold text-slate-600';
         label.textContent = `👁 ${sideLabel[e.side] || e.side}`;
         const val = document.createElement('span');
-        val.className = `text-sm font-black px-2.5 py-0.5 rounded-full ${risk ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`;
+        val.className = `text-sm font-black px-2.5 py-0.5 rounded-full ${codeStyle[e.code] || codeStyle.normal}`;
         val.textContent = `${e.probability}%`;
         row.appendChild(label);
         row.appendChild(val);

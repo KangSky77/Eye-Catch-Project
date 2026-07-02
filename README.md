@@ -14,10 +14,12 @@
 ## 🎯 주요 기능
 
 ### 1️⃣ **백내장 AI 자동 진단 (눈별 판정)**
-- **전이학습 ResNet18** 모델 (ImageNet 사전학습)
-- v3: 근접중복을 그룹으로 묶고 라벨 충돌 그룹을 제외해 train/val/test 간 누수를 차단한 정직한 재평가 — 테스트셋 정확도 **99.3%** | 민감도 **97.8%** | AUC **0.999** (자세한 내용은 "모델 성능" 섹션 참고)
-- 원본 16,816장 중 절반(8,639장)이 근접중복 그룹에 속했습니다. 현재 v3는 이미지를 삭제하지 않고, 같은 그룹이 서로 다른 split에 갈라지지 않도록 분할합니다.
-- 임계값 50% (운영 최적화)
+- **전이학습 EfficientNet-B0** 모델 (ImageNet 사전학습) — v4 백본 비교에서 ResNet18을 이겨 채택
+- v4: 그룹 단위 분할(근접중복 누수 차단) 기준 테스트셋 민감도 **98.2%** | 특이도 **99.9%** | AUC **0.9996** (자세한 내용은 "모델 성능" 섹션 참고)
+- 원본 16,816장 중 절반(8,639장)이 근접중복 그룹에 속했습니다. 이미지를 삭제하지 않고, 같은 그룹이 서로 다른 split에 갈라지지 않도록 분할합니다.
+- 추론 시 **좌우반전 TTA**(원본+거울상 평균) 적용 — 운영과 평가가 같은 방식
+- **3단계 판정**: 위험(≥50%) / **경계(25~50%** — 재촬영·검진 권장) / 정상(<25%).
+  경계 구간은 "정상으로 안심시키기엔 애매한" 확률대를 안내로 돌려, 문턱 바로 아래의 놓침(FN)을 줄입니다.
 - 🆕 **좌/우 눈 개별 분석** — 얼굴 사진에서 양쪽 눈을 따로 판정하고,
   한쪽만 위험하면 **"편측 의심" 배지** 표시 (편측 백내장 대응)
 - MTCNN 얼굴→눈 크롭 (얼굴 사진/눈 클로즈업 모두 지원)
@@ -73,7 +75,7 @@ Eye-Catch (C:\eye_catch_claude)
 │   │   ├── core/config.py       # 환경 설정 (.env 연동)
 │   │   ├── api/routes.py        # REST API
 │   │   ├── models/
-│   │   │   └── cataract_model.py  # ResNet18 신경망
+│   │   │   └── cataract_model.py  # 백본 빌더 (resnet18 | efficientnet_b0)
 │   │   └── services/
 │   │       ├── vision.py        # AI 추론 + 임계값 + 눈별/편측 판정
 │   │       ├── eye_detector.py  # MTCNN 얼굴→눈 크롭 (좌/우)
@@ -83,6 +85,8 @@ Eye-Catch (C:\eye_catch_claude)
 │   │       └── database.py      # 진단 기록 저장
 │   ├── dedup_dataset.py         # 근접중복 탐지 (phash, 정확한 O(n²)) → dataset_group_map.json
 │   ├── train_ai_v3.py           # 그룹 분할 + 라벨충돌 제외 + 불균형 보정 학습 스크립트
+│   ├── train_ai_v4.py           # 🆕 백본 비교 학습 (--backbone resnet18|efficientnet_b0)
+│   ├── validate_real_photos.py  # 🆕 실사진(폰 촬영)으로 배포 파이프라인 검증 (시연 전 필수)
 │   ├── requirements.txt          # 의존성 패키지
 │   └── dataset/                 # 이미지 데이터셋 (원본 16,816장, 8,177개 근접중복 그룹)
 │       ├── 0_normal/            # 정상 안구 14,993장
@@ -137,14 +141,15 @@ pip install --no-deps facenet-pytorch  # 얼굴→눈 크롭용
 ```
 
 ### 3️⃣ 환경변수 설정
-`.env.example`을 복사해 `.env`로 저장 후 값을 채우세요 (`MODEL_PATH`는 기본값이
-`cataract_resnet18_v3.pth`로 되어 있습니다):
+`.env.example`을 복사해 `.env`로 저장 후 값을 채우세요 (`MODEL_PATH`와 `MODEL_BACKBONE`은
+**반드시 짝이 맞아야** 합니다):
 ```bash
 cp .env.example .env
 ```
 ```ini
-# .env.example 주요 항목
-MODEL_PATH=cataract_resnet18_v3.pth
+# .env.example 주요 항목 — 가중치(.pth)는 git에 없으므로 팀원에게 받거나 재학습
+MODEL_PATH=cataract_efficientnet_b0_v4.pth
+MODEL_BACKBONE=efficientnet_b0
 
 # 데이터베이스
 DB_HOST=localhost
@@ -165,10 +170,12 @@ KAKAO_REST_KEY=
 
 ### 4️⃣ AI 모델 학습 (또는 사전학습 가중치 다운로드)
 ```bash
-python dedup_dataset.py   # 1회 — 근접중복 그룹 분할용 dataset_group_map.json 생성
-python train_ai_v3.py     # → cataract_resnet18_v3.pth 생성
+python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
+python train_ai_v4.py --backbone efficientnet_b0   # → cataract_efficientnet_b0_v4.pth (현재 배포 모델)
+python train_ai_v4.py --backbone resnet18          # (선택) 백본 비교용
 
-# 또는 사전학습 가중치 사용 → 프로젝트 루트에 배치 후 .env의 MODEL_PATH 수정
+# 또는 사전학습 가중치 사용 → 프로젝트 루트에 배치 후 .env의 MODEL_PATH/MODEL_BACKBONE 수정
+# 참고: RTX 3060 노트북 기준 efficientnet_b0 약 90분, resnet18 약 15분
 ```
 
 ### 5️⃣ Ollama 서버 실행
@@ -200,7 +207,37 @@ ngrok http 8000
 
 ## 📊 모델 성능
 
-### ResNet18 v3 (근접중복 그룹 분할 — 신뢰 가능한 수치, 최종)
+### EfficientNet-B0 v4 (백본 비교 — 현재 배포 모델)
+
+라벨 수정으로 파일 2장이 클래스를 옮기면서 v3 학습 당시의 train/val/test 분할이
+같은 시드로도 재현 불가능해졌습니다(클래스별 그룹 목록이 달라져 셔플 결과가 바뀜).
+이를 해소하기 위해 `dataset_group_map.json`을 재생성하고 **동일 조건에서 두 백본을
+재학습·비교**했습니다(`train_ai_v4.py`, v3 레시피 그대로 + `--backbone` 인자만 추가).
+
+| 지표 (test, 임계값 50%) | ResNet18 v4 | **EfficientNet-B0 v4 (채택)** |
+|------|------|------|
+| **민감도 (Sensitivity)** | 97.4% (FN=7) | **98.2% (FN=5)** |
+| **특이도 (Specificity)** | 99.9% (FP=3) | **99.9% (FP=3)** |
+| **AUC-ROC** | 0.9997 | **0.9996** |
+| **validation (선택 근거)** | 민감도 98.5% / 특이도 100% | **무결점 (2,565장 중 오류 0)** |
+| **파라미터** | 11.2M | **5.3M** |
+
+- **선택은 validation, test는 최종 확인 1회** — 데이터 스누핑 방지 원칙 유지.
+- **TTA(좌우반전 평균)는 모델마다 득실이 달랐습니다**: v3에선 이득(FN 7→6),
+  ResNet18 v4에선 오히려 해로움(FN 7→10), 채택된 EfficientNet-B0에선 무득실.
+  실사진의 거울 대칭 변화에 대한 보험으로 유지하되, **백본을 바꾸면 반드시 재측정**해야 합니다.
+- **3단계 판정(경계 구간 25~50%)**: 확률 분포가 양극단에 몰려 있어(20~50% 구간이 test
+  2,540장 중 4장뿐) 경계 안내 비용이 거의 없는데, test에서 놓친 백내장 5건 중 2건(39.7%)이
+  이 구간에 있어 "경계 — 재촬영·검진 권장"으로 구제됩니다. 정상이 경계로 분류되는 부담은
+  val 1/2,305 · test 1/2,268 (0.04%).
+- **알려진 약점**: test 오탐 3건은 모두 **밝은 색(청록·파랑·녹색) 홍채의 정상 눈**이었습니다
+  (98.5~99.9% 확신으로 오판). 데이터셋이 어두운 홍채 위주라 밝은 홍채의 뿌연 느낌을 수정체
+  혼탁으로 착각하는 것으로 보이며, 개선하려면 밝은 홍채 정상 눈 데이터 보강이 필요합니다.
+- **시연 전 실사진 점검**: 위 수치는 데이터셋 내부 수치입니다. 실제 폰 사진은 도메인 갭으로
+  성능이 낮아질 수 있으니, `python validate_real_photos.py <사진폴더>`로 배포 파이프라인
+  그대로(MTCNN→OOD게이트→TTA→3단계 판정) 미리 확인하세요.
+
+### ResNet18 v3 (근접중복 그룹 분할 — v4 이전 기록)
 
 v2는 사진 단위로 무작위 train/val/test 분할을 했는데, `dedup_dataset.py`로 전수 검사한 결과
 **원본 16,816장 중 8,639장(약 51%)이 다른 사진의 근접중복**이었습니다(여러 데이터셋을 합치며
@@ -251,8 +288,8 @@ threshold는 test set을 보지 않고 validation에서만 고른 뒤(`choose_th
 
 재현하려면:
 ```bash
-python dedup_dataset.py   # 1회 — dataset_group_map.json 생성 (정확한 O(n²) 비교)
-python train_ai_v3.py     # 그룹 분할 + 라벨충돌 제외 + 불균형 보정 재학습
+python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
+python train_ai_v4.py --backbone efficientnet_b0   # 현재 배포 모델 재학습
 ```
 >
 > 또한 비-눈 이미지 차단(OOD 검증, `eye_validator.py`)은 ImageNet 사전학습 ResNet18 가중치를 런타임에 받아옵니다. **서버를 처음 띄우는 환경(신규 배포·팀원 PC 등)에서는 최초 1회 인터넷 연결이 필요**하며, 실패하면 눈 클로즈업 분석이 503으로 막힙니다(의도된 fail-closed 동작).

@@ -72,7 +72,8 @@ def retrieve_for_opinion(cataract_code: str = "", amsler_abnormal: bool = False,
     """검사 결과(언어 중립 코드)에 해당하는 참고지식만 골라 반환."""
     symptom_codes = symptom_codes or []
     keys = []
-    if cataract_code == "risk":
+    # 경계(borderline) 판정도 백내장 참고지식을 제공 — 소견서가 '왜 재검이 필요한지' 설명 가능
+    if cataract_code in ("risk", "borderline"):
         keys.append("cataract")
     if amsler_abnormal:
         keys.append("macular")

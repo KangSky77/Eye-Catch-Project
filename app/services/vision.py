@@ -104,9 +104,15 @@ def _predict_single(img: Image.Image) -> float:
 
 
 def _classify(prob: float):
-    """확률(%) → (언어중립 코드, 한국어 기본 문구). 임계값 일관 적용."""
+    """확률(%) → (언어중립 코드, 한국어 기본 문구). 임계값 일관 적용.
+
+    3단계 판정: risk(≥risk_threshold) / borderline(경계 구간) / normal.
+    경계 구간은 '정상'으로 안심시키기엔 애매한 확률대(임계값 근거는 config.py 주석)를
+    재촬영·검진 권장으로 안내해, 문턱 바로 아래에서 놓치는 백내장(FN)을 줄인다."""
     if prob >= settings.risk_threshold:
         return "risk", "백내장 위험 단계 (정밀 검사 권장)"
+    if prob >= settings.borderline_threshold:
+        return "borderline", "경계 단계 (재촬영 후 재검사 또는 안과 검진 권장)"
     return "normal", "특이 소견 없음 (정상)"
 
 
