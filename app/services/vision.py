@@ -13,7 +13,7 @@ from app.services import eye_validator
 logger = logging.getLogger(__name__)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = build_model().to(device)
+model = build_model(backbone=settings.model_backbone).to(device)
 
 MAX_FILE_SIZE = settings.max_upload_size_bytes
 # 디코딩 후 픽셀 수 상한 — 작은 압축파일이 거대한 비트맵으로 풀리는 '압축 폭탄' 방어
@@ -92,8 +92,10 @@ def _predict_single(img: Image.Image) -> float:
 
     TTA(좌우반전 평균): 원본과 거울상 두 뷰의 예측을 평균한다. 눈은 좌우 대칭이고
     학습 때도 RandomHorizontalFlip을 썼으므로 분포상 안전한 앙상블.
-    자체 재평가(그룹 분할 val/test) 기준 val FP 11→9, test FN 7→6으로 손해 없는
-    소폭 개선이었고, 비용은 배치 2장 추론이라 무시할 수준."""
+    측정 결과는 모델마다 다름 — v3 resnet18에서는 소폭 이득(test FN 7→6),
+    현재 배포 중인 efficientnet_b0 v4에서는 val/test 모두 무득실(완전 동일).
+    실사진의 거울 대칭 변화에 대한 보험으로 유지하며, 비용은 배치 2장이라 무시할 수준.
+    주의: TTA가 해로운 모델도 있으니(resnet18 v4는 test FN 7→10) 백본 교체 시 재측정할 것."""
     x = preprocess(img)
     batch = torch.stack([x, torch.flip(x, dims=[2])]).to(device)   # dims=[2] = W(좌우)축
     with torch.no_grad():

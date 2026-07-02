@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     db_password: str = ""  # .env에서 읽어옴
     db_port: int = 5432
     model_path: str = "cataract_resnet18_v3.pth"  # train_ai_v3.py가 생성하는 그룹분할 재학습 가중치
+    model_backbone: str = "resnet18"   # 가중치와 짝이 맞아야 함 (resnet18 | efficientnet_b0)
     ollama_url: str = "http://localhost:11434/api/generate"
     ollama_model: str = "gemma4:e4b-it-qat"
     ollama_timeout_seconds: float = 120.0

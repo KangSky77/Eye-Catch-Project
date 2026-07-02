@@ -1,0 +1,107 @@
+{
+  "version": "v4",
+  "backbone": "resnet18",
+  "params_millions": 11.2,
+  "class_to_idx": {
+    "0_normal": 0,
+    "1_cataract": 1
+  },
+  "seed": 42,
+  "image_size": 224,
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "split_unit": "dedup_group (near-duplicate-safe)",
+  "excluded_label_conflict_images": 33,
+  "counts": {
+    "train": {
+      "0": 10395,
+      "1": 1283
+    },
+    "val": {
+      "0": 2305,
+      "1": 260
+    },
+    "test": {
+      "0": 2268,
+      "1": 272
+    }
+  },
+  "selection_metric": "balanced_accuracy + 0.25*cataract_f1",
+  "best_val_metrics": {
+    "loss": 0.008659265709959337,
+    "accuracy": 0.9984405458089669,
+    "sensitivity": 0.9846153846153847,
+    "specificity": 1.0,
+    "cataract_precision": 1.0,
+    "cataract_f1": 0.9922480620155039,
+    "balanced_accuracy": 0.9923076923076923,
+    "auc": 0.9996946437510429,
+    "cm": {
+      "tn": 2305,
+      "fp": 0,
+      "fn": 4,
+      "tp": 256
+    }
+  },
+  "prod_threshold": 0.5,
+  "test_metrics_at_prod_threshold": {
+    "loss": 0.017494430333306266,
+    "accuracy": 0.9960629921259843,
+    "sensitivity": 0.9742647058823529,
+    "specificity": 0.9986772486772487,
+    "cataract_precision": 0.9888059701492538,
+    "cataract_f1": 0.9814814814814815,
+    "balanced_accuracy": 0.9864709772798008,
+    "auc": 0.9996628280942006,
+    "cm": {
+      "tn": 2265,
+      "fp": 3,
+      "fn": 7,
+      "tp": 265
+    }
+  },
+  "test_metrics_at_prod_threshold_tta": {
+    "accuracy": 0.9948818897637796,
+    "sensitivity": 0.9632352941176471,
+    "specificity": 0.9986772486772487,
+    "cataract_precision": 0.9886792452830189,
+    "cataract_f1": 0.9757914338919926,
+    "balanced_accuracy": 0.9809562713974479,
+    "auc": 0.9996547230003112,
+    "cm": {
+      "tn": 2265,
+      "fp": 3,
+      "fn": 10,
+      "tp": 262
+    }
+  },
+  "val_selected_threshold": 0.28,
+  "val_selected_threshold_target_sensitivity": 0.99,
+  "test_metrics_at_val_selected_threshold": {
+    "loss": 0.017494430333306266,
+    "accuracy": 0.9952755905511811,
+    "sensitivity": 0.9742647058823529,
+    "specificity": 0.9977954144620811,
+    "cataract_precision": 0.9814814814814815,
+    "cataract_f1": 0.977859778597786,
+    "balanced_accuracy": 0.986030060172217,
+    "auc": 0.9996628280942006,
+    "cm": {
+      "tn": 2263,
+      "fp": 5,
+      "fn": 7,
+      "tp": 265
+    }
+  },
+  "train_minutes": 14.3
+}
