@@ -23,7 +23,9 @@ async function runAIAnalysis() {
         const res = await fetch('/api/analyze-eye', { method: 'POST', body: fd });
         const d = await res.json();
         if (!res.ok) {
-            alert(`⚠️ ${d.detail || "Error"}`);
+            // detail이 문자열이 아닐 수 있음(422 검증 오류는 객체 배열) → 그대로 alert하면 [object Object]
+            const msg = typeof d.detail === 'string' ? d.detail : (translations[state.lang].srv_err || "Error");
+            alert(`⚠️ ${msg}`);
             nextStep('step-photo');
             return;
         }
@@ -56,8 +58,10 @@ async function runAIAnalysis() {
 
         const disp = document.getElementById('ai-result-display');
         disp.innerHTML = '';
+        // 판정별 색상: 위험=장미색 / 경계=호박색 / 정상=파랑(기존 톤 유지)
+        const probColor = { risk: 'text-rose-600', borderline: 'text-amber-600', normal: 'text-blue-700' };
         const pProb = document.createElement('p');
-        pProb.className = 'text-xs text-blue-700 font-black mb-1';
+        pProb.className = `text-xs font-black mb-1 ${probColor[d.result_code] || probColor.normal}`;
         pProb.textContent = `${d.probability}%`;
         const pRes = document.createElement('p');
         pRes.className = 'text-xl font-bold';
