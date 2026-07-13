@@ -24,84 +24,84 @@
   "excluded_label_conflict_images": 33,
   "counts": {
     "train": {
-      "0": 10395,
-      "1": 1283
+      "0": 10553,
+      "1": 1265
     },
     "val": {
-      "0": 2305,
-      "1": 260
+      "0": 2299,
+      "1": 267
     },
     "test": {
-      "0": 2268,
-      "1": 272
+      "0": 2317,
+      "1": 283
     }
   },
   "selection_metric": "balanced_accuracy + 0.25*cataract_f1",
   "best_val_metrics": {
-    "loss": 0.0024647770662266457,
-    "accuracy": 1.0,
-    "sensitivity": 1.0,
-    "specificity": 1.0,
-    "cataract_precision": 1.0,
-    "cataract_f1": 1.0,
-    "balanced_accuracy": 1.0,
-    "auc": 1.0,
+    "loss": 0.011985209777099281,
+    "accuracy": 0.9976617303195635,
+    "sensitivity": 0.9925093632958801,
+    "specificity": 0.998260113092649,
+    "cataract_precision": 0.9851301115241635,
+    "cataract_f1": 0.9888059701492536,
+    "balanced_accuracy": 0.9953847381942645,
+    "auc": 0.9998322019181113,
     "cm": {
-      "tn": 2305,
-      "fp": 0,
-      "fn": 0,
-      "tp": 260
+      "tn": 2295,
+      "fp": 4,
+      "fn": 2,
+      "tp": 265
     }
   },
   "prod_threshold": 0.5,
   "test_metrics_at_prod_threshold": {
-    "loss": 0.01434579988770594,
-    "accuracy": 0.9968503937007874,
-    "sensitivity": 0.9816176470588235,
-    "specificity": 0.9986772486772487,
-    "cataract_precision": 0.9888888888888889,
-    "cataract_f1": 0.9852398523985241,
-    "balanced_accuracy": 0.9901474478680361,
-    "auc": 0.9996433758688661,
+    "loss": 0.012443773936095463,
+    "accuracy": 0.995,
+    "sensitivity": 0.9964664310954063,
+    "specificity": 0.9948208890807078,
+    "cataract_precision": 0.9591836734693877,
+    "cataract_f1": 0.9774696707105719,
+    "balanced_accuracy": 0.995643660088057,
+    "auc": 0.9999023960250781,
     "cm": {
-      "tn": 2265,
-      "fp": 3,
-      "fn": 5,
-      "tp": 267
+      "tn": 2305,
+      "fp": 12,
+      "fn": 1,
+      "tp": 282
     }
   },
   "test_metrics_at_prod_threshold_tta": {
-    "accuracy": 0.9968503937007874,
-    "sensitivity": 0.9816176470588235,
-    "specificity": 0.9986772486772487,
-    "cataract_precision": 0.9888888888888889,
-    "cataract_f1": 0.9852398523985241,
-    "balanced_accuracy": 0.9901474478680361,
-    "auc": 0.9995607039111941,
+    "accuracy": 0.9942307692307693,
+    "sensitivity": 0.9893992932862191,
+    "specificity": 0.9948208890807078,
+    "cataract_precision": 0.958904109589041,
+    "cataract_f1": 0.9739130434782609,
+    "balanced_accuracy": 0.9921100911834635,
+    "auc": 0.9998688446586987,
     "cm": {
-      "tn": 2265,
-      "fp": 3,
-      "fn": 5,
-      "tp": 267
+      "tn": 2305,
+      "fp": 12,
+      "fn": 3,
+      "tp": 280
     }
   },
-  "val_selected_threshold": 0.58,
+  "val_selected_threshold": 0.59,
   "val_selected_threshold_target_sensitivity": 0.99,
   "test_metrics_at_val_selected_threshold": {
-    "loss": 0.01434579988770594,
-    "accuracy": 0.9968503937007874,
-    "sensitivity": 0.9816176470588235,
-    "specificity": 0.9986772486772487,
-    "cataract_precision": 0.9888888888888889,
-    "cataract_f1": 0.9852398523985241,
-    "balanced_accuracy": 0.9901474478680361,
-    "auc": 0.9996433758688661,
+    "loss": 0.012443773936095463,
+    "accuracy": 0.9957692307692307,
+    "sensitivity": 0.9964664310954063,
+    "specificity": 0.9956840742339231,
+    "cataract_precision": 0.9657534246575342,
+    "cataract_f1": 0.9808695652173912,
+    "balanced_accuracy": 0.9960752526646648,
+    "auc": 0.9999023960250781,
     "cm": {
-      "tn": 2265,
-      "fp": 3,
-      "fn": 5,
-      "tp": 267
+      "tn": 2307,
+      "fp": 10,
+      "fn": 1,
+      "tp": 282
     }
   },
-  "train_minutes": 89.1
+  "train_minutes": 14.9
 }

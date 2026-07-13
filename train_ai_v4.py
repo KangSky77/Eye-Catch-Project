@@ -81,8 +81,12 @@ def main():
     parser = argparse.ArgumentParser(description="백내장 모델 v4 학습 (백본 비교)")
     parser.add_argument("--backbone", default="resnet18",
                         choices=["resnet18", "efficientnet_b0"])
+    # 배치 크기: VRAM이 작은 노트북(6GB급)에서 다른 GPU 작업(추론 서버·Ollama)과
+    # 겹치면 기본 64가 CUDA OOM을 낼 수 있어 조절 옵션 제공. 학습 GPU를 독점하면 64 권장.
+    parser.add_argument("--batch", type=int, default=BATCH_SIZE)
     args = parser.parse_args()
     backbone = args.backbone
+    batch_size = args.batch
 
     output_path = f"cataract_{backbone}_v4.pth"
     metadata_path = f"cataract_{backbone}_v4_metadata.json"
@@ -112,14 +116,14 @@ def main():
           f"test {dict(Counter(base.targets[i] for i in test_idx))}")
 
     pin = device.type == "cuda"
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE,
+    train_loader = DataLoader(train_ds, batch_size=batch_size,
                               sampler=make_sampler(train_targets),
                               num_workers=NUM_WORKERS, pin_memory=pin,
                               persistent_workers=NUM_WORKERS > 0)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False,
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False,
                             num_workers=NUM_WORKERS, pin_memory=pin,
                             persistent_workers=NUM_WORKERS > 0)
-    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False,
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False,
                              num_workers=NUM_WORKERS, pin_memory=pin,
                              persistent_workers=NUM_WORKERS > 0)
 
