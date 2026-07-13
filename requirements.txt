@@ -28,3 +28,6 @@ tqdm   # facenet-pytorch가 import 시점에 요구
 
 # 데이터셋 도구용 (앱 런타임에는 불필요 — dedup_dataset.py에서만 사용)
 imagehash
+
+# 테스트 (개발용 — tests/ 실행에만 필요)
+pytest

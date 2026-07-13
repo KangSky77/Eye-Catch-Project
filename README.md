@@ -87,6 +87,7 @@ Eye-Catch (C:\eye_catch_claude)
 │   ├── train_ai_v3.py           # 그룹 분할 + 라벨충돌 제외 + 불균형 보정 학습 스크립트
 │   ├── train_ai_v4.py           # 🆕 백본 비교 학습 (--backbone resnet18|efficientnet_b0)
 │   ├── validate_real_photos.py  # 🆕 실사진(폰 촬영)으로 배포 파이프라인 검증 (시연 전 필수)
+│   ├── tests/                   # 🆕 pytest 자동 테스트 60개 (~10초, GPU·Ollama·DB 불필요)
 │   ├── requirements.txt          # 의존성 패키지
 │   └── dataset/                 # 이미지 데이터셋 (17,017장, 8,373개 근접중복 그룹 — 밝은 홍채 보강 포함)
 │       ├── 0_normal/            # 정상 안구 14,993장
@@ -477,6 +478,18 @@ GET /api/nearby-clinics?lat=37.4979&lng=127.0276
 ---
 
 ## 🛠️ 개발 팁
+
+### 자동 테스트 (pytest)
+```bash
+pytest        # tests/ 60개 — 약 10초
+```
+- **외부 의존성 없이 돕니다**: GPU 학습·Ollama·PostgreSQL·카카오 API를 전부 모킹해서,
+  어느 팀원 PC에서든 클론 직후 바로 실행 가능. 가중치(.pth)·메타데이터가 없는 환경에서는
+  해당 테스트만 자동 skip.
+- **커버 범위**: 업로드 보안 가드(압축폭탄·가짜 이미지·EXIF 회전), 3단계 판정 경계값(25/50%),
+  눈 검증기 fail-closed, 편측(asymmetric) 판정, API 계약(fr/es 110자 회귀 방지 포함),
+  LLM 오류 마커·폴백 체인, RAG 검색, **학습↔서빙 전처리 일관성**(모델 메타데이터 교차검증).
+- 코드를 고치면 커밋 전에 한 번 돌려보세요 — 특히 vision.py·schemas·config 임계값을 만질 때.
 
 ### VS Code 프리뷰
 ```bash
