@@ -18,6 +18,7 @@ v3 대비 추가된 것:
        승자를 고르고, test 지표는 마지막 확인용으로만 본다.
 """
 import argparse
+import hashlib
 import json
 import time
 from collections import Counter
@@ -171,12 +172,17 @@ def main():
           f"| 혼동행렬 {test_val_thr['cm']}")
 
     elapsed_min = (time.time() - t_start) / 60
+    # 저장된 가중치의 지문 — 로컬 .pth가 이 메타데이터와 같은 학습본인지
+    # 테스트(tests/test_model_consistency.py)가 대조할 수 있게 한다
+    with open(output_path, "rb") as f:
+        weights_sha256 = hashlib.sha256(f.read()).hexdigest()
     metadata = {
         "version": "v4",
         "backbone": backbone,
         "params_millions": round(n_params, 1),
         "class_to_idx": base.class_to_idx,
         "seed": SEED,
+        "batch_size": batch_size,   # v5부터 기록 — batch가 다르면 같은 레시피가 아님(BN 통계·최적화 동학)
         "image_size": 224,
         "normalization": {"mean": NORM_MEAN, "std": NORM_STD},
         "split_unit": "dedup_group (near-duplicate-safe)",
@@ -195,6 +201,7 @@ def main():
         "val_selected_threshold_target_sensitivity": TARGET_SENSITIVITY,
         "test_metrics_at_val_selected_threshold": test_val_thr,
         "train_minutes": round(elapsed_min, 1),
+        "weights_sha256": weights_sha256,
     }
     with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(metadata, f, ensure_ascii=False, indent=2)

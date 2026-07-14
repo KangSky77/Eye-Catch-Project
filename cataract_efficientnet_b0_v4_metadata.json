@@ -7,6 +7,7 @@
     "1_cataract": 1
   },
   "seed": 42,
+  "batch_size": 40,
   "image_size": 224,
   "normalization": {
     "mean": [
@@ -103,5 +104,6 @@
       "tp": 282
     }
   },
-  "train_minutes": 14.9
+  "train_minutes": 14.9,
+  "weights_sha256": "3c83d9fd7cadc57fc9142ab116451cea4b90927faf73c1044cca8dcd685c6f16"
 }

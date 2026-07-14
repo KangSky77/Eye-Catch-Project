@@ -66,14 +66,17 @@ app.add_middleware(
 # 라우터 등록
 app.include_router(router)
 
-# 정적 파일 설정
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 정적 파일 설정 — 경로를 이 파일 기준으로 고정.
+# 상대경로 "static"은 프로세스 cwd에 따라 달라져서, 저장소 밖에서 uvicorn/pytest를
+# 실행하면 'Directory static does not exist'로 죽는다(IDE 테스트 러너 등).
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/")
 async def read_index():
     # index.html은 항상 재검증 → 정적 파일의 ?v= 버전이 바뀌면 즉시 반영됨
     # (모바일은 하드 새로고침이 어려워 캐시 무효화가 중요)
     return FileResponse(
-        os.path.join("static", "index.html"),
+        os.path.join(STATIC_DIR, "index.html"),
         headers={"Cache-Control": "no-cache, must-revalidate"},
     )

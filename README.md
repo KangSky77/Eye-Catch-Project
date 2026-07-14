@@ -87,10 +87,10 @@ Eye-Catch (C:\eye_catch_claude)
 │   ├── train_ai_v3.py           # 그룹 분할 + 라벨충돌 제외 + 불균형 보정 학습 스크립트
 │   ├── train_ai_v4.py           # 🆕 백본 비교 학습 (--backbone resnet18|efficientnet_b0)
 │   ├── validate_real_photos.py  # 🆕 실사진(폰 촬영)으로 배포 파이프라인 검증 (시연 전 필수)
-│   ├── tests/                   # 🆕 pytest 자동 테스트 60개 (~10초, GPU·Ollama·DB 불필요)
+│   ├── tests/                   # 🆕 pytest 자동 테스트 (수 초 완료, GPU·Ollama·DB 불필요)
 │   ├── requirements.txt          # 의존성 패키지
 │   └── dataset/                 # 이미지 데이터셋 (17,017장, 8,373개 근접중복 그룹 — 밝은 홍채 보강 포함)
-│       ├── 0_normal/            # 정상 안구 14,993장
+│       ├── 0_normal/            # 정상 안구 15,194장 (v5 밝은 홍채 201장 포함)
 │       └── 1_cataract/          # 백내장 1,823장
 │
 ├── 🎨 프론트엔드 (Vanilla JS + Tailwind CSS)
@@ -172,8 +172,12 @@ KAKAO_REST_KEY=
 ### 4️⃣ AI 모델 학습 (또는 사전학습 가중치 다운로드)
 ```bash
 python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
-python train_ai_v4.py --backbone efficientnet_b0   # → cataract_efficientnet_b0_v4.pth (현재 배포 모델)
+python train_ai_v4.py --backbone efficientnet_b0 --batch 40   # → cataract_efficientnet_b0_v4.pth (현재 배포 모델)
 python train_ai_v4.py --backbone resnet18          # (선택) 백본 비교용
+
+# --batch 40: 배포 중인 v5 모델과 동일 조건 (메타데이터 batch_size 기록과 일치).
+#   6GB급 노트북에서 추론 서버·Ollama와 GPU를 나눠 쓸 때의 OOM 방지 겸용 —
+#   학습이 GPU를 독점하는 큰 GPU에서도 v5 재현이 목적이면 40을 유지하세요.
 
 # 또는 사전학습 가중치 사용 → 프로젝트 루트에 배치 후 .env의 MODEL_PATH/MODEL_BACKBONE 수정
 # 참고: RTX 3060 노트북 기준 efficientnet_b0 약 90분, resnet18 약 15분
@@ -319,7 +323,7 @@ threshold는 test set을 보지 않고 validation에서만 고른 뒤(`choose_th
 재현하려면:
 ```bash
 python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
-python train_ai_v4.py --backbone efficientnet_b0   # 현재 배포 모델 재학습
+python train_ai_v4.py --backbone efficientnet_b0 --batch 40   # 현재 배포 모델(v5) 재학습 — batch 40 동일 조건
 ```
 >
 > 또한 비-눈 이미지 차단(OOD 검증, `eye_validator.py`)은 ImageNet 사전학습 ResNet18 가중치를 런타임에 받아옵니다. **서버를 처음 띄우는 환경(신규 배포·팀원 PC 등)에서는 최초 1회 인터넷 연결이 필요**하며, 실패하면 눈 클로즈업 분석이 503으로 막힙니다(의도된 fail-closed 동작).
@@ -482,7 +486,7 @@ GET /api/nearby-clinics?lat=37.4979&lng=127.0276
 
 ### 자동 테스트 (pytest)
 ```bash
-pytest        # tests/ 60개 — 약 10초
+pytest        # tests/ 전체 — 수 초 안에 완료
 ```
 - **외부 의존성 없이 돕니다**: GPU 학습·Ollama·PostgreSQL·카카오 API를 전부 모킹해서,
   어느 팀원 PC에서든 클론 직후 바로 실행 가능. 가중치(.pth)·메타데이터가 없는 환경에서는
@@ -536,7 +540,7 @@ pytest        # tests/ 60개 — 약 10초
 
 ```
 dataset/
-├── 0_normal/          # 정상 안구 (14,993장)
+├── 0_normal/          # 정상 안구 (15,194장 — v5 밝은 홍채 201장 포함)
 │   ├── eye_001.jpg
 │   ├── eye_002.jpg
 │   └── ...

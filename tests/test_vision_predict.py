@@ -107,9 +107,11 @@ def test_얼굴모드_양눈위험은_asymmetric_아님(monkeypatch, loaded, img
     (50.0, "risk"),            # 위험 문턱 — 이상(≥)
     (99.9, "risk"),
 ])
-def test_3단계_판정_경계값(prob, expected):
-    # 기본 임계값(50/25) 기준의 경계값 계약. .env로 임계값을 바꾼 환경이면 스킵.
-    if settings.risk_threshold != 50.0 or settings.borderline_threshold != 25.0:
-        pytest.skip("임계값이 기본값이 아닌 환경")
+def test_3단계_판정_경계값(monkeypatch, prob, expected):
+    # _classify의 '이상(≥)' 경계 계약을 검증. .env로 임계값을 튜닝한 환경에서도
+    # skip되지 않도록 임계값을 테스트 안에서 고정한다(스킵하면 정작 임계값을
+    # 만지는 환경에서 경계 검증이 사라짐).
+    monkeypatch.setattr(settings, "risk_threshold", 50.0)
+    monkeypatch.setattr(settings, "borderline_threshold", 25.0)
     code, _ = vision._classify(prob)
     assert code == expected

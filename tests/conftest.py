@@ -4,6 +4,14 @@
 없이 어느 PC에서든 `pytest` 한 방에 돌아야 한다. 무거운 것들은 전부 monkeypatch로 대체하고,
 여기서는 순수 로직(검증/판정/폴백/스키마)만 검사한다.
 """
+import os
+
+# 스위트 전체가 추론을 모킹하므로 GPU가 전혀 필요 없다. torch가 CUDA를 잡기 전에
+# 숨겨서 (1) 6GB 노트북에서 추론 서버·Ollama와 VRAM 경합으로 pytest가 OOM 나는 것을
+# 막고 (2) CUDA 컨텍스트 초기화 비용을 없앤다(실측 6.6s→5.2s).
+# 반드시 app.* 모듈 import 전에 실행돼야 함 (vision.py가 import 시점에 .to(device) 함).
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import io
 
 import pytest
