@@ -369,15 +369,17 @@ python train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # 현
 
 | # | 출처 | 라이선스 | 판정 | 왜 그런가 |
 |---|---|---|---|---|
-| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 124장, FAL·Copyrighted free use 5장, 미확정 1장 | 🟡 조건부 | 확인된 200장은 전부 자유 라이선스. **파일별 원저작자·라이선스·원본 링크를 [brightiris_attributions.csv](brightiris_attributions.csv)에 전수 기록** — CC BY(-SA) 조건인 출처 표기를 이 파일이 담당. 남은 1장은 아래 참고 |
+| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 125장, FAL·Copyrighted free use 5장 | 🟢 안전 | **201장 전부 자유 라이선스이며 저작자까지 확정**. 파일별 원저작자·라이선스·원본 링크를 [brightiris_attributions.csv](brightiris_attributions.csv)에 전수 기록 — CC BY(-SA) 조건인 출처 표기를 이 파일이 담당 |
 
-> ⚠️ **귀속 정보 보강(2026-08-19)**: Commons API로 전 파일을 재조회해, 비어 있던 항목을
-> 채웠습니다 — `see Commons`로 남아 있던 1장은 출처(File:Amber eye1.jpg, CC BY-SA 3.0)를 확정했고,
-> Artist 필드가 공란인 5장은 Commons 관례대로 업로더를 저작자로 기록하고 그 근거를 CSV의
-> 새 `notes` 열에 남겼습니다. **다만 `brightiris_commons_Hazel_eye1_p100.jpg` 1장은 원본 제목이
-> 기록되지 않아(`commons_Hazel`) 출처를 특정하지 못했습니다** — 이름이 비슷한 후보 두 개의
-> 저작자·라이선스가 서로 달라(PD vs CC BY-SA 3.0) 추정으로 적으면 안 되는 사례라, CSV에
-> `UNRESOLVED`로 표시했습니다. 재확인하거나 데이터셋에서 제외한 뒤 재학습하는 것이 원칙에 맞습니다.
+> ✅ **귀속 정보 전수 확정(2026-08-19)**: Commons API로 전 파일을 재조회해 비어 있던 항목을
+> 채웠습니다 — Artist 필드가 공란인 5장은 Commons 관례대로 업로더를 저작자로 기록하고 근거를
+> CSV의 새 `notes` 열에 남겼고, `original_title`이 유실돼 있던 2장(`commons_Amber`,
+> `commons_Hazel`)은 **phash 대조로 출처를 확정**했습니다(둘 다 해밍거리 0).
+> 후자는 원본이 `.png`(File:Hazel eye1.png, CC BY-SA 3.0)라 파일명 기반 `.jpg` 조회로는
+> 안 잡히던 건으로, 이름이 비슷한 `.jpg` 후보들은 거리 16~28로 전부 오답이었습니다 —
+> **이름 유사도가 아니라 픽셀로 대조해야 하는 이유**의 사례입니다(#2·#6·#10 교훈과 동일).
+> 검증 방법은 `dedup_dataset.py`와 같은 설정(phash 64비트, 해밍거리 ≤6)이며, 출처를 이미
+> 알고 있던 파일 5건으로 방법 자체를 먼저 검증했습니다(전부 거리 0, 회전본 1건 포함).
 
 > ⚠️ **데이터 품질 수정 기록(2026-06-23)**: #8(nandanp6) 출처와 `dataset/1_cataract`를
 > phash로 대조하다가, 같은 사진(`img (175).png`, `img (246).png`)이 원본 출처에서는
