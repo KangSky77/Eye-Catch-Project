@@ -1,0 +1,38 @@
+name: tests
+
+# 테스트 66건은 GPU·Ollama·PostgreSQL·카카오 API를 전부 모킹해서 10초 안에 끝난다.
+# 사람 기억("커밋 전에 돌려보세요")에 맡기지 않고 PR마다 자동으로 돌린다.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # 로컬 개발은 3.14, README 최소 요구는 3.11.
+          # CI는 의존성 wheel이 가장 안정적으로 갖춰진 3.13 한 종류만 돌린다.
+          # (3.11 하한을 실제로 보장하려면 matrix에 추가할 것 — 지금은 미검증)
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-base.txt
+
+      - name: torch (CPU 빌드) 설치
+        # requirements.txt는 CUDA 빌드(+cu130, 수 GB)를 고정하므로 CI에서는 쓰지 않는다.
+        # 테스트는 추론을 전부 모킹하고 torch의 API 표면(nn/models/transforms/softmax/flip)만
+        # 쓰기 때문에 CPU 최신 빌드로 충분하다.
+        # 트레이드오프: 고정된 2.12.0+cu130 자체의 API 변화는 CI가 잡지 못한다.
+        run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+      - name: 나머지 의존성 설치 (버전 고정)
+        run: pip install -r requirements-base.txt
+
+      - name: pytest
+        # .pth(가중치)는 저장소에 없으므로 관련 2건은 자동 skip된다 — 정상 동작.
+        run: pytest -q -rs

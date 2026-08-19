@@ -88,8 +88,10 @@ Eye-Catch (C:\eye_catch)
 │   ├── train_ai_v4.py           # 🆕 백본 비교 학습 (--backbone resnet18|efficientnet_b0)
 │   ├── validate_real_photos.py  # 🆕 실사진(폰 촬영)으로 배포 파이프라인 검증 (시연 전 필수)
 │   ├── smoke_eye_detect.py      # 사진 1장으로 얼굴→눈크롭→판정 경로 확인하는 수동 CLI
+│   ├── build_eye_centroid.py    # 🆕 눈 검증기(OOD) 기준 벡터 생성 + 임계값 근거 산출
 │   ├── tests/                   # 🆕 pytest 자동 테스트 (수 초 완료, GPU·Ollama·DB 불필요)
-│   ├── requirements.txt          # 의존성 패키지
+│   ├── requirements.txt         # 의존성 (CUDA torch) — 나머지는 requirements-base.txt
+│   ├── .github/workflows/       # 🆕 CI — PR마다 pytest 자동 실행
 │   └── dataset/                 # 이미지 데이터셋 (17,017장, 8,373개 근접중복 그룹 — 밝은 홍채 보강 포함)
 │       ├── 0_normal/            # 정상 안구 15,194장 (v5 밝은 홍채 201장 포함)
 │       └── 1_cataract/          # 백내장 1,823장
@@ -139,7 +141,7 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
-# 의존성 설치
+# 의존성 설치 (버전 고정 — GPU 환경용. CPU/CI는 requirements-base.txt + CPU torch)
 pip install -r requirements.txt
 
 # 추가 패키지 (선택)
@@ -513,6 +515,34 @@ pytest        # tests/ 전체 — 수 초 안에 완료
   눈 검증기 fail-closed, 편측(asymmetric) 판정, API 계약(fr/es 110자 회귀 방지 포함),
   LLM 오류 마커·폴백 체인, RAG 검색, **학습↔서빙 전처리 일관성**(모델 메타데이터 교차검증).
 - 코드를 고치면 커밋 전에 한 번 돌려보세요 — 특히 vision.py·schemas·config 임계값을 만질 때.
+
+### CI (GitHub Actions)
+`.github/workflows/tests.yml` — push(master)·PR마다 pytest를 자동 실행합니다. GPU가 없는
+러너라 torch는 CPU wheel을 쓰고(테스트는 추론을 전부 모킹), 나머지는 `requirements-base.txt`의
+고정 버전을 설치합니다. `.pth`가 없으므로 가중치 관련 2건은 자동 skip됩니다.
+
+### ⚠️ 프론트 스타일을 고칠 때 (Tailwind 재빌드)
+`static/tailwind.css`는 **빌드 산출물이 저장소에 커밋된 것**이고 `node_modules`는 없습니다.
+Tailwind는 JIT라 빌드 시점에 쓰이지 않은 유틸리티는 번들에 없는데, **없는 클래스를 써도
+브라우저는 에러 없이 조용히 무시**합니다(스타일만 사라짐). 새 유틸리티를 쓰면 반드시:
+```bash
+npm ci && npm run build:css
+```
+`tests/test_static_assets.py`가 마크업의 Tailwind 클래스가 빌드본에 있는지 검사하므로,
+빼먹으면 CI에서 잡힙니다. (실제로 이 검사로 경계 판정 색상 `bg-amber-100`/`text-amber-600`이
+빌드본에 없어 죽어 있던 것을 발견해 고쳤습니다.)
+
+### 눈 검증기 기준 벡터 재생성
+```bash
+python build_eye_centroid.py                          # 계산 + 배포본과 비교만 (덮어쓰지 않음)
+python build_eye_centroid.py --non-eye <비-눈 폴더>     # 임계값 근거까지 산출
+```
+`app/models/eye_centroid.npy`를 만드는 코드가 없어 "왜 임계값이 0.55인가"를 재현할 수 없던 것을
+메운 스크립트입니다. **현재 배포본은 이 레시피로 재현되지 않습니다**(코사인 0.976, 부분집합·표본크기
+가설 모두 기각 — 자세한 측정치는 스크립트 docstring 참고). 배포본은 실측상 잘 동작하므로
+(데이터셋 눈 사진 중 0.09%만 거부, 밝은 홍채는 전부 통과) 그대로 두었고, 이 스크립트는
+앞으로의 재현성을 위한 것입니다. 교체하려면 `--overwrite`와 함께 `eye_sim_threshold`도
+반드시 다시 구해야 합니다.
 
 ### VS Code 프리뷰
 `.claude/`는 개인 환경 설정이라 `.gitignore` 대상 — **클론하면 이 파일이 없습니다.**
