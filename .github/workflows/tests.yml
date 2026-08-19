@@ -11,15 +11,20 @@ on:
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 = README가 광고하는 최소 버전(실제로 지켜지는지 확인), 3.13 = 최신 안정.
+        # 로컬 개발은 3.14지만 러너 wheel 사정이 달라 CI는 이 둘로 고정한다.
+        # 3.11 + CPU torch + 아래 고정 버전 조합은 로컬 클린 venv에서 68 passed 확인됨.
+        python-version: ["3.11", "3.13"]
+    name: pytest (py${{ matrix.python-version }})
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          # 로컬 개발은 3.14, README 최소 요구는 3.11.
-          # CI는 의존성 wheel이 가장 안정적으로 갖춰진 3.13 한 종류만 돌린다.
-          # (3.11 하한을 실제로 보장하려면 matrix에 추가할 것 — 지금은 미검증)
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: requirements-base.txt
 

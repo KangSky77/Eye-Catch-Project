@@ -520,6 +520,8 @@ pytest        # tests/ 전체 — 수 초 안에 완료
 `.github/workflows/tests.yml` — push(master)·PR마다 pytest를 자동 실행합니다. GPU가 없는
 러너라 torch는 CPU wheel을 쓰고(테스트는 추론을 전부 모킹), 나머지는 `requirements-base.txt`의
 고정 버전을 설치합니다. `.pth`가 없으므로 가중치 관련 2건은 자동 skip됩니다.
+Python **3.11·3.13 매트릭스**로 돌려 README가 광고하는 최소 버전(3.11)이 실제로 지켜지는지도
+함께 확인합니다 — 3.11 + CPU torch + 고정 버전 조합은 클린 venv에서 68 passed 검증했습니다.
 
 ### ⚠️ 프론트 스타일을 고칠 때 (Tailwind 재빌드)
 `static/tailwind.css`는 **빌드 산출물이 저장소에 커밋된 것**이고 `node_modules`는 없습니다.
