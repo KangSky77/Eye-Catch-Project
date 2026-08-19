@@ -15,6 +15,9 @@ function startChat() {
     // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
     state.riskIdx = 0;
     state.riskAnswers = {};
+    state.symIdx = 0;
+    state.symptomScore = 0;
+    state.redFlags = [];
 
     askRiskQuestion();
 }
@@ -65,30 +68,88 @@ function handleAnswer(value, label) {
         state.chatHistory.push({ q: translations[state.lang][q.key] || q.key, a: label });
         state.riskIdx++;
         setTimeout(() => {
-            if (state.riskIdx < riskQuestions.length) {
-                askRiskQuestion();
-            } else {
-                // 증상 구간으로 — 예/아니오 버튼으로 되돌린다
-                renderChatOptions([
-                    { label: translations[state.lang].chat_yes, value: true },
-                    { label: translations[state.lang].chat_no,  value: false },
-                ]);
-                addMsg('bot', questions[state.lang][state.stepIdx].t);
-                state.chatBusy = false;
-            }
+            if (state.riskIdx < riskQuestions.length) askRiskQuestion();
+            else askSymptomQuestion();          // 위험요인이 끝나면 질환별 문진으로
         }, 500);
         return;
     }
-    handleChatAnswer(value === true);
+    handleSymptomAnswer(value === true);
 }
 
-function addMsg(sender, text) {
+// ------------------------------------------------------------------
+// 2단계: 질환별 문진
+// 조건부 분기(showIf) — 당뇨망막병증 문항은 당뇨가 있다고 답한 사람에게만 묻는다.
+// 비당뇨에게 "당뇨 10년 넘었나요?"를 묻는 것은 시간 낭비이자 결과 왜곡이다.
+// ------------------------------------------------------------------
+
+/** 이 사용자에게 실제로 물어볼 문항 목록(분기 반영). */
+function activeSymptomQuestions() {
+    return symptomQuestions.filter(q => !q.showIf || state.riskAnswers[q.showIf] === true);
+}
+
+function askSymptomQuestion() {
+    const list = activeSymptomQuestions();
+    if (state.symIdx >= list.length) { finishSurvey(); return; }
+    const q = list[state.symIdx];
+    const t = translations[state.lang];
+    addMsg('bot', t[q.key] || q.key, `${state.symIdx + 1} / ${list.length}`);
+    renderChatOptions([
+        { label: t.chat_yes, value: true },
+        { label: t.chat_no,  value: false },
+    ]);
+    state.chatBusy = false;
+}
+
+function handleSymptomAnswer(yes) {
+    if (state.chatBusy) return;
+    state.chatBusy = true;
+
+    const list = activeSymptomQuestions();
+    const q = list[state.symIdx];
+    const t = translations[state.lang];
+    const label = yes ? t.chat_yes : t.chat_no;
+    addMsg('user', label);
+    state.chatHistory.push({ q: t[q.key] || q.key, a: label });
+
+    // invert: '아니오'가 위험 신호인 문항(최근 검진 없음, 안저검사 미시행 등)
+    const flagged = q.invert ? (yes === false) : (yes === true);
+    if (flagged) {
+        state.symptomScore = (state.symptomScore || 0) + (q.weight || 0);
+        state.chatSymptoms.push(t['sym_' + q.code] || q.code);
+        // RAG 검색은 질환 코드 기준 — 중복 없이 모은다
+        if (q.disease && q.disease !== 'general' && !state.symptomCodes.includes(q.disease)) {
+            state.symptomCodes.push(q.disease);
+        }
+        if (q.redFlag) state.redFlags = (state.redFlags || []).concat(q.code);
+    }
+
+    state.symIdx++;
+    setTimeout(askSymptomQuestion, 450);
+}
+
+/** 문진 종료 → 기존 동적 질문(LLM) 단계로 넘긴다. */
+function finishSurvey() {
+    state.stepIdx = questions[state.lang].length;   // 고정 질문 구간을 건너뛴 상태로 맞춤
+    addLoadingMsg(translations[state.lang].survey_done || '');
+    fetchNextQuestion();
+}
+
+function addMsg(sender, text, progress) {
     const box = document.getElementById('chat-box');
     const div = document.createElement('div');
     div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} w-full`;
     const bubble = document.createElement('div');
     bubble.className = `max-w-[80%] p-3 rounded-2xl text-sm font-bold ${sender === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white text-slate-700 rounded-tl-sm shadow-sm border border-slate-50'}`;
-    bubble.textContent = text;
+    // 문항이 13개까지 늘어나 끝이 안 보이면 이탈한다 — 진행률을 보여준다
+    if (progress) {
+        const p = document.createElement('span');
+        p.className = 'block text-[10px] font-black text-slate-400 mb-1';
+        p.textContent = progress;
+        bubble.appendChild(p);
+        bubble.appendChild(document.createTextNode(text));
+    } else {
+        bubble.textContent = text;
+    }
     div.appendChild(bubble);
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;

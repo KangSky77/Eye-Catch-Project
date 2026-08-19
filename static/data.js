@@ -574,3 +574,188 @@ Object.assign(translations.zh, {
   vt_dist_tolerance: "距离偏差10%时视力误差仅0.04 logMAR — <b>不到视力表半行</b>。对比敏感度更不敏感，左右眼比较则与距离无关。",
   vt_dist_custom: "手动输入 (cm)"
 });
+
+// ==========================================================================
+// 질환별 문진 재설계
+//
+// 기존: 녹내장·당뇨망막병증에 각각 "증상 있나요?" 1문항씩.
+//   녹내장은 말기까지 자각 증상이 거의 없어서 "시야가 좁아진 느낌"에 '예'라고
+//   답할 수 있는 사람은 이미 늦은 단계다. 즉 조기발견 목적의 스크리닝으로는 성립하지 않는다.
+//   당뇨망막병증도 마찬가지로 비문증은 비특이적이다.
+//
+// 재설계 원칙:
+//   1) 증상이 없는 질환은 '과거력 · 위험인자 · 검진 공백'을 묻는다.
+//      (안압 지적받은 적, 고도근시, 마지막 안저검사 시기 등)
+//   2) 증상이 실제로 유용한 질환(백내장)은 증상군으로 세분한다.
+//   3) 응급 신호는 따로 맨 앞에서 잡는다 — 급성 폐쇄각 녹내장과 갑작스러운 시력상실은
+//      몇 시간이 시력을 가르므로 '수 주 내 검진'으로 안내하면 안 된다.
+//   4) 조건부 분기: 당뇨망막병증 문항은 당뇨가 있다고 답한 사람에게만 묻는다.
+//      (비당뇨에게 묻는 것은 시간 낭비이자 결과 왜곡)
+//
+// invert:true 는 '아니오'가 위험 신호라는 뜻(예: 최근 검진을 받지 않음).
+// ==========================================================================
+const symptomQuestions = [
+  // ── 응급 신호 (가장 먼저) ─────────────────────────────
+  { code: 'rf_acute',  key: 'q_rf_acute',  disease: 'glaucoma',    weight: 0, redFlag: true },
+  { code: 'rf_sudden', key: 'q_rf_sudden', disease: 'general',     weight: 0, redFlag: true },
+
+  // ── 백내장: 증상이 실제로 유용한 질환 ──────────────────
+  { code: 'cat_glare',   key: 'q_cat_glare',   disease: 'cataract', weight: 2 },
+  { code: 'cat_foggy',   key: 'q_cat_foggy',   disease: 'cataract', weight: 2 },
+  { code: 'cat_glasses', key: 'q_cat_glasses', disease: 'cataract', weight: 1 },
+
+  // ── 황반변성: 왜곡은 암슬러가 담당, 여기선 중심암점 ────
+  { code: 'amd_center', key: 'q_amd_center', disease: 'macular', weight: 2 },
+
+  // ── 녹내장: 초기 무증상 → 과거력·위험인자 중심 ─────────
+  { code: 'gla_iop',    key: 'q_gla_iop',    disease: 'glaucoma', weight: 3 },
+  { code: 'gla_myopia', key: 'q_gla_myopia', disease: 'glaucoma', weight: 2 },
+  { code: 'gla_field',  key: 'q_gla_field',  disease: 'glaucoma', weight: 2 },
+
+  // ── 당뇨망막병증: 당뇨가 있을 때만 묻는다 ──────────────
+  { code: 'dr_duration', key: 'q_dr_duration', disease: 'retinopathy', weight: 3, showIf: 'diabetes' },
+  { code: 'dr_fundus',   key: 'q_dr_fundus',   disease: 'retinopathy', weight: 2, showIf: 'diabetes', invert: true },
+  { code: 'dr_floaters', key: 'q_dr_floaters', disease: 'retinopathy', weight: 2, showIf: 'diabetes' },
+
+  // ── 공통: 검진 공백 ────────────────────────────────────
+  { code: 'chk_recent', key: 'q_chk_recent', disease: 'general', weight: 2, invert: true },
+];
+
+Object.assign(translations.ko, {
+  q_rf_acute: "최근 눈이 심하게 아프면서 두통·구역질이 나고, 불빛 주위에 무지개 테가 보인 적이 있나요?",
+  q_rf_sudden: "갑자기(몇 시간~며칠 사이) 한쪽 눈이 잘 안 보이게 된 적이 있나요?",
+  q_cat_glare: "밤에 운전하거나 불빛을 볼 때 빛이 심하게 번지거나 눈이 부신가요?",
+  q_cat_foggy: "안개가 낀 것처럼 전체적으로 뿌옇게 보이나요?",
+  q_cat_glasses: "최근 몇 년 사이 안경이나 돋보기 도수를 자주 바꾸셨나요?",
+  q_amd_center: "글자를 읽을 때 가운데 글자가 빠져 보이거나 유독 흐린가요?",
+  q_gla_iop: "안과에서 '안압이 높다'는 말을 들은 적이 있나요?",
+  q_gla_myopia: "안경 도수가 -6디옵터 이상인 고도근시인가요?",
+  q_gla_field: "옆에서 오는 사람이나 물체를 자주 못 보고 부딪히나요?",
+  q_dr_duration: "당뇨를 앓으신 지 10년이 넘었나요?",
+  q_dr_fundus: "최근 1년 안에 안저(망막) 검사를 받으셨나요?",
+  q_dr_floaters: "눈앞에 검은 점이나 실오라기가 갑자기 많아졌나요?",
+  q_chk_recent: "최근 2년 안에 안과 검진을 받으신 적이 있나요?",
+  sym_cat_glare: "빛 번짐·눈부심", sym_cat_foggy: "뿌옇게 보임", sym_cat_glasses: "도수 잦은 변경",
+  sym_amd_center: "중심 시야 이상", sym_gla_iop: "안압 상승 지적", sym_gla_myopia: "고도근시",
+  sym_gla_field: "주변 시야 이상", sym_dr_duration: "당뇨 10년 이상", sym_dr_fundus: "안저검사 미시행",
+  sym_dr_floaters: "비문증 급증", sym_chk_recent: "2년 내 검진 없음",
+  sym_rf_acute: "급성 안통·무지개 테", sym_rf_sudden: "갑작스러운 시력저하",
+  tri_urgent: "지금 바로 안과 진료를 받으세요",
+  tri_urgent_why: "응급 처치가 필요할 수 있는 신호입니다. 급성 녹내장이나 망막 이상은 몇 시간이 시력을 좌우합니다. 야간·주말이면 응급실로 가세요.",
+  survey_progress: "{c} / {n}"
+});
+Object.assign(translations.en, {
+  q_rf_acute: "Have you recently had severe eye pain with headache or nausea, and seen rainbow rings around lights?",
+  q_rf_sudden: "Have you suddenly (within hours or days) lost vision in one eye?",
+  q_cat_glare: "Do lights glare or streak badly, especially when driving at night?",
+  q_cat_foggy: "Does your vision look generally hazy, as if through fog?",
+  q_cat_glasses: "Have you changed your glasses or reading prescription often in the last few years?",
+  q_amd_center: "When reading, do letters in the middle look missing or unusually blurred?",
+  q_gla_iop: "Has an eye doctor ever told you your eye pressure was high?",
+  q_gla_myopia: "Are you highly myopic (glasses stronger than -6 diopters)?",
+  q_gla_field: "Do you often miss or bump into people and objects approaching from the side?",
+  q_dr_duration: "Have you had diabetes for more than 10 years?",
+  q_dr_fundus: "Have you had a retinal (fundus) exam within the last year?",
+  q_dr_floaters: "Has the number of dark spots or floaters in your vision suddenly increased?",
+  q_chk_recent: "Have you had an eye exam within the last 2 years?",
+  sym_cat_glare: "Glare / light streaking", sym_cat_foggy: "Hazy vision", sym_cat_glasses: "Frequent prescription changes",
+  sym_amd_center: "Central vision problem", sym_gla_iop: "High eye pressure noted", sym_gla_myopia: "High myopia",
+  sym_gla_field: "Peripheral vision problem", sym_dr_duration: "Diabetes over 10 years", sym_dr_fundus: "No recent fundus exam",
+  sym_dr_floaters: "Sudden increase in floaters", sym_chk_recent: "No exam in 2 years",
+  sym_rf_acute: "Acute eye pain with halos", sym_rf_sudden: "Sudden vision loss",
+  tri_urgent: "Seek eye care right now",
+  tri_urgent_why: "These signs may need emergency treatment. With acute glaucoma or retinal problems, hours can decide the outcome. Go to an emergency department if it is night or the weekend.",
+  survey_progress: "{c} / {n}"
+});
+Object.assign(translations.es, {
+  q_rf_acute: "¿Ha tenido dolor ocular intenso con dolor de cabeza o náuseas, y halos de arcoíris alrededor de las luces?",
+  q_rf_sudden: "¿Ha perdido la visión de un ojo de forma repentina (en horas o días)?",
+  q_cat_glare: "¿Las luces le deslumbran o se dispersan mucho, sobre todo al conducir de noche?",
+  q_cat_foggy: "¿Ve todo borroso como a través de niebla?",
+  q_cat_glasses: "¿Ha cambiado de graduación con frecuencia en los últimos años?",
+  q_amd_center: "Al leer, ¿faltan letras en el centro o se ven especialmente borrosas?",
+  q_gla_iop: "¿Le han dicho alguna vez que tiene la presión ocular alta?",
+  q_gla_myopia: "¿Tiene miopía alta (más de -6 dioptrías)?",
+  q_gla_field: "¿Choca a menudo con personas u objetos que vienen de lado?",
+  q_dr_duration: "¿Tiene diabetes desde hace más de 10 años?",
+  q_dr_fundus: "¿Se ha hecho un examen de retina (fondo de ojo) en el último año?",
+  q_dr_floaters: "¿Han aumentado de golpe las moscas volantes o puntos oscuros?",
+  q_chk_recent: "¿Se ha hecho una revisión ocular en los últimos 2 años?",
+  sym_cat_glare: "Deslumbramiento", sym_cat_foggy: "Visión brumosa", sym_cat_glasses: "Cambios frecuentes de graduación",
+  sym_amd_center: "Problema de visión central", sym_gla_iop: "Presión ocular alta", sym_gla_myopia: "Miopía alta",
+  sym_gla_field: "Problema de visión periférica", sym_dr_duration: "Diabetes +10 años", sym_dr_fundus: "Sin fondo de ojo reciente",
+  sym_dr_floaters: "Aumento de moscas volantes", sym_chk_recent: "Sin revisión en 2 años",
+  sym_rf_acute: "Dolor ocular agudo con halos", sym_rf_sudden: "Pérdida súbita de visión",
+  tri_urgent: "Acuda a un oftalmólogo ahora mismo",
+  tri_urgent_why: "Estos signos pueden requerir tratamiento urgente. En el glaucoma agudo o problemas de retina, las horas cuentan. Vaya a urgencias si es de noche o fin de semana.",
+  survey_progress: "{c} / {n}"
+});
+Object.assign(translations.fr, {
+  q_rf_acute: "Avez-vous eu récemment une douleur oculaire intense avec maux de tête ou nausées, et des halos colorés autour des lumières ?",
+  q_rf_sudden: "Avez-vous perdu la vue d'un œil brutalement (en quelques heures ou jours) ?",
+  q_cat_glare: "Les lumières vous éblouissent-elles fortement, surtout en conduisant la nuit ?",
+  q_cat_foggy: "Votre vision est-elle globalement voilée, comme dans le brouillard ?",
+  q_cat_glasses: "Avez-vous changé souvent de correction ces dernières années ?",
+  q_amd_center: "En lisant, des lettres manquent-elles au centre ou sont-elles très floues ?",
+  q_gla_iop: "Un ophtalmologiste vous a-t-il déjà dit que votre tension oculaire était élevée ?",
+  q_gla_myopia: "Êtes-vous fortement myope (au-delà de -6 dioptries) ?",
+  q_gla_field: "Heurtez-vous souvent des personnes ou objets venant de côté ?",
+  q_dr_duration: "Êtes-vous diabétique depuis plus de 10 ans ?",
+  q_dr_fundus: "Avez-vous eu un examen du fond d'œil durant la dernière année ?",
+  q_dr_floaters: "Le nombre de corps flottants a-t-il augmenté brusquement ?",
+  q_chk_recent: "Avez-vous consulté un ophtalmologiste ces 2 dernières années ?",
+  sym_cat_glare: "Éblouissement", sym_cat_foggy: "Vision voilée", sym_cat_glasses: "Changements fréquents de correction",
+  sym_amd_center: "Trouble de la vision centrale", sym_gla_iop: "Tension oculaire élevée", sym_gla_myopia: "Forte myopie",
+  sym_gla_field: "Trouble du champ périphérique", sym_dr_duration: "Diabète +10 ans", sym_dr_fundus: "Pas de fond d'œil récent",
+  sym_dr_floaters: "Corps flottants en hausse", sym_chk_recent: "Aucun examen en 2 ans",
+  sym_rf_acute: "Douleur aiguë avec halos", sym_rf_sudden: "Perte de vue brutale",
+  tri_urgent: "Consultez un ophtalmologiste immédiatement",
+  tri_urgent_why: "Ces signes peuvent nécessiter un traitement urgent. En cas de glaucome aigu ou d'atteinte rétinienne, quelques heures comptent. Allez aux urgences la nuit ou le week-end.",
+  survey_progress: "{c} / {n}"
+});
+Object.assign(translations.ja, {
+  q_rf_acute: "最近、強い目の痛みと頭痛・吐き気があり、光の周りに虹の輪が見えたことはありますか？",
+  q_rf_sudden: "急に（数時間〜数日で）片目が見えにくくなったことがありますか？",
+  q_cat_glare: "夜の運転や光を見たとき、光がひどくにじんだり眩しかったりしますか？",
+  q_cat_foggy: "霧がかかったように全体的にかすんで見えますか？",
+  q_cat_glasses: "ここ数年、眼鏡や老眼鏡の度数を頻繁に変えましたか？",
+  q_amd_center: "文字を読むとき、中央の文字が欠けたり特にぼやけたりしますか？",
+  q_gla_iop: "眼科で「眼圧が高い」と言われたことがありますか？",
+  q_gla_myopia: "-6ジオプター以上の強度近視ですか？",
+  q_gla_field: "横から来る人や物によくぶつかりますか？",
+  q_dr_duration: "糖尿病になって10年以上経ちますか？",
+  q_dr_fundus: "この1年以内に眼底（網膜）検査を受けましたか？",
+  q_dr_floaters: "黒い点や糸くずのような浮遊物が急に増えましたか？",
+  q_chk_recent: "この2年以内に眼科検診を受けましたか？",
+  sym_cat_glare: "光のにじみ・眩しさ", sym_cat_foggy: "かすみ目", sym_cat_glasses: "度数の頻繁な変更",
+  sym_amd_center: "中心視野の異常", sym_gla_iop: "眼圧上昇の指摘", sym_gla_myopia: "強度近視",
+  sym_gla_field: "周辺視野の異常", sym_dr_duration: "糖尿病10年以上", sym_dr_fundus: "眼底検査未実施",
+  sym_dr_floaters: "飛蚊症の急増", sym_chk_recent: "2年以内の検診なし",
+  sym_rf_acute: "急性の眼痛・虹輪視", sym_rf_sudden: "急激な視力低下",
+  tri_urgent: "今すぐ眼科を受診してください",
+  tri_urgent_why: "緊急処置が必要な可能性のある兆候です。急性緑内障や網膜の異常は数時間が視力を左右します。夜間・週末なら救急外来へ。",
+  survey_progress: "{c} / {n}"
+});
+Object.assign(translations.zh, {
+  q_rf_acute: "最近是否有剧烈眼痛伴头痛、恶心，并在灯光周围看到彩虹光圈？",
+  q_rf_sudden: "是否曾在数小时到数天内突然出现单眼视力下降？",
+  q_cat_glare: "夜间开车或看灯光时，是否有明显的光晕或刺眼感？",
+  q_cat_foggy: "视野是否像蒙上一层雾一样整体发白模糊？",
+  q_cat_glasses: "近几年是否频繁更换眼镜或老花镜度数？",
+  q_amd_center: "阅读时中间的字是否缺失或特别模糊？",
+  q_gla_iop: "眼科医生是否曾说过您的眼压偏高？",
+  q_gla_myopia: "您是否为高度近视（超过-6屈光度）？",
+  q_gla_field: "是否经常撞到从侧面来的人或物？",
+  q_dr_duration: "您患糖尿病是否已超过10年？",
+  q_dr_fundus: "最近一年内是否做过眼底（视网膜）检查？",
+  q_dr_floaters: "眼前的黑点或飞蚊是否突然增多？",
+  q_chk_recent: "最近两年内是否做过眼科检查？",
+  sym_cat_glare: "光晕·眩光", sym_cat_foggy: "视物模糊发雾", sym_cat_glasses: "频繁换度数",
+  sym_amd_center: "中心视野异常", sym_gla_iop: "眼压偏高", sym_gla_myopia: "高度近视",
+  sym_gla_field: "周边视野异常", sym_dr_duration: "糖尿病10年以上", sym_dr_fundus: "未做眼底检查",
+  sym_dr_floaters: "飞蚊突然增多", sym_chk_recent: "两年内无检查",
+  sym_rf_acute: "急性眼痛伴虹视", sym_rf_sudden: "突发视力下降",
+  tri_urgent: "请立即就诊眼科",
+  tri_urgent_why: "这些信号可能需要急诊处理。急性青光眼或视网膜病变，数小时就可能决定视力结局。夜间或周末请前往急诊。",
+  survey_progress: "{c} / {n}"
+});

@@ -55,14 +55,19 @@ function computeTriage(ctx) {
     const anySymptom = (ctx.symptomCodes || []).length > 0;
 
     let level;
-    if (ctx.cataractCode === 'risk' || ctx.amslerAbnormal) {
+    // 응급 신호가 하나라도 있으면 다른 무엇보다 우선한다.
+    // 급성 폐쇄각 녹내장·망막 이상은 몇 시간이 시력을 좌우하므로
+    // '수 주 내 검진'으로 안내하면 안 된다.
+    if ((ctx.redFlags || []).length > 0) {
+        level = 'urgent';
+    } else if (ctx.cataractCode === 'risk' || ctx.amslerAbnormal) {
         level = 'now';
     } else if (ctx.cataractCode === 'borderline') {
         level = highRisk ? 'now' : 'weeks';
     } else if (ctx.visionAsymmetric) {
         // 사진은 정상이어도 좌우 기능 차이가 크면 확인이 필요하다
         level = 'weeks';
-    } else if (anySymptom || highRisk) {
+    } else if (anySymptom || highRisk || (ctx.symptomScore || 0) >= 4) {
         level = 'weeks';
     } else {
         level = 'monitor';
@@ -84,6 +89,7 @@ function renderTriage(container, triage, factors) {
     container.innerHTML = '';
 
     const style = {
+        urgent:  { bg: 'bg-rose-100',   br: 'border-rose-400',    tx: 'text-rose-800',    ico: '🚑' },
         now:     { bg: 'bg-rose-50',    br: 'border-rose-200',    tx: 'text-rose-700',    ico: '🚨' },
         weeks:   { bg: 'bg-amber-50',   br: 'border-amber-200',   tx: 'text-amber-800',   ico: '📅' },
         monitor: { bg: 'bg-emerald-50', br: 'border-emerald-200', tx: 'text-emerald-700', ico: '✅' },

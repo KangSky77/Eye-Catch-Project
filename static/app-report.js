@@ -27,6 +27,8 @@ async function finish() {
         amslerAbnormal: state.hasAmsler,
         symptomCodes: state.symptomCodes,
         riskScore: risk.score,
+        symptomScore: state.symptomScore,
+        redFlags: state.redFlags,
         visionAsymmetric: state.visionTest && state.visionTest.asymmetric,
     });
     const triBox = document.getElementById('triage-box');
