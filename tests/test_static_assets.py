@@ -111,9 +111,12 @@ def test_마크업의_tailwind_클래스가_빌드본에_존재():
     )
 
 
-def test_index_html이_참조하는_정적파일이_실제로_존재():
+def test_html이_참조하는_정적파일이_실제로_존재():
     """?v= 버전만 올리고 파일명을 잘못 적으면 404 — 서버 없이 여기서 잡는다."""
-    html = (STATIC / "index.html").read_text(encoding="utf-8")
-    refs = re.findall(r'(?:src|href)="/static/([^"?]+)', html)
-    missing = [r for r in sorted(set(refs)) if not (STATIC / r).exists()]
-    assert not missing, f"index.html이 참조하는 정적 파일이 없습니다: {missing}"
+    missing = {}
+    for html_file in sorted(STATIC.glob("*.html")):
+        refs = re.findall(r'(?:src|href)="/static/([^"?]+)', html_file.read_text(encoding="utf-8"))
+        bad = [r for r in sorted(set(refs)) if not (STATIC / r).exists()]
+        if bad:
+            missing[html_file.name] = bad
+    assert not missing, f"참조하는 정적 파일이 없습니다: {missing}"
