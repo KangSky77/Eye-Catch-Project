@@ -524,3 +524,53 @@ Object.assign(translations.zh, {
   vt_touch_hint: "把卡片贴在屏幕<b>上边缘</b>，用下方的<b>+/−</b>按钮调整大小。此步骤会暂时关闭缩放与滚动。",
   vt_nudge_fine: "微调", vt_nudge_coarse: "粗调"
 });
+
+// 화면 고정 토글 + 거리 측정 안내
+Object.assign(translations.ko, {
+  vt_lock_off: "🔓 화면 고정하기", vt_lock_on: "🔒 고정됨 — 해제하려면 탭",
+  vt_lock_hint: "카드를 올려놓을 위치까지 스크롤한 뒤 <b>화면 고정</b>을 누르세요. 고정하면 카드가 닿아도 화면이 움직이지 않고, <b>+/−</b> 버튼으로만 크기를 바꿉니다.",
+  vt_dist_how: "거리는 어떻게 재나요?",
+  vt_dist_guide: "정확한 자가 없어도 됩니다. 손에 든 <b>카드 긴 변이 8.56cm</b>이고 <b>A4 긴 변이 29.7cm</b>예요.<br>· <b>60cm</b> = A4 긴 변 <b>2번</b> (59.4cm) 또는 카드 <b>7번</b> (59.9cm)<br>· <b>40cm</b> = A4 긴 변 <b>1번</b> + 카드 <b>1.2번</b> (약 40cm)<br>책상 위에 A4를 놓고 그 끝에 폰을 세우면 편합니다.",
+  vt_dist_tolerance: "거리가 10% 틀려도 시력 오차는 0.04 logMAR — <b>시력표 반 줄도 안 됩니다</b>. 대비감도는 이보다도 둔감하고, 좌우 눈 비교는 거리와 아예 무관합니다.",
+  vt_dist_custom: "직접 입력 (cm)"
+});
+Object.assign(translations.en, {
+  vt_lock_off: "🔓 Lock the screen", vt_lock_on: "🔒 Locked — tap to unlock",
+  vt_lock_hint: "Scroll to where you want to rest the card, then tap <b>Lock the screen</b>. While locked, the card touching the screen won't move it — resize with the <b>+/−</b> buttons only.",
+  vt_dist_how: "How do I measure the distance?",
+  vt_dist_guide: "You don't need a ruler. The card in your hand is <b>8.56cm</b> on its long edge, and A4 paper is <b>29.7cm</b>.<br>· <b>60cm</b> = A4 long edge <b>×2</b> (59.4cm) or the card <b>×7</b> (59.9cm)<br>· <b>40cm</b> = A4 long edge <b>×1</b> + card <b>×1.2</b> (about 40cm)<br>Laying an A4 sheet on the desk and standing the phone at its end works well.",
+  vt_dist_tolerance: "A 10% distance error shifts acuity by only 0.04 logMAR — <b>less than half a line</b> on an eye chart. Contrast sensitivity is even less sensitive, and left/right comparison doesn't depend on distance at all.",
+  vt_dist_custom: "Enter manually (cm)"
+});
+Object.assign(translations.es, {
+  vt_lock_off: "🔓 Bloquear pantalla", vt_lock_on: "🔒 Bloqueada — toque para desbloquear",
+  vt_lock_hint: "Desplácese hasta donde apoyará la tarjeta y pulse <b>Bloquear pantalla</b>. Bloqueada, la tarjeta no moverá la pantalla; ajuste solo con <b>+/−</b>.",
+  vt_dist_how: "¿Cómo mido la distancia?",
+  vt_dist_guide: "No necesita regla. La tarjeta mide <b>8,56cm</b> de lado largo y un A4 <b>29,7cm</b>.<br>· <b>60cm</b> = A4 <b>×2</b> (59,4cm) o tarjeta <b>×7</b> (59,9cm)<br>· <b>40cm</b> = A4 <b>×1</b> + tarjeta <b>×1,2</b>",
+  vt_dist_tolerance: "Un error del 10% en distancia cambia la agudeza solo 0,04 logMAR — <b>menos de media línea</b>. La sensibilidad al contraste es aún menos sensible.",
+  vt_dist_custom: "Introducir (cm)"
+});
+Object.assign(translations.fr, {
+  vt_lock_off: "🔓 Verrouiller l'écran", vt_lock_on: "🔒 Verrouillé — touchez pour déverrouiller",
+  vt_lock_hint: "Faites défiler jusqu'à l'endroit où poser la carte, puis touchez <b>Verrouiller l'écran</b>. Une fois verrouillé, la carte ne fera plus bouger l'écran ; ajustez avec <b>+/−</b>.",
+  vt_dist_how: "Comment mesurer la distance ?",
+  vt_dist_guide: "Pas besoin de règle. La carte fait <b>8,56cm</b> de grand côté et une feuille A4 <b>29,7cm</b>.<br>· <b>60cm</b> = A4 <b>×2</b> (59,4cm) ou carte <b>×7</b> (59,9cm)<br>· <b>40cm</b> = A4 <b>×1</b> + carte <b>×1,2</b>",
+  vt_dist_tolerance: "Une erreur de 10% sur la distance ne décale l'acuité que de 0,04 logMAR — <b>moins d'une demi-ligne</b>. La sensibilité au contraste y est encore moins sensible.",
+  vt_dist_custom: "Saisir (cm)"
+});
+Object.assign(translations.ja, {
+  vt_lock_off: "🔓 画面を固定", vt_lock_on: "🔒 固定中 — タップで解除",
+  vt_lock_hint: "カードを置きたい位置までスクロールしてから<b>画面を固定</b>を押してください。固定中はカードが触れても画面が動かず、<b>+/−</b>ボタンだけでサイズを変えます。",
+  vt_dist_how: "距離はどうやって測る？",
+  vt_dist_guide: "定規は不要です。手元のカードの長辺が<b>8.56cm</b>、A4の長辺が<b>29.7cm</b>です。<br>· <b>60cm</b> = A4長辺<b>2回</b>(59.4cm) またはカード<b>7回</b>(59.9cm)<br>· <b>40cm</b> = A4長辺<b>1回</b> + カード<b>1.2回</b>",
+  vt_dist_tolerance: "距離が10%ずれても視力の誤差は0.04 logMAR — <b>視力表の半行未満</b>です。コントラスト感度はさらに鈍感で、左右比較は距離と無関係です。",
+  vt_dist_custom: "直接入力 (cm)"
+});
+Object.assign(translations.zh, {
+  vt_lock_off: "🔓 锁定屏幕", vt_lock_on: "🔒 已锁定 — 点击解锁",
+  vt_lock_hint: "先滚动到想放卡片的位置，再点<b>锁定屏幕</b>。锁定后卡片接触屏幕也不会移动画面，只用<b>+/−</b>按钮调整大小。",
+  vt_dist_how: "距离怎么测？",
+  vt_dist_guide: "不需要尺子。手中卡片长边<b>8.56cm</b>，A4纸长边<b>29.7cm</b>。<br>· <b>60cm</b> = A4长边<b>×2</b>(59.4cm) 或卡片<b>×7</b>(59.9cm)<br>· <b>40cm</b> = A4长边<b>×1</b> + 卡片<b>×1.2</b>",
+  vt_dist_tolerance: "距离偏差10%时视力误差仅0.04 logMAR — <b>不到视力表半行</b>。对比敏感度更不敏感，左右眼比较则与距离无关。",
+  vt_dist_custom: "手动输入 (cm)"
+});

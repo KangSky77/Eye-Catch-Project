@@ -29,7 +29,7 @@
           integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260819f">
+    <link rel="stylesheet" href="/static/style.css?v=20260819h">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -181,6 +181,7 @@
             <p id="vt-orient-hint" class="text-[11px] text-slate-500 leading-relaxed mb-3"></p>
             <div class="vt-cardwrap"><div id="vt-cardbox" class="vt-cardbox"></div></div>
             <p id="vt-touch-hint" class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed mt-3"></p>
+            <button id="vt-lock-btn" onclick="vtToggleLock()" class="w-full mt-3 py-3 rounded-2xl font-bold text-[13px] btn-pop bg-slate-100 text-slate-700"></button>
             <input id="vt-slider" type="range" min="80" max="900" value="300" class="w-full my-3">
             <div class="vt-nudge">
                 <button onclick="vtNudge(-10)" class="vt-nudge-btn" aria-label="-10">−10</button>
@@ -191,10 +192,22 @@
             <p class="text-center text-[12px] font-black text-slate-700 mb-3"><span id="vt-pxmm">—</span> px/mm</p>
 
             <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="vt_dist_label">화면에서 눈까지 거리</label>
-            <select id="vt-dist" class="w-full bg-slate-50 border-none rounded-xl px-3 py-2.5 text-sm mb-4">
+            <select id="vt-dist" onchange="vtOnDistChange()" class="w-full bg-slate-50 border-none rounded-xl px-3 py-2.5 text-sm mb-2">
+                <option value="300">30 cm</option>
                 <option value="400">40 cm</option>
+                <option value="500">50 cm</option>
                 <option value="600" selected>60 cm</option>
+                <option value="700">70 cm</option>
+                <option value="custom" data-i18n="vt_dist_custom">직접 입력 (cm)</option>
             </select>
+            <input id="vt-dist-custom" type="number" min="20" max="200" step="1" value="60"
+                   class="w-full bg-slate-50 border-none rounded-xl px-3 py-2.5 text-sm mb-2 hidden"
+                   oninput="vtPaintCard()">
+            <details class="mb-4">
+                <summary class="text-[11px] font-bold text-blue-700 cursor-pointer py-1" data-i18n="vt_dist_how">거리는 어떻게 재나요?</summary>
+                <p id="vt-dist-guide" class="text-[11px] text-slate-500 leading-relaxed mt-2 bg-slate-50 rounded-xl p-3"></p>
+                <p id="vt-dist-tol" class="text-[11px] text-emerald-700 leading-relaxed mt-2 bg-emerald-50 rounded-xl p-3"></p>
+            </details>
 
             <button onclick="vtSaveCalibration()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm" data-i18n="vt_calib_save">저장하고 계속</button>
 
@@ -358,7 +371,7 @@
         </div>
     </nav>
 
-    <script src="/static/data.js?v=20260819f"></script>
+    <script src="/static/data.js?v=20260819h"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-core.js?v=20260819f"></script>
     <script src="/static/app-vision.js?v=20260819b"></script>
@@ -367,7 +380,7 @@
     <script src="/static/app-disease.js?v=20260623a"></script>
     <script src="/static/calibration.js?v=20260819b"></script>
     <script src="/static/app-assess.js?v=20260819b"></script>
-    <script src="/static/app-visiontest.js?v=20260819g"></script>
+    <script src="/static/app-visiontest.js?v=20260819h"></script>
     <script src="/static/app-map.js?v=20260623a"></script>
 </body>
 </html>

@@ -247,8 +247,14 @@ function vtPaintCard() {
     document.getElementById('vt-pxmm').textContent =
         (vtCardPx / C.EDGE_MM[vtEdge]).toFixed(2);
 
+    const t2 = translations[state.lang];
     const th = document.getElementById('vt-touch-hint');
-    if (th) th.innerHTML = translations[state.lang].vt_touch_hint || '';
+    if (th) th.innerHTML = t2.vt_lock_hint || '';
+    const dg = document.getElementById('vt-dist-guide');
+    if (dg) dg.innerHTML = t2.vt_dist_guide || '';
+    const dt = document.getElementById('vt-dist-tol');
+    if (dt) dt.innerHTML = t2.vt_dist_tolerance || '';
+    vtUpdateLockButton();
 
     const hint = document.getElementById('vt-orient-hint');
     if (hint) {
@@ -305,6 +311,40 @@ function vtInstallGestureGuards() {
     document.addEventListener('touchmove', vtBlockGestures, { passive: false });
 }
 
+/** 사용자가 직접 켜고 끄는 화면 고정. 카드 놓을 자리까지 스크롤한 뒤 켜면 된다. */
+function vtToggleLock() {
+    vtLockViewport(!vtGestureLockActive);
+    vtUpdateLockButton();
+}
+
+function vtUpdateLockButton() {
+    const b = document.getElementById('vt-lock-btn');
+    if (!b) return;
+    const t = translations[state.lang];
+    b.textContent = vtGestureLockActive ? (t.vt_lock_on || '🔒') : (t.vt_lock_off || '🔓');
+    b.className = 'w-full mt-3 py-3 rounded-2xl font-bold text-[13px] btn-pop ' +
+        (vtGestureLockActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700');
+}
+
+/** 거리 드롭다운에서 '직접 입력'을 고르면 숫자 입력칸을 연다. */
+function vtOnDistChange() {
+    const sel = document.getElementById('vt-dist');
+    const custom = document.getElementById('vt-dist-custom');
+    if (custom) custom.classList.toggle('hidden', sel.value !== 'custom');
+    vtPaintCard();
+}
+
+/** 현재 선택된 보는 거리(mm). '직접 입력'이면 숫자 입력칸 값을 cm→mm로. */
+function vtCurrentDistanceMm() {
+    const sel = document.getElementById('vt-dist');
+    if (!sel) return 600;
+    if (sel.value === 'custom') {
+        const cm = parseFloat(document.getElementById('vt-dist-custom').value);
+        return (isFinite(cm) && cm >= 20 && cm <= 200) ? cm * 10 : 600;
+    }
+    return parseFloat(sel.value);
+}
+
 /** +/− 미세조정 — 카드를 화면에 댄 채로 크기를 바꿀 수 있게 한다. */
 function vtNudge(delta) {
     const sl = document.getElementById('vt-slider');
@@ -318,7 +358,8 @@ function vtNudge(delta) {
 function vtRefreshCalibrationUI() {
     if (!document.getElementById('vt-cardbox')) return;
     vtInstallGestureGuards();
-    vtLockViewport(true);
+    vtLockViewport(false);       // 기본은 해제 — 사용자가 카드 놓을 자리로 스크롤할 수 있어야 한다
+    vtUpdateLockButton();
     // 슬라이더 값이 새 상한을 넘으면 클램프
     vtPaintCard();
     const sl = document.getElementById('vt-slider');
@@ -334,7 +375,7 @@ window.addEventListener('resize', vtRefreshCalibrationUI);
 window.addEventListener('orientationchange', () => setTimeout(vtRefreshCalibrationUI, 200));
 
 function vtSaveCalibration() {
-    const dist = parseFloat(document.getElementById('vt-dist').value);
+    const dist = vtCurrentDistanceMm();
     const cal = window.ECCalib.saveCalibration(vtCardPx, dist, vtEdge);
     // 검증 막대 — 자로 재서 50mm면 보정이 맞다는 것을 사용자가 직접 확인
     document.getElementById('vt-verify').classList.remove('hidden');
@@ -348,7 +389,15 @@ function vtInitCalibrationUI() {
         vtEdge = existing.edge || 'long';
         vtCardPx = existing.matchedPx || existing.cardWidthPx;
         const d = document.getElementById('vt-dist');
-        if (d && existing.distanceMm) d.value = String(existing.distanceMm);
+        if (d && existing.distanceMm) {
+            const opt = [...d.options].find(o => o.value === String(existing.distanceMm));
+            if (opt) { d.value = opt.value; }
+            else {
+                d.value = 'custom';
+                const c = document.getElementById('vt-dist-custom');
+                if (c) { c.value = existing.distanceMm / 10; c.classList.remove('hidden'); }
+            }
+        }
     } else {
         vtEdge = window.ECCalib.suggestEdge(window.innerWidth);
     }

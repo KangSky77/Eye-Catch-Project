@@ -378,6 +378,8 @@ body {
 
 /* 카드를 화면에 올려두면 접촉이 터치로 잡혀 확대·스크롤이 일어난다.
    캘리브레이션 단계에서만 제스처를 끈다(다른 화면의 확대 기능은 그대로 둔다). */
+/* .vt-nozoom은 사용자가 '화면 고정'을 켰을 때만 붙는다.
+   기본 상태에서 스크롤까지 막으면 카드를 올려놓을 위치로 이동조차 못 한다. */
 .vt-nozoom { touch-action: none; -ms-touch-action: none; }
 .vt-nozoom * { touch-action: none; }
 .vt-nozoom input[type=range] { touch-action: pan-x; }   /* 슬라이더는 가로 드래그 허용 */
