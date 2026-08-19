@@ -14,7 +14,7 @@
     <meta name="twitter:description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단까지 한 번에 받아보세요.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
-    <link rel="stylesheet" href="/static/tailwind.css?v=20260819b">
+    <link rel="stylesheet" href="/static/tailwind.css?v=20260819c">
 
     <!-- 외부 CDN 자원에는 SRI(integrity)를 건다: CDN이 뚫리거나 버전 태그가 재배포돼
          내용이 바뀌면 브라우저가 로드를 거부한다. 의료 스크리닝 화면에 임의 스크립트가
@@ -29,7 +29,7 @@
           integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260819b">
+    <link rel="stylesheet" href="/static/style.css?v=20260819e">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -178,7 +178,8 @@
                 <button id="vt-edge-short" onclick="vtSetEdge('short')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_short">짧은 변 54.0mm</button>
             </div>
 
-            <div id="vt-cardbox" class="vt-cardbox"></div>
+            <p id="vt-orient-hint" class="text-[11px] text-slate-500 leading-relaxed mb-3"></p>
+            <div class="vt-cardwrap"><div id="vt-cardbox" class="vt-cardbox"></div></div>
             <input id="vt-slider" type="range" min="80" max="900" value="300" class="w-full my-3">
             <p class="text-center text-[12px] font-black text-slate-700 mb-3"><span id="vt-pxmm">—</span> px/mm</p>
 
@@ -350,16 +351,16 @@
         </div>
     </nav>
 
-    <script src="/static/data.js?v=20260819b"></script>
+    <script src="/static/data.js?v=20260819c"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260819b"></script>
+    <script src="/static/app-core.js?v=20260819c"></script>
     <script src="/static/app-vision.js?v=20260819b"></script>
     <script src="/static/app-chat.js?v=20260819b"></script>
     <script src="/static/app-report.js?v=20260819b"></script>
     <script src="/static/app-disease.js?v=20260623a"></script>
     <script src="/static/calibration.js?v=20260819b"></script>
     <script src="/static/app-assess.js?v=20260819b"></script>
-    <script src="/static/app-visiontest.js?v=20260819b"></script>
+    <script src="/static/app-visiontest.js?v=20260819e"></script>
     <script src="/static/app-map.js?v=20260623a"></script>
 </body>
 </html>

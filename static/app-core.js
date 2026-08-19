@@ -120,6 +120,10 @@ function showTab(tid) {
 
     // 지도 탭이 보일 때 Leaflet 크기 재계산 (숨겨진 동안 0px로 깨지는 것 방지)
     if (tid === 'tab-map' && typeof ensureMap === 'function') ensureMap();
+
+    // 시력검사 탭도 같은 이유 — 숨겨진 동안에는 부모 폭이 0이라 카드 크기를 계산할 수 없다.
+    // 이 호출이 없으면 카드가 폭 0으로 그려져 '파란 박스가 안 보이는' 상태가 된다.
+    if (tid === 'tab-vision' && typeof vtRefreshCalibrationUI === 'function') vtRefreshCalibrationUI();
 }
 
 function nextStep(sid) {

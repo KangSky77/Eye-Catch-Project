@@ -472,3 +472,29 @@ const riskQuestions = [
   { code: 'family',       key: 'q_family',       type: 'yesno', score: 2, labelKey: 'risk_family' },
   { code: 'smoking',      key: 'q_smoking',      type: 'yesno', score: 2, labelKey: 'risk_smoking' },
 ];
+
+// 카드 방향 안내 — 폰은 카드를 세워야 폭 54mm·높이 85.6mm가 모두 화면에 들어간다.
+Object.assign(translations.ko, {
+  vt_orient_portrait: "카드를 <b>세로로 세워</b> 화면에 대고, 파란 사각형을 카드와 똑같이 맞추세요.",
+  vt_orient_landscape: "카드를 <b>가로로 눕혀</b> 화면에 대고, 파란 사각형을 카드와 똑같이 맞추세요."
+});
+Object.assign(translations.en, {
+  vt_orient_portrait: "Hold the card <b>upright (portrait)</b> against the screen and match the blue rectangle to it.",
+  vt_orient_landscape: "Lay the card <b>sideways (landscape)</b> against the screen and match the blue rectangle to it."
+});
+Object.assign(translations.es, {
+  vt_orient_portrait: "Coloque la tarjeta <b>en vertical</b> sobre la pantalla y ajuste el rectángulo azul a ella.",
+  vt_orient_landscape: "Coloque la tarjeta <b>en horizontal</b> sobre la pantalla y ajuste el rectángulo azul a ella."
+});
+Object.assign(translations.fr, {
+  vt_orient_portrait: "Placez la carte <b>à la verticale</b> sur l'écran et ajustez le rectangle bleu à sa taille.",
+  vt_orient_landscape: "Placez la carte <b>à l'horizontale</b> sur l'écran et ajustez le rectangle bleu à sa taille."
+});
+Object.assign(translations.ja, {
+  vt_orient_portrait: "カードを<b>縦向き</b>に画面へ当て、青い四角をカードにぴったり合わせてください。",
+  vt_orient_landscape: "カードを<b>横向き</b>に画面へ当て、青い四角をカードにぴったり合わせてください。"
+});
+Object.assign(translations.zh, {
+  vt_orient_portrait: "将卡片<b>竖放</b>贴在屏幕上，把蓝色矩形调整到与卡片一致。",
+  vt_orient_landscape: "将卡片<b>横放</b>贴在屏幕上，把蓝色矩形调整到与卡片一致。"
+});

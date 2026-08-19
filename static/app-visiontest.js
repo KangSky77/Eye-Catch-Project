@@ -202,18 +202,57 @@ function vtPaintCard() {
     const C = window.ECCalib;
     const box = document.getElementById('vt-cardbox');
     if (!box) return;
-    const ratio = C.CARD_WIDTH_MM / C.CARD_HEIGHT_MM;
+
+    // 탭이 숨겨져 있으면(display:none) 부모 폭이 0이라 계산이 전부 망가진다.
+    // 이 상태로 그리면 카드 폭이 0이 되어 '파란 박스가 안 보이는' 버그가 된다.
+    // → 보이게 될 때(showTab) 다시 호출되므로 여기서는 조용히 건너뛴다.
     const avail = box.parentElement.clientWidth;
-    // 짧은 변 모드에서는 카드 전체 폭이 폰 화면을 넘으므로 잘라 표시한다
-    let w = vtEdge === 'long' ? vtCardPx : vtCardPx * ratio;
-    const h = vtEdge === 'long' ? vtCardPx / ratio : vtCardPx;
-    if (w > avail) w = avail;
-    box.style.width = w + 'px';
-    box.style.height = h + 'px';
+    if (!avail) return;
+
+    const ratio = C.CARD_WIDTH_MM / C.CARD_HEIGHT_MM;   // 1.586
+
+    // 방향 선택의 핵심:
+    //   긴 변 모드  = 카드를 눕혀서(가로) 맞춘다. 폭이 85.6mm 필요 → 넓은 화면용.
+    //   짧은 변 모드 = 카드를 세워서(세로) 맞춘다. 폭 54mm · 높이 85.6mm 라
+    //                 폰 화면(보통 68~72mm)에 둘 다 들어간다. 잘라 보여줄 필요가 없다.
+    const w = vtEdge === 'long' ? vtCardPx : vtCardPx;              // 슬라이더가 곧 '맞추는 변'
+    const h = vtEdge === 'long' ? vtCardPx / ratio : vtCardPx * ratio;
+    box.style.width = Math.round(w) + 'px';
+    box.style.height = Math.round(h) + 'px';
+    box.dataset.orient = vtEdge === 'long' ? 'landscape' : 'portrait';
+    // 안전장치: 레이아웃이 카드를 축소/확대하면 px/mm가 어긋난다. 어긋나면 콘솔에 남긴다.
+    requestAnimationFrame(() => {
+        const actual = box.getBoundingClientRect().width;
+        const expect = vtEdge === 'long' ? vtCardPx : vtCardPx;
+        if (Math.abs(actual - expect) > 1.5) {
+            console.warn('[calib] 카드 렌더 폭 불일치 — px/mm가 부정확해집니다.', { expect, actual });
+        }
+    });
+
+    // 슬라이더 상한: 카드 전체가 화면 안에 들어오는 선까지.
+    // 상한이 '실제로 필요한 값'보다 낮으면 사용자가 카드를 못 맞춰 캘리브레이션 자체가 불가능해진다.
+    // 화면 폭이 좁은(=px/mm가 높은) 기기까지 커버하도록 넉넉히 잡는다:
+    //  - 좌우로 카드 컨테이너 패딩만큼(.vt-cardwrap 음수 마진) 더 쓴다
+    //  - 세로는 뷰포트의 72%까지 허용(스크롤되어도 맞추는 데 지장 없음)
+    // .vt-cardwrap이 음수 마진으로 이미 패딩을 되찾았으므로 avail에 그 폭이 포함돼 있다.
+    // 여기서 또 더하면 상한이 실제 가용폭을 넘어 flex가 카드를 축소시키고,
+    // 그러면 '계산한 폭'과 '실제 그려진 폭'이 달라져 px/mm가 조용히 틀어진다.
+    const maxByWidth = Math.min(avail, window.innerWidth - 8);
+    const maxByHeight = vtEdge === 'long'
+        ? window.innerHeight * 0.72 * ratio          // 가로 카드: 높이 = px/ratio
+        : window.innerHeight * 0.72 / ratio;         // 세로 카드: 높이 = px*ratio
     document.getElementById('vt-slider').max =
-        Math.max(80, Math.round(vtEdge === 'long' ? avail : window.innerHeight * 0.4));
+        Math.max(80, Math.round(Math.min(maxByWidth, maxByHeight)));
+
     document.getElementById('vt-pxmm').textContent =
         (vtCardPx / C.EDGE_MM[vtEdge]).toFixed(2);
+
+    const hint = document.getElementById('vt-orient-hint');
+    if (hint) {
+        const t = translations[state.lang];
+        hint.innerHTML = vtEdge === 'long'
+            ? (t.vt_orient_landscape || '') : (t.vt_orient_portrait || '');
+    }
 
     for (const e of ['long', 'short']) {
         const b = document.getElementById('vt-edge-' + e);
@@ -221,6 +260,23 @@ function vtPaintCard() {
             (e === vtEdge ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600');
     }
 }
+
+/** 탭이 보이게 되거나 화면이 회전하면 다시 그린다(숨김 상태에서는 폭이 0이라 계산 불가). */
+function vtRefreshCalibrationUI() {
+    if (!document.getElementById('vt-cardbox')) return;
+    // 슬라이더 값이 새 상한을 넘으면 클램프
+    vtPaintCard();
+    const sl = document.getElementById('vt-slider');
+    if (sl && vtCardPx > parseFloat(sl.max)) {
+        vtCardPx = parseFloat(sl.max);
+        sl.value = vtCardPx;
+        vtPaintCard();
+    } else if (sl) {
+        sl.value = vtCardPx;
+    }
+}
+window.addEventListener('resize', vtRefreshCalibrationUI);
+window.addEventListener('orientationchange', () => setTimeout(vtRefreshCalibrationUI, 200));
 
 function vtSaveCalibration() {
     const dist = parseFloat(document.getElementById('vt-dist').value);

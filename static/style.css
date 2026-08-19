@@ -363,3 +363,15 @@ body {
 .vt-cross { margin-top: 8px; font-size: 11px; font-weight: 700; line-height: 1.6;
             color: #065f46; background: #ecfdf5; border-radius: 12px; padding: 10px 12px; }
 @media (prefers-reduced-motion: reduce) { .vt-dir { transition: none; } }
+
+/* 카드 맞추기 영역 — 카드가 세로/가로 어느 방향이든 넘치지 않게 감싼다 */
+/* 좌우 음수 마진으로 카드 컨테이너 패딩을 되찾는다 — 화면이 좁은 기기에서
+   카드를 실물 크기까지 키울 수 있어야 캘리브레이션이 가능하다(app-visiontest.js의 BLEED와 짝) */
+.vt-cardwrap { display: flex; justify-content: center; margin-left: -24px; margin-right: -24px; }
+/* 맞춰야 할 모서리를 눈에 띄게: 흰 점선 테두리를 안쪽에 겹쳐 경계를 분명히 한다 */
+/* flex 컨테이너가 카드를 축소하면 계산한 px/mm와 실제 크기가 어긋난다 */
+.vt-cardbox { position: relative; flex-shrink: 0; }
+.vt-cardbox::before {
+  content: ''; position: absolute; inset: 3px; border: 1px dashed rgba(255,255,255,.65);
+  border-radius: 7px; pointer-events: none;
+}
