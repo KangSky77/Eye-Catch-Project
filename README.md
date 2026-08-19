@@ -67,7 +67,7 @@ ngrok http 8000
 ## 🏗️ 아키텍처
 
 ```
-Eye-Catch (C:\eye_catch_claude)
+Eye-Catch (C:\eye_catch)
 │
 ├── 🔙 백엔드 (FastAPI, Python)
 │   ├── app/
