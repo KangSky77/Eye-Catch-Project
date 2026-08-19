@@ -247,6 +247,9 @@ function vtPaintCard() {
     document.getElementById('vt-pxmm').textContent =
         (vtCardPx / C.EDGE_MM[vtEdge]).toFixed(2);
 
+    const th = document.getElementById('vt-touch-hint');
+    if (th) th.innerHTML = translations[state.lang].vt_touch_hint || '';
+
     const hint = document.getElementById('vt-orient-hint');
     if (hint) {
         const t = translations[state.lang];
@@ -261,9 +264,61 @@ function vtPaintCard() {
     }
 }
 
+// ------------------------------------------------------------------
+// 실물 카드를 화면에 올려두면 그 접촉이 터치로 인식돼 화면이 확대·스크롤된다.
+// 캘리브레이션 단계에서만 제스처를 잠그고, 벗어나면 반드시 되돌린다.
+// (확대를 앱 전체에서 영구히 끄면 저시력 사용자에게 해롭다 — 이 화면에서만 끈다)
+// ------------------------------------------------------------------
+const VT_VIEWPORT_DEFAULT = 'width=device-width, initial-scale=1.0';
+const VT_VIEWPORT_LOCKED =
+    'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no';
+
+function vtLockViewport(lock) {
+    vtGestureLockActive = !!lock;
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (meta) meta.setAttribute('content', lock ? VT_VIEWPORT_LOCKED : VT_VIEWPORT_DEFAULT);
+    const calib = document.getElementById('vt-calib');
+    // touch-action:none 이 표준 방식 — iOS는 user-scalable=no 를 무시하므로 이쪽이 실질 방어선
+    if (calib) calib.classList.toggle('vt-nozoom', !!lock);
+    document.body.classList.toggle('vt-noscroll', !!lock);
+}
+
+// 문서 레벨 핸들러는 한 번만 붙지만, 실제 차단은 '캘리브레이션 잠금 중'일 때만 한다.
+// 무조건 막으면 앱의 다른 화면(지도 확대 등)에서도 핀치가 죽어 접근성을 해친다.
+let vtGestureLockActive = false;
+
+/** 카드가 화면에 닿아 생기는 멀티터치 제스처(핀치 확대)를 막는다. */
+function vtBlockGestures(e) {
+    if (!vtGestureLockActive) return;
+    if (e.type === 'gesturestart' || (e.touches && e.touches.length > 1)) e.preventDefault();
+}
+
+function vtInstallGestureGuards() {
+    const calib = document.getElementById('vt-calib');
+    if (!calib || calib.dataset.guarded) return;
+    calib.dataset.guarded = '1';
+    // passive:false 여야 preventDefault가 먹는다
+    calib.addEventListener('touchmove', (e) => {
+        if (vtGestureLockActive) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('gesturestart', vtBlockGestures, { passive: false });   // iOS Safari
+    document.addEventListener('touchmove', vtBlockGestures, { passive: false });
+}
+
+/** +/− 미세조정 — 카드를 화면에 댄 채로 크기를 바꿀 수 있게 한다. */
+function vtNudge(delta) {
+    const sl = document.getElementById('vt-slider');
+    const next = Math.min(parseFloat(sl.max), Math.max(parseFloat(sl.min), vtCardPx + delta));
+    vtCardPx = next;
+    sl.value = next;
+    vtPaintCard();
+}
+
 /** 탭이 보이게 되거나 화면이 회전하면 다시 그린다(숨김 상태에서는 폭이 0이라 계산 불가). */
 function vtRefreshCalibrationUI() {
     if (!document.getElementById('vt-cardbox')) return;
+    vtInstallGestureGuards();
+    vtLockViewport(true);
     // 슬라이더 값이 새 상한을 넘으면 클램프
     vtPaintCard();
     const sl = document.getElementById('vt-slider');

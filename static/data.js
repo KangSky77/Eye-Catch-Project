@@ -498,3 +498,29 @@ Object.assign(translations.zh, {
   vt_orient_portrait: "将卡片<b>竖放</b>贴在屏幕上，把蓝色矩形调整到与卡片一致。",
   vt_orient_landscape: "将卡片<b>横放</b>贴在屏幕上，把蓝色矩形调整到与卡片一致。"
 });
+
+// 카드를 화면에 대면 그 접촉이 터치로 인식돼 화면이 확대/스크롤되는 문제 안내
+Object.assign(translations.ko, {
+  vt_touch_hint: "카드를 화면 <b>위쪽 가장자리</b>에 걸쳐 대고, 아래 <b>+/−</b> 버튼으로 크기를 맞추세요. 이 단계에서는 화면 확대·스크롤이 잠시 꺼집니다.",
+  vt_nudge_fine: "미세", vt_nudge_coarse: "크게"
+});
+Object.assign(translations.en, {
+  vt_touch_hint: "Rest the card along the <b>top edge</b> of the screen and use the <b>+/−</b> buttons below to size it. Pinch-zoom and scrolling are turned off during this step.",
+  vt_nudge_fine: "Fine", vt_nudge_coarse: "Coarse"
+});
+Object.assign(translations.es, {
+  vt_touch_hint: "Apoye la tarjeta en el <b>borde superior</b> de la pantalla y use los botones <b>+/−</b> para ajustar. El zoom y el desplazamiento se desactivan en este paso.",
+  vt_nudge_fine: "Fino", vt_nudge_coarse: "Grueso"
+});
+Object.assign(translations.fr, {
+  vt_touch_hint: "Posez la carte le long du <b>bord supérieur</b> de l'écran et utilisez les boutons <b>+/−</b> pour ajuster. Le zoom et le défilement sont désactivés à cette étape.",
+  vt_nudge_fine: "Fin", vt_nudge_coarse: "Large"
+});
+Object.assign(translations.ja, {
+  vt_touch_hint: "カードを画面の<b>上端</b>に沿えて置き、下の<b>+/−</b>ボタンでサイズを合わせてください。この手順では拡大・スクロールを一時的に無効化します。",
+  vt_nudge_fine: "微調整", vt_nudge_coarse: "粗調整"
+});
+Object.assign(translations.zh, {
+  vt_touch_hint: "把卡片贴在屏幕<b>上边缘</b>，用下方的<b>+/−</b>按钮调整大小。此步骤会暂时关闭缩放与滚动。",
+  vt_nudge_fine: "微调", vt_nudge_coarse: "粗调"
+});
