@@ -135,8 +135,40 @@ function renderEyeBreakdown(container, eyes) {
     container.appendChild(wrap);
 }
 
+// ------------------------------------------------------------------
+// 암슬러 격자 — 반드시 한쪽 눈씩 따로 본다.
+// 양안으로 보면 한쪽 눈의 결손을 반대쪽 눈이 메워버려 이상을 놓친다.
+// 실제 임상 프로토콜도 한눈 가리기 + 중심 응시가 기본이다.
+// ------------------------------------------------------------------
+function startAmslerStep() {
+    state.amslerEye = 'left';
+    state.amslerResult = {};
+    updateAmslerPrompt();
+    nextStep('step-amsler');
+}
+
+function updateAmslerPrompt() {
+    const t = translations[state.lang];
+    const el = document.getElementById('amsler-eye-instruction');
+    if (el) el.textContent = t['ams_which_' + state.amslerEye] || '';
+}
+
 function recordAmsler(bad) {
-    state.hasAmsler = bad; // 상태 업데이트
+    state.amslerResult[state.amslerEye] = bad;
+
+    if (state.amslerEye === 'left') {
+        state.amslerEye = 'right';
+        updateAmslerPrompt();
+        return;                       // 아직 반대쪽 눈이 남았다
+    }
+
+    const L = !!state.amslerResult.left, R = !!state.amslerResult.right;
+    state.hasAmsler = L || R;         // 한쪽이라도 이상이면 이상 소견
+    const t = translations[state.lang];
+    state.amslerLabel = (L && R) ? (t.ams_result_bad || '양쪽 이상')
+                      : L ? (t.ams_result_left || '왼쪽 눈 이상')
+                      : R ? (t.ams_result_right || '오른쪽 눈 이상')
+                          : (t.ams_result_both || '양쪽 정상');
     nextStep('step-chat');
     startChat();
 }

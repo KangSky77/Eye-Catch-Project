@@ -49,8 +49,17 @@ VARIANT_RE = re.compile(r"^(?:[a-z-]+:)+")
 
 
 def _looks_tailwind(cls: str) -> bool:
+    """접두사 매칭은 단어 경계를 지켜야 한다.
+    'border'로 단순 startswith를 하면 판정 코드 문자열 'borderline'까지 클래스로 오인한다.
+    → 접두사가 하이픈으로 끝나면 그대로, 아니면 '완전 일치' 또는 '접두사-'만 인정한다."""
     base = VARIANT_RE.sub("", cls)
-    return base.startswith(TW_PREFIXES)
+    for p in TW_PREFIXES:
+        if p.endswith("-"):
+            if base.startswith(p):
+                return True
+        elif base == p or base.startswith(p + "-"):
+            return True
+    return False
 
 
 def _selector_present(css: str, cls: str) -> bool:

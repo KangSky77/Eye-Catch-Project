@@ -11,12 +11,26 @@ async function finish() {
     document.getElementById('report-date').innerText = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ISSUED`;
 
     const cataractRes = state.aiResult || "-";
-    const amslerRes = state.hasAmsler ? translations[state.lang].res_ams_bad : translations[state.lang].res_ams_ok;
+    // 암슬러는 좌우를 따로 보므로 어느 쪽 눈인지까지 표기한다
+    const amslerRes = state.amslerLabel
+        || (state.hasAmsler ? translations[state.lang].res_ams_bad : translations[state.lang].res_ams_ok);
     const symptoms = state.chatSymptoms;
 
     document.getElementById('pdf-ai-result').innerText = cataractRes;
     document.getElementById('pdf-amsler-result').innerText = amslerRes;
     document.getElementById('pdf-chat-result').innerText = symptoms.length > 0 ? symptoms.join(", ") : translations[state.lang].res_chat_none;
+
+    // 행동 권고 — 등급이 아니라 '언제 병원에 가야 하는가'를 먼저 보여준다
+    const risk = computeRiskScore(state.riskAnswers || {});
+    state.triage = computeTriage({
+        cataractCode: state.aiResultCode,
+        amslerAbnormal: state.hasAmsler,
+        symptomCodes: state.symptomCodes,
+        riskScore: risk.score,
+        visionAsymmetric: state.visionTest && state.visionTest.asymmetric,
+    });
+    const triBox = document.getElementById('triage-box');
+    if (triBox) renderTriage(triBox, state.triage, risk.factors);
 
     showTab('tab-report');
 
@@ -85,17 +99,14 @@ async function finish() {
             });
         }
 
-        // 진단 결과 DB 저장 (백그라운드 — 실패해도 UX에 영향 없음)
-        fetch('/api/save-diagnosis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                cataract_result: cataractRes,
-                amsler_result: amslerRes,
-                chat_symptoms: symptoms,
-                gemma_opinion: opinionText ? opinionText.innerText : ''
-            })
-        }).catch(() => {}); // 저장 실패는 조용히 무시
+        // 진단 결과 DB 저장 — 건강정보는 민감정보라 '동의한 경우에만' 저장한다.
+        // 이전에는 사용자에게 묻지 않고 저장했다(개인정보보호법상 별도 동의 필요 항목).
+        requestSaveConsent({
+            cataract_result: cataractRes,
+            amsler_result: amslerRes,
+            chat_symptoms: symptoms,
+            gemma_opinion: opinionText ? opinionText.innerText : ''
+        });
 
     } catch (e) {
         stopOpinionLoader();

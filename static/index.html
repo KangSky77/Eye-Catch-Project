@@ -14,7 +14,7 @@
     <meta name="twitter:description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단까지 한 번에 받아보세요.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
-    <link rel="stylesheet" href="/static/tailwind.css?v=20260623a">
+    <link rel="stylesheet" href="/static/tailwind.css?v=20260819b">
 
     <!-- 외부 CDN 자원에는 SRI(integrity)를 건다: CDN이 뚫리거나 버전 태그가 재배포돼
          내용이 바뀌면 브라우저가 로드를 거부한다. 의료 스크리닝 화면에 임의 스크립트가
@@ -29,7 +29,7 @@
           integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260618b">
+    <link rel="stylesheet" href="/static/style.css?v=20260819b">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -45,6 +45,7 @@
             <div class="flex items-center gap-5">
                 <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
                     <div onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</div>
+                    <div onclick="showTab('tab-vision')" data-tab="tab-vision" data-i18n="nav_vision" class="nav-pill">시력 검사</div>
                     <div onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</div>
                     <div onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</div>
                     <div onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</div>
@@ -133,13 +134,14 @@
             <div class="glass-card p-8 rounded-[2rem] border border-blue-100">
                 <h2 class="text-2xl font-black mb-4 text-slate-800" data-i18n="ai_res_title">백내장 판별 결과</h2>
                 <div id="ai-result-display" class="p-5 bg-slate-50 rounded-2xl mb-8"></div>
-                <button onclick="nextStep('step-amsler')" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="next_amsler">황반변성 정밀 테스트</button>
+                <button onclick="startAmslerStep()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="next_amsler">황반변성 정밀 테스트</button>
             </div>
         </div>
 
         <div id="step-amsler" class="step-content text-center max-w-md mx-auto">
             <div class="glass-card p-8 rounded-[2rem]">
-                <h2 class="text-xl font-black mb-6" data-i18n="ams_title">황반변성 자가진단</h2>
+                <h2 class="text-xl font-black mb-2" data-i18n="ams_title">황반변성 자가진단</h2>
+                <p id="amsler-eye-instruction" class="text-[12px] font-bold text-blue-700 bg-blue-50 rounded-xl px-3 py-2 mb-5 leading-relaxed"></p>
                 <div id="amsler-box" class="amsler-grid mb-6"><div class="amsler-dot"></div></div>
                 <div class="space-y-3">
                     <button onclick="recordAmsler(false)" class="w-full py-3.5 bg-slate-100 text-slate-700 rounded-2xl font-bold btn-pop" data-i18n="ams_ok">정상 (곧게 보임)</button>
@@ -161,6 +163,73 @@
         </div>
     </main>
 
+    <!-- 시력 · 대비감도 자가검사 -->
+    <main id="tab-vision" class="tab-content max-w-md mx-auto px-4 py-12">
+        <h1 class="text-2xl font-black text-center mb-2 text-slate-800 tracking-tight" data-i18n="vt_title">시력 · 대비감도 자가검사</h1>
+        <p class="text-center text-slate-500 text-[13px] font-medium mb-8 leading-relaxed" data-i18n="vt_intro_desc">사진 분석은 겉으로 보이는 변화만 잡습니다.</p>
+
+        <!-- 1단계: 화면 캘리브레이션 -->
+        <div id="vt-calib" class="glass-card p-6 rounded-[2rem] mb-5">
+            <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="vt_calib_title">1단계 · 화면 크기 맞추기</p>
+            <p class="text-[12px] text-slate-500 leading-relaxed mb-4" data-i18n="vt_calib_desc">카드를 화면에 대고 사각형을 실물과 같은 크기로 맞추세요.</p>
+
+            <div class="flex gap-2 mb-3">
+                <button id="vt-edge-long" onclick="vtSetEdge('long')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_long">긴 변 85.6mm</button>
+                <button id="vt-edge-short" onclick="vtSetEdge('short')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_short">짧은 변 54.0mm</button>
+            </div>
+
+            <div id="vt-cardbox" class="vt-cardbox"></div>
+            <input id="vt-slider" type="range" min="80" max="900" value="300" class="w-full my-3">
+            <p class="text-center text-[12px] font-black text-slate-700 mb-3"><span id="vt-pxmm">—</span> px/mm</p>
+
+            <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="vt_dist_label">화면에서 눈까지 거리</label>
+            <select id="vt-dist" class="w-full bg-slate-50 border-none rounded-xl px-3 py-2.5 text-sm mb-4">
+                <option value="400">40 cm</option>
+                <option value="600" selected>60 cm</option>
+            </select>
+
+            <button onclick="vtSaveCalibration()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm" data-i18n="vt_calib_save">저장하고 계속</button>
+
+            <div id="vt-verify" class="hidden mt-4">
+                <p class="text-[11px] text-emerald-700 font-bold mb-2" data-i18n="vt_calib_verify">확인: 아래 막대가 자로 정확히 50mm면 보정이 맞습니다.</p>
+                <div id="vt-ruler" class="h-7 bg-emerald-500 rounded-md"></div>
+            </div>
+        </div>
+
+        <!-- 2단계: 시작 -->
+        <div id="vt-intro" class="glass-card p-6 rounded-[2rem] text-center mb-5">
+            <button onclick="vtStart()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="vt_start">검사 시작</button>
+        </div>
+
+        <!-- 눈 가리기 안내 -->
+        <div id="vt-eye-prompt" class="glass-card p-8 rounded-[2rem] text-center hidden">
+            <div class="text-5xl mb-4">🖐️</div>
+            <h2 id="vt-eye-instruction" class="text-lg font-black mb-2"></h2>
+            <p id="vt-eye-sub" class="text-[12px] text-slate-500 leading-relaxed mb-6"></p>
+            <button onclick="vtBeginStage()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm" data-i18n="vt_begin">준비됐어요</button>
+        </div>
+
+        <!-- 검사 화면 -->
+        <div id="vt-test-area" class="glass-card p-5 rounded-[2rem] text-center hidden">
+            <p id="vt-progress" class="text-[11px] font-black text-slate-400 mb-2"></p>
+            <canvas id="vt-canvas" class="vt-canvas"></canvas>
+            <p class="text-[12px] font-bold text-slate-600 mt-3 mb-3" data-i18n="vt_which_dir">E가 향하는 방향은?</p>
+            <div class="vt-pad">
+                <button onclick="vtAnswer('up')"    class="vt-dir" style="grid-area:u" aria-label="up">▲</button>
+                <button onclick="vtAnswer('left')"  class="vt-dir" style="grid-area:l" aria-label="left">◀</button>
+                <button onclick="vtAnswer('right')" class="vt-dir" style="grid-area:r" aria-label="right">▶</button>
+                <button onclick="vtAnswer('down')"  class="vt-dir" style="grid-area:d" aria-label="down">▼</button>
+            </div>
+        </div>
+
+        <!-- 결과 -->
+        <div id="vt-result" class="glass-card p-6 rounded-[2rem] hidden">
+            <p class="text-[10px] font-black text-blue-400 mb-3" data-i18n="vt_result_title">기능검사 결과</p>
+            <div id="vt-result-body"></div>
+            <button onclick="vtStart()" class="w-full mt-4 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm btn-pop" data-i18n="vt_redo">다시 검사</button>
+        </div>
+    </main>
+
     <main id="tab-disease" class="tab-content max-w-3xl mx-auto px-4 py-12">
         <h1 class="text-3xl font-black text-center mb-3 text-slate-800 tracking-tight" data-i18n="dis_main_title">4대 주요 안질환 안내</h1>
         <p class="text-center text-slate-500 text-sm font-medium mb-10" data-i18n="dis_card_hint">카드를 누르면 자세한 설명을 확인할 수 있어요.</p>
@@ -174,6 +243,7 @@
                 <p class="text-[10px] text-slate-400 font-bold mt-2" id="report-date"></p>
             </div>
             <div class="space-y-4" id="report-body">
+                <div id="triage-box"></div>
                 <div class="bg-blue-50 p-4 rounded-2xl">
                     <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="rep_l1">1. 백내장 AI 결과</p>
                     <p id="pdf-ai-result" class="font-black text-blue-800">-</p>
@@ -188,7 +258,7 @@
                 </div>
 
                 <div class="bg-gradient-to-tr from-indigo-50 to-blue-50 p-5 rounded-2xl border border-blue-100 mt-4">
-                    <p class="text-[10px] font-black text-indigo-400 mb-2" data-i18n="rep_l4">4. Gemma AI 맞춤 소견 ✨</p>
+                    <p class="text-[10px] font-black text-indigo-400 mb-2" data-i18n="rep_info_title">AI 참고 정보</p>
 
                     <div id="gemma-loading-container" class="mt-2">
                         <p id="gemma-loading-text" class="text-xs font-medium text-slate-400 leading-relaxed" data-i18n="gemma_idle">먼저 'AI 검사'를 진행하면 맞춤 소견이 여기에 표시됩니다.</p>
@@ -208,6 +278,7 @@
                 <p class="text-[11px] text-amber-800 font-bold leading-relaxed" data-i18n="rep_warn">본 리포트는 AI 자가진단 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.</p>
             </div>
 
+            <div id="consent-box" class="mt-5 hidden"></div>
             <div class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <p class="text-xs font-bold text-slate-400 mb-2" data-i18n="rep_followup_title">🤖 AI에게 더 궁금한 점 물어보기</p>
                 <div class="flex gap-2">
@@ -265,6 +336,9 @@
         <div onclick="showTab('tab-test')" data-tab="tab-test" class="bnav-item">
             <span class="text-2xl bnav-ico">💬</span><span class="text-[10px] font-bold" data-i18n="nav_test">AI 검사</span>
         </div>
+        <div onclick="showTab('tab-vision')" data-tab="tab-vision" class="bnav-item">
+            <span class="text-2xl bnav-ico">👁️</span><span class="text-[10px] font-bold" data-i18n="nav_vision">시력 검사</span>
+        </div>
         <div onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
             <span class="text-2xl bnav-ico">📖</span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 소개</span>
         </div>
@@ -276,13 +350,16 @@
         </div>
     </nav>
 
-    <script src="/static/data.js?v=20260819a"></script>
+    <script src="/static/data.js?v=20260819b"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260819a"></script>
-    <script src="/static/app-vision.js?v=20260702b"></script>
-    <script src="/static/app-chat.js?v=20260702a"></script>
-    <script src="/static/app-report.js?v=20260702a"></script>
+    <script src="/static/app-core.js?v=20260819b"></script>
+    <script src="/static/app-vision.js?v=20260819b"></script>
+    <script src="/static/app-chat.js?v=20260819b"></script>
+    <script src="/static/app-report.js?v=20260819b"></script>
     <script src="/static/app-disease.js?v=20260623a"></script>
+    <script src="/static/calibration.js?v=20260819b"></script>
+    <script src="/static/app-assess.js?v=20260819b"></script>
+    <script src="/static/app-visiontest.js?v=20260819b"></script>
     <script src="/static/app-map.js?v=20260623a"></script>
 </body>
 </html>

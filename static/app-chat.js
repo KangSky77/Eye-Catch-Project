@@ -12,8 +12,74 @@ function startChat() {
     state.symptomCodes = [];
     state.chatHistory = [];
     state.chatBusy = false;
+    // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
+    state.riskIdx = 0;
+    state.riskAnswers = {};
 
-    addMsg('bot', questions[state.lang][state.stepIdx].t);
+    askRiskQuestion();
+}
+
+// ------------------------------------------------------------------
+// 1단계: 위험요인 문진 (나이·당뇨·고혈압·가족력·흡연)
+// 선택지형(나이)과 예/아니오형이 섞여 있어 버튼을 질문마다 새로 그린다.
+// ------------------------------------------------------------------
+function askRiskQuestion() {
+    const q = riskQuestions[state.riskIdx];
+    const t = translations[state.lang];
+    addMsg('bot', t[q.key] || q.key);
+    if (q.type === 'choice') {
+        renderChatOptions(q.options.map(o => ({ label: t[o.key] || o.v, value: o.v })));
+    } else {
+        renderChatOptions([
+            { label: t.chat_yes, value: true },
+            { label: t.chat_no,  value: false },
+        ]);
+    }
+    state.chatBusy = false;
+}
+
+/** 답변 버튼을 질문에 맞게 다시 그린다. 선택지 개수가 달라지므로 매번 재생성. */
+function renderChatOptions(opts) {
+    const box = document.getElementById('chat-controls');
+    box.innerHTML = '';
+    box.className = 'p-4 bg-white/80 border-t flex flex-wrap gap-2 backdrop-blur-md';
+    opts.forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'flex-1 py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm btn-pop';
+        if (o.value === false) b.className = 'flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm btn-pop';
+        b.style.minWidth = '30%';
+        b.textContent = o.label;
+        b.onclick = () => handleAnswer(o.value, o.label);
+        box.appendChild(b);
+    });
+}
+
+/** 위험요인 구간과 증상 구간을 하나의 입구로 처리. */
+function handleAnswer(value, label) {
+    if (state.chatBusy) return;
+    if (state.riskIdx < riskQuestions.length) {
+        state.chatBusy = true;
+        const q = riskQuestions[state.riskIdx];
+        addMsg('user', label);
+        state.riskAnswers[q.code] = value;
+        state.chatHistory.push({ q: translations[state.lang][q.key] || q.key, a: label });
+        state.riskIdx++;
+        setTimeout(() => {
+            if (state.riskIdx < riskQuestions.length) {
+                askRiskQuestion();
+            } else {
+                // 증상 구간으로 — 예/아니오 버튼으로 되돌린다
+                renderChatOptions([
+                    { label: translations[state.lang].chat_yes, value: true },
+                    { label: translations[state.lang].chat_no,  value: false },
+                ]);
+                addMsg('bot', questions[state.lang][state.stepIdx].t);
+                state.chatBusy = false;
+            }
+        }, 500);
+        return;
+    }
+    handleChatAnswer(value === true);
 }
 
 function addMsg(sender, text) {
