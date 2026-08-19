@@ -71,11 +71,13 @@ def main():
         try:
             r = vision.predict_cataract(load_image(f))
             code, prob, mode = r["result_code"], r["probability"], r["mode"]
-        except Exception as e:
+        except Exception:
             code, prob, mode = "error", 0.0, "-"
         results.append((label, f, code, prob, mode))
+        # .get 폴백: 판정 코드가 새로 늘어나도(vision.py의 _classify 변경 등)
+        # 검증 도구가 KeyError로 죽지 않고 끝까지 돌게 한다.
         mark = {"risk": "[위험]", "borderline": "[경계]", "normal": "[정상]",
-                "invalid": "[거부]", "error": "[오류]"}[code]
+                "invalid": "[거부]", "error": "[오류]"}.get(code, f"[{code}]")
         print(f"{mark} {prob:5.1f}%  mode={mode:4s}  {f}")
 
     if not results:

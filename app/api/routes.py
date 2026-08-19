@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from app.services.vision import predict_cataract, validate_and_read_image
@@ -13,7 +13,12 @@ router = APIRouter()
 
 
 @router.get("/api/nearby-clinics")
-async def nearby_clinics(lat: float, lng: float):
+async def nearby_clinics(
+    # 좌표 범위를 스키마에서 막는다 — 범위 밖 값을 그대로 넘기면 카카오/Overpass에
+    # 무의미한 외부 요청만 나가고, 에러도 서드파티 쪽에서 뒤늦게 돌아온다.
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+):
     """현재 위치 주변 안과 검색 (카카오 로컬 REST API, 키 없으면 빈 목록)."""
     return await search_eye_clinics(lat, lng)
 

@@ -82,3 +82,24 @@ def test_generate_next_question(client, monkeypatch):
     monkeypatch.setattr(routes, "generate_next_question", fake)
     r = client.post("/api/generate-next-question", json={"cataract_res": "정상", "amsler_res": "정상"})
     assert r.json() == {"question": "야간 운전 시 빛 번짐이 있나요?"}
+
+
+@pytest.mark.parametrize("params", [
+    {"lat": 91, "lng": 127.0},      # 위도 상한 초과
+    {"lat": -91, "lng": 127.0},
+    {"lat": 37.5, "lng": 181},      # 경도 상한 초과
+    {"lat": 37.5, "lng": -181},
+])
+def test_nearby_clinics_좌표범위_밖은_422(client, params):
+    # 범위 밖 좌표를 그대로 통과시키면 카카오/Overpass로 무의미한 외부 요청이 나간다
+    r = client.get("/api/nearby-clinics", params=params)
+    assert r.status_code == 422
+
+
+def test_nearby_clinics_정상좌표는_서비스로_전달(client, monkeypatch):
+    async def fake(lat, lng):
+        return {"source": "none", "clinics": [], "reason": "no_key", "echo": [lat, lng]}
+    monkeypatch.setattr(routes, "search_eye_clinics", fake)
+    r = client.get("/api/nearby-clinics", params={"lat": 37.5, "lng": 127.0})
+    assert r.status_code == 200
+    assert r.json()["echo"] == [37.5, 127.0]

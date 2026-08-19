@@ -25,17 +25,28 @@ async def lifespan(app: FastAPI):
     load_trained_weights()
     logger.info("✅ AI 모델 로드 완료!")
 
+    # 백그라운드 워밍업 태스크는 반드시 참조를 붙들어 둔다 —
+    # 이벤트루프는 태스크에 강한 참조를 유지하지 않아서, 로컬 변수조차 없이 만들면
+    # 실행 도중 GC에 수거돼 워밍업이 조용히 사라질 수 있다(파이썬 공식 문서 경고).
+    warmup_tasks: set[asyncio.Task] = set()
+
+    def spawn(coro):
+        task = asyncio.create_task(coro)
+        warmup_tasks.add(task)
+        task.add_done_callback(warmup_tasks.discard)
+        return task
+
     # Gemma(Ollama) 모델 백그라운드 워밍업 — 첫 소견서 콜드스타트 제거
     # (서버 기동을 막지 않도록 백그라운드 태스크로 실행)
-    asyncio.create_task(warmup_ollama())
+    spawn(warmup_ollama())
     logger.info("🔥 Gemma 워밍업 시작(백그라운드)")
 
     # 눈 검증기 백그라운드 워밍업 — ImageNet 가중치 미리 로드(첫 분석 지연·런타임 실패 방지)
-    asyncio.create_task(run_in_threadpool(eye_validator.warmup))
+    spawn(run_in_threadpool(eye_validator.warmup))
 
     # MTCNN 얼굴 감지기 백그라운드 워밍업 (설치되어 있을 때만)
     if eye_detector.is_available():
-        asyncio.create_task(run_in_threadpool(eye_detector.warmup))
+        spawn(run_in_threadpool(eye_detector.warmup))
         logger.info("🔥 MTCNN 감지기 웜업 시작(백그라운드)")
 
 

@@ -56,9 +56,14 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
 
-    contents = await file.read()
+    # 파일 크기 제한 — '읽기 전에' 막는다.
+    # Starlette가 채워주는 file.size를 먼저 보고, 없으면 상한+1바이트만 읽어서 초과를 판정한다.
+    # (무인자 read()로 전부 읽은 뒤 검사하면, 거부할 업로드도 일단 통째로 메모리에 올라와
+    #  MAX_FILE_SIZE가 사실상 방어 역할을 못 한다.)
+    if file.size is not None and file.size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="파일 크기는 10MB 이하여야 합니다.")
 
-    # 파일 크기 제한 (10MB)
+    contents = await file.read(MAX_FILE_SIZE + 1)
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="파일 크기는 10MB 이하여야 합니다.")
 

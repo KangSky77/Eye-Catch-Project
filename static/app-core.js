@@ -84,6 +84,9 @@ function changeLanguage(lang) {
 function updateUI(lang) {
     state.lang = lang;
     localStorage.setItem('ec_lang', lang);   // 선택 언어 저장 → 새로고침/재방문 시 복원
+    // 문서 언어도 함께 바꾼다 — 스크린리더 발음, 브라우저 번역 제안, CJK 폰트 선택이
+    // 모두 이 속성을 본다. index.html에 lang="ko"로 박혀 있으면 6개국어가 전부 한국어로 읽힌다.
+    document.documentElement.lang = lang;
     document.getElementById('lang-selector').value = lang;
 
     document.querySelectorAll('[data-i18n]').forEach(el => {

@@ -85,9 +85,17 @@ def main():
     # 배치 크기: VRAM이 작은 노트북(6GB급)에서 다른 GPU 작업(추론 서버·Ollama)과
     # 겹치면 기본 64가 CUDA OOM을 낼 수 있어 조절 옵션 제공. 학습 GPU를 독점하면 64 권장.
     parser.add_argument("--batch", type=int, default=BATCH_SIZE)
+    # 메타데이터에 기록할 '학습 세대' 태그.
+    # 파일명(cataract_{backbone}_v4.pth)은 .env·README·배포가 이미 이 이름을 가리키고 있어
+    # 세대가 올라가도 그대로 덮어쓰는 운영 방식이다. 그래서 파일명만으로는 세대를 알 수 없고,
+    # 이 필드가 유일한 구분자다 — v4 시절 하드코딩 때문에 v5 재학습본이 "v4"로 기록되는
+    # 문제가 있었으므로 인자로 분리했다. 기본값은 현재 배포 세대.
+    parser.add_argument("--version", default="v5",
+                        help="메타데이터 version 필드에 기록할 세대 태그 (파일명은 _v4 고정)")
     args = parser.parse_args()
     backbone = args.backbone
     batch_size = args.batch
+    version_tag = args.version
 
     output_path = f"cataract_{backbone}_v4.pth"
     metadata_path = f"cataract_{backbone}_v4_metadata.json"
@@ -177,7 +185,7 @@ def main():
     with open(output_path, "rb") as f:
         weights_sha256 = hashlib.sha256(f.read()).hexdigest()
     metadata = {
-        "version": "v4",
+        "version": version_tag,
         "backbone": backbone,
         "params_millions": round(n_params, 1),
         "class_to_idx": base.class_to_idx,
@@ -205,7 +213,7 @@ def main():
     }
     with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(metadata, f, ensure_ascii=False, indent=2)
-    print(f"💾 메타데이터 저장: {metadata_path} (학습 {elapsed_min:.0f}분 소요)")
+    print(f"💾 메타데이터 저장: {metadata_path} (세대 {version_tag}, 학습 {elapsed_min:.0f}분 소요)")
 
 
 if __name__ == "__main__":

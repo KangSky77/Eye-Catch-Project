@@ -1,5 +1,5 @@
 {
-  "version": "v4",
+  "version": "v5",
   "backbone": "efficientnet_b0",
   "params_millions": 4.0,
   "class_to_idx": {

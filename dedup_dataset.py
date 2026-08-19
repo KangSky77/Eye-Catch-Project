@@ -48,7 +48,7 @@ def _hash_one(path: str):
         with Image.open(path) as img:
             h = imagehash.phash(img.convert("RGB"), hash_size=HASH_SIZE)
         return path, int(str(h), 16)
-    except Exception as e:
+    except Exception:
         return path, None
 
 

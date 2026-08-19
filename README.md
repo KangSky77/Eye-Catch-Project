@@ -5,7 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.11+-blue" />
   <img src="https://img.shields.io/badge/FastAPI-Latest-green" />
-  <img src="https://img.shields.io/badge/PyTorch-2.1+-red" />
+  <img src="https://img.shields.io/badge/PyTorch-2.12-red" />
   <img src="https://img.shields.io/badge/Languages-6-orange" />
 </p>
 
@@ -67,7 +67,7 @@ ngrok http 8000
 ## 🏗️ 아키텍처
 
 ```
-Eye-Catch (C:\eye_catch_claude)
+Eye-Catch (C:\eye_catch)
 │
 ├── 🔙 백엔드 (FastAPI, Python)
 │   ├── app/
@@ -87,6 +87,7 @@ Eye-Catch (C:\eye_catch_claude)
 │   ├── train_ai_v3.py           # 그룹 분할 + 라벨충돌 제외 + 불균형 보정 학습 스크립트
 │   ├── train_ai_v4.py           # 🆕 백본 비교 학습 (--backbone resnet18|efficientnet_b0)
 │   ├── validate_real_photos.py  # 🆕 실사진(폰 촬영)으로 배포 파이프라인 검증 (시연 전 필수)
+│   ├── smoke_eye_detect.py      # 사진 1장으로 얼굴→눈크롭→판정 경로 확인하는 수동 CLI
 │   ├── tests/                   # 🆕 pytest 자동 테스트 (수 초 완료, GPU·Ollama·DB 불필요)
 │   ├── requirements.txt          # 의존성 패키지
 │   └── dataset/                 # 이미지 데이터셋 (17,017장, 8,373개 근접중복 그룹 — 밝은 홍채 보강 포함)
@@ -94,12 +95,16 @@ Eye-Catch (C:\eye_catch_claude)
 │       └── 1_cataract/          # 백내장 1,823장
 │
 ├── 🎨 프론트엔드 (Vanilla JS + Tailwind CSS)
-│   ├── static/
-│   │   ├── index.html           # SPA 마크업
-│   │   ├── app.js               # 메인 로직 (i18n, 상태관리)
-│   │   ├── data.js              # 6개국어 번역 데이터
-│   │   └── style.css            # 커스텀 스타일
-│   └── .claude/launch.json      # VS Code 프리뷰 설정
+│   └── static/
+│       ├── index.html           # SPA 마크업
+│       ├── app-core.js          # 공통 기반 (state·i18n·스트림 리더·로더) — 항상 먼저 로드
+│       ├── app-vision.js        # 백내장 분석 요청/결과 렌더 (눈별·편측 표시)
+│       ├── app-chat.js          # 문진 챗봇 (고정 질문 + 동적 질문)
+│       ├── app-report.js        # 소견서 스트리밍 + PDF 생성
+│       ├── app-disease.js       # 질환 카드/모달
+│       ├── app-map.js           # Leaflet 지도 + 주변 안과 목록
+│       ├── data.js              # 6개국어 번역 + 문진 질문 + 질환 데이터
+│       └── style.css            # 커스텀 스타일
 │
 └── 📦 배포 & 설정
     ├── .env                     # 환경변수 (DB 비번, LLM 설정)
@@ -172,7 +177,7 @@ KAKAO_REST_KEY=
 ### 4️⃣ AI 모델 학습 (또는 사전학습 가중치 다운로드)
 ```bash
 python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
-python train_ai_v4.py --backbone efficientnet_b0 --batch 40   # → cataract_efficientnet_b0_v4.pth (현재 배포 모델)
+python train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # → cataract_efficientnet_b0_v4.pth (현재 배포 모델)
 python train_ai_v4.py --backbone resnet18          # (선택) 백본 비교용
 
 # --batch 40: 배포 중인 v5 모델과 동일 조건 (메타데이터 batch_size 기록과 일치).
@@ -220,6 +225,9 @@ Commons에서 밝은 홍채(청록·파랑·녹색) 정상 눈 사진 **201장**
 dedup 전수 비교 결과 201장 중 **196장이 기존 데이터와 겹치지 않는 신규 그룹**이라, 부족하던
 서브그룹을 실제로 늘린 것이 확인됐습니다. 배포 파일명은 `cataract_efficientnet_b0_v4.pth`
 그대로 덮어썼고, 보강 전 모델은 `cataract_efficientnet_b0_v4_preaug.pth`로 백업해뒀습니다.
+**파일명만으로는 세대를 알 수 없으므로**, 메타데이터 JSON의 `version` 필드가 유일한 구분자입니다
+(`train_ai_v4.py --version` 로 기록). 로컬 `.pth`가 그 메타데이터와 같은 학습본인지는
+`weights_sha256`으로 `pytest`가 대조합니다.
 
 **공정한 before/after 비교**: 보강 후 test 분할에 배정된 밝은 홍채 44장은 **두 모델 모두
 학습에 쓰지 않은** held-out입니다(보강 전 모델은 아예 못 봤고, 보강 후 모델은 test 분할이라
@@ -323,7 +331,7 @@ threshold는 test set을 보지 않고 validation에서만 고른 뒤(`choose_th
 재현하려면:
 ```bash
 python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
-python train_ai_v4.py --backbone efficientnet_b0 --batch 40   # 현재 배포 모델(v5) 재학습 — batch 40 동일 조건
+python train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # 현재 배포 모델(v5) 재학습 — batch 40 동일 조건
 ```
 >
 > 또한 비-눈 이미지 차단(OOD 검증, `eye_validator.py`)은 ImageNet 사전학습 ResNet18 가중치를 런타임에 받아옵니다. **서버를 처음 띄우는 환경(신규 배포·팀원 PC 등)에서는 최초 1회 인터넷 연결이 필요**하며, 실패하면 눈 클로즈업 분석이 503으로 막힙니다(의도된 fail-closed 동작).
@@ -361,7 +369,15 @@ python train_ai_v4.py --backbone efficientnet_b0 --batch 40   # 현재 배포 �
 
 | # | 출처 | 라이선스 | 판정 | 왜 그런가 |
 |---|---|---|---|---|
-| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 123장 외 | 🟢 안전 | 전부 자유 라이선스. **파일별 원저작자·라이선스·원본 링크를 [brightiris_attributions.csv](brightiris_attributions.csv)에 전수 기록** — CC BY(-SA) 조건인 출처 표기를 이 파일이 담당 |
+| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 124장, FAL·Copyrighted free use 5장, 미확정 1장 | 🟡 조건부 | 확인된 200장은 전부 자유 라이선스. **파일별 원저작자·라이선스·원본 링크를 [brightiris_attributions.csv](brightiris_attributions.csv)에 전수 기록** — CC BY(-SA) 조건인 출처 표기를 이 파일이 담당. 남은 1장은 아래 참고 |
+
+> ⚠️ **귀속 정보 보강(2026-08-19)**: Commons API로 전 파일을 재조회해, 비어 있던 항목을
+> 채웠습니다 — `see Commons`로 남아 있던 1장은 출처(File:Amber eye1.jpg, CC BY-SA 3.0)를 확정했고,
+> Artist 필드가 공란인 5장은 Commons 관례대로 업로더를 저작자로 기록하고 그 근거를 CSV의
+> 새 `notes` 열에 남겼습니다. **다만 `brightiris_commons_Hazel_eye1_p100.jpg` 1장은 원본 제목이
+> 기록되지 않아(`commons_Hazel`) 출처를 특정하지 못했습니다** — 이름이 비슷한 후보 두 개의
+> 저작자·라이선스가 서로 달라(PD vs CC BY-SA 3.0) 추정으로 적으면 안 되는 사례라, CSV에
+> `UNRESOLVED`로 표시했습니다. 재확인하거나 데이터셋에서 제외한 뒤 재학습하는 것이 원칙에 맞습니다.
 
 > ⚠️ **데이터 품질 수정 기록(2026-06-23)**: #8(nandanp6) 출처와 `dataset/1_cataract`를
 > phash로 대조하다가, 같은 사진(`img (175).png`, `img (246).png`)이 원본 출처에서는
@@ -378,14 +394,14 @@ python train_ai_v4.py --backbone efficientnet_b0 --batch 40   # 현재 배포 �
 
 ### 🔴 위험 등급 출처를 그대로 유지하기로 한 이유
 
-`1_cataract`(1,821장) 중 phash로 확인된 위험 등급(Unknown/© Original Authors) 출처 비중만
-최소 **338장(약 18.6%)** — #8 nandanp6 306장 + #10 akshayramakrishnan28 32장 (#5·#7은
+`1_cataract`(1,823장) 중 phash로 확인된 위험 등급(Unknown/© Original Authors) 출처 비중만
+최소 **338장(약 18.5%)** — #8 nandanp6 306장 + #10 akshayramakrishnan28 32장 (#5·#7은
 다운로드 전이라 미포함, 합치면 더 늘어날 수 있음). 전부 제거하는 방안도 검토했으나, 아래
 이유로 **그대로 유지하고 투명한 공개로 대응**하기로 결정했습니다:
 
 1. **대체할 데이터가 없습니다.** 공개된 백내장 안구 사진 데이터셋 대다수는 안저(망막)
    사진이라, 이 모델이 학습한 "눈 클로즈업(세극등 사진과 유사한 각도)" 형식과 맞지 않습니다.
-   백내장은 소수 클래스(1,821장)라 여기서 18%+를 더 빼면 데이터가 더 부족해집니다.
+   백내장은 소수 클래스(1,823장)라 여기서 18%+를 더 빼면 데이터가 더 부족해집니다.
 2. **재배포 리스크가 원천적으로 낮습니다.** 원본 이미지·가중치 파일은 `.gitignore`로
    GitHub에 올라간 적이 없고, 공개 데모(ngrok)도 "확률" 숫자만 돌려줄 뿐 이미지 자체를
    배포하지 않습니다.
@@ -497,11 +513,31 @@ pytest        # tests/ 전체 — 수 초 안에 완료
 - 코드를 고치면 커밋 전에 한 번 돌려보세요 — 특히 vision.py·schemas·config 임계값을 만질 때.
 
 ### VS Code 프리뷰
-```bash
-# .claude/launch.json이 이미 설정됨
-# F5 또는 Run → "eye-catch-api" 선택
-# → 포트 8001에서 프리뷰 서버 실행
+`.claude/`는 개인 환경 설정이라 `.gitignore` 대상 — **클론하면 이 파일이 없습니다.**
+직접 만드세요(`runtimeExecutable`의 파이썬 경로는 본인 가상환경에 맞게 수정):
+```jsonc
+// .claude/launch.json
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "eye-catch-api",
+      "runtimeExecutable": "C:\\eye_catch\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0",
+                      "--port", "8001", "--reload", "--reload-dir", "app", "--reload-dir", "static"],
+      "port": 8001
+    }
+  ]
+}
 ```
+만든 뒤 F5 또는 Run → "eye-catch-api" 선택 → 포트 8001에서 프리뷰 서버 실행.
+
+### 수동 스모크 테스트 (사진 1장)
+```bash
+python smoke_eye_detect.py <사진경로>   # 얼굴사진 → mode=face / 눈 클로즈업 → mode=eye
+```
+가중치·MTCNN이 실제로 붙어 있는지 눈으로 확인하는 CLI입니다. 파일명이 `test_`로 시작하지
+않는 이유는 pytest가 수집하면 import 시점의 `SystemExit`로 스위트 전체가 죽기 때문입니다.
 
 ### 프론트엔드 수정 후 캐시 무효화
 - 각 수정마다 `static/index.html`의 `?v=` 버전을 올립니다

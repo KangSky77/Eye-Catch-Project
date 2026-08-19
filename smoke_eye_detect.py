@@ -1,9 +1,13 @@
 """
 얼굴→눈 크롭→백내장 분석 파이프라인 스모크 테스트
 사용법:
-    .venv\\Scripts\\python.exe test_eye_detect.py <사진경로>
+    .venv\\Scripts\\python.exe smoke_eye_detect.py <사진경로>
 얼굴 사진을 주면 mode=face / eyes_detected=2 가 나와야 하고,
 눈 클로즈업을 주면 mode=eye 로 기존 경로가 동작해야 합니다.
+
+⚠️ 파일명이 `test_*.py`가 아닌 이유: 이 스크립트는 import 시점에 인자를 읽고
+   SystemExit를 던지는 CLI라, pytest가 수집하면 INTERNALERROR로 스위트 전체가
+   죽는다(`pytest .` 처럼 경로를 넘겨 실행하는 경우). 자동 테스트는 tests/ 참고.
 """
 import sys
 from PIL import Image, ImageOps
@@ -12,7 +16,7 @@ from app.services import eye_detector
 from app.services.vision import load_trained_weights, predict_cataract
 
 if len(sys.argv) < 2:
-    raise SystemExit("사용법: python test_eye_detect.py <사진경로>")
+    raise SystemExit("사용법: python smoke_eye_detect.py <사진경로>")
 
 print(f"MTCNN 사용 가능: {eye_detector.is_available()}")
 loaded = load_trained_weights()

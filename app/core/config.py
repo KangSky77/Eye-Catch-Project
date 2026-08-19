@@ -6,8 +6,12 @@ class Settings(BaseSettings):
     db_user: str = "postgres"
     db_password: str = ""  # .env에서 읽어옴
     db_port: int = 5432
-    model_path: str = "cataract_resnet18_v3.pth"  # train_ai_v3.py가 생성하는 그룹분할 재학습 가중치
-    model_backbone: str = "resnet18"   # 가중치와 짝이 맞아야 함 (resnet18 | efficientnet_b0)
+    # 현재 배포 모델 = EfficientNet-B0 v5(밝은 홍채 보강). v5는 v4 파일명을 그대로
+    # 덮어쓰는 운영 방식이라 경로에 _v4가 남아 있다(README "모델 성능" 참고).
+    # .env가 없는 새 클론도 배포 모델을 그대로 쓰도록 기본값을 여기에 맞춘다 —
+    # 기본값이 구세대(v3)면 학습↔서빙 일관성 테스트가 엉뚱한 메타데이터를 검증하게 된다.
+    model_path: str = "cataract_efficientnet_b0_v4.pth"
+    model_backbone: str = "efficientnet_b0"   # 가중치와 짝이 맞아야 함 (resnet18 | efficientnet_b0)
     ollama_url: str = "http://localhost:11434/api/generate"
     ollama_model: str = "gemma4:e4b-it-qat"
     ollama_timeout_seconds: float = 120.0

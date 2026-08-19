@@ -15,10 +15,20 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
     <link rel="stylesheet" href="/static/tailwind.css?v=20260623a">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- 외부 CDN 자원에는 SRI(integrity)를 건다: CDN이 뚫리거나 버전 태그가 재배포돼
+         내용이 바뀌면 브라우저가 로드를 거부한다. 의료 스크리닝 화면에 임의 스크립트가
+         주입되는 경로를 차단하는 것이 목적.
+         해시는 버전을 올릴 때 반드시 다시 계산할 것:
+           curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css"
+          integrity="sha384-NdgPecIXlJ1xLScMhFLAVlgsGwMyEtMulH/8RBcjhZxL82ZFWGXdUJNJduricI5y" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+            integrity="sha384-Yv5O+t3uE3hunW8uyrbpPW3iw6/5/Y7HitWJBLgqfMoA36NogMmy+8wWZMpn3HWc" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="/static/style.css?v=20260618b">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
@@ -187,6 +197,17 @@
                     <p id="gemma-opinion-text" class="text-xs font-bold text-slate-700 leading-relaxed italic hidden"></p>
                 </div>
             </div>
+
+            <!-- 의료 면책 고지: PDF 푸터(pdf_footer)에만 있고 화면에는 없던 것을 맞춤.
+                 자가진단 보조 도구라는 사실은 PDF를 내려받지 않는 사용자도 봐야 한다.
+                 ⚠️ 클래스는 반드시 static/tailwind.css(빌드 산출물)에 이미 있는 것만 쓸 것 —
+                 node_modules가 저장소에 없어 재빌드가 어렵고, 없는 유틸리티는 조용히 무시된다.
+                 (mt-5·mt-0.5·leading-none이 실제로 그렇게 죽어서 mt-6/text-sm으로 교체함) -->
+            <div class="mt-6 flex items-start gap-2 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl">
+                <span class="text-sm">⚠️</span>
+                <p class="text-[11px] text-amber-800 font-bold leading-relaxed" data-i18n="rep_warn">본 리포트는 AI 자가진단 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.</p>
+            </div>
+
             <div class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <p class="text-xs font-bold text-slate-400 mb-2" data-i18n="rep_followup_title">🤖 AI에게 더 궁금한 점 물어보기</p>
                 <div class="flex gap-2">
@@ -255,9 +276,9 @@
         </div>
     </nav>
 
-    <script src="/static/data.js?v=20260702a"></script>
+    <script src="/static/data.js?v=20260819a"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260702a"></script>
+    <script src="/static/app-core.js?v=20260819a"></script>
     <script src="/static/app-vision.js?v=20260702b"></script>
     <script src="/static/app-chat.js?v=20260702a"></script>
     <script src="/static/app-report.js?v=20260702a"></script>

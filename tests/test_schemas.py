@@ -50,3 +50,21 @@ def test_저장요청_증상목록_상한():
             cataract_result="정상", amsler_result="정상",
             chat_symptoms=["s"] * 31,       # max_length=30
         )
+
+
+def test_증상_항목별_길이_상한():
+    # 리스트 길이(30개)만 막으면 '거대한 항목 30개'가 그대로 LLM 프롬프트·DB로 흘러간다.
+    # 항목 하나하나에도 상한이 걸려 있어야 함.
+    GemmaRequest(cataract_res="정상", amsler_res="정상", chat_symptoms=["x" * 100])  # 상한값은 통과
+    with pytest.raises(ValidationError):
+        GemmaRequest(cataract_res="정상", amsler_res="정상", chat_symptoms=["x" * 101])
+    with pytest.raises(ValidationError):
+        SaveDiagnosisRequest(cataract_result="정상", amsler_result="정상",
+                             chat_symptoms=["x" * 101])
+
+
+def test_증상코드_항목별_길이_상한():
+    # symptom_codes는 'glaucoma' 같은 언어 중립 키라 더 짧은 상한
+    GemmaRequest(cataract_res="정상", amsler_res="정상", symptom_codes=["c" * 20])
+    with pytest.raises(ValidationError):
+        GemmaRequest(cataract_res="정상", amsler_res="정상", symptom_codes=["c" * 21])
