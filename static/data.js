@@ -759,3 +759,85 @@ Object.assign(translations.zh, {
   tri_urgent_why: "这些信号可能需要急诊处理。急性青光眼或视网膜病变，数小时就可能决定视力结局。夜间或周末请前往急诊。",
   survey_progress: "{c} / {n}"
 });
+
+// ==========================================================================
+// (1) 전문 용어에 짧은 설명 덧붙이기
+//     용어 자체는 유지한다 — 사용자가 안과에서 그 말을 들었을 때 알아들어야 하므로.
+//     대신 괄호로 "그게 뭔지"를 붙여 지금 답할 수 있게 한다.
+// (2) 보는 거리: 준비물 없는 '팔 뻗은 거리'를 기본값으로
+//     A4를 찾아와야 한다면 '간편한 자가검사'라는 전제가 깨진다.
+//     거리 10% 오차 = 시력 0.04 logMAR(시력표 반 줄 미만)이므로 팔 길이로 충분하다.
+//     정밀하게 재고 싶은 사람을 위해 A4·카드 방법은 '선택'으로 남긴다.
+// ==========================================================================
+Object.assign(translations.ko, {
+  q_gla_iop: "안과에서 '안압이 높다'는 말을 들은 적이 있나요? (안압 = 눈 속의 압력. 건강검진 안과 항목에서도 잽니다)",
+  q_gla_myopia: "고도근시인가요? (안경 도수 -6.00 이상. 안경을 벗으면 팔 뻗은 거리의 손가락도 흐릿한 정도예요)",
+  q_dr_fundus: "최근 1년 안에 안저 검사를 받으셨나요? (안저 = 눈 안쪽 망막. 눈에 약을 넣어 동공을 키우고 들여다보는 검사입니다)",
+  q_dr_floaters: "눈앞에 검은 점이나 실오라기 같은 것(비문증)이 갑자기 많아졌나요?",
+  q_rf_acute: "최근 눈이 심하게 아프면서 두통·구역질이 나고, 불빛 주위에 무지개 같은 테가 보인 적이 있나요?",
+  vt_dist_label: "화면에서 눈까지 거리",
+  dist_arm: "팔 뻗은 거리 (약 60cm) · 준비물 없음",
+  vt_dist_how: "더 정확히 재고 싶다면 (선택)",
+  vt_dist_guide: "<b>그냥 팔을 쭉 뻗은 거리면 충분합니다.</b> 준비물이 필요 없고, 아래 설명처럼 오차가 결과를 크게 바꾸지 않아요.<br><br>더 정확히 재고 싶다면, 캘리브레이션에 쓴 <b>카드 긴 변이 8.56cm</b>이고 <b>A4 긴 변이 29.7cm</b>입니다.<br>· <b>60cm</b> = A4 긴 변 <b>2번</b> (59.4cm)<br>· <b>40cm</b> = A4 긴 변 <b>1번</b> + 카드 <b>1.2번</b>",
+  vt_dist_tolerance: "거리가 10% 틀려도 시력 오차는 0.04 logMAR — <b>시력표 반 줄도 안 됩니다</b>. 대비감도는 이보다 더 둔감하고, <b>이 앱에서 가장 신뢰도 높은 지표인 좌우 눈 비교는 거리와 아예 무관합니다</b>."
+});
+Object.assign(translations.en, {
+  q_gla_iop: "Has an eye doctor ever told you your eye pressure was high? (Eye pressure = the fluid pressure inside your eye, measured at routine eye exams)",
+  q_gla_myopia: "Are you highly myopic? (Glasses stronger than -6.00 — without them, even your fingers at arm's length look blurry)",
+  q_dr_fundus: "Have you had a fundus exam within the last year? (Fundus = the retina at the back of the eye; drops widen the pupil so the doctor can look inside)",
+  q_dr_floaters: "Has the number of dark spots or thread-like floaters in your vision suddenly increased?",
+  q_rf_acute: "Have you recently had severe eye pain with headache or nausea, and seen rainbow-like rings around lights?",
+  vt_dist_label: "Distance from screen to your eyes",
+  dist_arm: "Arm's length (about 60cm) · nothing needed",
+  vt_dist_how: "Want to measure it more precisely? (optional)",
+  vt_dist_guide: "<b>Just holding it at arm's length is enough.</b> Nothing to fetch, and as explained below the error barely changes the result.<br><br>If you want more precision: the card you calibrated with is <b>8.56cm</b> on its long edge and A4 paper is <b>29.7cm</b>.<br>· <b>60cm</b> = A4 long edge <b>×2</b> (59.4cm)<br>· <b>40cm</b> = A4 <b>×1</b> + card <b>×1.2</b>",
+  vt_dist_tolerance: "A 10% distance error shifts acuity by only 0.04 logMAR — <b>less than half a line</b> on an eye chart. Contrast sensitivity is even less sensitive, and <b>the left/right comparison — this app's most reliable signal — doesn't depend on distance at all</b>."
+});
+Object.assign(translations.es, {
+  q_gla_iop: "¿Le han dicho que tiene la presión ocular alta? (Presión ocular = la presión del líquido dentro del ojo, se mide en revisiones)",
+  q_gla_myopia: "¿Tiene miopía alta? (Graduación superior a -6,00 — sin gafas, ni los dedos con el brazo extendido se ven nítidos)",
+  q_dr_fundus: "¿Se ha hecho un examen de fondo de ojo en el último año? (Fondo de ojo = la retina; con gotas se dilata la pupila para mirar dentro)",
+  q_dr_floaters: "¿Han aumentado de golpe los puntos oscuros o filamentos (moscas volantes)?",
+  q_rf_acute: "¿Ha tenido dolor ocular intenso con dolor de cabeza o náuseas, y halos como un arcoíris alrededor de las luces?",
+  vt_dist_label: "Distancia de la pantalla a sus ojos",
+  dist_arm: "Con el brazo extendido (unos 60cm) · sin preparativos",
+  vt_dist_how: "¿Quiere medirlo con más precisión? (opcional)",
+  vt_dist_guide: "<b>Con el brazo extendido basta.</b> No hace falta nada más y, como se explica abajo, el error apenas cambia el resultado.<br><br>Si quiere más precisión: la tarjeta mide <b>8,56cm</b> de lado largo y un A4 <b>29,7cm</b>.<br>· <b>60cm</b> = A4 <b>×2</b> (59,4cm)<br>· <b>40cm</b> = A4 <b>×1</b> + tarjeta <b>×1,2</b>",
+  vt_dist_tolerance: "Un error del 10% cambia la agudeza solo 0,04 logMAR — <b>menos de media línea</b>. La sensibilidad al contraste es aún menos sensible, y <b>la comparación entre ojos, la señal más fiable de esta app, no depende de la distancia</b>."
+});
+Object.assign(translations.fr, {
+  q_gla_iop: "Un ophtalmologiste vous a-t-il dit que votre tension oculaire était élevée ? (Tension oculaire = la pression du liquide dans l'œil, mesurée lors des examens)",
+  q_gla_myopia: "Êtes-vous fortement myope ? (Correction au-delà de -6,00 — sans lunettes, même vos doigts à bout de bras sont flous)",
+  q_dr_fundus: "Avez-vous eu un examen du fond d'œil cette dernière année ? (Fond d'œil = la rétine ; des gouttes dilatent la pupille pour regarder à l'intérieur)",
+  q_dr_floaters: "Le nombre de points noirs ou filaments (corps flottants) a-t-il augmenté brusquement ?",
+  q_rf_acute: "Avez-vous eu une douleur oculaire intense avec maux de tête ou nausées, et des halos comme un arc-en-ciel autour des lumières ?",
+  vt_dist_label: "Distance entre l'écran et vos yeux",
+  dist_arm: "À bout de bras (environ 60cm) · rien à préparer",
+  vt_dist_how: "Mesurer plus précisément ? (facultatif)",
+  vt_dist_guide: "<b>À bout de bras, cela suffit.</b> Rien à aller chercher, et comme expliqué ci-dessous l'erreur ne change presque rien.<br><br>Pour plus de précision : la carte fait <b>8,56cm</b> de grand côté et un A4 <b>29,7cm</b>.<br>· <b>60cm</b> = A4 <b>×2</b> (59,4cm)<br>· <b>40cm</b> = A4 <b>×1</b> + carte <b>×1,2</b>",
+  vt_dist_tolerance: "Une erreur de 10% ne décale l'acuité que de 0,04 logMAR — <b>moins d'une demi-ligne</b>. La sensibilité au contraste y est encore moins sensible, et <b>la comparaison entre les deux yeux, le signal le plus fiable de cette app, ne dépend pas de la distance</b>."
+});
+Object.assign(translations.ja, {
+  q_gla_iop: "眼科で「眼圧が高い」と言われたことがありますか？（眼圧＝目の中の圧力。健診の眼科項目でも測ります）",
+  q_gla_myopia: "強度近視ですか？（度数 -6.00 以上。眼鏡を外すと腕を伸ばした先の指もぼやける程度です）",
+  q_dr_fundus: "この1年以内に眼底検査を受けましたか？（眼底＝目の奥の網膜。目薬で瞳孔を広げて中を見る検査です）",
+  q_dr_floaters: "黒い点や糸くずのようなもの（飛蚊症）が急に増えましたか？",
+  q_rf_acute: "最近、強い目の痛みと頭痛・吐き気があり、光の周りに虹のような輪が見えたことはありますか？",
+  vt_dist_label: "画面から目までの距離",
+  dist_arm: "腕を伸ばした距離（約60cm）・準備物なし",
+  vt_dist_how: "もっと正確に測りたい場合（任意）",
+  vt_dist_guide: "<b>腕を伸ばした距離で十分です。</b>準備物は要らず、下の説明のとおり誤差は結果をほとんど変えません。<br><br>より正確に測るなら、キャリブレーションに使ったカードの長辺が<b>8.56cm</b>、A4の長辺が<b>29.7cm</b>です。<br>· <b>60cm</b> = A4長辺<b>2回</b>(59.4cm)<br>· <b>40cm</b> = A4<b>1回</b> + カード<b>1.2回</b>",
+  vt_dist_tolerance: "距離が10%ずれても視力の誤差は0.04 logMAR — <b>視力表の半行未満</b>です。コントラスト感度はさらに鈍感で、<b>このアプリで最も信頼できる指標である左右差は距離と無関係</b>です。"
+});
+Object.assign(translations.zh, {
+  q_gla_iop: "眼科医生是否说过您的眼压偏高？（眼压＝眼球内部的压力，体检的眼科项目也会测）",
+  q_gla_myopia: "您是高度近视吗？（度数超过 -6.00，不戴眼镜时连伸直手臂的手指都看不清）",
+  q_dr_fundus: "最近一年内做过眼底检查吗？（眼底＝眼球后部的视网膜，需滴药水散瞳后查看）",
+  q_dr_floaters: "眼前的黑点或丝状物（飞蚊症）是否突然增多？",
+  q_rf_acute: "最近是否有剧烈眼痛伴头痛、恶心，并在灯光周围看到彩虹样的光圈？",
+  vt_dist_label: "屏幕到眼睛的距离",
+  dist_arm: "手臂伸直的距离（约60cm）· 无需准备",
+  vt_dist_how: "想量得更准确？（可选）",
+  vt_dist_guide: "<b>手臂伸直的距离就够了。</b>无需任何准备，且如下所述误差几乎不改变结果。<br><br>若想更准确：校准用的卡片长边<b>8.56cm</b>，A4纸长边<b>29.7cm</b>。<br>· <b>60cm</b> = A4长边<b>×2</b>(59.4cm)<br>· <b>40cm</b> = A4<b>×1</b> + 卡片<b>×1.2</b>",
+  vt_dist_tolerance: "距离偏差10%时视力误差仅0.04 logMAR — <b>不到视力表半行</b>。对比敏感度更不敏感，而<b>本应用最可靠的指标——左右眼比较——与距离完全无关</b>。"
+});
