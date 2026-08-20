@@ -406,3 +406,9 @@ button.nav-pill:focus-visible, button.bnav-item:focus-visible,
 button.disease-card:focus-visible, .dm-close:focus-visible {
   outline: 3px solid #3b53d6; outline-offset: 2px; border-radius: 12px;
 }
+
+/* 지도 타일을 못 받는 환경(오프라인)에서 빈 회색 화면 대신 안내를 보여준다 */
+.map-offline { display: flex; flex-direction: column; align-items: center; justify-content: center;
+               gap: 10px; height: 100%; padding: 24px; text-align: center; background: #f1f5f9; }
+.map-offline-ico { font-size: 40px; opacity: .5; }
+.map-offline p { margin: 0; font-size: 12.5px; font-weight: 700; color: #64748b; line-height: 1.6; max-width: 34ch; }

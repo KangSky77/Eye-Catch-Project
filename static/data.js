@@ -966,3 +966,11 @@ Object.assign(translations.zh, {
   gate_desc: "在AI检查标签完成照片分析与问诊后，结果报告将显示在这里。",
   gate_go: "开始检查"
 });
+
+// 지도 타일을 못 받는 환경(발표장 오프라인 등) 안내 — 다른 기능은 정상 동작한다
+Object.assign(translations.ko, { map_offline: "지도를 불러올 수 없습니다. 인터넷 연결을 확인해주세요. AI 검사·문진·리포트·PDF는 정상 동작합니다.", map_offline_short: "지도 오프라인" });
+Object.assign(translations.en, { map_offline: "The map could not be loaded. Check your internet connection. The screening, questionnaire, report and PDF all still work.", map_offline_short: "Map offline" });
+Object.assign(translations.es, { map_offline: "No se pudo cargar el mapa. Revise su conexión. El análisis, el cuestionario, el informe y el PDF siguen funcionando.", map_offline_short: "Mapa sin conexión" });
+Object.assign(translations.fr, { map_offline: "La carte n'a pas pu être chargée. Vérifiez votre connexion. Le dépistage, le questionnaire, le rapport et le PDF fonctionnent toujours.", map_offline_short: "Carte hors ligne" });
+Object.assign(translations.ja, { map_offline: "地図を読み込めませんでした。インターネット接続をご確認ください。AI検査・問診・レポート・PDFは正常に動作します。", map_offline_short: "地図オフライン" });
+Object.assign(translations.zh, { map_offline: "无法加载地图。请检查网络连接。AI检查、问诊、报告和PDF均可正常使用。", map_offline_short: "地图离线" });

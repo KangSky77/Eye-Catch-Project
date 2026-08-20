@@ -536,6 +536,22 @@ pytest        # tests/ 전체 — 수 초 안에 완료
   LLM 오류 마커·폴백 체인, RAG 검색, **학습↔서빙 전처리 일관성**(모델 메타데이터 교차검증).
 - 코드를 고치면 커밋 전에 한 번 돌려보세요 — 특히 vision.py·schemas·config 임계값을 만질 때.
 
+### 오프라인 동작 (발표장 대비)
+발표장 인터넷이 끊겨도 **AI 검사·문진·리포트·PDF는 그대로 동작**합니다. 외부 CDN에 의존하던
+핵심 자원을 `static/vendor/`로 번들했기 때문입니다.
+
+| 자원 | 원본 | 로컬 |
+|---|---|---|
+| 글꼴 | Pretendard v1.3.8 (SIL OFL) | 가변 폰트 1개 (2.0MB) — 정적 5종 3.8MB를 대체 |
+| PDF | html2pdf.js 0.10.1 | 885KB |
+| 지도 | Leaflet 1.9.4 + 마커 이미지 | 160KB |
+
+- `index.html`에는 **외부 URL이 하나도 없습니다**(`tests/test_static_assets.py`가 회귀를 막습니다).
+- 지도 **타일**은 성격상 번들할 수 없습니다(전 세계 이미지). 오프라인이면 빈 회색 화면 대신
+  안내 문구로 대체되고, 나머지 기능은 영향을 받지 않습니다.
+- 로컬 파일에는 SRI `integrity`를 쓰지 않습니다 — 같은 출처에서 서빙되므로 불필요합니다.
+  (CDN으로 되돌릴 경우 해시를 다시 계산해야 합니다)
+
 ### CI (GitHub Actions)
 `.github/workflows/tests.yml` — push(master)·PR마다 pytest를 자동 실행합니다. GPU가 없는
 러너라 torch는 CPU wheel을 쓰고(테스트는 추론을 전부 모킹), 나머지는 `requirements-base.txt`의

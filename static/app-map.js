@@ -8,13 +8,47 @@ let _map = null, _userMarker = null, _clinicLayer = null;
 
 function ensureMap() {
     if (_map) { _map.invalidateSize(); return _map; }
+
+    // 마커 아이콘 경로를 명시 — Leaflet은 기본적으로 스크립트 URL에서 images/ 위치를
+    // 추론하는데, 로컬 번들 경로에서는 추론이 빗나가 마커가 안 보일 수 있다.
+    if (L.Icon && L.Icon.Default) L.Icon.Default.imagePath = '/static/vendor/leaflet/images/';
+
     _map = L.map('leaflet-map', { zoomControl: true }).setView(DEFAULT_CENTER, 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19, attribution: '© OpenStreetMap'
-    }).addTo(_map);
+    });
+    // 지도 '타일'은 성격상 로컬 번들에 넣을 수 없다(전 세계 이미지).
+    // 오프라인이면 빈 회색 화면이 남는데, 그걸 방치하면 앱이 고장난 것처럼 보인다.
+    // → 타일 로드 실패를 감지해 안내로 대체한다. 나머지 기능(검사·문진·리포트·PDF)은 영향 없음.
+    let tileFailed = false;
+    tiles.on('tileerror', () => {
+        if (tileFailed) return;
+        tileFailed = true;
+        showMapOffline();
+    });
+    tiles.addTo(_map);
     _clinicLayer = L.layerGroup().addTo(_map);
     setTimeout(() => _map.invalidateSize(), 200);   // 숨겨진 탭 init 보정
     return _map;
+}
+
+/** 타일을 못 받아오는 환경(오프라인·발표장 네트워크)에서 지도를 안내로 대체. */
+function showMapOffline() {
+    const box = document.getElementById('leaflet-map');
+    const t = translations[state.lang];
+    if (!box) return;
+    box.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'map-offline';
+    const icon = document.createElement('div');
+    icon.className = 'map-offline-ico';
+    icon.textContent = '🗺️';
+    const msg = document.createElement('p');
+    msg.textContent = t.map_offline || '지도를 불러올 수 없습니다. 인터넷 연결을 확인해주세요. 나머지 검사 기능은 정상 동작합니다.';
+    wrap.appendChild(icon); wrap.appendChild(msg);
+    box.appendChild(wrap);
+    const status = document.getElementById('map-status');
+    if (status) status.innerText = t.map_offline_short || '지도 오프라인';
 }
 
 function haversine(aLat, aLng, bLat, bLng) {

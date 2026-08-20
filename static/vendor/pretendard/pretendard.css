@@ -1,0 +1,18 @@
+/*
+ * Pretendard 가변 폰트 (로컬 번들)
+ * Copyright (c) 2021 Kil Hyung-jin — SIL Open Font License 1.1
+ * https://github.com/orioncactus/pretendard
+ *
+ * 왜 로컬에 두는가: 발표장 인터넷이 끊겨도 화면이 그대로 나와야 한다.
+ * 왜 가변 폰트인가: 앱이 쓰는 weight가 400·500·700·800·900로 5종인데,
+ *   정적 파일로 받으면 5개 x 약 770KB = 약 3.8MB다. 가변 폰트는 2MB 하나로
+ *   100~900 전 구간을 커버한다.
+ */
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 100 900;              /* 가변 축 — 이 한 줄이 9개 @font-face를 대체 */
+  font-style: normal;
+  font-display: swap;
+  src: local('Pretendard Variable'),
+       url('./PretendardVariable.woff2') format('woff2-variations');
+}

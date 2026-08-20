@@ -129,3 +129,38 @@ def test_html이_참조하는_정적파일이_실제로_존재():
         if bad:
             missing[html_file.name] = bad
     assert not missing, f"참조하는 정적 파일이 없습니다: {missing}"
+
+
+def test_index_html에_외부_CDN_의존이_없다():
+    """발표장 인터넷이 끊겨도 화면·PDF가 나와야 한다.
+
+    핵심 자원(글꼴·html2pdf·Leaflet)은 static/vendor로 번들했다.
+    누군가 다시 CDN 링크를 넣으면 여기서 잡는다.
+    (지도 '타일'은 성격상 번들 불가 — app-map.js가 오프라인이면 안내로 대체한다)
+    """
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    external = re.findall(r'(?:src|href)="(https?://[^"]+)"', html)
+    assert not external, f"index.html이 외부 자원을 참조합니다: {external}"
+
+
+def test_로컬_번들_자원이_실제로_존재한다():
+    required = [
+        "vendor/html2pdf.bundle.min.js",
+        "vendor/leaflet/leaflet.js",
+        "vendor/leaflet/leaflet.css",
+        "vendor/leaflet/images/marker-icon.png",
+        "vendor/leaflet/images/marker-shadow.png",
+        "vendor/pretendard/pretendard.css",
+        "vendor/pretendard/PretendardVariable.woff2",
+    ]
+    missing = [r for r in required if not (STATIC / r).exists()]
+    assert not missing, f"로컬 번들 자원 누락: {missing}"
+
+
+def test_로컬_pretendard_css가_번들된_폰트를_가리킨다():
+    css = (STATIC / "vendor" / "pretendard" / "pretendard.css").read_text(encoding="utf-8")
+    urls = re.findall(r"url\('([^']+)'\)", css)
+    assert urls, "폰트 url이 없습니다"
+    for u in urls:
+        assert not u.startswith("http"), f"외부 폰트를 가리킵니다: {u}"
+        assert (STATIC / "vendor" / "pretendard" / u.lstrip("./")).exists(), f"폰트 파일 없음: {u}"
