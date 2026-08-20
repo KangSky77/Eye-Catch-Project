@@ -4,6 +4,7 @@ import asyncio
 import httpx
 from app.core.config import settings
 from app.services import knowledge
+from app.services import safety
 
 logger = logging.getLogger(__name__)
 
@@ -30,52 +31,63 @@ def _lang_name(lang: str) -> str:
 
 def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang: str,
                           reference: str = "", eye_asymmetric: bool = False) -> str:
+    """생활 관리 조언용 프롬프트.
+
+    이 프롬프트는 의도적으로 '검사 결과 해석'을 시키지 않는다. 편측(eye_asymmetric)을
+    포함한 모든 의학적 해석은 프론트가 코드로 결정론적으로 생성한다(app-findings.js).
+    LLM에게 해석을 맡겼더니 실제로 "암슬러가 정상이므로 녹내장 가능성이 낮다" 같은
+    문장을 만들어냈기 때문이다. 인자는 호출부 호환을 위해 남기되 프롬프트에 넣지 않는다."""
     symptom_text = ", ".join(symptoms) if symptoms else "없음" if lang == "ko" else "None"
     lang_name = _lang_name(lang)
     reference_block = f"\n{reference}\n" if reference else ""
     if lang == "ko":
-        asym_line = ("\n- 양쪽 눈의 백내장 위험도가 다릅니다(편측). 어느 쪽 눈이 더 위험한지 짚고, "
-                     "한쪽 눈에만 진행된 백내장일 가능성과 양안 비교 검진의 필요성을 언급하세요."
-                     if eye_asymmetric else "")
-        return f"""당신은 경험 많은 안과 전문의의 조수 AI 'Eye-Catch'입니다.
-[가장 중요] 답변 전체를 반드시 {lang_name}로만 작성하세요. (Write your ENTIRE response ONLY in {lang_name}.)
-다음 검사 결과를 바탕으로 환자에게 줄 맞춤형 소견서를 작성해주세요.
-[검사 결과]
+        return f"""당신은 안과 검진을 앞둔 분에게 생활 관리 조언을 드리는 도우미입니다.
+[가장 중요] 답변 전체를 반드시 {lang_name}로만 작성하세요.
+
+[이미 확정된 검사 요약 — 참고만 하고 절대 재해석하지 마세요]
 1. 백내장 AI 판독: {cataract}
 2. 황반변성 자가진단(암슬러 격자): {amsler}
-3. 문진 의심 소견: {symptom_text}
-{reference_block}[작성 가이드라인]
-- 환자분이라고 부르며 시작하세요.
-- 위 [참고 의학 정보]에 담긴 검사명·위험요인·관리법에 근거해 전문적으로 설명하되, 참고 정보에 없는 내용은 지어내지 마세요.
-- 위 검사 결과의 수치와 소견을 소견서 본문에 직접 인용하면서, 항목별로 그것이 '무엇을 의미하는지' 구체적으로 해석해주세요.
-  (예: 백내장 확률이 높다면 수정체 혼탁 가능성과 그로 인한 증상, 암슬러 격자 이상이면 황반부 문제 가능성, 시야 좁아짐 응답이면 녹내장과의 연관성 등){asym_line}
-- 소견들의 시급성을 구분해주세요: 빠른 시일 내 진료가 필요한 항목과, 경과 관찰해도 되는 항목.
-- 안과에 가면 받게 될 검사를 1~2개 구체적으로 언급해 마음의 준비를 돕세요. (예: 세극등 현미경 검사, 안저 검사, 안압 측정, OCT 등 결과와 관련된 것)
-- 마지막에 이 환자의 소견과 직접 관련된 생활 관리 조언을 1~2개만 덧붙이세요.
-- "눈은 소중하니 잘 관리하세요" 같은 뻔한 일반론과 인사치레는 금지합니다. 모든 문장이 이 환자의 결과에 근거해야 합니다.
-- 6~9문장으로 작성하세요. 의료적 확정 진단처럼 말하지 말고 '~가능성', '~의심' 수준으로 표현하세요.
-- 마크다운 문법(**, ##, 목록 기호)을 쓰지 말고 자연스러운 평문 문단으로 작성하세요.""".strip()
-    else:
-        asym_line = ("\n- Left and right eye cataract risk levels differ (asymmetric). Mention which eye is at higher risk, "
-                     "explain the possibility of unilateral cataract, and suggest a bilateral comparative examination."
-                     if eye_asymmetric else "")
-        return f"""You are 'Eye-Catch', an expert assistant to an ophthalmologist.
-[CRITICAL] Write your entire response ONLY in {lang_name}. Do NOT use English or other languages.
+3. 문진에서 확인된 항목: {symptom_text}
+{reference_block}[절대 금지 — 어기면 답변이 폐기됩니다]
+- 검사 결과를 해석하거나 의미를 설명하지 마세요. 해석은 이미 앱이 따로 제공합니다.
+- 어떤 질환의 가능성이 '높다/낮다'고 말하지 마세요. 특히 '가능성이 낮다', '안심하셔도 된다'는 금지입니다.
+  (선별검사는 질환을 배제할 수 없습니다)
+- 숫자나 퍼센트를 쓰지 마세요. '확률'이라는 단어도 쓰지 마세요.
+- 한 문장에서 서로 다른 질환을 연결짓지 마세요. (예: 암슬러 결과로 녹내장을 논하는 것)
+- 진단하지 마세요.
 
-Based on the following test results, write a personalized screening opinion for the patient.
-[Screening Results]
+[해야 할 일]
+- 환자분이라고 부르며 짧게 시작하세요.
+- 위 [참고 의학 정보]에 근거해, 안과에 가면 받게 될 검사를 1~2개 소개해 마음의 준비를 돕세요.
+  (예: 세극등 현미경 검사, 안저 검사, 안압 측정, OCT)
+- 문진에서 확인된 항목과 관련된 생활 관리 조언을 2~3개 구체적으로 알려주세요.
+  (자외선 차단, 금연, 혈당·혈압 관리, 눈 휴식, 정기 검진 등 참고 정보에 있는 것)
+- "눈은 소중합니다" 같은 뻔한 일반론은 쓰지 마세요.
+- 4~6문장, 마크다운 없이 자연스러운 평문으로 작성하세요.""".strip()
+    else:
+        return f"""You help someone prepare for an eye clinic visit with practical lifestyle advice.
+[CRITICAL] Write your entire response ONLY in {lang_name}.
+
+[Already-finalized screening summary — for context only. Do NOT reinterpret it.]
 1. Cataract AI analysis: {cataract}
-2. Macular Degeneration (Amsler Grid): {amsler}
-3. Patient survey symptoms: {symptom_text}
-{reference_block}[Guidelines]
-- Start naturally with a polite, patient-facing greeting in {lang_name}.
-- Base your advice strictly on the provided [Reference Medical Information] if available. Do not make up any medical facts or details that are not in the reference information.
-- Quote the specific findings/numbers from the [Screening Results] in your text, and explain what they mean for the patient's eye health. (e.g. high cataract probability points to lens cloudiness, Amsler grid distortion implies macular issues, narrow field of vision implies glaucoma connection, etc.){asym_line}
-- Distinguish the urgency of findings: which items require prompt medical attention vs. those that can just be monitored.
-- Mention 1-2 specific clinical exams the patient might undergo at an ophthalmology clinic (e.g., Slit-lamp exam, OCT, intraocular pressure measurement, fundus exam) depending on their findings.
-- Conclude with 1-2 personalized lifestyle or management tips directly related to these findings.
-- Do not write generic advice like "eyes are precious, take care." Every sentence must relate to this patient's results.
-- Keep the length between 6 to 9 sentences. Write in natural paragraphs without markdown formatting like bolding (**) or headings (##).""".strip()
+2. Macular self-test (Amsler grid): {amsler}
+3. Items flagged in the questionnaire: {symptom_text}
+{reference_block}[STRICTLY FORBIDDEN — violations cause the answer to be discarded]
+- Do NOT interpret or explain what the results mean. The app already provides that separately.
+- Do NOT say any condition is likely or unlikely. Never say "low risk", "unlikely", or "no need to worry".
+  (A screening test cannot rule out disease.)
+- Do NOT use numbers or percentages. Do NOT use the word "probability".
+- Do NOT link two different conditions in one sentence (e.g. drawing a glaucoma conclusion from an Amsler result).
+- Do NOT diagnose.
+
+[What to do]
+- Start with a short, polite greeting in {lang_name}.
+- Based on the [Reference Medical Information], name 1-2 exams they may receive at the clinic
+  (e.g. slit-lamp exam, fundus exam, intraocular pressure measurement, OCT) so they know what to expect.
+- Give 2-3 concrete lifestyle tips related to the flagged questionnaire items
+  (UV protection, smoking cessation, blood sugar/pressure control, eye rest, regular check-ups).
+- Avoid generic filler like "eyes are precious".
+- 4-6 sentences, plain prose, no markdown.""".strip()
 
 
 def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = "") -> str:
@@ -90,7 +102,11 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
 - 위 [참고 의학 정보]가 있으면 그 내용에 근거해 정확히 답하고, 없는 사실은 지어내지 마세요.
 - 환자의 질문에 친절하고 구체적으로 답변하세요. "안내해 드릴 수 없다"는 식의 회피성 답변은 절대 하지 마세요.
 - 일반적인 눈 건강 관리 수칙은 적극적으로 알려주세요. (예: 자외선 차단 선글라스, 금연, 혈당·혈압 관리, 눈 휴식, 어두운 곳 독서 피하기, 정기 검진 등 질문과 관련된 것)
-- 단, 확정 진단·약 처방은 하지 말고, 정확한 진단을 위해 안과 방문도 함께 권하세요.
+- 단, 확정 진단·약 처방은 하지 마세요.
+- 어떤 질환의 가능성이 '낮다'거나 '안심해도 된다'고 말하지 마세요. 선별검사는 질환을 배제할 수 없습니다.
+- 숫자·퍼센트·'확률'이라는 표현을 쓰지 마세요.
+- 한 문장에서 서로 다른 질환을 연결짓지 마세요.
+- 정확한 진단을 위해 안과 방문을 함께 권하세요.
 - 마크다운 문법(**, ##, 번호 목록 기호)을 쓰지 말고 자연스러운 평문 문장으로 3~6문장 작성하세요.
 환자 질문: {user_msg}""".strip()
     else:
@@ -103,7 +119,11 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
 - If [Reference Medical Information] is provided, base your answer strictly on those facts. Do not make up any facts or details that are not in the reference information.
 - Answer the patient's question kindly, professionally, and directly. Do not use evasive phrases like "I cannot help with this."
 - Actively share general eye health care tips related to the question (e.g., UV sunglasses, smoking cessation, blood sugar/pressure management, resting eyes, avoiding reading in the dark, regular eye checks).
-- Do not provide a final medical diagnosis or prescribe medications. Suggest visiting an ophthalmologist for a formal diagnosis.
+- Do not provide a final medical diagnosis or prescribe medications.
+- Never say a condition is unlikely or that there is no need to worry — a screening test cannot rule out disease.
+- Do not use numbers, percentages, or the word "probability".
+- Do not link two different conditions in a single sentence.
+- Suggest visiting an ophthalmologist for a formal diagnosis.
 - Keep the length between 3 to 6 sentences. Write in natural paragraphs without markdown formatting like bolding (**) or headings (##).
 Patient Question: {user_msg}""".strip()
 
@@ -187,6 +207,50 @@ async def stream_with_keepalive(prompt: str):
     finally:
         task.cancel()
 
+async def sanitized_stream(prompt: str):
+    """스트림을 문장 단위로 버퍼링해 안전 필터를 통과한 문장만 내보낸다.
+
+    왜 문장 단위인가: 토큰을 그대로 흘리면 위험한 문장이 화면에 찍힌 뒤에야 걸러낼 수 있다.
+    반대로 전체를 다 받고 검사하면 스트리밍의 이점이 사라진다. 문장이 끝나는 순간에
+    검사해서 통과한 것만 내보내면 둘 다 지킬 수 있다.
+
+    하트비트와 오류 마커는 검사 대상이 아니므로 그대로 통과시킨다.
+    """
+    buf = ""
+    dropped: list[str] = []
+    async for chunk in stream_with_keepalive(prompt):
+        if chunk == KEEPALIVE:
+            yield chunk                     # 연결 유지용 — 내용이 아니다
+            continue
+        if chunk.startswith(ERROR_MARKER):
+            yield chunk
+            return
+        buf += chunk
+        # 완성된 문장이 생길 때마다 검사해서 내보낸다
+        while True:
+            m = safety._SENT_SPLIT.search(buf)
+            if not m:
+                break
+            sentence, buf = buf[:m.end()], buf[m.end():]
+            why = safety.check_sentence(sentence.strip())
+            if why:
+                dropped.append(why)
+                logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, sentence.strip()[:120])
+            else:
+                yield sentence
+    # 마지막 문장(종결부호 없이 끝난 경우)
+    tail = buf.strip()
+    if tail:
+        why = safety.check_sentence(tail)
+        if why:
+            dropped.append(why)
+            logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, tail[:120])
+        else:
+            yield tail
+    if dropped:
+        logger.warning("⚠️  LLM 안전 필터 제거 %d문장 (사유: %s)", len(dropped), ", ".join(sorted(set(dropped))))
+
+
 async def generate_ollama(prompt: str) -> str:
     async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
         response = await client.post(settings.ollama_url, json=_ollama_payload(prompt, stream=False))
@@ -214,7 +278,8 @@ async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[st
     )
     prompt = _build_opinion_prompt(cataract, amsler, symptoms, lang, reference, eye_asymmetric)
     try:
-        async for chunk in stream_with_keepalive(prompt): yield chunk
+        # 안전 필터 경유 — 해석·확률·배제·질환 교차 문장은 화면에 닿기 전에 제거된다
+        async for chunk in sanitized_stream(prompt): yield chunk
     except Exception:
         logger.error("⚠️  소견서 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"
@@ -223,7 +288,8 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko"):
     # RAG: 질문 키워드로 관련 참고지식을 검색해 주입
     reference = knowledge.format_reference(knowledge.retrieve_for_chat(user_msg))
     try:
-        async for chunk in stream_with_keepalive(_build_chat_prompt(user_msg, context, lang, reference)): yield chunk
+        # 자유 질문은 소견서보다 더 자유롭게 흘러가므로 필터가 더 중요하다
+        async for chunk in sanitized_stream(_build_chat_prompt(user_msg, context, lang, reference)): yield chunk
     except Exception:
         logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"

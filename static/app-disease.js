@@ -23,7 +23,8 @@ function renderDiseases(lang) {
         // 백내장(idx 0)만 실제 이미지 AI 분석 대상이라 배지를 표시합니다.
         const badge = idx === 0
             ? `<span class="dc-badge">✨ ${aiBadge}</span>` : '';
-        return `<div class="disease-card" onclick="openDisease(${idx})" style="--accent:${th.accent};--soft:${th.soft}">
+        // div가 아니라 button — 키보드(Tab/Enter)로도 열 수 있어야 한다
+        return `<button type="button" class="disease-card" onclick="openDisease(${idx})" style="--accent:${th.accent};--soft:${th.soft}">
             <div class="dc-head">
                 <span class="dc-ico">${item.i}</span>
                 <div class="dc-head-text">
@@ -33,7 +34,7 @@ function renderDiseases(lang) {
             </div>
             <p>${item.d}</p>
             <p class="dc-more">${moreLabel}</p>
-        </div>`;
+        </button>`;
     }).join('');
 }
 
@@ -66,11 +67,26 @@ function openDisease(idx) {
     detail.appendChild(p);
     detail.appendChild(noteDiv);
 
-    document.getElementById('disease-modal').classList.add('show');
+    const modal = document.getElementById('disease-modal');
+    modal.classList.add('show');
+    // 포커스를 모달 안으로 옮기고, 닫을 때 원래 요소로 되돌린다.
+    // 이게 없으면 스크린리더·키보드 사용자는 모달이 열린 것도 모르고 뒤 배경을 계속 훑는다.
+    _dmLastFocus = document.activeElement;
+    const closeBtn = modal.querySelector('.dm-close');
+    if (closeBtn) closeBtn.focus();
+    document.addEventListener('keydown', _dmEscHandler);
+}
+
+let _dmLastFocus = null;
+function _dmEscHandler(e) {
+    if (e.key === 'Escape') closeDisease();
 }
 
 function closeDisease(e) {
     // 오버레이 배경 클릭 또는 닫기 버튼(인자 없음)일 때만 닫기
     if (e && e.target && e.target.id !== 'disease-modal') return;
     document.getElementById('disease-modal').classList.remove('show');
+    document.removeEventListener('keydown', _dmEscHandler);
+    if (_dmLastFocus && _dmLastFocus.focus) _dmLastFocus.focus();
+    _dmLastFocus = null;
 }

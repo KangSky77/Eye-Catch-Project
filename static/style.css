@@ -390,3 +390,19 @@ body.vt-noscroll { overscroll-behavior: none; }
                 font-variant-numeric: tabular-nums; touch-action: manipulation; }
 .vt-nudge-btn:active { background: #dbe4ff; transform: scale(.95); }
 .vt-nudge-btn:focus-visible { outline: 3px solid #3b53d6; outline-offset: 2px; }
+
+
+/* 접근성: 네비·질환카드를 div에서 button으로 바꿨다(키보드 접근).
+   버튼 기본 스타일(배경·테두리·정렬)을 지워 기존 디자인을 그대로 유지한다. */
+button.nav-pill, button.bnav-item, button.disease-card {
+  appearance: none; -webkit-appearance: none;
+  background: none; border: none; font: inherit; color: inherit;
+  text-align: inherit; width: auto;
+}
+button.disease-card { width: 100%; text-align: left; cursor: pointer; }
+button.bnav-item { cursor: pointer; }
+/* 키보드 포커스는 반드시 눈에 보여야 한다 */
+button.nav-pill:focus-visible, button.bnav-item:focus-visible,
+button.disease-card:focus-visible, .dm-close:focus-visible {
+  outline: 3px solid #3b53d6; outline-offset: 2px; border-radius: 12px;
+}

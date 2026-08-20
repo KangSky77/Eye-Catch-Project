@@ -14,7 +14,7 @@
     <meta name="twitter:description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단까지 한 번에 받아보세요.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
-    <link rel="stylesheet" href="/static/tailwind.css?v=20260819i">
+    <link rel="stylesheet" href="/static/tailwind.css?v=20260820a">
 
     <!-- 외부 CDN 자원에는 SRI(integrity)를 건다: CDN이 뚫리거나 버전 태그가 재배포돼
          내용이 바뀌면 브라우저가 로드를 거부한다. 의료 스크리닝 화면에 임의 스크립트가
@@ -29,7 +29,7 @@
           integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260819h">
+    <link rel="stylesheet" href="/static/style.css?v=20260820a">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -44,14 +44,14 @@
 
             <div class="flex items-center gap-5">
                 <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
-                    <div onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</div>
-                    <div onclick="showTab('tab-vision')" data-tab="tab-vision" data-i18n="nav_vision" class="nav-pill">시력 검사</div>
-                    <div onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</div>
-                    <div onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</div>
-                    <div onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</div>
+                    <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</button>
+                    <button type="button" onclick="showTab('tab-vision')" data-tab="tab-vision" data-i18n="nav_vision" class="nav-pill">시력 검사</button>
+                    <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</button>
+                    <button type="button" onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</button>
+                    <button type="button" onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</button>
                 </div>
 
-                <select id="lang-selector" onchange="changeLanguage(this.value)" class="bg-slate-100 text-slate-700 font-bold text-xs py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer border-none shadow-sm">
+                <select id="lang-selector" aria-label="언어 선택 / Select language" onchange="changeLanguage(this.value)" class="bg-slate-100 text-slate-700 font-bold text-xs py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer border-none shadow-sm">
                     <option value="ko">🇰🇷 한국어</option>
                     <option value="en">🇺🇸 English</option>
                     <option value="es">🇪🇸 Español</option>
@@ -258,6 +258,13 @@
     </main>
 
     <main id="tab-report" class="tab-content max-w-md mx-auto px-4 py-12">
+        <!-- 검사 전에는 빈 리포트/PDF 대신 안내만 보여준다 -->
+        <div id="report-gate" class="glass-card p-8 rounded-[2rem] text-center hidden">
+            <div class="text-5xl mb-4">📋</div>
+            <h2 id="report-gate-title" class="text-lg font-black mb-2"></h2>
+            <p id="report-gate-desc" class="text-[12px] text-slate-500 leading-relaxed mb-6"></p>
+            <button id="report-gate-btn" onclick="showTab('tab-test')" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm"></button>
+        </div>
         <div id="report-content" class="glass-card p-8 rounded-[2rem] mb-6">
             <div class="text-center mb-6 pb-6 border-b border-slate-100">
                 <h1 class="text-2xl font-black text-slate-800" data-i18n="rep_title">Eye-Catch 진단 리포트</h1>
@@ -265,6 +272,7 @@
             </div>
             <div class="space-y-4" id="report-body">
                 <div id="triage-box"></div>
+                <div id="findings-box" class="bg-white border border-slate-200 rounded-2xl p-4"></div>
                 <div class="bg-blue-50 p-4 rounded-2xl">
                     <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="rep_l1">1. 백내장 AI 결과</p>
                     <p id="pdf-ai-result" class="font-black text-blue-800">-</p>
@@ -304,7 +312,7 @@
                 <p class="text-xs font-bold text-slate-400 mb-2" data-i18n="rep_followup_title">🤖 AI에게 더 궁금한 점 물어보기</p>
                 <div class="flex gap-2">
                     <input type="text" id="user-followup-input" class="flex-1 min-w-0 bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="예: 관리 방법 알려줘" data-i18n-ph="rep_followup_ph">
-                    <button onclick="askGemmaMore()" class="shrink-0 px-3 bg-blue-600 text-white rounded-xl shadow-md btn-pop">
+                    <button onclick="askGemmaMore()" aria-label="질문 보내기" class="shrink-0 px-3 bg-blue-600 text-white rounded-xl shadow-md btn-pop">
                         <span class="text-lg">🚀</span>
                     </button>
                 </div>
@@ -312,7 +320,7 @@
             </div>
         </div>
 
-        <div class="space-y-3 px-2">
+        <div id="report-actions" class="space-y-3 px-2">
             <button onclick="downloadPDF()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold flex justify-center items-center gap-2 btn-pop shadow-xl" data-i18n="pdf_btn">📄 PDF 다운로드</button>
             <button onclick="showTab('tab-map')" id="dynamic-map-btn" class="w-full py-4 bg-yellow-400 text-slate-900 rounded-2xl font-bold btn-pop shadow-lg">🏥 Kakao Maps</button>
         </div>
@@ -337,10 +345,10 @@
     </main>
 
     <!-- 질환 상세 모달 -->
-    <div id="disease-modal" class="dm-overlay" onclick="closeDisease(event)">
+    <div id="disease-modal" class="dm-overlay" onclick="closeDisease(event)" role="dialog" aria-modal="true" aria-labelledby="dm-title">
         <div id="dm-card" class="dm-card" onclick="event.stopPropagation()">
             <div class="dm-head">
-                <button class="dm-close" onclick="closeDisease()">✕</button>
+                <button class="dm-close" onclick="closeDisease()" aria-label="닫기">✕</button>
                 <div id="dm-icon" class="dm-icon-lg"></div>
                 <h2 id="dm-title" class="dm-title"></h2>
             </div>
@@ -354,32 +362,33 @@
     </div>
 
     <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t flex justify-around py-2 z-50 pb-safe shadow-lg">
-        <div onclick="showTab('tab-test')" data-tab="tab-test" class="bnav-item">
+        <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" class="bnav-item">
             <span class="text-2xl bnav-ico">💬</span><span class="text-[10px] font-bold" data-i18n="nav_test">AI 검사</span>
-        </div>
-        <div onclick="showTab('tab-vision')" data-tab="tab-vision" class="bnav-item">
+        </button>
+        <button type="button" onclick="showTab('tab-vision')" data-tab="tab-vision" class="bnav-item">
             <span class="text-2xl bnav-ico">👁️</span><span class="text-[10px] font-bold" data-i18n="nav_vision">시력 검사</span>
-        </div>
-        <div onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
+        </button>
+        <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
             <span class="text-2xl bnav-ico">📖</span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 소개</span>
-        </div>
-        <div onclick="showTab('tab-report')" data-tab="tab-report" class="bnav-item">
+        </button>
+        <button type="button" onclick="showTab('tab-report')" data-tab="tab-report" class="bnav-item">
             <span class="text-2xl bnav-ico">📄</span><span class="text-[10px] font-bold" data-i18n="nav_report">리포트</span>
-        </div>
-        <div onclick="showTab('tab-map')" data-tab="tab-map" class="bnav-item">
+        </button>
+        <button type="button" onclick="showTab('tab-map')" data-tab="tab-map" class="bnav-item">
             <span class="text-2xl bnav-ico">📍</span><span class="text-[10px] font-bold" data-i18n="nav_map">병원 찾기</span>
-        </div>
+        </button>
     </nav>
 
-    <script src="/static/data.js?v=20260819j"></script>
+    <script src="/static/data.js?v=20260820a"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260819f"></script>
-    <script src="/static/app-vision.js?v=20260819b"></script>
+    <script src="/static/app-core.js?v=20260820a"></script>
+    <script src="/static/app-vision.js?v=20260820a"></script>
     <script src="/static/app-chat.js?v=20260819i"></script>
-    <script src="/static/app-report.js?v=20260819i"></script>
-    <script src="/static/app-disease.js?v=20260623a"></script>
+    <script src="/static/app-report.js?v=20260820a"></script>
+    <script src="/static/app-disease.js?v=20260820a"></script>
     <script src="/static/calibration.js?v=20260819b"></script>
-    <script src="/static/app-assess.js?v=20260819i"></script>
+    <script src="/static/app-assess.js?v=20260820a"></script>
+    <script src="/static/app-findings.js?v=20260820a"></script>
     <script src="/static/app-visiontest.js?v=20260819h"></script>
     <script src="/static/app-map.js?v=20260623a"></script>
 </body>

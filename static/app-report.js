@@ -34,6 +34,10 @@ async function finish() {
     const triBox = document.getElementById('triage-box');
     if (triBox) renderTriage(triBox, state.triage, risk.factors);
 
+    // 검사 결과 '해석'은 코드가 고정 문장으로 생성한다 — LLM은 생활 조언만 담당
+    const findBox = document.getElementById('findings-box');
+    if (findBox && typeof renderFindings === 'function') renderFindings(findBox);
+
     showTab('tab-report');
 
     const loadingContainer = document.getElementById('gemma-loading-container');

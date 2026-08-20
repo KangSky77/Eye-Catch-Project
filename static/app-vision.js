@@ -60,14 +60,20 @@ async function runAIAnalysis() {
         disp.innerHTML = '';
         // 판정별 색상: 위험=장미색 / 경계=호박색 / 정상=파랑(기존 톤 유지)
         const probColor = { risk: 'text-rose-600', borderline: 'text-amber-600', normal: 'text-blue-700' };
+        // 모델 출력은 보정되지 않은 softmax 값이라 '확률'로 읽히면 안 된다.
+        // (Brier/ECE/temperature scaling 미적용) 표기와 각주로 명시한다.
         const pProb = document.createElement('p');
         pProb.className = `text-xs font-black mb-1 ${probColor[d.result_code] || probColor.normal}`;
-        pProb.textContent = `${d.probability}%`;
+        pProb.textContent = `${t.score_label || 'AI 위험 점수'} ${d.probability}`;
         const pRes = document.createElement('p');
         pRes.className = 'text-xl font-bold';
         pRes.textContent = resultText;
         disp.appendChild(pProb);
         disp.appendChild(pRes);
+        const pNote = document.createElement('p');
+        pNote.className = 'text-[10px] text-slate-400 mt-2 leading-relaxed';
+        pNote.textContent = t.score_note || '';
+        disp.appendChild(pNote);
 
         // 눈별 분석 카드 (얼굴 모드 + 눈 2개일 때만)
         if (twoEyes) {

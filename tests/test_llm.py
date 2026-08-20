@@ -20,12 +20,16 @@ def test_소견서_프롬프트_영어_및_비지원언어_폴백():
     assert "ONLY in English" in p_unknown
 
 
-def test_편측백내장_지시문은_asymmetric일때만():
+def test_LLM에게는_편측_해석을_시키지_않는다():
+    """설계 변경(2026-08-20): 의학적 해석은 전부 코드가 결정론적으로 생성한다.
+
+    LLM에게 해석을 맡겼더니 "암슬러가 정상이므로 녹내장 가능성이 낮다"는 문장이
+    실제로 나왔기 때문에, 편측 여부도 프롬프트에 넣지 않는다."""
     base = ("판독", "정상", [], "ko")
     with_asym = llm._build_opinion_prompt(*base, eye_asymmetric=True)
     without = llm._build_opinion_prompt(*base, eye_asymmetric=False)
-    assert "편측" in with_asym
-    assert "편측" not in without
+    assert with_asym == without, "편측 여부가 프롬프트를 바꾸면 안 됩니다(해석은 코드 담당)"
+    assert "해석하거나" in with_asym and "금지" in with_asym
 
 
 def test_참고지식_블록_주입():
