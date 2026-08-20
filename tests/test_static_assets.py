@@ -164,3 +164,30 @@ def test_로컬_pretendard_css가_번들된_폰트를_가리킨다():
     for u in urls:
         assert not u.startswith("http"), f"외부 폰트를 가리킵니다: {u}"
         assert (STATIC / "vendor" / "pretendard" / u.lstrip("./")).exists(), f"폰트 파일 없음: {u}"
+
+
+def test_방문권고가_검증되지_않은_지표를_쓰지_않는다():
+    """triage(언제 병원에 갈지)는 근거가 있는 입력만 써야 한다.
+
+    외부 리뷰 지적: 검증되지 않은 기능검사 좌우차와 임의 배점 위험점수가
+    의료 행동 시점을 바꾸고 있었다. 둘 다 리포트 '참고 정보'로만 남기고
+    computeTriage의 판정 분기에서는 제외했다. 되살아나면 여기서 잡는다.
+    """
+    src = (STATIC / "app-assess.js").read_text(encoding="utf-8")
+    body = src[src.index("function computeTriage"):src.index("function renderTriage")]
+    # 판정 분기(let level = ... 이후 if 체인)에 쓰이면 안 되는 입력
+    decision = body[body.index("let level;"):]
+    for banned in ("visionAsymmetric", "highRisk", "riskScore >="):
+        assert banned not in decision, (
+            f"computeTriage 판정 분기가 '{banned}'를 다시 쓰고 있습니다. "
+            "검증 전 지표로 진료 시점을 정하면 안 됩니다."
+        )
+
+
+def test_기능검사_문구가_단정적이지_않다():
+    """'영향을 받지 않는다', '일치합니다' 같은 단정은 검증 전에는 쓸 수 없다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    ko_start = data.index("vt_intro_desc")
+    banned = ["영향을 받지 않아", "결과가 일치합니다", "신뢰도가 높은 신호"]
+    found = [b for b in banned if b in data]
+    assert not found, f"과도한 단정 표현이 남아 있습니다: {found}"

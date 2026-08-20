@@ -105,6 +105,26 @@ function updateUI(lang) {
     if (mapBtn && translations[lang].map_btn) mapBtn.innerText = translations[lang].map_btn;
 
     renderDiseases(lang);
+
+    // data-i18n으로 덮이지 않는 '동적 생성' 문구들도 다시 그린다.
+    // (리포트 게이트·해석·시력검사 안내는 JS가 textContent로 넣으므로
+    //  언어만 바꾸면 이전 언어 문장이 그대로 남는다)
+    if (typeof updateReportGate === 'function') updateReportGate();
+    if (typeof vtRefreshCalibrationUI === 'function' && document.getElementById('vt-cardbox')) {
+        vtRefreshCalibrationUI();
+    }
+    const findBox = document.getElementById('findings-box');
+    if (findBox && findBox.children.length && typeof renderFindings === 'function') {
+        renderFindings(findBox);
+    }
+    const triBox = document.getElementById('triage-box');
+    if (triBox && triBox.children.length && state.triage && typeof renderTriage === 'function') {
+        renderTriage(triBox, computeTriage({
+            cataractCode: state.aiResultCode, amslerAbnormal: state.hasAmsler,
+            symptomCodes: state.symptomCodes, symptomScore: state.symptomScore,
+            redFlags: state.redFlags,
+        }), computeRiskScore(state.riskAnswers || {}).factors);
+    }
 }
 
 function showTab(tid) {

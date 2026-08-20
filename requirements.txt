@@ -14,6 +14,14 @@ torchvision==0.27.0+cu130
 # 나머지 의존성은 전부 requirements-base.txt에 버전 고정으로 정리돼 있습니다.
 -r requirements-base.txt
 
+# ⚠️ `pip check`는 facenet-pytorch 때문에 항상 실패를 보고합니다 — 의도된 상태입니다.
+#    facenet-pytorch 2.6.0의 선언:  torch<2.3, torchvision<0.18, numpy<2.0, Pillow<10.3
+#    우리가 쓰는 조합:              torch 2.12, torchvision 0.27, numpy 2.4, Pillow 12
+#    선언 범위가 오래된 것이고, 실제로 쓰는 API(MTCNN.detect)는 정상 동작하는 것을 확인했습니다.
+#    범위를 맞추려고 torch를 2.2로 내리면 CUDA 13 빌드를 못 쓰고 학습 재현도 깨집니다.
+#    → 그래서 --no-deps로 설치하고, pip check 실패는 무시합니다.
+#    발표 환경에서는 아래 조합을 그대로 고정해서 쓰세요(팀원 PC 재설치 시 특히 주의).
+#
 # ⚠️ MTCNN(facenet-pytorch)은 여기에 없습니다 — 반드시 --no-deps로 따로 설치할 것!
 #    (구버전 torch를 강제로 끌고와서 설치된 torch 2.12+cu130을 다운그레이드하려고 함)
 #    없어도 앱은 정상 동작합니다 (얼굴→눈 크롭 기능만 비활성화).

@@ -3,10 +3,15 @@
 // app-core.js, calibration.js가 먼저 로드되어야 함
 //
 // 왜 이 기능인가:
-//   사진 모델은 '겉으로 보이는' 백내장만 잡는다. 초기 핵경화는 외안부 사진에 안 나타난다.
-//   반면 대비감도는 백내장 초기에 시력보다 먼저 떨어지므로, 사진이 놓치는 구간을 메운다.
-//   또 좌우 차이는 같은 기기·같은 거리에서 재므로 캘리브레이션 오차가 상쇄된다 →
-//   사진 모델의 편측(asymmetric) 판정과 교차검증할 수 있다.
+//   사진 모델은 '겉으로 보이는' 백내장만 잡는다. 기능검사로 좌우 차이를 함께 보면
+//   사진만으로는 안 보이는 신호를 참고로 얻을 수 있다.
+//
+// ⚠️ 현재 위치: 검증 전 '참고용 측정'이다. 임상 시력값이 아니다.
+//   같은 기기·거리에서 재므로 좌우 비교가 절대값보다 안정적인 것은 맞지만,
+//   화면 축소 오차·검사 순서·피로/학습·눈 가림 실패·화면 밝기와 감마·주변 조명·
+//   굴절 이상 같은 교란을 아직 통제하지 못했다.
+//   그래서 이 결과는 리포트에 참고 정보로만 표시하고, 방문 권고(computeTriage)
+//   계산에는 넣지 않는다. 기기별 반복 검증을 통과한 뒤에 다시 논의할 것.
 //
 // 왜 Tumbling E인가:
 //   문자 시표는 언어·문해력에 의존한다. E의 방향(상하좌우)을 고르는 4지 선다는
@@ -40,6 +45,12 @@ const vtState = {
 
 const DIRECTIONS = ['up', 'right', 'down', 'left'];
 
+/** 이 기기·거리에서 실제로 표시 가능한 시력 단계만. vtStart에서 계산해 둔다. */
+function vtAcuityLevels() {
+    return vtState.acuityLevels && vtState.acuityLevels.length
+        ? vtState.acuityLevels : VT.ACUITY_LEVELS;
+}
+
 // ------------------------------------------------------------------
 // Tumbling E 그리기 (물리 픽셀 기준)
 // ------------------------------------------------------------------
@@ -63,18 +74,41 @@ function drawTumblingE(ctx, cx, cy, size, direction, grayLevel) {
     ctx.restore();
 }
 
-/** 캔버스를 물리 픽셀 해상도로 준비하고 컨텍스트를 반환. */
-function prepareCanvas(canvas, cssW, cssH) {
+/**
+ * 캔버스를 물리 픽셀 해상도로 준비하고 { ctx, cssW } 를 반환.
+ *
+ * ⚠️ 여기서 반환하는 cssW는 '요청한 폭'이 아니라 **실제로 렌더된 폭**이다.
+ *    이유: style.width를 지정해도 CSS(max-width, flex, padding 등)가 다시 줄일 수 있다.
+ *    실제로 .vt-canvas의 max-width:100% + 부모 padding 때문에 캔버스가 11.3% 축소됐고,
+ *    그 상태로 물리 크기를 계산하니 시표가 계산값보다 작게 그려졌다.
+ *    → 폭을 정한 뒤 반드시 다시 '측정'해서, 그 값을 기준으로 시표 크기를 계산한다.
+ *      이렇게 하면 CSS가 무엇을 하든 화면에 찍히는 크기가 계산과 일치한다.
+ */
+function prepareCanvas(canvas, requestedCssW, cssH) {
     const dpr = window.devicePixelRatio || 1;
-    canvas.style.width = cssW + 'px';
+    canvas.style.width = requestedCssW + 'px';
     canvas.style.height = cssH + 'px';
-    canvas.width = Math.round(cssW * dpr);
+
+    // 레이아웃을 강제로 확정시킨 뒤 실제 폭을 읽는다
+    const actualCssW = canvas.getBoundingClientRect().width || requestedCssW;
+    if (Math.abs(actualCssW - requestedCssW) > 0.5) {
+        // CSS가 개입했다 — 실제 폭에 맞춰 다시 지정해 계산과 표시를 일치시킨다
+        canvas.style.width = actualCssW + 'px';
+    }
+
+    canvas.width = Math.round(actualCssW * dpr);
     canvas.height = Math.round(cssH * dpr);
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;        // 시표 가장자리를 뭉개지 않는다
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    return ctx;
+    return { ctx, cssW: actualCssW };
+}
+
+/** 부모의 '콘텐츠 폭'(패딩 제외). clientWidth는 패딩을 포함하므로 그대로 쓰면 넘친다. */
+function contentWidthOf(el) {
+    const cs = getComputedStyle(el);
+    return el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
 }
 
 // ------------------------------------------------------------------
@@ -93,15 +127,16 @@ function vtRenderStimulus() {
 
     const dpr = window.devicePixelRatio || 1;
     const dist = cal.distanceMm || 600;
-    const cssW = Math.min(canvas.parentElement.clientWidth, 420);
+    // 부모의 '콘텐츠 폭'을 써야 한다 — clientWidth는 패딩을 포함해서 그대로 쓰면
+    // max-width:100%에 걸려 캔버스가 다시 줄어든다(실제로 11.3% 축소됐던 버그)
     const cssH = 240;
-    const ctx = prepareCanvas(canvas, cssW, cssH);
+    const { ctx, cssW } = prepareCanvas(canvas, Math.min(contentWidthOf(canvas.parentElement), 420), cssH);
 
     vtState.current = DIRECTIONS[Math.floor(Math.random() * 4)];
 
     let sizeMm, gray;
     if (vtState.phase === 'acuity') {
-        sizeMm = window.ECCalib.acuityToLetterMm(VT.ACUITY_LEVELS[vtState.levelIdx], dist);
+        sizeMm = window.ECCalib.acuityToLetterMm(vtAcuityLevels()[vtState.levelIdx], dist);
         gray = 0;                                            // 최대 대비(검정)
     } else {
         sizeMm = window.ECCalib.acuityToLetterMm(VT.CONTRAST_LETTER_ACUITY, dist);
@@ -110,6 +145,12 @@ function vtRenderStimulus() {
     }
     // CSS px/mm * dpr = 물리 px/mm
     const sizePhys = sizeMm * cal.pxPerMm * dpr;
+
+    // 안전장치: 시표가 캔버스를 넘치거나 픽셀이 너무 적으면 측정값이 무의미해진다.
+    // 조용히 잘못된 값을 내느니 콘솔에 남긴다.
+    if (sizePhys > canvas.height || sizePhys > canvas.width) {
+        console.warn('[vt] 시표가 캔버스보다 큽니다 — 거리를 늘리거나 캔버스를 키워야 합니다', { sizePhys, canvas: canvas.width + 'x' + canvas.height });
+    }
     drawTumblingE(ctx, canvas.width / 2, canvas.height / 2, sizePhys, vtState.current, gray);
 
     const t = translations[state.lang];
@@ -129,7 +170,7 @@ function vtAnswer(direction) {
 
     // 한 단계 종료 — 통과하면 더 어려운 단계로, 실패하면 이 눈의 이 검사 종료
     const passed = vtState.correct >= VT.PASS_REQUIRED;
-    const levels = vtState.phase === 'acuity' ? VT.ACUITY_LEVELS : VT.CONTRAST_LEVELS;
+    const levels = vtState.phase === 'acuity' ? vtAcuityLevels() : VT.CONTRAST_LEVELS;
 
     if (passed && vtState.levelIdx < levels.length - 1) {
         vtState.levelIdx++;
@@ -150,8 +191,9 @@ function vtAnswer(direction) {
 function vtAdvanceStage() {
     if (vtState.phase === 'acuity') {
         vtState.phase = 'contrast';
-    } else if (vtState.eye === 'left') {
-        vtState.eye = 'right';
+    } else if (vtState.eye === vtState.firstEye) {
+        // 먼저 한 눈이 끝났으면 반대쪽으로 (시작 눈이 무작위이므로 고정 비교를 쓰면 안 된다)
+        vtState.eye = vtState.eye === 'left' ? 'right' : 'left';
         vtState.phase = 'acuity';
     } else {
         vtFinish();
@@ -180,6 +222,7 @@ function vtBeginStage() {
     document.getElementById('vt-eye-prompt').classList.add('hidden');
     document.getElementById('vt-test-area').classList.remove('hidden');
     vtRenderStimulus();
+    vtScrollToTest();
 }
 
 // ------------------------------------------------------------------
@@ -419,35 +462,75 @@ function vtStart() {
         alert(t.vt_need_calib || '먼저 화면 캘리브레이션을 완료해주세요.');
         return;
     }
+    // 보정 후 화면이 바뀌었으면(회전·확대·창 크기·다른 디스플레이) 예전 px/mm는 무효다.
+    // calibrationStale()이 그걸 감지하도록 만들어져 있었는데 아무도 호출하지 않고 있었다.
+    if (window.ECCalib.calibrationStale(cal)) {
+        alert(t.calib_stale || '화면 설정이 바뀐 것 같습니다. 다시 보정해 주세요.');
+        document.getElementById('vt-calib').classList.remove('hidden');
+        document.getElementById('vt-calib').scrollIntoView({ block: 'start', behavior: 'smooth' });
+        return;
+    }
+
+    // 이 기기·거리에서 물리적으로 표시할 수 없는 시력 단계는 사다리에서 잘라낸다.
+    // 그러지 않으면 픽셀이 부족해 형태가 무너진 E를 보여주고 '못 봤다'로 기록된다.
+    const maxA = window.ECCalib.maxDisplayableAcuity(
+        cal.pxPerMm * (window.devicePixelRatio || 1), cal.distanceMm || 600);
+    vtState.acuityLevels = VT.ACUITY_LEVELS.filter(a => a <= maxA);
+    if (!vtState.acuityLevels.length) vtState.acuityLevels = [VT.ACUITY_LEVELS[0]];
+    vtState.maxDisplayableAcuity = maxA;
     vtState.phase = 'acuity';
-    vtState.eye = 'left';
+    // 시작 눈을 무작위로 — 항상 왼쪽부터 하면 피로·학습 효과가 한쪽 눈에만 쌓여
+    // 좌우 차이가 검사 순서 때문에 생길 수 있다.
+    vtState.eye = Math.random() < 0.5 ? 'left' : 'right';
+    vtState.firstEye = vtState.eye;
     vtState.levelIdx = 0;
     vtState.trial = 0;
     vtState.correct = 0;
     vtState.results = { left: {}, right: {} };
     document.getElementById('vt-intro').classList.add('hidden');
     document.getElementById('vt-result').classList.add('hidden');
+    // 검사 중에는 캘리브레이션 패널을 숨긴다 — 그대로 두면 모바일에서 시표와
+    // 방향 버튼이 한 화면에 안 들어와 매번 스크롤해야 한다(390x844에서 실측 확인).
+    document.getElementById('vt-calib').classList.add('hidden');
+    vtLockViewport(false);          // 검사 중에는 확대 잠금이 필요 없다
     vtShowEyePrompt();
+}
+
+/** 검사 카드가 화면 위쪽에 오도록 스크롤 — 시표와 방향 버튼을 함께 보이게 한다. */
+function vtScrollToTest() {
+    const el = document.getElementById('vt-test-area');
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }
 
 function vtFinish() {
     vtState.phase = 'done';
     document.getElementById('vt-test-area').classList.add('hidden');
     document.getElementById('vt-eye-prompt').classList.add('hidden');
+    document.getElementById('vt-calib').classList.remove('hidden');   // 재보정할 수 있게 복원
 
     const r = vtState.results;
     state.visionTest = {
         left:  { acuity: r.left.acuity,  logCS: r.left.contrast },
         right: { acuity: r.right.acuity, logCS: r.right.contrast },
     };
-    // 좌우 차이 — 캘리브레이션 오차가 상쇄되므로 절대값보다 신뢰도가 높다
+    // 좌우 차이. 같은 기기·거리에서 재므로 절대값보다는 비교가 안정적이다(단, 검증 전이다).
     const dCS = (r.left.contrast != null && r.right.contrast != null)
         ? Math.abs(r.left.contrast - r.right.contrast) : null;
     const dAc = (r.left.acuity != null && r.right.acuity != null)
         ? Math.abs(window.ECCalib.decimalToLogMAR(r.left.acuity) - window.ECCalib.decimalToLogMAR(r.right.acuity))
         : null;
-    // 0.3 logCS(=2배) 이상 차이면 편측 의심 — 임상에서 유의미하게 보는 폭
-    state.visionTest.asymmetric = (dCS != null && dCS >= 0.3) || (dAc != null && dAc >= 0.2);
+
+    // ⚠️ 한쪽 눈만 null인 경우 = 그 눈은 가장 큰/진한 자극조차 못 맞혔다는 뜻이다.
+    //    이건 '차이 없음'이 아니라 **가장 심한 좌우 차이**다.
+    //    이전 구현은 둘 다 값이 있을 때만 차이를 계산해서, 최악의 케이스를 정상으로 처리했다.
+    const oneSideUnmeasurable =
+        (r.left.acuity == null) !== (r.right.acuity == null) ||
+        (r.left.contrast == null) !== (r.right.contrast == null);
+
+    // 0.3 logCS(=2배) / 0.2 logMAR(2줄) 이상이면 좌우 차이로 본다
+    state.visionTest.asymmetric = oneSideUnmeasurable
+        || (dCS != null && dCS >= 0.3) || (dAc != null && dAc >= 0.2);
+    state.visionTest.oneSideUnmeasurable = oneSideUnmeasurable;
     state.visionTest.deltaLogCS = dCS;
     state.visionTest.deltaLogMAR = dAc;
 
