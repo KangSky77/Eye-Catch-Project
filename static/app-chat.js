@@ -4,6 +4,7 @@
 // ==========================================
 function startChat() {
     document.getElementById('chat-box').innerHTML = '';
+    setChatAnswerMode('yesno');   // 이전 회차에서 자유 입력칸이 열려 있었을 수 있다
 
     // 챗봇 관련 상태 초기화
     state.stepIdx = 0;
@@ -191,6 +192,7 @@ async function fetchNextQuestion() {
 
     // 서버 실패·빈 응답이면 선택 언어의 기본 질문으로 폴백 (백엔드도 실패 시 ""를 반환)
     let q = translations[state.lang].nextq_fallback || "추가적으로 눈이 불편하신 곳이 있나요?";
+    let answerType = 'yesno';
     try {
         const response = await fetch('/api/generate-next-question', {
             method: 'POST',
@@ -203,13 +205,19 @@ async function fetchNextQuestion() {
             })
         });
         const result = await response.json();
-        if (result.question) q = result.question;
+        if (result.question) {
+            q = result.question;
+            // 서버가 이 질문을 네/아니오로 답할 수 있는지 알려준다.
+            // 서술형이면 버튼 대신 자유 입력칸을 띄운다 — 버튼만 있으면 답할 방법이 없다.
+            answerType = result.answer_type === 'text' ? 'text' : 'yesno';
+        }
     } catch (e) {
-        // 네트워크 오류 → 위의 폴백 질문 그대로 사용
+        // 네트워크 오류 → 위의 폴백 질문(예/아니오형) 그대로 사용
     } finally {
         removeLoadingMsg(); // "생성 중..." 메시지 제거
         addMsg('bot', q);
         state.chatHistory.push({ q: q, a: "" });
+        setChatAnswerMode(answerType);
         state.chatBusy = false;   // 새 질문 표시 완료 → 답변 잠금 해제
     }
 }
@@ -244,17 +252,73 @@ async function handleChatAnswer(yes) {
         if (yes) { state.chatSymptoms.push(translations[state.lang].symptom_extra || "기타 의심 증상 추가 발견"); state.symptomCodes.push('other'); }
 
         state.dynamicCount++;
-
-        if (state.dynamicCount < state.maxDynamic) {
-            setTimeout(() => {
-                addLoadingMsg(translations[state.lang].next_q_generating || "다음 맞춤형 질문을 생성 중입니다...");
-                fetchNextQuestion();
-            }, 600);
-        } else {
-            setTimeout(() => {
-                addMsg('bot', translations[state.lang].msg_gen);
-                setTimeout(finish, 1200);
-            }, 500);
-        }
+        advanceAfterDynamicAnswer();
     }
 }
+
+
+// ------------------------------------------
+// 답변 입력 모드 전환 (네/아니오 버튼 <-> 자유 입력칸)
+// AI가 서술형 질문을 내면 버튼으로는 답할 수 없으므로 입력칸으로 바꾼다.
+// ------------------------------------------
+function setChatAnswerMode(mode) {
+    const buttons = document.getElementById('chat-controls');
+    const free = document.getElementById('chat-free');
+    if (!buttons || !free) return;
+    const isText = mode === 'text';
+    buttons.classList.toggle('hidden', isText);
+    free.classList.toggle('hidden', !isText);
+    if (isText) {
+        const input = document.getElementById('chat-free-input');
+        if (input) { input.value = ''; input.focus(); }
+    }
+}
+
+// 자유 답변 전송. skip=true면 "답변 안 함"으로 넘어간다.
+function handleChatFreeAnswer(skip) {
+    if (state.chatBusy) return;
+    const input = document.getElementById('chat-free-input');
+    const text = skip ? '' : (input ? input.value.trim() : '');
+    if (!skip && !text) { if (input) input.focus(); return; }   // 빈 답변은 전송하지 않는다
+
+    state.chatBusy = true;
+    const shown = text || (translations[state.lang].chat_free_skip || '건너뛰기');
+    addMsg('user', shown);
+    if (input) input.value = '';
+    setChatAnswerMode('yesno');   // 다음 질문은 보통 예/아니오형이므로 기본으로 되돌린다
+
+    // 자유 답변은 소견서 문맥(chatHistory)에만 남긴다.
+    // symptomCodes/triage는 검증된 고정 문항으로만 계산한다 — 자유 문장을
+    // 코드로 자동 변환하면 근거 없는 의료 판정이 섞인다.
+    if (state.chatHistory.length) {
+        state.chatHistory[state.chatHistory.length - 1].a =
+            text || (translations[state.lang].res_chat_none || '답변 없음');
+    }
+
+    state.dynamicCount++;
+    advanceAfterDynamicAnswer();
+}
+
+// 맞춤형 질문 구간에서 답변 후 다음 단계로 (버튼 답변·자유 답변 공통)
+function advanceAfterDynamicAnswer() {
+    if (state.dynamicCount < state.maxDynamic) {
+        setTimeout(() => {
+            addLoadingMsg(translations[state.lang].next_q_generating || "다음 맞춤형 질문을 생성 중입니다...");
+            fetchNextQuestion();
+        }, 600);
+    } else {
+        setTimeout(() => {
+            addMsg('bot', translations[state.lang].msg_gen);
+            setTimeout(finish, 1200);
+        }, 500);
+    }
+}
+
+// 입력칸에서 Enter로도 전송 (한글·일본어 조합 중 Enter는 무시)
+window.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('chat-free-input');
+    if (!input) return;
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); handleChatFreeAnswer(); }
+    });
+});

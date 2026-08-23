@@ -62,8 +62,11 @@ async def chat_with_gemma(req: ChatRequest):
 
 @router.post("/api/generate-next-question")
 async def generate_next_question_endpoint(req: QuestionGenRequest):
-    question = await generate_next_question(req.lang, req.cataract_res, req.amsler_res, req.chat_history)
-    return {"question": question}
+    question, answer_type = await generate_next_question(
+        req.lang, req.cataract_res, req.amsler_res, req.chat_history
+    )
+    # answer_type: "yesno"(네/아니오 버튼) | "text"(자유 입력칸)
+    return {"question": question, "answer_type": answer_type}
 
 @router.post("/api/save-diagnosis")
 async def save_diagnosis_endpoint(req: SaveDiagnosisRequest):

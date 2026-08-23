@@ -78,10 +78,20 @@ def test_get_ai_opinion_상한초과는_422(client):
 
 def test_generate_next_question(client, monkeypatch):
     async def fake(*a, **kw):
-        return "야간 운전 시 빛 번짐이 있나요?"
+        return "야간 운전 시 빛 번짐이 있나요?", "yesno"
     monkeypatch.setattr(routes, "generate_next_question", fake)
     r = client.post("/api/generate-next-question", json={"cataract_res": "정상", "amsler_res": "정상"})
-    assert r.json() == {"question": "야간 운전 시 빛 번짐이 있나요?"}
+    assert r.json() == {"question": "야간 운전 시 빛 번짐이 있나요?", "answer_type": "yesno"}
+
+
+def test_generate_next_question_서술형이면_answer_type이_text(client, monkeypatch):
+    # 프론트가 이 값을 보고 네/아니오 버튼 대신 자유 입력칸을 띄운다.
+    # 이 계약이 깨지면 사용자가 답할 수 없는 질문 앞에서 문진이 멈춘다.
+    async def fake(*a, **kw):
+        return "시력 변화를 자세히 설명해 주시겠어요?", "text"
+    monkeypatch.setattr(routes, "generate_next_question", fake)
+    r = client.post("/api/generate-next-question", json={"cataract_res": "정상", "amsler_res": "정상"})
+    assert r.json()["answer_type"] == "text"
 
 
 @pytest.mark.parametrize("params", [

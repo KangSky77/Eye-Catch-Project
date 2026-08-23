@@ -334,7 +334,8 @@ def _is_yes_no_question(q: str) -> bool:
     low = q.strip().lower()
     return not any(m in low for m in _OPEN_ENDED_MARKERS)
 
-async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, chat_history: list) -> str:
+async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, chat_history: list) -> tuple[str, str]:
+    """(질문, 답변형식) 반환. 답변형식은 "yesno" | "text"."""
     # ChatHistoryItem은 Pydantic 모델이므로 .q / .a 속성으로 접근
     history_text = "\n".join([f"- 의사: {item.q}\n- 환자: {item.a}" for item in chat_history]).strip() or "아직 진행된 문진 대화가 없습니다."
     try:
@@ -342,11 +343,12 @@ async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, 
         # 기본 질문(nextq_fallback)으로 대체한다. 여기서 한국어 문장을 고정 반환하면
         # 영어 등 다른 언어 사용자에게 한국어 질문이 나가므로 폴백은 프론트에 위임.
         q = await generate_ollama(_build_next_question_prompt(lang, cataract_res, amsler_res, history_text))
-        if not _is_yes_no_question(q):
-            # 서술형이 나왔다 — 네/아니오 버튼으로는 답할 수 없으므로 쓰지 않는다
-            logger.info("동적 문진 질문이 서술형이라 폐기하고 기본 질문으로 폴백: %r", q)
-            return ""
-        return q
+        if not (q or "").strip():
+            return "", "yesno"
+        # 프롬프트로 예/아니오를 요구하지만 LLM이 가끔 서술형을 낸다.
+        # 예전에는 그런 질문을 버렸는데, 좋은 질문인 경우가 많아 버리기 아깝다.
+        # 대신 종류를 알려주고 프론트가 자유 입력칸을 띄우게 한다.
+        return q, ("yesno" if _is_yes_no_question(q) else "text")
     except Exception:
         logger.warning("⚠️  동적 문진 질문 생성 실패 — 프론트 기본 질문으로 폴백", exc_info=True)
-        return ""
+        return "", "yesno"

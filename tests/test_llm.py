@@ -66,8 +66,9 @@ async def test_동적문진_실패시_빈문자열_폴백(monkeypatch):
     async def broken(prompt):
         raise ConnectionError("down")
     monkeypatch.setattr(llm, "generate_ollama", broken)
-    q = await llm.generate_next_question("en", "normal", "normal", [])
+    q, answer_type = await llm.generate_next_question("en", "normal", "normal", [])
     assert q == ""
+    assert answer_type == "yesno"
 
 
 @pytest.mark.anyio
@@ -78,7 +79,7 @@ async def test_동적문진_문진내역이_프롬프트에_포함(monkeypatch):
         return "다음 질문?"
     monkeypatch.setattr(llm, "generate_ollama", capture)
     history = [ChatHistoryItem(q="눈부심이 있나요?", a="네, 밤에 심해요")]
-    q = await llm.generate_next_question("ko", "위험 87%", "정상", history)
+    q, _ = await llm.generate_next_question("ko", "위험 87%", "정상", history)
     assert q == "다음 질문?"
     assert "눈부심이 있나요?" in captured["prompt"]
     assert "네, 밤에 심해요" in captured["prompt"]
@@ -124,3 +125,25 @@ def test_질문_프롬프트에_예아니오_제약이_들어있다():
     en = _build_next_question_prompt("en", "normal", "normal", "-")
     assert "Yes" in en and "No" in en
     assert "Open-ended questions are forbidden" in en
+
+
+def test_generate_next_question은_질문과_답변형식을_함께_돌려준다():
+    """서술형 질문을 버리지 않고 answer_type='text'로 넘겨야
+    프론트가 자유 입력칸을 띄울 수 있다."""
+    import asyncio
+    from unittest.mock import patch
+    from app.services import llm
+
+    async def run(fake):
+        with patch.object(llm, "generate_ollama", return_value=fake):
+            return await llm.generate_next_question("ko", "정상", "정상", [])
+
+    q, t = asyncio.run(run("밝은 곳에서 눈이 부시나요?"))
+    assert t == "yesno" and q
+
+    q, t = asyncio.run(run("시력 변화를 자세히 설명해 주시겠어요?"))
+    assert t == "text", "서술형은 폐기하지 말고 text로 넘겨야 한다"
+    assert q, "서술형 질문도 문장 자체는 유지돼야 한다"
+
+    q, t = asyncio.run(run("   "))
+    assert q == "" and t == "yesno"
