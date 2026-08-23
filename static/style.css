@@ -191,6 +191,15 @@ body {
     transition: background .2s ease;
 }
 .dm-close:hover { background: rgba(255,255,255,0.35); }
+.dm-close svg {
+    width: 18px;
+    height: 18px;
+    margin: auto;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
 .dm-icon-lg { font-size: 3rem; margin-bottom: 8px; }
 .dm-title { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; }
 .dm-body { padding: 24px 28px; overflow-y: auto; overscroll-behavior: contain; }
@@ -225,7 +234,8 @@ body {
 .dm-figure figcaption { padding: 12px 14px 13px; font-size: .74rem; line-height: 1.5; color: #526277; }
 .dm-figure figcaption > p:first-child { color: #334155; font-weight: 700; }
 .dm-image-note { margin-top: 4px; color: #64748b; }
-.dm-figure figcaption a { display: inline-block; margin-top: 7px; color: #155eef; font-size: .69rem; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.dm-license-links { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 7px; }
+.dm-figure figcaption a { display: inline-block; color: #155eef; font-size: .69rem; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .dm-intro { margin-bottom: 18px; color: #26364a; font-size: .94rem; line-height: 1.75; }
 .dm-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .dm-section { padding: 16px; border: 1px solid #e1e8f2; border-radius: 14px; background: #f8fafc; }

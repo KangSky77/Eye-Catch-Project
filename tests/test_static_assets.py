@@ -266,3 +266,31 @@ def test_가중치_미로드를_로드완료로_기록하지_않는다():
     assert "weights_ready = load_trained_weights()" in main
     assert "if weights_ready:" in main
     assert "사진 분석 API는 503으로 차단" in main
+
+
+def test_질환_모달은_표시한_뒤_스크롤을_초기화한다():
+    """숨겨진 모달에 scrollTop을 설정해 재열기 위치가 남는 회귀를 막는다."""
+    src = (STATIC / "app-disease.js").read_text(encoding="utf-8")
+    body = src[src.index("function openDiseaseModal"):src.index("function closeDisease")]
+    assert body.index("classList.add('show')") < body.index("scrollTop = 0")
+
+
+def test_질환_모달_닫기_svg가_실제로_그려진다():
+    """fill이 없는 X 아이콘에는 CSS stroke와 크기가 반드시 필요하다."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    rule = css[css.index(".dm-close svg"):css.index(".dm-icon-lg")]
+    assert "stroke: currentColor" in rule
+    assert "width: 18px" in rule
+    assert "height: 18px" in rule
+
+
+def test_질환_사진에_원본_라이선스와_변경_고지가_노출된다():
+    """CC 사진의 원본·라이선스 링크와 재인코딩 사실을 공개 UI에 남긴다."""
+    disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert "sourceLink.href = media.page" in disease
+    assert "licenseLink.href = media.licenseUrl" in disease
+    assert "media.change === 'reencoded'" in disease
+    assert 'licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/"' in data
+    assert 'licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/"' in data
+    assert data.count("dis_modal_image_change_reencoded:") == 6

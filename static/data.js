@@ -13,7 +13,7 @@ const translations = {
         msg_gen: "리포트를 생성 중입니다...", res_ams_bad: "이상 소견 (검사 요망)", res_ams_ok: "특이사항 없음", res_chat_none: "주요 증상 없음",
         rep_warn: "본 리포트는 AI 자가진단 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.",
         dis_card_hint: "카드를 누르면 자세한 설명을 확인할 수 있어요.", dis_more: "자세히 보기 →", dis_modal_note: "이런 증상이 의심되면 안과 검진을 받아보세요.", dm_close: "닫기", dis_ai_badge: "AI 분석 지원",
-        dis_modal_image: "임상 참고 이미지", dis_modal_symptoms: "주요 증상", dis_modal_risk: "위험 요인", dis_modal_care: "검사와 치료", dis_modal_urgent: "빠른 진료가 필요한 경우", dis_modal_source: "공식 질환 정보", dis_modal_image_note: "교육용 참고 이미지이며 사진만으로 질환을 진단할 수 없습니다.", dis_modal_license: "이미지 출처·라이선스",
+        dis_modal_image: "임상 참고 이미지", dis_modal_symptoms: "주요 증상", dis_modal_risk: "위험 요인", dis_modal_care: "검사와 치료", dis_modal_urgent: "빠른 진료가 필요한 경우", dis_modal_source: "공식 질환 정보", dis_modal_image_note: "교육용 참고 이미지이며 사진만으로 질환을 진단할 수 없습니다.", dis_modal_image_source: "이미지 원본", dis_modal_license: "라이선스", dis_modal_image_change_reencoded: "변경 사항: 960px 썸네일을 PNG에서 JPEG로 재인코딩했습니다(품질 85). 내용 편집·크롭은 하지 않았습니다.",
         dis_modal_image_external: "외안부 사진", dis_modal_image_fundus: "안저 사진 · 병원 장비 필요", dis_modal_image_fundus_note: "눈 안쪽 망막에 생기는 질환이라 겉모습으로는 확인할 수 없고, 앱의 사진 분석 대상도 아닙니다.",
         map_page_title: "내 주변 안과 찾기", map_locate: "내 위치로 찾기", map_open_full: "카카오맵에서 전체 보기",
         map_status_idle: "아래 버튼을 눌러 가까운 안과를 찾아보세요.", map_status_loading: "위치를 확인하는 중...", map_status_denied: "위치 권한이 거부되었어요. 전체 지도에서 검색해 주세요.", map_status_unsupported: "이 브라우저는 위치 기능을 지원하지 않아요.",
@@ -52,7 +52,7 @@ const translations = {
         msg_gen: "Generating report...", res_ams_bad: "Distortion detected", res_ams_ok: "Normal", res_chat_none: "No symptoms",
         rep_warn: "This is an AI-assisted tool. Please consult an ophthalmologist for an accurate diagnosis.",
         dis_card_hint: "Tap a card to see the full description.", dis_more: "Learn more →", dis_modal_note: "If you notice these symptoms, please see an ophthalmologist.", dm_close: "Close", dis_ai_badge: "AI-Powered",
-        dis_modal_image: "Clinical reference image", dis_modal_symptoms: "Common symptoms", dis_modal_risk: "Risk factors", dis_modal_care: "Exams and treatment", dis_modal_urgent: "When to seek prompt care", dis_modal_source: "Official condition guide", dis_modal_image_note: "For education only. A condition cannot be diagnosed from a photo alone.", dis_modal_license: "Image source and license",
+        dis_modal_image: "Clinical reference image", dis_modal_symptoms: "Common symptoms", dis_modal_risk: "Risk factors", dis_modal_care: "Exams and treatment", dis_modal_urgent: "When to seek prompt care", dis_modal_source: "Official condition guide", dis_modal_image_note: "For education only. A condition cannot be diagnosed from a photo alone.", dis_modal_image_source: "Image source", dis_modal_license: "License", dis_modal_image_change_reencoded: "Change: the 960 px thumbnail was re-encoded from PNG to JPEG (quality 85), with no content edits or cropping.",
         dis_modal_image_external: "External eye photo", dis_modal_image_fundus: "Fundus photo · clinic equipment needed", dis_modal_image_fundus_note: "This develops on the retina inside the eye, so it is invisible from the outside and is not covered by the app photo analysis.",
         map_page_title: "Find a Clinic Near You", map_locate: "Use My Location", map_open_full: "Open Full Map",
         map_status_idle: "Tap the button below to find nearby eye clinics.", map_status_loading: "Locating you...", map_status_denied: "Location denied. Please search on the full map.", map_status_unsupported: "This browser does not support geolocation.",
@@ -91,7 +91,7 @@ const translations = {
         msg_gen: "Generando informe...", res_ams_bad: "Distorsión", res_ams_ok: "Normal", res_chat_none: "Sin síntomas",
         rep_warn: "Herramienta asistida por IA. Consulte a un oftalmólogo para un diagnóstico preciso.",
         dis_card_hint: "Toca una tarjeta para ver la descripción completa.", dis_more: "Ver más →", dis_modal_note: "Si nota estos síntomas, consulte a un oftalmólogo.", dm_close: "Cerrar", dis_ai_badge: "Análisis con IA",
-        dis_modal_image: "Imagen clínica de referencia", dis_modal_symptoms: "Síntomas frecuentes", dis_modal_risk: "Factores de riesgo", dis_modal_care: "Pruebas y tratamiento", dis_modal_urgent: "Cuándo buscar atención rápida", dis_modal_source: "Guía oficial", dis_modal_image_note: "Solo con fines educativos. Una foto por sí sola no permite diagnosticar.", dis_modal_license: "Fuente y licencia de la imagen",
+        dis_modal_image: "Imagen clínica de referencia", dis_modal_symptoms: "Síntomas frecuentes", dis_modal_risk: "Factores de riesgo", dis_modal_care: "Pruebas y tratamiento", dis_modal_urgent: "Cuándo buscar atención rápida", dis_modal_source: "Guía oficial", dis_modal_image_note: "Solo con fines educativos. Una foto por sí sola no permite diagnosticar.", dis_modal_image_source: "Fuente de la imagen", dis_modal_license: "Licencia", dis_modal_image_change_reencoded: "Cambio: la miniatura de 960 px se recodificó de PNG a JPEG (calidad 85), sin editar ni recortar el contenido.",
         dis_modal_image_external: "Foto ocular externa", dis_modal_image_fundus: "Retinografía · requiere equipo clínico", dis_modal_image_fundus_note: "Se desarrolla en la retina, dentro del ojo, por lo que no se ve desde fuera ni lo cubre el análisis de fotos de la app.",
         map_page_title: "Encontrar una clínica cercana", map_locate: "Usar mi ubicación", map_open_full: "Abrir mapa completo",
         map_status_idle: "Pulse el botón para encontrar clínicas cercanas.", map_status_loading: "Localizando...", map_status_denied: "Ubicación denegada. Busque en el mapa completo.", map_status_unsupported: "Este navegador no admite geolocalización.",
@@ -130,7 +130,7 @@ const translations = {
         msg_gen: "Génération du rapport...", res_ams_bad: "Distorsion", res_ams_ok: "Normal", res_chat_none: "Aucun symptôme",
         rep_warn: "Outil assisté par IA. Veuillez consulter un ophtalmologiste.",
         dis_card_hint: "Appuyez sur une carte pour voir la description complète.", dis_more: "En savoir plus →", dis_modal_note: "Si vous remarquez ces symptômes, consultez un ophtalmologiste.", dm_close: "Fermer", dis_ai_badge: "Analyse par IA",
-        dis_modal_image: "Image clinique de référence", dis_modal_symptoms: "Symptômes fréquents", dis_modal_risk: "Facteurs de risque", dis_modal_care: "Examens et traitement", dis_modal_urgent: "Quand consulter rapidement", dis_modal_source: "Guide officiel", dis_modal_image_note: "Image éducative uniquement. Une photo seule ne permet pas de poser un diagnostic.", dis_modal_license: "Source et licence de l’image",
+        dis_modal_image: "Image clinique de référence", dis_modal_symptoms: "Symptômes fréquents", dis_modal_risk: "Facteurs de risque", dis_modal_care: "Examens et traitement", dis_modal_urgent: "Quand consulter rapidement", dis_modal_source: "Guide officiel", dis_modal_image_note: "Image éducative uniquement. Une photo seule ne permet pas de poser un diagnostic.", dis_modal_image_source: "Source de l’image", dis_modal_license: "Licence", dis_modal_image_change_reencoded: "Modification : la vignette de 960 px a été réencodée du PNG au JPEG (qualité 85), sans retouche ni recadrage.",
         dis_modal_image_external: "Photo oculaire externe", dis_modal_image_fundus: "Rétinographie · équipement clinique requis", dis_modal_image_fundus_note: "Cette atteinte se développe sur la rétine, à l'intérieur de l'œil : invisible de l'extérieur, elle n'est pas couverte par l'analyse photo de l'app.",
         map_page_title: "Trouver une clinique près de chez vous", map_locate: "Utiliser ma position", map_open_full: "Ouvrir la carte complète",
         map_status_idle: "Appuyez sur le bouton pour trouver des cliniques proches.", map_status_loading: "Localisation...", map_status_denied: "Position refusée. Recherchez sur la carte complète.", map_status_unsupported: "Ce navigateur ne prend pas en charge la géolocalisation.",
@@ -169,7 +169,7 @@ const translations = {
         msg_gen: "レポートを作成中...", res_ams_bad: "異常あり（要検査）", res_ams_ok: "特記事項なし", res_chat_none: "主要な症状なし",
         rep_warn: "本レポートはAIによる補助資料です。正確な診断のため眼科を受診してください。",
         dis_card_hint: "カードをタップすると詳しい説明が見られます。", dis_more: "詳しく見る →", dis_modal_note: "このような症状があれば眼科を受診してください。", dm_close: "閉じる", dis_ai_badge: "AI分析対応",
-        dis_modal_image: "臨床参考画像", dis_modal_symptoms: "主な症状", dis_modal_risk: "リスク因子", dis_modal_care: "検査と治療", dis_modal_urgent: "早めの受診が必要な場合", dis_modal_source: "公的な疾患情報", dis_modal_image_note: "教育用の参考画像です。写真だけで診断することはできません。", dis_modal_license: "画像の出典・ライセンス",
+        dis_modal_image: "臨床参考画像", dis_modal_symptoms: "主な症状", dis_modal_risk: "リスク因子", dis_modal_care: "検査と治療", dis_modal_urgent: "早めの受診が必要な場合", dis_modal_source: "公的な疾患情報", dis_modal_image_note: "教育用の参考画像です。写真だけで診断することはできません。", dis_modal_image_source: "画像の出典", dis_modal_license: "ライセンス", dis_modal_image_change_reencoded: "変更点：960pxのサムネイルをPNGからJPEG（品質85）へ再エンコードしました。内容の編集やトリミングはしていません。",
         dis_modal_image_external: "外眼部写真", dis_modal_image_fundus: "眼底写真 · 医療機器が必要", dis_modal_image_fundus_note: "眼の内側の網膜に生じるため外見では確認できず、アプリの写真分析の対象外です。",
         map_page_title: "近くの眼科を探す", map_locate: "現在地で探す", map_open_full: "地図全体を開く",
         map_status_idle: "下のボタンを押して近くの眼科を探しましょう。", map_status_loading: "現在地を確認中...", map_status_denied: "位置情報が拒否されました。地図全体で検索してください。", map_status_unsupported: "このブラウザは位置情報に対応していません。",
@@ -208,7 +208,7 @@ const translations = {
         msg_gen: "正在生成报告...", res_ams_bad: "发现异常", res_ams_ok: "正常", res_chat_none: "无主要症状",
         rep_warn: "本报告为AI辅助参考资料，为了获得准确诊断，请咨询眼科医生。",
         dis_card_hint: "点击卡片可查看详细说明。", dis_more: "查看详情 →", dis_modal_note: "如有这些症状，请及时就诊眼科。", dm_close: "关闭", dis_ai_badge: "支持AI分析",
-        dis_modal_image: "临床参考图片", dis_modal_symptoms: "常见症状", dis_modal_risk: "风险因素", dis_modal_care: "检查与治疗", dis_modal_urgent: "需要尽快就医的情况", dis_modal_source: "官方疾病信息", dis_modal_image_note: "图片仅供健康教育参考，不能仅凭照片诊断疾病。", dis_modal_license: "图片来源与许可",
+        dis_modal_image: "临床参考图片", dis_modal_symptoms: "常见症状", dis_modal_risk: "风险因素", dis_modal_care: "检查与治疗", dis_modal_urgent: "需要尽快就医的情况", dis_modal_source: "官方疾病信息", dis_modal_image_note: "图片仅供健康教育参考，不能仅凭照片诊断疾病。", dis_modal_image_source: "图片来源", dis_modal_license: "许可证", dis_modal_image_change_reencoded: "更改说明：将960像素缩略图从PNG重新编码为JPEG（质量85），未编辑或裁剪内容。",
         dis_modal_image_external: "眼表照片", dis_modal_image_fundus: "眼底照片 · 需医院设备", dis_modal_image_fundus_note: "病变位于眼球内部的视网膜，从外观无法看出，也不在本应用的照片分析范围内。",
         map_page_title: "查找附近的眼科", map_locate: "使用我的位置", map_open_full: "打开完整地图",
         map_status_idle: "点击下方按钮查找附近的眼科。", map_status_loading: "正在确认位置...", map_status_denied: "位置权限被拒绝，请在完整地图中搜索。", map_status_unsupported: "此浏览器不支持定位功能。",
@@ -256,6 +256,8 @@ const diseaseMedia = [
         kind: "external",
         credit: "Rakesh Ahuja, MD · Wikimedia Commons",
         license: "CC BY-SA 3.0",
+        licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
+        change: "reencoded",
         page: "https://commons.wikimedia.org/wiki/File:Cataract_in_human_eye.png"
     },
     {
@@ -263,6 +265,7 @@ const diseaseMedia = [
         kind: "fundus",
         credit: "National Eye Institute, NIH · Wikimedia Commons",
         license: "Public domain",
+        licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/",
         page: "https://commons.wikimedia.org/wiki/File:Intermediate_age_related_macular_degeneration.jpg"
     },
     {
@@ -270,6 +273,7 @@ const diseaseMedia = [
         kind: "external",
         credit: "James Heilman, MD · Wikimedia Commons",
         license: "CC BY-SA 3.0",
+        licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
         page: "https://commons.wikimedia.org/wiki/File:Acute_angle_closure_glaucoma.JPG"
     },
     {
@@ -277,6 +281,7 @@ const diseaseMedia = [
         kind: "fundus",
         credit: "National Eye Institute, NIH · Wikimedia Commons",
         license: "Public domain",
+        licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/",
         page: "https://commons.wikimedia.org/wiki/File:Fundus_retinopathy_EDA03.JPG"
     }
 ];

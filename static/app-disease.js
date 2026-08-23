@@ -113,11 +113,21 @@ function openDisease(idx) {
         imageNote.className = 'dm-image-note';
         imageNote.textContent = labels.dis_modal_image_note || 'For education only. A photo alone cannot diagnose a condition.';
 
+        const sourceLink = document.createElement('a');
+        sourceLink.href = media.page;
+        sourceLink.target = '_blank';
+        sourceLink.rel = 'noopener';
+        sourceLink.textContent = `${labels.dis_modal_image_source || 'Image source'}: ${media.credit} ↗`;
+
         const licenseLink = document.createElement('a');
-        licenseLink.href = media.page;
+        licenseLink.href = media.licenseUrl;
         licenseLink.target = '_blank';
-        licenseLink.rel = 'noopener';
-        licenseLink.textContent = `${labels.dis_modal_license || 'Image source and license'}: ${media.credit} · ${media.license} ↗`;
+        licenseLink.rel = 'noopener license';
+        licenseLink.textContent = `${labels.dis_modal_license || 'License'}: ${media.license} ↗`;
+
+        const licenseLinks = document.createElement('div');
+        licenseLinks.className = 'dm-license-links';
+        licenseLinks.append(sourceLink, licenseLink);
 
         figcaption.append(caption, imageNote);
         // 안저사진이면 '왜 겉으로는 안 보이는지'까지 덧붙인다 —
@@ -128,7 +138,13 @@ function openDisease(idx) {
             why.textContent = labels.dis_modal_image_fundus_note;
             figcaption.appendChild(why);
         }
-        figcaption.appendChild(licenseLink);
+        if (media.change === 'reencoded' && labels.dis_modal_image_change_reencoded) {
+            const changeNote = document.createElement('p');
+            changeNote.className = 'dm-image-note';
+            changeNote.textContent = labels.dis_modal_image_change_reencoded;
+            figcaption.appendChild(changeNote);
+        }
+        figcaption.appendChild(licenseLinks);
 
         figure.append(imageLabel, img, figcaption);
         detail.appendChild(figure);
@@ -199,9 +215,6 @@ function openDisease(idx) {
         detail.appendChild(sourceLink);
     }
 
-    const modalBody = document.querySelector('#dm-card .dm-body');
-    if (modalBody) modalBody.scrollTop = 0;
-
     openDiseaseModal();
 }
 
@@ -213,6 +226,9 @@ let _lastFocused = null;
 function openDiseaseModal() {
     _lastFocused = document.activeElement;
     document.getElementById('disease-modal').classList.add('show');
+    // display:none 상태에서는 scrollTop 초기화가 무시될 수 있으므로 표시한 뒤 맨 위로 이동한다.
+    const modalBody = document.querySelector('#dm-card .dm-body');
+    if (modalBody) modalBody.scrollTop = 0;
     // 모달이 열린 동안 뒤 페이지가 스크롤되면 어디를 보고 있었는지 잃어버린다
     document.body.classList.add('modal-open');
     const closeBtn = document.querySelector('#dm-card .dm-close');
