@@ -16,7 +16,9 @@
     npm run build:css   (node_modules 없으면 npm install 먼저)
     또는 이미 빌드본에 있는 다른 클래스로 교체.
 """
+import json
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -187,7 +189,80 @@ def test_방문권고가_검증되지_않은_지표를_쓰지_않는다():
 def test_기능검사_문구가_단정적이지_않다():
     """'영향을 받지 않는다', '일치합니다' 같은 단정은 검증 전에는 쓸 수 없다."""
     data = (STATIC / "data.js").read_text(encoding="utf-8")
-    ko_start = data.index("vt_intro_desc")
-    banned = ["영향을 받지 않아", "결과가 일치합니다", "신뢰도가 높은 신호"]
+    banned = [
+        "영향을 받지 않아", "결과가 일치합니다", "신뢰도가 높은 신호",
+        "한쪽 눈만 진행된 변화", "one-sided change", "可能为单眼病变",
+    ]
     found = [b for b in banned if b in data]
     assert not found, f"과도한 단정 표현이 남아 있습니다: {found}"
+
+
+def _classify_vision_results(payload: dict) -> dict:
+    """브라우저와 같은 JS 판정 함수를 Node에서 직접 실행한다."""
+    source_path = json.dumps(str(STATIC / "app-visiontest.js"))
+    payload_json = json.dumps(payload)
+    script = f"""
+const fs = require('fs');
+global.window = {{
+  addEventListener() {{}},
+  ECCalib: {{ decimalToLogMAR(a) {{ return -Math.log10(a); }} }}
+}};
+const source = fs.readFileSync({source_path}, 'utf8');
+(0, eval)(source + '\\n;process.stdout.write(JSON.stringify(vtClassifyResults({payload_json})));');
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, check=True
+    )
+    return json.loads(completed.stdout)
+
+
+def test_기능검사_측정불가_상태를_좌우차이없음으로_처리하지_않는다():
+    """양안 실패, 한쪽 실패, 정상 비교를 서로 다른 상태로 보존한다."""
+    both_failed = _classify_vision_results({
+        "left": {"acuity": None, "contrast": None},
+        "right": {"acuity": None, "contrast": None},
+    })
+    assert both_failed["bothEyesUnmeasurable"] is True
+    assert both_failed["oneSideUnmeasurable"] is False
+    assert both_failed["asymmetric"] is False
+
+    one_failed = _classify_vision_results({
+        "left": {"acuity": None, "contrast": None},
+        "right": {"acuity": 0.63, "contrast": 1.2},
+    })
+    assert one_failed["bothEyesUnmeasurable"] is False
+    assert one_failed["oneSideUnmeasurable"] is True
+    assert one_failed["asymmetric"] is True
+
+    comparable = _classify_vision_results({
+        "left": {"acuity": 0.8, "contrast": 1.2},
+        "right": {"acuity": 0.8, "contrast": 1.2},
+    })
+    assert comparable["bothEyesUnmeasurable"] is False
+    assert comparable["oneSideUnmeasurable"] is False
+    assert comparable["asymmetric"] is False
+
+    threshold = _classify_vision_results({
+        "left": {"acuity": 0.8, "contrast": 0.9},
+        "right": {"acuity": 0.8, "contrast": 1.2},
+    })
+    assert threshold["asymmetric"] is True, "0.30 logCS 경계값이 부동소수점 오차로 빠지면 안 됩니다"
+
+
+def test_기능검사_동적문구와_결과가_재렌더된다():
+    """언어 전환 시 보정 패널만 갱신해 진행 문구가 남는 회귀를 막는다."""
+    core = (STATIC / "app-core.js").read_text(encoding="utf-8")
+    vision = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
+    findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
+    assert "vtRefreshDynamicUI()" in core
+    assert "result.scrollIntoView" in vision
+    assert "function vtRecalibrate" in vision
+    assert "bothEyesUnmeasurable" in findings
+
+
+def test_가중치_미로드를_로드완료로_기록하지_않는다():
+    """발표 환경에 모델이 없는데도 성공 로그를 남기면 준비 오류를 놓친다."""
+    main = (ROOT / "app" / "main.py").read_text(encoding="utf-8")
+    assert "weights_ready = load_trained_weights()" in main
+    assert "if weights_ready:" in main
+    assert "사진 분석 API는 503으로 차단" in main

@@ -22,8 +22,11 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # AI 모델 로드
-    load_trained_weights()
-    logger.info("✅ AI 모델 로드 완료!")
+    weights_ready = load_trained_weights()
+    if weights_ready:
+        logger.info("✅ AI 모델 가중치 로드 완료!")
+    else:
+        logger.warning("⚠️  AI 모델 가중치 미로드 — 사진 분석 API는 503으로 차단됩니다")
 
     # 백그라운드 워밍업 태스크는 반드시 참조를 붙들어 둔다 —
     # 이벤트루프는 태스크에 강한 참조를 유지하지 않아서, 로컬 변수조차 없이 만들면

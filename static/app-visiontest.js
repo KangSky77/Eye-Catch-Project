@@ -44,6 +44,7 @@ const vtState = {
 };
 
 const DIRECTIONS = ['up', 'right', 'down', 'left'];
+const VT_COMPARE_EPSILON = 1e-9; // 1.20 - 0.90이 0.299999...가 되는 부동소수점 경계 보정
 
 /** 이 기기·거리에서 실제로 표시 가능한 시력 단계만. vtStart에서 계산해 둔다. */
 function vtAcuityLevels() {
@@ -153,8 +154,16 @@ function vtRenderStimulus() {
     }
     drawTumblingE(ctx, canvas.width / 2, canvas.height / 2, sizePhys, vtState.current, gray);
 
+    vtUpdateProgress();
+}
+
+/** 현재 시표를 바꾸지 않고 진행 문구만 다시 그린다(언어 전환용). */
+function vtUpdateProgress() {
+    if (vtState.phase !== 'acuity' && vtState.phase !== 'contrast') return;
+    const progress = document.getElementById('vt-progress');
+    if (!progress) return;
     const t = translations[state.lang];
-    document.getElementById('vt-progress').textContent =
+    progress.textContent =
         `${vtState.phase === 'acuity' ? (t.vt_acuity || '시력') : (t.vt_contrast || '대비감도')} · ` +
         `${(t['vt_eye_' + vtState.eye] || vtState.eye)} · ` +
         `${vtState.trial + 1}/${VT.TRIALS_PER_LEVEL}`;
@@ -187,7 +196,7 @@ function vtAnswer(direction) {
     vtAdvanceStage();
 }
 
-/** 눈/검사 순서: 좌안 시력 → 좌안 대비 → 우안 시력 → 우안 대비 → 결과 */
+/** 눈/검사 순서: 무작위로 고른 첫 눈의 시력·대비 → 반대쪽 눈의 시력·대비 → 결과 */
 function vtAdvanceStage() {
     if (vtState.phase === 'acuity') {
         vtState.phase = 'contrast';
@@ -216,6 +225,19 @@ function vtShowEyePrompt() {
     document.getElementById('vt-eye-instruction').textContent = which;
     document.getElementById('vt-eye-sub').textContent =
         (vtState.phase === 'acuity' ? (t.vt_acuity_desc || '') : (t.vt_contrast_desc || ''));
+}
+
+/** 언어를 바꿔도 진행 중인 시표·판정 상태는 바꾸지 않고 동적 문구만 갱신한다. */
+function vtRefreshDynamicUI() {
+    const prompt = document.getElementById('vt-eye-prompt');
+    const testArea = document.getElementById('vt-test-area');
+    if ((vtState.phase === 'acuity' || vtState.phase === 'contrast') && prompt && !prompt.classList.contains('hidden')) {
+        vtShowEyePrompt();
+    }
+    if ((vtState.phase === 'acuity' || vtState.phase === 'contrast') && testArea && !testArea.classList.contains('hidden')) {
+        vtUpdateProgress();
+    }
+    if (vtState.phase === 'done' && state.visionTest) vtRenderResult();
 }
 
 function vtBeginStage() {
@@ -401,7 +423,6 @@ function vtNudge(delta) {
 function vtRefreshCalibrationUI() {
     if (!document.getElementById('vt-cardbox')) return;
     vtInstallGestureGuards();
-    vtLockViewport(false);       // 기본은 해제 — 사용자가 카드 놓을 자리로 스크롤할 수 있어야 한다
     vtUpdateLockButton();
     // 슬라이더 값이 새 상한을 넘으면 클램프
     vtPaintCard();
@@ -502,40 +523,65 @@ function vtScrollToTest() {
     if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }
 
+/** DOM과 무관하게 양안 결과를 분류한다. 브라우저 흐름과 회귀 테스트가 같은 규칙을 쓴다. */
+function vtClassifyResults(r) {
+    const left = r.left || {};
+    const right = r.right || {};
+    const dCS = (left.contrast != null && right.contrast != null)
+        ? Math.abs(left.contrast - right.contrast) : null;
+    const dAc = (left.acuity != null && right.acuity != null)
+        ? Math.abs(window.ECCalib.decimalToLogMAR(left.acuity) - window.ECCalib.decimalToLogMAR(right.acuity))
+        : null;
+
+    const oneSideUnmeasurable =
+        (left.acuity == null) !== (right.acuity == null) ||
+        (left.contrast == null) !== (right.contrast == null);
+    const bothEyesUnmeasurable =
+        left.acuity == null && right.acuity == null &&
+        left.contrast == null && right.contrast == null;
+    const asymmetric = !bothEyesUnmeasurable && (oneSideUnmeasurable
+        || (dCS != null && dCS + VT_COMPARE_EPSILON >= 0.3)
+        || (dAc != null && dAc + VT_COMPARE_EPSILON >= 0.2));
+
+    return { dCS, dAc, oneSideUnmeasurable, bothEyesUnmeasurable, asymmetric };
+}
+
 function vtFinish() {
     vtState.phase = 'done';
     document.getElementById('vt-test-area').classList.add('hidden');
     document.getElementById('vt-eye-prompt').classList.add('hidden');
-    document.getElementById('vt-calib').classList.remove('hidden');   // 재보정할 수 있게 복원
 
     const r = vtState.results;
     state.visionTest = {
         left:  { acuity: r.left.acuity,  logCS: r.left.contrast },
         right: { acuity: r.right.acuity, logCS: r.right.contrast },
     };
-    // 좌우 차이. 같은 기기·거리에서 재므로 절대값보다는 비교가 안정적이다(단, 검증 전이다).
-    const dCS = (r.left.contrast != null && r.right.contrast != null)
-        ? Math.abs(r.left.contrast - r.right.contrast) : null;
-    const dAc = (r.left.acuity != null && r.right.acuity != null)
-        ? Math.abs(window.ECCalib.decimalToLogMAR(r.left.acuity) - window.ECCalib.decimalToLogMAR(r.right.acuity))
-        : null;
-
-    // ⚠️ 한쪽 눈만 null인 경우 = 그 눈은 가장 큰/진한 자극조차 못 맞혔다는 뜻이다.
-    //    이건 '차이 없음'이 아니라 **가장 심한 좌우 차이**다.
-    //    이전 구현은 둘 다 값이 있을 때만 차이를 계산해서, 최악의 케이스를 정상으로 처리했다.
-    const oneSideUnmeasurable =
-        (r.left.acuity == null) !== (r.right.acuity == null) ||
-        (r.left.contrast == null) !== (r.right.contrast == null);
-
-    // 0.3 logCS(=2배) / 0.2 logMAR(2줄) 이상이면 좌우 차이로 본다
-    state.visionTest.asymmetric = oneSideUnmeasurable
-        || (dCS != null && dCS >= 0.3) || (dAc != null && dAc >= 0.2);
-    state.visionTest.oneSideUnmeasurable = oneSideUnmeasurable;
-    state.visionTest.deltaLogCS = dCS;
-    state.visionTest.deltaLogMAR = dAc;
+    // 양안 모두 최저 단계를 통과하지 못한 경우는 '차이 없음'이 아니라
+    // 비교 불가능한 검사 실패다. 한쪽만 null인 경우와도 구분한다.
+    const classified = vtClassifyResults(r);
+    state.visionTest.asymmetric = classified.asymmetric;
+    state.visionTest.oneSideUnmeasurable = classified.oneSideUnmeasurable;
+    state.visionTest.bothEyesUnmeasurable = classified.bothEyesUnmeasurable;
+    state.visionTest.deltaLogCS = classified.dCS;
+    state.visionTest.deltaLogMAR = classified.dAc;
 
     vtRenderResult();
-    document.getElementById('vt-result').classList.remove('hidden');
+    const result = document.getElementById('vt-result');
+    result.classList.remove('hidden');
+    // 보정 패널이 DOM상 앞에 있어 모바일에서 결과가 화면 밖으로 밀리므로,
+    // 사용자가 검사 완료 직후 결과를 바로 보도록 한다.
+    requestAnimationFrame(() => result.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+}
+
+/** 결과를 유지한 채 화면 보정 단계만 다시 연다. */
+function vtRecalibrate() {
+    vtState.phase = 'idle';
+    document.getElementById('vt-result').classList.add('hidden');
+    document.getElementById('vt-intro').classList.remove('hidden');
+    const calib = document.getElementById('vt-calib');
+    calib.classList.remove('hidden');
+    vtRefreshCalibrationUI();
+    calib.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }
 
 function vtRenderResult() {
@@ -559,10 +605,20 @@ function vtRenderResult() {
         box.appendChild(mk(`${t['vt_eye_' + side] || side} · ${t.vt_acuity || '시력'}`, fmtA(r[side].acuity)));
         box.appendChild(mk(`${t['vt_eye_' + side] || side} · ${t.vt_contrast || '대비감도'}`, fmtC(r[side].logCS)));
     }
-    if (r.asymmetric) {
+    if (r.bothEyesUnmeasurable) {
         const w = document.createElement('p');
         w.className = 'vt-warn';
-        w.textContent = t.vt_asym || '⚠️ 좌우 차이가 큽니다 — 한쪽 눈만 진행된 변화일 수 있어 안과 확인을 권합니다.';
+        w.textContent = t.vt_unmeasurable_both || '⚠️ 양쪽 눈 모두 측정이 완료되지 않았습니다. 조명·거리·눈 가림을 확인하고 다시 검사해 주세요.';
+        box.appendChild(w);
+    } else if (r.oneSideUnmeasurable) {
+        const w = document.createElement('p');
+        w.className = 'vt-warn';
+        w.textContent = t.vt_unmeasurable || '⚠️ 한쪽 눈의 측정이 완료되지 않았습니다. 조건을 확인해 재검사하고, 차이가 지속되면 안과에서 확인하세요.';
+        box.appendChild(w);
+    } else if (r.asymmetric) {
+        const w = document.createElement('p');
+        w.className = 'vt-warn';
+        w.textContent = t.vt_asym || '⚠️ 좌우 결과 차이가 관찰됐습니다. 측정 조건에 따라 달라질 수 있으므로 재검사 후에도 차이가 지속되면 안과에서 확인하세요.';
         box.appendChild(w);
     }
     // 사진 모델의 편측 판정과 교차검증

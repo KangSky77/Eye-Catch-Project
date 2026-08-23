@@ -40,8 +40,9 @@ function buildFindings() {
 
     // --- 기능검사(시력·대비감도) ---
     if (state.visionTest) {
-        // 한쪽 눈이 아예 측정되지 않은 경우는 '차이 있음'과도 다른 상황이라 따로 안내한다
-        if (state.visionTest.oneSideUnmeasurable) out.push(t.find_vt_unmeasurable);
+        // 양안 모두 측정 불가능은 '차이 없음'이 아니라 검사 실패이므로 가장 먼저 분리한다.
+        if (state.visionTest.bothEyesUnmeasurable) out.push(t.find_vt_unmeasurable_both);
+        else if (state.visionTest.oneSideUnmeasurable) out.push(t.find_vt_unmeasurable);
         else out.push(state.visionTest.asymmetric ? t.find_vt_asym : t.find_vt_ok);
     }
 

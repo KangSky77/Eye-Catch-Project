@@ -113,6 +113,7 @@ function updateUI(lang) {
     if (typeof vtRefreshCalibrationUI === 'function' && document.getElementById('vt-cardbox')) {
         vtRefreshCalibrationUI();
     }
+    if (typeof vtRefreshDynamicUI === 'function') vtRefreshDynamicUI();
     const findBox = document.getElementById('findings-box');
     if (findBox && findBox.children.length && typeof renderFindings === 'function') {
         renderFindings(findBox);
