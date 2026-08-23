@@ -233,7 +233,7 @@ async function handleChatAnswer(yes) {
             setTimeout(() => { addMsg('bot', questions[state.lang][state.stepIdx].t); state.chatBusy = false; }, 600);
         } else {
             setTimeout(() => {
-                addLoadingMsg(translations[state.lang].survey_done || "기본 문진이 완료되었습니다. 맞춤형 추가 질문을 생성 중입니다... ⏳");
+                addLoadingMsg(translations[state.lang].survey_done || "기본 문진이 완료되었습니다. 맞춤형 추가 질문을 생성 중입니다...");
                 fetchNextQuestion();
             }, 600);
         }
@@ -247,7 +247,7 @@ async function handleChatAnswer(yes) {
 
         if (state.dynamicCount < state.maxDynamic) {
             setTimeout(() => {
-                addLoadingMsg(translations[state.lang].next_q_generating || "다음 맞춤형 질문을 생성 중입니다... ⏳");
+                addLoadingMsg(translations[state.lang].next_q_generating || "다음 맞춤형 질문을 생성 중입니다...");
                 fetchNextQuestion();
             }, 600);
         } else {

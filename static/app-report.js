@@ -91,7 +91,7 @@ async function finish() {
 
         // AI 오류면 의료 소견이 아님 → 에러로 표시하고 완료 알림·DB저장을 건너뜀
         if (streamError) {
-            opinionText.innerText = translations[state.lang].opinion_error || "⚠️ AI 서버 응답에 문제가 발생했습니다.";
+            opinionText.innerText = translations[state.lang].opinion_error || "AI 서버 응답에 문제가 발생했습니다.";
             opinionText.classList.add('text-rose-600');
             return;
         }
@@ -100,7 +100,7 @@ async function finish() {
         opinionText.innerText = opinionText.innerText.replace(/\*\*/g, '');
 
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(translations[state.lang].notif_title || "Eye-Catch 진단 완료 🏥", {
+            new Notification(translations[state.lang].notif_title || "Eye-Catch 진단 완료", {
                 body: translations[state.lang].notif_body || "Gemma AI의 맞춤형 소견서 작성이 완료되었습니다! 결과를 확인해보세요.",
             });
         }
@@ -116,19 +116,26 @@ async function finish() {
 
     } catch (e) {
         stopOpinionLoader();
-        if (opinionText) opinionText.innerText = translations[state.lang].opinion_error || "⚠️ 로컬 AI 서버와 연결이 끊어졌습니다.";
+        if (opinionText) opinionText.innerText = translations[state.lang].opinion_error || "로컬 AI 서버와 연결이 끊어졌습니다.";
     }
 }
 
+let _followupBusy = false;
+
 async function askGemmaMore() {
+    if (_followupBusy) return;   // 답변 스트리밍 중 재전송 금지 (응답이 뒤섞이는 것 방지)
+
     const inputEl = document.getElementById('user-followup-input');
     const responseEl = document.getElementById('followup-response');
+    const sendBtn = document.getElementById('followup-send-btn');
     const userMsg = inputEl.value.trim();
 
-    if (!userMsg) return;
+    if (!userMsg) { inputEl.focus(); return; }
 
     const context = document.getElementById('gemma-opinion-text').innerText;
 
+    _followupBusy = true;
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.setAttribute('aria-busy', 'true'); }
     inputEl.value = '';
     responseEl.classList.remove('hidden');
     responseEl.innerText = '';
@@ -157,7 +164,7 @@ async function askGemmaMore() {
         responseEl.innerText = `Q: ${userMsg}\nA: ` + text;
         const streamError = hasError;
         if (streamError) {          // AI 오류 → 에러 메시지로 대체
-            responseEl.innerText = translations[state.lang].srv_err || "⚠️ 서버와 연결할 수 없습니다.";
+            responseEl.innerText = translations[state.lang].srv_err || "서버와 연결할 수 없습니다.";
             responseEl.classList.add('text-rose-600');
             return;
         }
@@ -166,9 +173,25 @@ async function askGemmaMore() {
         responseEl.innerText = responseEl.innerText.replace(/\*\*/g, '');
     } catch (e) {
         loader.stop();
-        responseEl.innerText = translations[state.lang].srv_err || "⚠️ 서버와 연결할 수 없습니다.";
+        responseEl.innerText = translations[state.lang].srv_err || "서버와 연결할 수 없습니다.";
+    } finally {
+        _followupBusy = false;
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.removeAttribute('aria-busy'); }
     }
 }
+
+// 입력창에서 Enter로도 전송 (모바일 키보드의 '보내기' 포함)
+window.addEventListener('DOMContentLoaded', () => {
+    const inputEl = document.getElementById('user-followup-input');
+    if (inputEl) {
+        inputEl.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.isComposing) {   // isComposing: 한글/일본어 조합 중 Enter는 무시
+                e.preventDefault();
+                askGemmaMore();
+            }
+        });
+    }
+});
 
 // 소견서를 '쪼개짐 방지' 문단들로 변환.
 // 이유: 소견서가 빈 줄 없는 긴 한 덩어리면 html2pdf가 페이지 경계에서
@@ -295,10 +318,38 @@ function cleanupPdfHost() {
     if (_pdfHost) { _pdfHost.remove(); _pdfHost = null; }
 }
 
+let _pdfBusy = false;
+
 function downloadPDF() {
+    if (_pdfBusy) return;   // 생성에 몇 초 걸려 연타하면 PDF가 여러 장 만들어진다
+    const t = translations[state.lang];
+    if (!state.aiResult) {  // 전부 "-"인 빈 리포트를 내려받는 일 방지
+        showToast(t.report_hint_empty || "Run the AI analysis first.", 'info');
+        return;
+    }
+
+    _pdfBusy = true;
+    const btn = document.getElementById('pdf-btn');
+    const restoreBtn = setButtonBusy(btn, t.pdf_making || "Creating your PDF...");
+
     // 이중 안전장치: 생성 동안 스크롤을 맨 위로 (완료 후 원위치 복원)
     const sx = window.scrollX, sy = window.scrollY;
     window.scrollTo(0, 0);
-    const restore = () => { cleanupPdfHost(); window.scrollTo(sx, sy); };
-    buildReportPdf().save().then(restore, restore);
+    const restore = () => {
+        cleanupPdfHost();
+        window.scrollTo(sx, sy);
+        restoreBtn();
+        _pdfBusy = false;
+    };
+    try {
+        buildReportPdf().save().then(restore, err => {
+            restore();
+            showToast(t.pdf_err || "Could not create the PDF. Please try again.", 'error');
+            console.error(err);
+        });
+    } catch (err) {         // html2pdf 미로딩 등 동기 실패도 버튼이 잠긴 채로 남지 않게
+        restore();
+        showToast(t.pdf_err || "Could not create the PDF. Please try again.", 'error');
+        console.error(err);
+    }
 }

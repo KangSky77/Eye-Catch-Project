@@ -382,11 +382,22 @@ function vtToggleLock() {
     vtUpdateLockButton();
 }
 
+const VT_LOCK_ICON_ON  = '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0v2.9"/></svg>';
+const VT_LOCK_ICON_OFF = '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.3-1.3"/></svg>';
+
 function vtUpdateLockButton() {
     const b = document.getElementById('vt-lock-btn');
     if (!b) return;
     const t = translations[state.lang];
-    b.textContent = vtGestureLockActive ? (t.vt_lock_on || '🔒') : (t.vt_lock_off || '🔓');
+    // 아이콘은 기기마다 모양이 달라지는 이모지 대신 선형 SVG (앱 전체 아이콘 규칙과 동일)
+    b.innerHTML = '';
+    const ico = document.createElement('span');
+    ico.className = 'vt-lock-ico';
+    ico.setAttribute('aria-hidden', 'true');
+    ico.innerHTML = vtGestureLockActive ? VT_LOCK_ICON_ON : VT_LOCK_ICON_OFF;   // 고정 상수
+    const label = document.createElement('span');
+    label.textContent = vtGestureLockActive ? (t.vt_lock_on || '고정됨') : (t.vt_lock_off || '화면 고정하기');
+    b.append(ico, label);
     b.className = 'w-full mt-3 py-3 rounded-2xl font-bold text-[13px] btn-pop ' +
         (vtGestureLockActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700');
 }
