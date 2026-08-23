@@ -595,6 +595,24 @@ function vtRecalibrate() {
     calib.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }
 
+// 기능검사 결과 배지 아이콘 — 앱 전체와 같은 선형 SVG (이모지 미사용)
+const VT_WARN_ICON  = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 8.6v4.2M12 16.4h.01"/><path d="M10.3 3.9 2.7 17.1A2 2 0 0 0 4.4 20h15.2a2 2 0 0 0 1.7-2.9L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>';
+const VT_CROSS_ICON = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5 9 17.5 20 6.5"/></svg>';
+
+/** 경고·교차검증 문구를 아이콘과 함께 만든다(문자열은 항상 textContent). */
+function vtMakeNote(cls, icon, text) {
+    const p = document.createElement('p');
+    p.className = cls;
+    const i = document.createElement('span');
+    i.className = 'vt-note-ico';
+    i.setAttribute('aria-hidden', 'true');
+    i.innerHTML = icon;                 // 고정 상수
+    const t = document.createElement('span');
+    t.textContent = text;
+    p.append(i, t);
+    return p;
+}
+
 function vtRenderResult() {
     const t = translations[state.lang];
     const r = state.visionTest;
@@ -617,26 +635,14 @@ function vtRenderResult() {
         box.appendChild(mk(`${t['vt_eye_' + side] || side} · ${t.vt_contrast || '대비감도'}`, fmtC(r[side].logCS)));
     }
     if (r.bothEyesUnmeasurable) {
-        const w = document.createElement('p');
-        w.className = 'vt-warn';
-        w.textContent = t.vt_unmeasurable_both || '⚠️ 양쪽 눈 모두 측정이 완료되지 않았습니다. 조명·거리·눈 가림을 확인하고 다시 검사해 주세요.';
-        box.appendChild(w);
+        box.appendChild(vtMakeNote('vt-warn', VT_WARN_ICON, t.vt_unmeasurable_both || '양쪽 눈 모두 측정이 완료되지 않았습니다. 조명·거리·눈 가림을 확인하고 다시 검사해 주세요.'));
     } else if (r.oneSideUnmeasurable) {
-        const w = document.createElement('p');
-        w.className = 'vt-warn';
-        w.textContent = t.vt_unmeasurable || '⚠️ 한쪽 눈의 측정이 완료되지 않았습니다. 조건을 확인해 재검사하고, 차이가 지속되면 안과에서 확인하세요.';
-        box.appendChild(w);
+        box.appendChild(vtMakeNote('vt-warn', VT_WARN_ICON, t.vt_unmeasurable || '한쪽 눈의 측정이 완료되지 않았습니다. 조건을 확인해 재검사하고, 차이가 지속되면 안과에서 확인하세요.'));
     } else if (r.asymmetric) {
-        const w = document.createElement('p');
-        w.className = 'vt-warn';
-        w.textContent = t.vt_asym || '⚠️ 좌우 결과 차이가 관찰됐습니다. 측정 조건에 따라 달라질 수 있으므로 재검사 후에도 차이가 지속되면 안과에서 확인하세요.';
-        box.appendChild(w);
+        box.appendChild(vtMakeNote('vt-warn', VT_WARN_ICON, t.vt_asym || '좌우 결과 차이가 관찰됐습니다. 측정 조건에 따라 달라질 수 있으므로 재검사 후에도 차이가 지속되면 안과에서 확인하세요.'));
     }
     // 사진 모델의 편측 판정과 교차검증
     if (state.asymmetric && r.asymmetric) {
-        const c = document.createElement('p');
-        c.className = 'vt-cross';
-        c.textContent = t.vt_cross_match || '📌 사진 분석의 편측 소견과 기능검사 결과가 일치합니다.';
-        box.appendChild(c);
+        box.appendChild(vtMakeNote('vt-cross', VT_CROSS_ICON, t.vt_cross_match || '사진 분석의 편측 소견과 기능검사 결과가 일치합니다.'));
     }
 }

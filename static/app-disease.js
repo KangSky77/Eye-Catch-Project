@@ -89,9 +89,14 @@ function openDisease(idx) {
         const figure = document.createElement('figure');
         figure.className = 'dm-figure';
 
+        // 촬영 방식을 구분해 표시한다. 백내장·급성 폐쇄각 녹내장은 겉에서 보이지만,
+        // 황반변성·당뇨망막병증은 눈 안쪽 망막 병변이라 안저촬영(병원 장비)이 있어야 보인다.
+        // 라벨이 넷 다 '임상 참고 이미지'로 같으면 폰 사진으로 넷 다 판별된다고 읽힌다.
         const imageLabel = document.createElement('span');
-        imageLabel.className = 'dm-image-label';
-        imageLabel.textContent = labels.dis_modal_image || 'Clinical reference image';
+        imageLabel.className = 'dm-image-label dm-image-label-' + (media.kind || 'external');
+        imageLabel.textContent = (media.kind === 'fundus'
+            ? labels.dis_modal_image_fundus
+            : labels.dis_modal_image_external) || labels.dis_modal_image || 'Clinical reference image';
 
         const img = document.createElement('img');
         img.className = 'dm-clinical-image';
@@ -103,15 +108,28 @@ function openDisease(idx) {
         const figcaption = document.createElement('figcaption');
         const caption = document.createElement('p');
         caption.textContent = item.caption;
+
         const imageNote = document.createElement('p');
         imageNote.className = 'dm-image-note';
         imageNote.textContent = labels.dis_modal_image_note || 'For education only. A photo alone cannot diagnose a condition.';
+
         const licenseLink = document.createElement('a');
         licenseLink.href = media.page;
         licenseLink.target = '_blank';
         licenseLink.rel = 'noopener';
         licenseLink.textContent = `${labels.dis_modal_license || 'Image source and license'}: ${media.credit} · ${media.license} ↗`;
-        figcaption.append(caption, imageNote, licenseLink);
+
+        figcaption.append(caption, imageNote);
+        // 안저사진이면 '왜 겉으로는 안 보이는지'까지 덧붙인다 —
+        // 이 앱의 사진 분석이 백내장만 다루는 이유와 직결된다.
+        if (media.kind === 'fundus' && labels.dis_modal_image_fundus_note) {
+            const why = document.createElement('p');
+            why.className = 'dm-image-note';
+            why.textContent = labels.dis_modal_image_fundus_note;
+            figcaption.appendChild(why);
+        }
+        figcaption.appendChild(licenseLink);
+
         figure.append(imageLabel, img, figcaption);
         detail.appendChild(figure);
     }

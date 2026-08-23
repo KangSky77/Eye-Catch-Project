@@ -41,9 +41,9 @@ body {
     cursor: pointer;
     transition: background .2s ease, color .2s ease;
 }
-.nav-pill:hover { color: #2563eb; background: rgba(37, 99, 235, 0.06); }
+.nav-pill:hover { color: var(--ec-blue); background: rgba(21, 94, 239, 0.06); }
 .nav-pill.active {
-    color: #2563eb;
+    color: var(--ec-blue);
     background: rgba(37, 99, 235, 0.10);
 }
 
@@ -60,7 +60,7 @@ body {
     transition: color .2s ease, transform .12s ease;
 }
 .bnav-item:active { transform: scale(0.92); }
-.bnav-item.active { color: #2563eb; }
+.bnav-item.active { color: var(--ec-blue); }
 .bnav-ico { transition: transform .2s ease; }
 .bnav-item.active .bnav-ico { transform: translateY(-2px) scale(1.08); }
 
@@ -76,7 +76,7 @@ body {
     .disease-grid { grid-template-columns: 1fr 1fr; }
 }
 .disease-card {
-    --accent: #3b82f6;
+    --accent: var(--ec-blue);
     --soft: #eff6ff;
     position: relative;
     overflow: hidden;
@@ -233,15 +233,15 @@ body {
 .dm-section p, .dm-urgent p { margin: 0; }
 .dm-section ul { margin: 0; padding-left: 1.1rem; list-style: disc; }
 .dm-section li + li { margin-top: 4px; }
-.dm-care { margin-top: 12px; background: var(--soft, #eff6ff); border-color: color-mix(in srgb, var(--accent, #2563eb) 22%, #dbe4f0); }
+.dm-care { margin-top: 12px; background: var(--soft, var(--ec-blue-soft)); border-color: color-mix(in srgb, var(--accent, var(--ec-blue)) 22%, #dbe4f0); }
 .dm-urgent { margin-top: 12px; padding: 14px 16px; border: 1px solid #fecaca; border-radius: 14px; background: #fff7f7; color: #7f1d1d; }
 .dm-urgent h3 { color: #b42318; }
 .dm-source-link { display: inline-flex; align-items: center; margin-top: 14px; color: #155eef; font-size: .78rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .dm-note {
     margin-top: 16px;
     padding: 12px 14px;
-    background: var(--soft, #eff6ff);
-    border: 1px solid color-mix(in srgb, var(--accent, #2563eb) 25%, transparent);
+    background: var(--soft, var(--ec-blue-soft));
+    border: 1px solid color-mix(in srgb, var(--accent, var(--ec-blue)) 25%, transparent);
     border-radius: 14px;
     font-size: 0.78rem;
     font-weight: 700;
@@ -293,7 +293,7 @@ body {
 .clinic-item .ci-dist {
     font-size: 0.72rem;
     font-weight: 800;
-    color: #2563eb;
+    color: var(--ec-blue);
     white-space: nowrap;
 }
 .clinic-item .ci-dist + a { margin-left: 10px; }
@@ -319,13 +319,12 @@ body {
     border-radius: 1.25rem;
     box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.3);
 }
-.clinic-item .ci-ico { font-size: 1.4rem; }
 .clinic-item .ci-name { font-weight: 800; color: #0f172a; font-size: 0.92rem; }
 .clinic-item .ci-desc { font-size: 0.74rem; color: #64748b; font-weight: 500; }
 .clinic-item a {
     margin-left: auto;
     padding: 8px 14px;
-    background: #2563eb;
+    background: var(--ec-blue);
     color: #fff;
     font-size: 0.74rem;
     font-weight: 800;
@@ -356,7 +355,7 @@ body {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #6366f1;
+    background: var(--ec-blue);
     animation: aiDotBounce 1.2s ease-in-out infinite;
 }
 .ai-dots span:nth-child(2) { animation-delay: 0.15s; }
@@ -368,8 +367,8 @@ body {
 .ai-loading .al-elapsed {
     font-size: 0.7rem;
     font-weight: 800;
-    color: #6366f1;
-    background: #eef2ff;
+    color: var(--ec-blue);
+    background: var(--ec-blue-soft);
     padding: 2px 8px;
     border-radius: 999px;
     font-variant-numeric: tabular-nums; /* 숫자 폭 고정 → 떨림 방지 */
@@ -397,27 +396,27 @@ body {
 /* ── 시력 · 대비감도 자가검사 ─────────────────────────────────────
    canvas는 물리 픽셀로 그리므로 CSS에서 크기를 강제하지 않는다
    (JS가 style.width/height를 직접 지정한다). */
-.vt-cardbox { background: linear-gradient(145deg,#5B78FF,#3B53D6); border-radius: 10px;
+.vt-cardbox { background: var(--ec-blue); border-radius: 10px;
               box-shadow: 0 6px 18px rgba(59,83,214,.28); max-width: 100%; }
 .vt-canvas { display: block; margin: 0 auto; background: #fff;
              border: 1px solid #e2e8f0; border-radius: 12px; max-width: 100%; }
 .vt-pad { display: grid; grid-template-areas: ". u ." "l . r" ". d ."; gap: 8px;
           justify-content: center; }
 .vt-dir { width: 64px; height: 56px; border: none; border-radius: 16px;
-          background: #eef2ff; color: #3b53d6; font-size: 20px; font-weight: 700;
+          background: var(--ec-blue-soft); color: var(--ec-blue); font-size: 20px; font-weight: 700;
           cursor: pointer; transition: transform .08s ease, background .15s ease; }
-.vt-dir:hover { background: #dbe4ff; }
+.vt-dir:hover { background: #dbe6fb; }
 .vt-dir:active { transform: scale(.94); }
-.vt-dir:focus-visible { outline: 3px solid #3b53d6; outline-offset: 2px; }
+.vt-dir:focus-visible { outline: 3px solid var(--ec-blue); outline-offset: 2px; }
 .vt-row { display: flex; justify-content: space-between; align-items: baseline;
           gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
 .vt-row:last-child { border-bottom: none; }
 .vt-row-l { font-size: 12px; font-weight: 700; color: #64748b; }
 .vt-row-v { font-size: 13px; font-weight: 800; color: #1e293b;
             font-variant-numeric: tabular-nums; }
-.vt-warn { margin-top: 10px; font-size: 11px; font-weight: 700; line-height: 1.6;
+.vt-warn { display: flex; gap: 7px; margin-top: 10px; font-size: 11px; font-weight: 700; line-height: 1.6;
            color: #b91c1c; background: #fef2f2; border-radius: 12px; padding: 10px 12px; }
-.vt-cross { margin-top: 8px; font-size: 11px; font-weight: 700; line-height: 1.6;
+.vt-cross { display: flex; gap: 7px; margin-top: 8px; font-size: 11px; font-weight: 700; line-height: 1.6;
             color: #065f46; background: #ecfdf5; border-radius: 12px; padding: 10px 12px; }
 @media (prefers-reduced-motion: reduce) { .vt-dir { transition: none; } }
 
@@ -442,11 +441,11 @@ body {
 .vt-nozoom input[type=range] { touch-action: pan-x; }   /* 슬라이더는 가로 드래그 허용 */
 body.vt-noscroll { overscroll-behavior: none; }
 .vt-nudge { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-.vt-nudge-btn { padding: 12px 0; border: none; border-radius: 14px; background: #eef2ff;
-                color: #3b53d6; font-size: 15px; font-weight: 800; cursor: pointer;
+.vt-nudge-btn { padding: 12px 0; border: none; border-radius: 14px; background: var(--ec-blue-soft);
+                color: var(--ec-blue); font-size: 15px; font-weight: 800; cursor: pointer;
                 font-variant-numeric: tabular-nums; touch-action: manipulation; }
-.vt-nudge-btn:active { background: #dbe4ff; transform: scale(.95); }
-.vt-nudge-btn:focus-visible { outline: 3px solid #3b53d6; outline-offset: 2px; }
+.vt-nudge-btn:active { background: #dbe6fb; transform: scale(.95); }
+.vt-nudge-btn:focus-visible { outline: 3px solid var(--ec-blue); outline-offset: 2px; }
 
 
 /* 접근성: 네비·질환카드를 div에서 button으로 바꿨다(키보드 접근).
@@ -460,7 +459,7 @@ button.bnav-item { cursor: pointer; }
 /* 키보드 포커스는 반드시 눈에 보여야 한다 */
 button.nav-pill:focus-visible, button.bnav-item:focus-visible,
 .disease-card:focus-visible, .dm-close:focus-visible {
-  outline: 3px solid #3b53d6; outline-offset: 2px; border-radius: 12px;
+  outline: 3px solid var(--ec-blue); outline-offset: 2px; border-radius: 12px;
 }
 
 /* 지도 타일을 못 받는 환경(오프라인)에서 빈 회색 화면 대신 안내를 보여준다 */
@@ -681,14 +680,16 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
     border: 1px solid var(--ec-line);
     box-shadow: var(--ec-shadow);
     backdrop-filter: none;
+    /* 반경은 여기 한 곳에서만 정한다. 예전엔 #step-* 선택자를 나열해서 덮었는데,
+       그러면 나중에 추가되는 카드(#report-gate가 실제로 그랬다)가 조용히
+       마크업의 rounded-[2rem](32px)로 남아 혼자 튄다.
+       tailwind.css보다 style.css가 뒤에 로드되므로 유틸리티 클래스를 이긴다. */
+    border-radius: var(--ec-radius-lg);
 }
 
 #step-guide, #step-photo, #step-ai-result, #step-amsler, #step-chat {
     padding-top: 3rem;
     padding-bottom: 3rem;
-}
-#step-guide .glass-card, #step-photo .glass-card, #step-ai-result .glass-card, #step-amsler .glass-card, #step-chat .glass-card {
-    border-radius: var(--ec-radius-lg);
 }
 
 .section-icon, .upload-icon {
@@ -835,7 +836,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
 
 /* 숨겨진 파일 입력에 키보드 포커스가 오면 표시용 라벨에 링을 보여준다. */
 #cataract-file:focus-visible + label {
-    outline: 3px solid #2563eb;
+    outline: 3px solid var(--ec-blue);
     outline-offset: 3px;
 }
 
@@ -1041,4 +1042,19 @@ body.modal-open { overflow: hidden; }
                    stroke-linecap: round; stroke-linejoin: round; }
 .notice-icon { flex-shrink: 0; display: grid; place-items: center; width: 18px; height: 18px; color: #b45309; }
 .notice-icon svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8;
+                   stroke-linecap: round; stroke-linejoin: round; }
+
+/* 권장 조치(triage) 아이콘 — 이모지를 SVG로 바꾸면서 필요한 정렬.
+   색은 상자의 위급도 색(text-rose-800 등)을 그대로 물려받는다(currentColor). */
+.tri-main { display: flex; align-items: center; gap: 7px; }
+.tri-ico { flex-shrink: 0; display: grid; place-items: center; width: 18px; height: 18px; }
+.tri-ico svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8;
+               stroke-linecap: round; stroke-linejoin: round; }
+
+/* 촬영 방식 배지 — 외안부(겉에서 보임)와 안저(병원 장비 필요)를 색으로도 구분한다.
+   넷 다 같은 회색 배지면 폰 사진으로 넷 다 판별된다고 읽힌다. */
+.dm-image-label-fundus { background: rgba(85, 51, 122, .86); }
+
+.vt-note-ico { flex-shrink: 0; display: grid; place-items: center; width: 15px; height: 15px; margin-top: 1px; }
+.vt-note-ico svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2;
                    stroke-linecap: round; stroke-linejoin: round; }

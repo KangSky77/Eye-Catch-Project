@@ -96,15 +96,25 @@ function computeTriage(ctx) {
 }
 
 /** 리포트에 행동 권고 카드를 그린다. */
+// 권장 조치 아이콘 — 리포트에서 가장 눈에 먼저 들어오는 자리다.
+// 이모지는 기기·OS마다 모양과 색이 달라서(특히 🚑/🚨는 플랫폼별 차이가 크다)
+// 위급도 단계를 색과 함께 읽어야 하는 요소에는 쓰지 않는다. 앱 전체 규칙과 동일한 선형 SVG.
+const TRIAGE_ICONS = {
+    urgent:  '<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 8.5h9v8h-9z"/><path d="M12.5 11h4l4 3.5v2h-8z"/><circle cx="7" cy="18.5" r="1.9"/><circle cx="17" cy="18.5" r="1.9"/><path d="M8 10.5v4M6 12.5h4"/></svg>',
+    now:     '<svg viewBox="0 0 24 24" fill="none"><path d="M12 8.6v4.2M12 16.4h.01"/><path d="M10.3 3.9 2.7 17.1A2 2 0 0 0 4.4 20h15.2a2 2 0 0 0 1.7-2.9L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
+    weeks:   '<svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.8h17M8 3.2v3.6M16 3.2v3.6"/><path d="M11 13.5h5"/></svg>',
+    monitor: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.6"/><path d="m8.2 12.3 2.7 2.7 5-5.3"/></svg>',
+};
+
 function renderTriage(container, triage, factors) {
     const t = translations[state.lang];
     container.innerHTML = '';
 
     const style = {
-        urgent:  { bg: 'bg-rose-100',   br: 'border-rose-400',    tx: 'text-rose-800',    ico: '🚑' },
-        now:     { bg: 'bg-rose-50',    br: 'border-rose-200',    tx: 'text-rose-700',    ico: '🚨' },
-        weeks:   { bg: 'bg-amber-50',   br: 'border-amber-200',   tx: 'text-amber-800',   ico: '📅' },
-        monitor: { bg: 'bg-emerald-50', br: 'border-emerald-200', tx: 'text-emerald-700', ico: '✅' },
+        urgent:  { bg: 'bg-rose-100',   br: 'border-rose-400',    tx: 'text-rose-800',    ico: TRIAGE_ICONS.urgent },
+        now:     { bg: 'bg-rose-50',    br: 'border-rose-200',    tx: 'text-rose-700',    ico: TRIAGE_ICONS.now },
+        weeks:   { bg: 'bg-amber-50',   br: 'border-amber-200',   tx: 'text-amber-800',   ico: TRIAGE_ICONS.weeks },
+        monitor: { bg: 'bg-emerald-50', br: 'border-emerald-200', tx: 'text-emerald-700', ico: TRIAGE_ICONS.monitor },
     }[triage.level];
 
     const box = document.createElement('div');
@@ -116,8 +126,14 @@ function renderTriage(container, triage, factors) {
     box.appendChild(head);
 
     const main = document.createElement('p');
-    main.className = `font-black text-sm ${style.tx}`;
-    main.textContent = `${style.ico} ${triage.label}`;
+    main.className = `tri-main font-black text-sm ${style.tx}`;
+    const mainIco = document.createElement('span');
+    mainIco.className = 'tri-ico';
+    mainIco.setAttribute('aria-hidden', 'true');
+    mainIco.innerHTML = style.ico;              // 고정 상수 (아래 TRIAGE_ICONS)
+    const mainTxt = document.createElement('span');
+    mainTxt.textContent = triage.label;         // 서버/번역 문자열은 항상 textContent
+    main.append(mainIco, mainTxt);
     box.appendChild(main);
 
     const why = document.createElement('p');
