@@ -82,3 +82,45 @@ async def test_동적문진_문진내역이_프롬프트에_포함(monkeypatch):
     assert q == "다음 질문?"
     assert "눈부심이 있나요?" in captured["prompt"]
     assert "네, 밤에 심해요" in captured["prompt"]
+
+
+# ------------------------------------------------------------------
+# 동적 문진 질문은 '네/아니오' 버튼 두 개로만 답할 수 있다.
+# 서술형이 나오면 사용자가 답할 방법이 없어 문진이 그 자리에서 멈춘다.
+# ------------------------------------------------------------------
+def test_서술형_질문은_걸러진다():
+    from app.services.llm import _is_yes_no_question
+    개방형 = [
+        "시력 변화에 대해 자세히 설명해 주시겠어요?",
+        "눈이 얼마나 불편하신지 말씀해 주세요.",
+        "증상이 어떻게 나타나나요?",
+        "Could you describe your vision changes?",
+        "How often does this happen?",
+        "どのくらい見えにくいですか？",
+        "请详细说明您的症状。",
+        "",
+    ]
+    for q in 개방형:
+        assert not _is_yes_no_question(q), f"서술형인데 통과됨: {q!r}"
+
+
+def test_예아니오_질문은_통과된다():
+    from app.services.llm import _is_yes_no_question
+    폐쇄형 = [
+        "밝은 곳에서 눈이 부시는 느낌이 있나요?",
+        "야간 운전이 예전보다 힘드신가요?",
+        "Do bright lights feel glaring to you?",
+        "夜間の運転は以前より大変ですか？",
+    ]
+    for q in 폐쇄형:
+        assert _is_yes_no_question(q), f"예/아니오 질문인데 거부됨: {q!r}"
+
+
+def test_질문_프롬프트에_예아니오_제약이_들어있다():
+    from app.services.llm import _build_next_question_prompt
+    ko = _build_next_question_prompt("ko", "정상", "정상", "-")
+    assert "'네'" in ko and "'아니오'" in ko
+    assert "서술형" in ko
+    en = _build_next_question_prompt("en", "normal", "normal", "-")
+    assert "Yes" in en and "No" in en
+    assert "Open-ended questions are forbidden" in en

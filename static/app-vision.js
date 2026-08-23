@@ -6,6 +6,76 @@
 // 서버까지 올려서 거절당하기 전에 즉시 알려주면 모바일 데이터·대기시간을 아낄 수 있다.
 const MAX_UPLOAD_MB = 10;
 
+// ------------------------------------------
+// 분석 로딩 진행 표시
+// 서버 추론은 0.2초 수준이고, 폰에서 체감되는 대기는 거의 전부 '사진 업로드'다.
+// 그래서 fetch 대신 XHR을 쓴다 — fetch는 업로드 진행률(upload.onprogress)을 주지 않는다.
+// ------------------------------------------
+const SLOW_HINT_AFTER_MS = 8000;   // 이 시간을 넘기면 "느릴 수 있다" 안내를 띄운다
+
+function startLoadingProgress() {
+    const t = translations[state.lang];
+    const titleEl = document.getElementById('loading-title');
+    const elapsedEl = document.getElementById('loading-elapsed');
+    const barEl = document.getElementById('upload-progress-bar');
+    const wrapEl = document.getElementById('upload-progress');
+    const hintEl = document.getElementById('loading-slow-hint');
+
+    if (barEl) barEl.style.width = '0%';
+    if (wrapEl) wrapEl.setAttribute('aria-valuenow', '0');
+    if (hintEl) hintEl.classList.add('hidden');
+    if (titleEl) titleEl.textContent = t.loading_uploading || '사진 업로드 중';
+
+    const tmpl = t.loading_elapsed || '{s}초 경과';
+    const t0 = performance.now();
+    if (elapsedEl) elapsedEl.textContent = tmpl.replace('{s}', '0.0');
+
+    const timer = setInterval(() => {
+        const ms = performance.now() - t0;
+        if (elapsedEl) elapsedEl.textContent = tmpl.replace('{s}', (ms / 1000).toFixed(1));
+        if (hintEl && ms > SLOW_HINT_AFTER_MS) hintEl.classList.remove('hidden');
+    }, 100);
+
+    return {
+        // 업로드 진행률(0~100)
+        setProgress(pct) {
+            const v = Math.max(0, Math.min(100, Math.round(pct)));
+            if (barEl) barEl.style.width = v + '%';
+            if (wrapEl) wrapEl.setAttribute('aria-valuenow', String(v));
+        },
+        // 업로드가 끝나 서버가 분석하는 구간으로 전환
+        toAnalyzing() {
+            if (titleEl) titleEl.textContent = t.loading_analyzing || 'AI가 분석 중';
+            if (barEl) barEl.style.width = '100%';
+            if (wrapEl) wrapEl.setAttribute('aria-valuenow', '100');
+        },
+        stop() { clearInterval(timer); }
+    };
+}
+
+/** XHR 업로드 — fetch와 달리 진행률을 받을 수 있다. fetch Response와 비슷한 형태로 돌려준다. */
+function uploadWithProgress(url, formData, onProgress, onUploaded) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.responseType = 'text';
+        if (xhr.upload) {
+            xhr.upload.onprogress = e => {
+                if (e.lengthComputable && onProgress) onProgress((e.loaded / e.total) * 100);
+            };
+            xhr.upload.onload = () => { if (onUploaded) onUploaded(); };
+        }
+        xhr.onload = () => {
+            let data = {};
+            try { data = JSON.parse(xhr.responseText); } catch (e) { /* 비-JSON 응답 */ }
+            resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data });
+        };
+        xhr.onerror = () => reject(new Error('network'));
+        xhr.ontimeout = () => reject(new Error('timeout'));
+        xhr.send(formData);
+    });
+}
+
 async function runAIAnalysis(droppedFile) {
     const fileInput = document.getElementById('cataract-file');
     const file = droppedFile || fileInput.files[0];
@@ -36,9 +106,14 @@ async function runAIAnalysis(droppedFile) {
     const fd = new FormData();
     fd.append('file', file);
 
+    const progress = startLoadingProgress();
     try {
-        const res = await fetch('/api/analyze-eye', { method: 'POST', body: fd });
-        const d = await res.json();
+        const res = await uploadWithProgress(
+            '/api/analyze-eye', fd,
+            pct => progress.setProgress(pct),
+            () => progress.toAnalyzing()
+        );
+        const d = res.data;
         if (!res.ok) {
             // detail이 문자열이 아닐 수 있음(422 검증 오류는 객체 배열) → 그대로 alert하면 [object Object]
             const msg = typeof d.detail === 'string' ? d.detail : (translations[state.lang].srv_err || "Error");
@@ -106,6 +181,10 @@ async function runAIAnalysis(droppedFile) {
     } catch (e) {
         showToast(translations[state.lang].srv_err || "Server Connection Error", 'error');
         nextStep('step-photo');
+    } finally {
+        // 성공·실패·중간 return 어느 경로로 나가든 경과 시간 타이머는 반드시 멈춘다
+        // (안 멈추면 결과 화면으로 넘어간 뒤에도 초가 계속 올라간다)
+        progress.stop();
     }
 }
 

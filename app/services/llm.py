@@ -138,7 +138,16 @@ def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, h
 - 황반변성 자가진단: {amsler_res}
 [지금까지의 문진 내역]
 {history_text}
-위 상태와 문진 내역을 바탕으로, 환자의 눈 건강 상태를 더 자세히 파악하기 위한 새로운 맞춤형 질문을 딱 1개만 생성해주세요. 부가 설명 없이 질문 한 문장만 출력하세요.""".strip()
+위 상태와 문진 내역을 바탕으로, 환자의 눈 건강 상태를 더 자세히 파악하기 위한 새로운 맞춤형 질문을 딱 1개만 생성해주세요.
+
+[반드시 지켜야 할 제약]
+- 화면에는 '네'와 '아니오' 버튼 두 개뿐입니다. 환자는 그 둘 중 하나로만 답할 수 있습니다.
+- 따라서 반드시 '네' 또는 '아니오'로 답할 수 있는 질문만 만드세요.
+- 서술형 질문은 절대 금지입니다: "설명해 주시겠어요", "어떤가요", "어떻게", "얼마나", "무엇을", "말씀해 주세요" 같은 표현을 쓰지 마세요.
+- 좋은 예: "밝은 곳에서 눈이 부시는 느낌이 있나요?" / "야간 운전이 예전보다 힘드신가요?"
+- 나쁜 예: "시력 변화에 대해 자세히 설명해 주시겠어요?" (네/아니오로 답할 수 없음)
+
+부가 설명 없이 질문 한 문장만 출력하세요.""".strip()
     else:
         return f"""You are an assistant to an ophthalmologist.
 [CRITICAL] Write your question ONLY in {lang_name}. Do NOT use English or other languages.
@@ -149,7 +158,16 @@ Current Patient State:
 [Ophthalmology Screening History]
 {history_text}
 
-Based on the patient's state and history, generate exactly one new personalized question to better understand their eye health. Output ONLY the friendly question sentence itself, with no explanations, greetings, or extra words.""".strip()
+Based on the patient's state and history, generate exactly one new personalized question to better understand their eye health.
+
+[HARD CONSTRAINTS]
+- The screen has only two buttons: "Yes" and "No". The patient can answer ONLY with one of those.
+- Therefore the question MUST be answerable with a plain Yes or No.
+- Open-ended questions are forbidden. Never use "describe", "explain", "how", "how much", "what", "which", "tell me about".
+- Good: "Do bright lights feel glaring to you?" / "Is night driving harder than it used to be?"
+- Bad: "Could you describe your vision changes in detail?" (cannot be answered Yes/No)
+
+Output ONLY the question sentence itself, with no explanations, greetings, or extra words.""".strip()
 
 def _ollama_timeout() -> httpx.Timeout:
     return httpx.Timeout(connect=10.0, read=settings.ollama_timeout_seconds, write=30.0, pool=10.0)
@@ -294,6 +312,28 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko"):
         logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"
 
+# 화면에는 '네/아니오' 버튼뿐이라, 서술형 질문이 나오면 사용자가 답할 방법이 없다.
+# 프롬프트로 제약을 걸어도 LLM이 가끔 어기므로 서버에서 한 번 더 거른다.
+# 여기 걸리면 빈 문자열을 반환 → 프론트가 선택 언어의 기본 질문으로 대체한다.
+_OPEN_ENDED_MARKERS = (
+    # 한국어
+    "설명해", "말씀해", "말해 주", "어떤가요", "어떠신가요", "어떻게", "얼마나",
+    "무엇", "어느 정도", "묘사", "알려주세요", "적어주",
+    # 영어 및 기타 언어에서 공통으로 쓰이는 의문사
+    "describe", "explain", "how much", "how long", "how often", "how would",
+    "what ", "which ", "tell me", "décrivez", "expliquez", "comment ",
+    "combien", "describa", "explique", "cómo", "cuánto", "詳しく", "どのように",
+    "どのくらい", "説明", "教えてください", "详细", "如何", "多久", "描述",
+)
+
+
+def _is_yes_no_question(q: str) -> bool:
+    """네/아니오로 답할 수 있는 질문인지 대략 판별한다(보수적: 애매하면 거부)."""
+    if not q or not q.strip():
+        return False
+    low = q.strip().lower()
+    return not any(m in low for m in _OPEN_ENDED_MARKERS)
+
 async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, chat_history: list) -> str:
     # ChatHistoryItem은 Pydantic 모델이므로 .q / .a 속성으로 접근
     history_text = "\n".join([f"- 의사: {item.q}\n- 환자: {item.a}" for item in chat_history]).strip() or "아직 진행된 문진 대화가 없습니다."
@@ -301,7 +341,12 @@ async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, 
         # 실패/빈 응답이면 빈 문자열 반환 → 프론트(app-chat.js)가 선택 언어의
         # 기본 질문(nextq_fallback)으로 대체한다. 여기서 한국어 문장을 고정 반환하면
         # 영어 등 다른 언어 사용자에게 한국어 질문이 나가므로 폴백은 프론트에 위임.
-        return await generate_ollama(_build_next_question_prompt(lang, cataract_res, amsler_res, history_text))
+        q = await generate_ollama(_build_next_question_prompt(lang, cataract_res, amsler_res, history_text))
+        if not _is_yes_no_question(q):
+            # 서술형이 나왔다 — 네/아니오 버튼으로는 답할 수 없으므로 쓰지 않는다
+            logger.info("동적 문진 질문이 서술형이라 폐기하고 기본 질문으로 폴백: %r", q)
+            return ""
+        return q
     except Exception:
         logger.warning("⚠️  동적 문진 질문 생성 실패 — 프론트 기본 질문으로 폴백", exc_info=True)
         return ""

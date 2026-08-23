@@ -1068,3 +1068,55 @@ body.modal-open { overflow: hidden; }
 .vt-note-ico { flex-shrink: 0; display: grid; place-items: center; width: 15px; height: 15px; margin-top: 1px; }
 .vt-note-ico svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2;
                    stroke-linecap: round; stroke-linejoin: round; }
+
+/* ==========================================
+   사진 분석 로딩 — 업로드 진행률 + 경과 시간
+   서버 추론은 0.2초 남짓이고 체감 대기의 대부분이 업로드라, 진행률을 업로드에 붙인다.
+   ========================================== */
+.upload-progress {
+    width: min(240px, 70%);
+    height: 6px;
+    margin: 0 auto 12px;
+    border-radius: 999px;
+    background: var(--ec-line);
+    overflow: hidden;
+}
+.upload-progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--ec-blue);
+    transition: width .2s ease;
+}
+.loading-elapsed {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--ec-muted);
+    font-variant-numeric: tabular-nums;   /* 숫자가 바뀌어도 폭이 흔들리지 않게 */
+}
+.loading-slow-hint {
+    margin-top: 8px;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--ec-muted);
+    opacity: .85;
+}
+
+/* ==========================================
+   문진 대화 카드
+   ========================================== */
+/* vh는 모바일 브라우저 주소창 높이를 포함해서 실제보다 크게 잡힌다 —
+   주소창이 보이는 동안 카드 아래가 잘리므로 dvh를 쓴다(미지원 브라우저는 vh로 폴백). */
+.chat-shell {
+    height: 60vh;
+    height: 60dvh;
+    min-height: 380px;   /* 화면이 짧은 기기에서 대화가 한두 줄만 보이는 것 방지 */
+    max-height: 560px;   /* 데스크톱에서 빈 여백만 길어지는 것 방지 */
+}
+.chat-box {
+    padding: 20px;
+    /* 마지막 말풍선이 아래 버튼 영역 경계선에 딱 붙어 보이던 문제 —
+       맨 아래로 스크롤했을 때도 한 줄 만큼 숨 쉴 공간을 남긴다. */
+    padding-bottom: 28px;
+    scroll-padding-bottom: 28px;
+}
