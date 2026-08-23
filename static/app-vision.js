@@ -2,10 +2,27 @@
 // app-vision.js — AI 비전 분석 (Vision AI)
 // app-core.js가 먼저 로드되어야 함 (state, nextStep 등 사용)
 // ==========================================
-async function runAIAnalysis() {
+// 백엔드(app/core/config.py의 max_upload_size_bytes) 기본값과 맞춘 클라이언트 사전 검사.
+// 서버까지 올려서 거절당하기 전에 즉시 알려주면 모바일 데이터·대기시간을 아낄 수 있다.
+const MAX_UPLOAD_MB = 10;
+
+async function runAIAnalysis(droppedFile) {
     const fileInput = document.getElementById('cataract-file');
-    const file = fileInput.files[0];
+    const file = droppedFile || fileInput.files[0];
+    // 같은 파일을 다시 고를 때도 change 이벤트가 뜨도록 값을 비운다
+    // (에러 후 같은 사진을 재시도하면 아무 반응이 없던 문제)
+    fileInput.value = '';
     if (!file) return;
+
+    const t = translations[state.lang];
+    if (!file.type.startsWith('image/')) {
+        showToast(t.err_file_type || "Please upload an image file.", 'error');
+        return;
+    }
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+        showToast((t.err_file_size || "File too large ({n} MB max).").replace('{n}', MAX_UPLOAD_MB), 'error');
+        return;
+    }
 
     const r = new FileReader();
     r.onload = e => {
@@ -25,20 +42,19 @@ async function runAIAnalysis() {
         if (!res.ok) {
             // detail이 문자열이 아닐 수 있음(422 검증 오류는 객체 배열) → 그대로 alert하면 [object Object]
             const msg = typeof d.detail === 'string' ? d.detail : (translations[state.lang].srv_err || "Error");
-            alert(`⚠️ ${msg}`);
+            showToast(msg, 'error');
             nextStep('step-photo');
             return;
         }
 
         // 눈 사진이 아니라고 판단되면 의료 결과 대신 재촬영 안내
         if (d.result_code === 'invalid') {
-            alert(translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.");
+            showToast(translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.", 'error', 6000);
             nextStep('step-photo');
             return;
         }
 
         // 백내장 결과를 선택 언어로 표시 (result_code 기반)
-        const t = translations[state.lang];
         const resultText = t['ai_' + d.result_code] || d.result;
         state.aiResultCode = d.result_code;   // 언어 중립 코드 저장 (RAG 검색용)
         state.eyeBreakdown = d.eyes || [];
@@ -75,14 +91,14 @@ async function runAIAnalysis() {
         } else if (d.mode === 'face' && d.eyes_detected > 0) {
             const pFace = document.createElement('p');
             pFace.className = 'text-[11px] text-slate-500 font-bold mt-2';
-            const tmpl = t.face_mode_note || "👁 얼굴 사진에서 눈 {n}곳을 찾아 분석했어요.";
+            const tmpl = t.face_mode_note || "얼굴 사진에서 눈 {n}곳을 찾아 분석했어요.";
             pFace.textContent = tmpl.replace('{n}', d.eyes_detected);
             disp.appendChild(pFace);
         }
 
         setTimeout(() => nextStep('step-ai-result'), 1000);
     } catch (e) {
-        alert(translations[state.lang].srv_err || "Server Connection Error");
+        showToast(translations[state.lang].srv_err || "Server Connection Error", 'error');
         nextStep('step-photo');
     }
 }
@@ -111,7 +127,7 @@ function renderEyeBreakdown(container, eyes) {
         row.className = 'flex items-center justify-between py-1.5';
         const label = document.createElement('span');
         label.className = 'text-sm font-bold text-slate-600';
-        label.textContent = `👁 ${sideLabel[e.side] || e.side}`;
+        label.textContent = sideLabel[e.side] || e.side;
         const val = document.createElement('span');
         val.className = `text-sm font-black px-2.5 py-0.5 rounded-full ${codeStyle[e.code] || codeStyle.normal}`;
         val.textContent = `${e.probability}%`;
@@ -123,7 +139,7 @@ function renderEyeBreakdown(container, eyes) {
     if (state.asymmetric) {
         const badge = document.createElement('p');
         badge.className = 'mt-2 text-[11px] font-black text-rose-600 bg-rose-50 rounded-lg px-3 py-2';
-        badge.textContent = t.eye_unilateral || '⚠️ 편측 의심';
+        badge.textContent = t.eye_unilateral || '편측 의심';
         wrap.appendChild(badge);
     }
 
@@ -140,3 +156,36 @@ function recordAmsler(bad) {
     nextStep('step-chat');
     startChat();
 }
+
+// ------------------------------------------
+// 사진 업로드 카드 드래그&드롭 — 데스크톱에서 파일 선택창을 거치지 않고 바로 분석
+// ------------------------------------------
+window.addEventListener('DOMContentLoaded', () => {
+    const zone = document.getElementById('dropzone');
+    if (zone) {
+        ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => {
+            e.preventDefault();
+            zone.classList.add('dragover');
+        }));
+        ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => {
+            e.preventDefault();
+            zone.classList.remove('dragover');
+        }));
+        zone.addEventListener('drop', e => {
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (file) runAIAnalysis(file);
+        });
+    }
+
+    // 암슬러 "휘어보임" 버튼에 커서를 올리거나 포커스하면 격자가 왜곡되어 보인다 —
+    // 사용자가 무엇을 고르는 건지 미리 볼 수 있게. 인라인 onmouseover였던 것을
+    // 여기로 옮기면서 키보드 포커스(focus/blur)와 터치(pointer)에서도 동작하게 했다.
+    const badBtn = document.getElementById('amsler-bad-btn');
+    const box = document.getElementById('amsler-box');
+    if (badBtn && box) {
+        const on = () => box.classList.add('amsler-distorted');
+        const off = () => box.classList.remove('amsler-distorted');
+        ['pointerenter', 'focus'].forEach(ev => badBtn.addEventListener(ev, on));
+        ['pointerleave', 'pointercancel', 'blur'].forEach(ev => badBtn.addEventListener(ev, off));
+    }
+});

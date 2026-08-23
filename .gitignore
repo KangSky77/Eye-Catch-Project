@@ -41,3 +41,5 @@ compare/
 .claude-memory-backup/
 .codex/
 .agents/
+# 디자인 시안 렌더(로컬 참고용 · 앱 코드 아님)
+design/

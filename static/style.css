@@ -158,10 +158,13 @@ body {
 .dm-overlay.show { display: flex; }
 .dm-card {
     width: 100%;
-    max-width: 420px;
+    max-width: 760px;
+    max-height: calc(100dvh - 40px);
     background: #ffffff;
     border-radius: 1.75rem;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 30px 70px -20px rgba(15, 23, 42, 0.5);
     animation: dmIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -190,8 +193,50 @@ body {
 .dm-close:hover { background: rgba(255,255,255,0.35); }
 .dm-icon-lg { font-size: 3rem; margin-bottom: 8px; }
 .dm-title { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; }
-.dm-body { padding: 24px; }
+.dm-body { padding: 24px 28px; overflow-y: auto; overscroll-behavior: contain; }
 .dm-body #dm-detail { font-size: 0.9rem; color: #334155; line-height: 1.7; font-weight: 500; }
+.dm-figure {
+    position: relative;
+    margin: 0 0 22px;
+    overflow: hidden;
+    border: 1px solid #dbe4f0;
+    border-radius: 16px;
+    background: #f8fafc;
+}
+.dm-image-label {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(11, 31, 58, .82);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 800;
+    backdrop-filter: blur(6px);
+}
+.dm-clinical-image {
+    width: 100%;
+    height: 300px;
+    object-fit: contain;
+    background: #0b1220;
+}
+.dm-figure figcaption { padding: 12px 14px 13px; font-size: .74rem; line-height: 1.5; color: #526277; }
+.dm-figure figcaption > p:first-child { color: #334155; font-weight: 700; }
+.dm-image-note { margin-top: 4px; color: #64748b; }
+.dm-figure figcaption a { display: inline-block; margin-top: 7px; color: #155eef; font-size: .69rem; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.dm-intro { margin-bottom: 18px; color: #26364a; font-size: .94rem; line-height: 1.75; }
+.dm-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dm-section { padding: 16px; border: 1px solid #e1e8f2; border-radius: 14px; background: #f8fafc; }
+.dm-section h3, .dm-urgent h3 { margin: 0 0 8px; color: #0b1f3a; font-size: .82rem; font-weight: 900; }
+.dm-section p, .dm-urgent p { margin: 0; }
+.dm-section ul { margin: 0; padding-left: 1.1rem; list-style: disc; }
+.dm-section li + li { margin-top: 4px; }
+.dm-care { margin-top: 12px; background: var(--soft, #eff6ff); border-color: color-mix(in srgb, var(--accent, #2563eb) 22%, #dbe4f0); }
+.dm-urgent { margin-top: 12px; padding: 14px 16px; border: 1px solid #fecaca; border-radius: 14px; background: #fff7f7; color: #7f1d1d; }
+.dm-urgent h3 { color: #b42318; }
+.dm-source-link { display: inline-flex; align-items: center; margin-top: 14px; color: #155eef; font-size: .78rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .dm-note {
     margin-top: 16px;
     padding: 12px 14px;
@@ -215,6 +260,18 @@ body {
 }
 .dm-btn:hover { filter: brightness(1.1); }
 .dm-btn:active { transform: scale(0.97); }
+
+@media (max-width: 640px) {
+    .dm-overlay { padding: 8px; align-items: flex-end; }
+    .dm-card { max-height: calc(100dvh - 16px); border-radius: 18px 18px 12px 12px; }
+    .dm-head { padding: 22px 18px 16px; }
+    .dm-icon-lg svg { width: 40px; height: 40px; }
+    .dm-title { font-size: 1.3rem; }
+    .dm-body { padding: 18px; }
+    .dm-clinical-image { height: 220px; }
+    .dm-info-grid { grid-template-columns: 1fr; }
+    .dm-foot { padding: 0 18px 18px; }
+}
 
 /* ==========================================
    병원 찾기 임베디드 지도 (map-embed)
@@ -336,3 +393,565 @@ body {
 }
 .amsler-dot { width: 8px; height: 8px; background-color: #0f172a; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 .amsler-distorted { filter: url(#wavy) blur(1px); }
+
+/* ==========================================
+   2026 polish — clinical design system
+   ========================================== */
+:root {
+    --ec-blue: #155eef;
+    --ec-blue-dark: #0f4bd8;
+    --ec-blue-soft: #eef4ff;
+    --ec-navy: #0b1f3a;
+    --ec-text: #1b2b44;
+    --ec-muted: #61708a;
+    --ec-line: #dce5f2;
+    --ec-bg: #f7faff;
+    --ec-white: #ffffff;
+    --ec-success: #087a5b;
+    --ec-danger: #c83349;
+    --ec-radius-sm: 10px;
+    --ec-radius: 16px;
+    --ec-radius-lg: 22px;
+    --ec-shadow: 0 14px 36px -24px rgba(31, 55, 88, 0.32);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    color: var(--ec-text);
+    background: var(--ec-bg);
+    letter-spacing: -0.012em;
+}
+
+button, select, input { font: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]:focus-visible {
+    outline: 3px solid rgba(21, 94, 239, 0.24);
+    outline-offset: 3px;
+}
+
+.site-header {
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid var(--ec-line);
+    box-shadow: 0 1px 0 rgba(11, 31, 58, 0.02);
+    backdrop-filter: blur(14px);
+}
+
+.brand-mark {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: #fff;
+    background: var(--ec-blue);
+    box-shadow: 0 8px 18px -10px rgba(21, 94, 239, 0.8);
+}
+.brand-mark svg { width: 25px; height: 25px; stroke: currentColor; stroke-width: 1.8; }
+.brand-name { color: var(--ec-navy); font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; }
+
+.nav-pill {
+    position: relative;
+    padding: 9px 12px 13px;
+    border-radius: 0;
+    color: #53627a;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+.nav-pill:hover { color: var(--ec-blue); background: transparent; }
+.nav-pill::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 99px;
+    background: var(--ec-blue);
+    transform: scaleX(0);
+    transition: transform .2s ease;
+}
+.nav-pill.active { color: var(--ec-blue); background: transparent; }
+.nav-pill.active::after { transform: scaleX(1); }
+
+.language-select {
+    min-height: 40px;
+    padding: 0 34px 0 13px;
+    border: 1px solid var(--ec-line);
+    border-radius: var(--ec-radius-sm);
+    background-color: #fff;
+    color: #3b4b63;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.screening-main { padding-top: 0; padding-bottom: 0; }
+
+.intro-stage {
+    position: relative;
+    min-height: calc(100dvh - 72px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 3.5rem 1rem 3rem;
+}
+.intro-stage::before,
+.intro-stage::after {
+    content: "";
+    position: absolute;
+    width: 430px;
+    height: 430px;
+    border: 1px solid #dce9ff;
+    border-radius: 50%;
+    opacity: .8;
+    pointer-events: none;
+}
+.intro-stage::before { left: -355px; top: 22%; box-shadow: 0 0 0 76px rgba(220, 233, 255, .32); }
+.intro-stage::after { right: -360px; top: 14%; box-shadow: 0 0 0 82px rgba(220, 233, 255, .3); }
+
+.hero-eye {
+    width: 100px;
+    height: 100px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 1.75rem;
+    border: 1px solid #bfd4ff;
+    border-radius: 50%;
+    background: rgba(255,255,255,.84);
+    color: var(--ec-blue);
+    box-shadow: 0 16px 36px -28px rgba(21, 94, 239, .8);
+}
+.hero-eye svg { width: 58px; height: 58px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.hero-title {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    color: var(--ec-navy);
+    font-size: clamp(2.5rem, 4.7vw, 4rem);
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: -0.055em;
+}
+.hero-description {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 1.25rem auto 0;
+    color: var(--ec-muted);
+    font-size: 0.98rem;
+    font-weight: 500;
+    line-height: 1.75;
+}
+
+.screening-flow {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: min(100%, 470px);
+    margin: 2rem auto 1.9rem;
+}
+.flow-item {
+    flex: 0 0 82px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #43546e;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+.flow-icon {
+    width: 45px;
+    height: 45px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #cddbf0;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--ec-blue);
+    box-shadow: 0 8px 18px -15px rgba(16, 50, 94, .5);
+}
+.flow-icon svg { width: 23px; height: 23px; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.flow-line { flex: 1; height: 1px; margin-top: 22px; background: #bfd0ec; }
+
+.primary-cta {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 525px);
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 11px;
+    background: var(--ec-blue);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 750;
+    box-shadow: 0 16px 26px -16px rgba(21, 94, 239, .75);
+}
+.primary-cta:hover { background: var(--ec-blue-dark); }
+.primary-cta svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .18s ease; }
+.primary-cta:hover svg { transform: translateX(3px); }
+
+.glass-card {
+    background: #fff;
+    border: 1px solid var(--ec-line);
+    box-shadow: var(--ec-shadow);
+    backdrop-filter: none;
+}
+
+#step-guide, #step-photo, #step-ai-result, #step-amsler, #step-chat {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+#step-guide .glass-card, #step-photo .glass-card, #step-ai-result .glass-card, #step-amsler .glass-card, #step-chat .glass-card {
+    border-radius: var(--ec-radius-lg);
+}
+
+.section-icon, .upload-icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #cbdaf3;
+    border-radius: 16px;
+    background: var(--ec-blue-soft);
+    color: var(--ec-blue);
+}
+.section-icon svg, .upload-icon svg { width: 28px; height: 28px; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tip-number {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--ec-blue-soft);
+    color: var(--ec-blue);
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+#step-guide .space-y-4 > div {
+    border-color: var(--ec-line);
+    border-radius: 12px;
+    box-shadow: none;
+}
+#step-photo .glass-card { border: 1px solid var(--ec-line) !important; }
+
+.btn-pop { transition: transform .12s ease, background-color .2s ease, box-shadow .2s ease; }
+.btn-pop:hover { filter: none; }
+/* .bg-blue-600 / .bg-slate-900 / .rounded-2xl 재정의는 tailwind.config.js의
+   theme.extend로 옮겼습니다 — 유틸리티 클래스명을 !important로 덮어쓰면 이후 그
+   클래스를 쓰는 모든 코드가 조용히 다른 값을 갖고, 되돌릴 수단도 없어집니다. */
+
+#tab-disease, #tab-report, #tab-map { padding-top: 3rem; padding-bottom: 4rem; }
+#tab-disease > h1, #tab-map > h1 { color: var(--ec-navy); font-weight: 800; letter-spacing: -0.04em; }
+
+.disease-grid { gap: 14px; }
+.disease-card {
+    border-radius: var(--ec-radius);
+    padding: 1.35rem;
+    box-shadow: var(--ec-shadow);
+}
+.disease-card::before { height: 3px; }
+.disease-card:hover { transform: translateY(-2px); }
+.disease-card .dc-ico { border-radius: 11px; box-shadow: none; }
+.disease-card .dc-ico svg { width: 25px; height: 25px; stroke: var(--accent); stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.disease-card h3 { color: var(--ec-navy); font-weight: 800; }
+.disease-card .dc-badge { border-radius: 6px; }
+
+.dm-overlay { background: rgba(11,31,58,.48); }
+.dm-card { border-radius: var(--ec-radius-lg); }
+.dm-head { background: var(--ec-blue); }
+.dm-title { font-weight: 800; }
+.dm-icon-lg { display: grid; place-items: center; }
+.dm-icon-lg svg { width: 48px; height: 48px; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+#report-content { border-radius: var(--ec-radius-lg); }
+#report-body > div { border-radius: 12px !important; }
+#report-body > div > p:first-child { font-size: .69rem !important; letter-spacing: .01em; }
+#report-body > div > p:last-child { font-size: .9rem; }
+.button-icon { width: 19px; height: 19px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-button { width: 44px; min-height: 44px; display: grid; place-items: center; box-shadow: none; }
+.icon-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.map-embed { height: 390px; }
+#tab-map .glass-card { border-radius: var(--ec-radius-lg); }
+#map-full-btn { background: #fff !important; color: var(--ec-navy) !important; border: 1px solid var(--ec-line); box-shadow: none; }
+#map-full-btn:hover { background: var(--ec-blue-soft) !important; color: var(--ec-blue) !important; }
+.clinic-item { border-radius: var(--ec-radius); box-shadow: var(--ec-shadow); }
+.clinic-item a { border-radius: 9px; background: var(--ec-blue); }
+
+.mobile-nav {
+    background: rgba(255,255,255,.97);
+    border-top: 1px solid var(--ec-line);
+    box-shadow: 0 -10px 30px -28px rgba(11,31,58,.45);
+    backdrop-filter: blur(14px);
+}
+.bnav-item {
+    min-width: 64px;
+    min-height: 44px;      /* 손가락 터치 최소 권장치 — 이전 41px */
+    justify-content: center;
+    gap: 3px;
+    color: #7a899e;
+}
+.bnav-item.active { color: var(--ec-blue); }
+.bnav-ico { width: 23px; height: 23px; display: grid; place-items: center; }
+.bnav-ico svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (max-width: 767px) {
+    .site-header .max-w-6xl { padding: .72rem 1rem; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 9px; }
+    .brand-mark svg { width: 22px; height: 22px; }
+    .brand-name { font-size: 1.05rem; }
+    .language-select { min-height: 36px; width: 125px; max-width: 125px; padding-left: 10px; font-size: .68rem; }
+    .screening-main { padding-left: 1rem; padding-right: 1rem; }
+    .intro-stage { min-height: calc(100vh - 126px); padding: 2rem 0 .75rem; overflow: visible; }
+    .intro-stage::before, .intro-stage::after { display: none; }
+    .hero-eye { width: 70px; height: 70px; margin-bottom: 1.35rem; }
+    .hero-eye svg { width: 43px; height: 43px; }
+    .hero-title { font-size: clamp(2rem, 10vw, 2.65rem); line-height: 1.18; }
+    .hero-description { max-width: 340px; margin-top: 1rem; font-size: .88rem; line-height: 1.65; }
+    .screening-flow { width: min(100%, 340px); margin: 1.7rem auto 1.6rem; }
+    .flow-item { flex-basis: 70px; font-size: .67rem; }
+    .flow-icon { width: 41px; height: 41px; }
+    .flow-line { margin-top: 20px; }
+    .primary-cta { min-height: 54px; width: min(100%, 350px); }
+    .medical-notice { max-width: 320px; line-height: 1.45; }
+    #step-guide, #step-photo, #step-ai-result, #step-amsler, #step-chat { padding-top: 1.5rem; }
+    #step-guide .glass-card, #step-photo .glass-card { padding: 1.5rem !important; }
+    #tab-disease, #tab-report, #tab-map { padding-top: 2rem; }
+    .map-embed { height: 330px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    /* 예외: 로딩 스피너·타이핑 점은 '지금 처리 중'을 알리는 유일한 신호다.
+       위 규칙에 그대로 걸리면 1회 0.01ms만 돌고 멈춰, 분석 화면이 멈춘 것처럼 보인다.
+       완전히 끄는 대신 속도를 늦춰서 남긴다. */
+    .animate-spin, .btn-spinner, .ai-dots span {
+        animation-duration: 1.6s !important;
+        animation-iteration-count: infinite !important;
+    }
+}
+
+/* ==========================================
+   접근성 기본기 (a11y basics)
+   ========================================== */
+/* 화면에는 안 보이지만 스크린리더는 읽는 텍스트 */
+.sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 숨겨진 파일 입력에 키보드 포커스가 오면 표시용 라벨에 링을 보여준다. */
+#cataract-file:focus-visible + label {
+    outline: 3px solid #2563eb;
+    outline-offset: 3px;
+}
+
+/* 키보드 사용자가 네비를 매번 지나치지 않도록 — Tab 첫 타에만 나타난다 */
+.skip-link {
+    position: fixed;
+    top: 8px; left: 8px;
+    z-index: 200;
+    padding: 10px 16px;
+    background: var(--ec-navy);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: var(--ec-radius-sm);
+    transform: translateY(-160%);
+    transition: transform .18s ease;
+}
+.skip-link:focus { transform: translateY(0); }
+
+.noscript-banner {
+    padding: 14px 16px;
+    background: #fff1f2;
+    border-bottom: 1px solid #fecdd3;
+    color: #9f1239;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* 링크·커스텀 위젯까지 포커스 링 적용 (버튼/입력은 위쪽 규칙에서 처리) */
+a:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+    outline: 3px solid rgba(21, 94, 239, 0.24);
+    outline-offset: 3px;
+}
+/* 탭 전환 시 포커스만 옮기고 링은 표시하지 않음 */
+.tab-content:focus, .tab-content:focus-visible { outline: none; }
+
+/* 비활성(처리 중) 버튼 공통 */
+button:disabled,
+button[aria-busy="true"] { opacity: .6; cursor: progress; }
+.btn-pop:disabled:active { transform: none; }
+
+/* 처리 중 버튼 안에서 도는 작은 스피너 */
+.btn-spinner {
+    display: inline-block;
+    width: 15px; height: 15px;
+    margin-right: 8px;
+    vertical-align: -2px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 모달이 열린 동안 뒤 페이지 스크롤 잠금 */
+body.modal-open { overflow: hidden; }
+
+/* 로고(홈) 버튼 — <div onclick>이었던 것을 실제 버튼으로 */
+.brand-btn { background: none; border: 0; cursor: pointer; }
+
+/* ==========================================
+   진행 단계 표시 (step-progress)
+   ========================================== */
+.step-progress {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding-top: 2.5rem;
+}
+.step-progress.show { display: flex; }
+.sp-dot {
+    width: 26px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--ec-line);
+    transition: background .25s ease, width .25s ease;
+}
+.sp-dot.done { background: #9dbaf0; }
+.sp-dot.current { width: 40px; background: var(--ec-blue); }
+
+/* 카드 하단의 '이전' 되돌아가기 링크 */
+.back-link {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 8px;
+    background: none;
+    border: 0;
+    color: var(--ec-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color .2s ease;
+}
+.back-link:hover { color: var(--ec-navy); }
+
+/* ==========================================
+   업로드 카드 드래그&드롭
+   ========================================== */
+.dropzone { transition: border-color .2s ease, background .2s ease; }
+.dropzone.dragover {
+    border-color: var(--ec-blue) !important;
+    background: var(--ec-blue-soft);
+}
+.dropzone-hint {
+    margin-top: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ec-muted);
+}
+/* 손가락으로 쓰는 화면에는 드래그&드롭 안내가 의미 없다 */
+@media (pointer: coarse) {
+    .dropzone-hint { display: none; }
+}
+
+/* 암슬러 격자 사용법 안내 */
+.amsler-howto {
+    margin: 0 auto 18px;
+    max-width: 300px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ec-muted);
+    line-height: 1.6;
+}
+
+/* ==========================================
+   인앱 토스트 알림 (alert 대체)
+   ========================================== */
+.toast-host {
+    position: fixed;
+    left: 50%;
+    bottom: calc(88px + env(safe-area-inset-bottom));   /* 모바일 하단 네비 위 */
+    transform: translateX(-50%);
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(420px, calc(100vw - 32px));
+    pointer-events: none;
+}
+@media (min-width: 768px) {
+    .toast-host { bottom: 24px; }
+}
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 16px;
+    border-radius: var(--ec-radius);
+    background: var(--ec-white);
+    border: 1px solid var(--ec-line);
+    border-left: 4px solid var(--ec-muted);
+    box-shadow: 0 16px 36px -14px rgba(11, 31, 58, 0.4);
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--ec-text);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: toastIn .28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.toast-error { border-left-color: var(--ec-danger); color: #8f2338; }
+.toast-success { border-left-color: var(--ec-success); color: #065f46; }
+.toast-info { border-left-color: var(--ec-blue); color: #123c8f; }
+.toast-ico { flex-shrink: 0; width: 17px; height: 17px; margin-top: 1px; }
+.toast-ico svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.toast-msg { flex: 1; min-width: 0; }
+.toast.leaving { animation: toastOut .25s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(10px) scale(0.97); } }
+
+/* ==========================================
+   안과 목록 — 이름 부분을 버튼으로 (키보드로도 지도 이동 가능)
+   ========================================== */
+.clinic-item .ci-info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+.clinic-item .ci-name,
+.clinic-item .ci-desc {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.clinic-item .ci-info:hover .ci-name { color: var(--ec-blue); }
+.clinic-item .ci-ico { width: 22px; height: 22px; display: grid; place-items: center; color: var(--ec-blue); }
+.clinic-item .ci-ico svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
