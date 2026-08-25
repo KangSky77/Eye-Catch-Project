@@ -372,3 +372,41 @@ def test_반사_판독보류를_프론트가_처리한다():
 
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("ai_hold:") == 6, "6개 언어 모두에 반사 안내 문구가 있어야 한다"
+
+
+def test_학습스크립트가_저장소_어디서_실행돼도_동작한다():
+    """scripts/ 로 옮기면서 두 가지가 깨질 수 있었다:
+      1) python scripts/x.py 로 실행하면 sys.path[0]이 scripts/라 app 패키지를 못 찾는다
+      2) dataset/ 같은 상대경로가 실행 위치에 따라 달라진다
+    각 스크립트 상단의 REPO_ROOT 부트스트랩이 둘 다 막는다."""
+    scripts = ROOT / "scripts"
+    assert scripts.is_dir(), "scripts/ 폴더가 있어야 한다"
+
+    필수 = ["train_ai_v3.py", "train_ai_v4.py", "dedup_dataset.py",
+            "validate_real_photos.py", "smoke_eye_detect.py", "build_eye_centroid.py"]
+    for name in 필수:
+        src = (scripts / name).read_text(encoding="utf-8")
+        assert "REPO_ROOT = Path(__file__).resolve().parent.parent" in src, f"{name}: 루트 부트스트랩 없음"
+        assert "sys.path.insert(0, str(REPO_ROOT))" in src, f"{name}: sys.path 보정 없음"
+        assert "os.chdir(REPO_ROOT)" in src, f"{name}: 작업 디렉터리 보정 없음"
+
+
+def test_파이프라인_산출물_경로가_data폴더를_가리킨다():
+    """dataset_group_map.json 등을 data/로 옮겼으므로 읽고 쓰는 쪽도 같이 가야 한다.
+    한쪽만 바뀌면 학습이 '그룹 맵 없음'으로 조용히 다른 분할을 쓰게 된다."""
+    dedup = (ROOT / "scripts" / "dedup_dataset.py").read_text(encoding="utf-8")
+    assert 'Path("data/dataset_group_map.json")' in dedup
+
+    v3 = (ROOT / "scripts" / "train_ai_v3.py").read_text(encoding="utf-8")
+    assert '"data/dataset_group_map.json"' in v3
+    assert '"data/label_conflicts.json"' in v3
+
+    for f in ["dataset_group_map.json", "label_conflicts.json", "brightiris_attributions.csv"]:
+        assert (ROOT / "data" / f).exists(), f"data/{f} 가 없습니다"
+
+
+def test_모델_메타데이터는_가중치_옆에_남아있다():
+    """tests/test_model_consistency.py가 settings.model_path의 .pth를
+    _metadata.json으로 바꿔 찾는다. 메타데이터만 옮기면 이 짝이 깨진다."""
+    metas = list(ROOT.glob("cataract_*_metadata.json"))
+    assert metas, "모델 메타데이터가 루트에 있어야 한다(.pth와 같은 위치)"

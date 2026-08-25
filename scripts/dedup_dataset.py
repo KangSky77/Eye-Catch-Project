@@ -19,9 +19,21 @@
       방식으로 교체했다 — false negative 없음.
 
 실행:  python dedup_dataset.py
-출력:  dataset_group_map.json  ({"0_normal/img (1).jpg": group_id, ...})
+출력:  data/dataset_group_map.json  ({"0_normal/img (1).jpg": group_id, ...})
        콘솔에 중복 그룹 요약 + (있다면) 클래스가 다른데 중복인 경우 경고
 """
+import os
+import sys
+from pathlib import Path
+
+# scripts/ 안에서 실행돼도 저장소 루트를 기준으로 동작하게 한다.
+# (python scripts/x.py 로 실행하면 sys.path[0]이 scripts/라 app 패키지를 못 찾고,
+#  dataset/ 같은 상대경로도 실행 위치에 따라 달라진다)
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+os.chdir(REPO_ROOT)
+
 import json
 import os
 from collections import defaultdict
@@ -36,7 +48,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True  # 살짝 깨진 파일도 최대한 읽�
 
 DATA_DIR = Path("dataset")
 CLASSES = ["0_normal", "1_cataract"]
-OUTPUT_PATH = Path("dataset_group_map.json")
+OUTPUT_PATH = Path("data/dataset_group_map.json")
 HASH_SIZE = 8          # 8x8 DCT → 64비트 해시
 DUP_THRESHOLD = 6      # 해밍거리 이 값 이하면 "같은 출처 사진"으로 간주 (보수적 값)
 COMPARE_CHUNK = 2000   # O(n^2) 비교를 메모리에 맞게 청크 단위로 처리

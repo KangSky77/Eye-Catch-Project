@@ -83,12 +83,17 @@ Eye-Catch (C:\eye_catch)
 │   │       ├── knowledge.py     # 🆕 RAG 안과 참고지식 베이스 + 검색
 │   │       ├── clinics.py       # 🆕 주변 안과 검색 (카카오/Overpass)
 │   │       └── database.py      # 진단 기록 저장
-│   ├── dedup_dataset.py         # 근접중복 탐지 (phash, 정확한 O(n²)) → dataset_group_map.json
-│   ├── train_ai_v3.py           # 그룹 분할 + 라벨충돌 제외 + 불균형 보정 학습 스크립트
-│   ├── train_ai_v4.py           # 🆕 백본 비교 학습 (--backbone resnet18|efficientnet_b0)
-│   ├── validate_real_photos.py  # 🆕 실사진(폰 촬영)으로 배포 파이프라인 검증 (시연 전 필수)
-│   ├── smoke_eye_detect.py      # 사진 1장으로 얼굴→눈크롭→판정 경로 확인하는 수동 CLI
-│   ├── build_eye_centroid.py    # 🆕 눈 검증기(OOD) 기준 벡터 생성 + 임계값 근거 산출
+│   ├── scripts/                 # 🆕 학습·데이터 도구 (저장소 어디서 실행해도 동작)
+│   │   ├── dedup_dataset.py         # 근접중복 탐지 (phash, 정확한 O(n²)) → data/dataset_group_map.json
+│   │   ├── train_ai_v3.py           # 그룹 분할 + 라벨충돌 제외 + 불균형 보정 학습 스크립트
+│   │   ├── train_ai_v4.py           # 백본 비교 학습 (--backbone resnet18|efficientnet_b0)
+│   │   ├── validate_real_photos.py  # 실사진(폰 촬영)으로 배포 파이프라인 검증 (시연 전 필수)
+│   │   ├── smoke_eye_detect.py      # 사진 1장으로 얼굴→눈크롭→판정 경로 확인하는 수동 CLI
+│   │   └── build_eye_centroid.py    # 눈 검증기(OOD) 기준 벡터 생성 + 임계값 근거 산출
+│   ├── data/                    # 🆕 파이프라인 산출물 (이미지 아님)
+│   │   ├── dataset_group_map.json    # dedup_dataset.py 출력 — 근접중복 그룹 매핑
+│   │   ├── label_conflicts.json      # 학습에서 제외한 라벨 충돌 이미지 목록
+│   │   └── brightiris_attributions.csv  # v5 보강분 201장 출처·라이선스 전수 기록
 │   ├── tests/                   # 🆕 pytest 자동 테스트 (수 초 완료, GPU·Ollama·DB 불필요)
 │   ├── requirements.txt         # 의존성 (CUDA torch) — 나머지는 requirements-base.txt
 │   ├── .github/workflows/       # 🆕 CI — PR마다 pytest 자동 실행
@@ -178,9 +183,9 @@ KAKAO_REST_KEY=
 
 ### 4️⃣ AI 모델 학습 (또는 사전학습 가중치 다운로드)
 ```bash
-python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
-python train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # → cataract_efficientnet_b0_v4.pth (현재 배포 모델)
-python train_ai_v4.py --backbone resnet18          # (선택) 백본 비교용
+python scripts/dedup_dataset.py                            # 1회 — data/dataset_group_map.json 생성
+python scripts/train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # → cataract_efficientnet_b0_v4.pth (현재 배포 모델)
+python scripts/train_ai_v4.py --backbone resnet18          # (선택) 백본 비교용
 
 # --batch 40: 배포 중인 v5 모델과 동일 조건 (메타데이터 batch_size 기록과 일치).
 #   6GB급 노트북에서 추론 서버·Ollama와 GPU를 나눠 쓸 때의 OOM 방지 겸용 —
@@ -223,7 +228,7 @@ ngrok http 8000
 
 v4의 알려진 약점(밝은 색 홍채의 정상 눈을 백내장으로 오판)을 해소하기 위해, Wikimedia
 Commons에서 밝은 홍채(청록·파랑·녹색) 정상 눈 사진 **201장**을 수집해 정상 클래스에 보강하고
-같은 레시피로 재학습했습니다(파일별 출처·라이선스는 `brightiris_attributions.csv`에 전수 기록).
+같은 레시피로 재학습했습니다(파일별 출처·라이선스는 `data/brightiris_attributions.csv`에 전수 기록).
 dedup 전수 비교 결과 201장 중 **196장이 기존 데이터와 겹치지 않는 신규 그룹**이라, 부족하던
 서브그룹을 실제로 늘린 것이 확인됐습니다. 배포 파일명은 `cataract_efficientnet_b0_v4.pth`
 그대로 덮어썼고, 보강 전 모델은 `cataract_efficientnet_b0_v4_preaug.pth`로 백업해뒀습니다.
@@ -275,7 +280,7 @@ dedup 전수 비교 결과 201장 중 **196장이 기존 데이터와 겹치지 
 
 라벨 수정으로 파일 2장이 클래스를 옮기면서 v3 학습 당시의 train/val/test 분할이
 같은 시드로도 재현 불가능해졌습니다(클래스별 그룹 목록이 달라져 셔플 결과가 바뀜).
-이를 해소하기 위해 `dataset_group_map.json`을 재생성하고 **동일 조건에서 두 백본을
+이를 해소하기 위해 `data/dataset_group_map.json`을 재생성하고 **동일 조건에서 두 백본을
 재학습·비교**했습니다(`train_ai_v4.py`, v3 레시피 그대로 + `--backbone` 인자만 추가).
 
 | 지표 (test, 임계값 50%) | ResNet18 v4 | **EfficientNet-B0 v4 (채택)** |
@@ -298,7 +303,7 @@ dedup 전수 비교 결과 201장 중 **196장이 기존 데이터와 겹치지 
   (98.5~99.9% 확신으로 오판). 데이터셋이 어두운 홍채 위주라 밝은 홍채의 뿌연 느낌을 수정체
   혼탁으로 착각하는 것으로 보였고 → **v5 데이터 보강으로 해소**(위 섹션 참고).
 - **시연 전 실사진 점검**: 위 수치는 데이터셋 내부 수치입니다. 실제 폰 사진은 도메인 갭으로
-  성능이 낮아질 수 있으니, `python validate_real_photos.py <사진폴더>`로 배포 파이프라인
+  성능이 낮아질 수 있으니, `python scripts/validate_real_photos.py <사진폴더>`로 배포 파이프라인
   그대로(MTCNN→OOD게이트→TTA→3단계 판정) 미리 확인하세요.
 
 ### ResNet18 v3 (근접중복 그룹 분할 — v4 이전 기록)
@@ -315,8 +320,8 @@ train과 test에 동시에 들어가는 누수가 거의 확실해서, v2의 "�
 > 수치(8,639장/8,177장)는 이 정확한 비교 결과입니다.
 
 `train_ai_v3.py`는 근접중복을 삭제하지 않고 그룹으로 묶어 **그룹 전체를 하나의 split에만**
-배정합니다(`dataset_group_map.json`). 정상/백내장 두 클래스에 걸친 라벨 충돌 그룹(같은 사진이
-양쪽에 라벨링된 경우)은 **학습/검증/테스트 전부에서 제외**하고 `label_conflicts.json`에
+배정합니다(`data/dataset_group_map.json`). 정상/백내장 두 클래스에 걸친 라벨 충돌 그룹(같은 사진이
+양쪽에 라벨링된 경우)은 **학습/검증/테스트 전부에서 제외**하고 `data/label_conflicts.json`에
 기록합니다(3그룹, 33장 — 사람이 직접 확인 후 라벨을 고쳐 재포함할 대상). 또한 Codex 버전의
 `WeightedRandomSampler`(배치 내 클래스 비율을 50:50으로 공급)와 `balanced_accuracy + 0.25·F1`
 기준 모델 선택을 이식했습니다. 처음엔 손실 함수에도 클래스 가중치를 추가로 줬는데, 샘플러가
@@ -352,8 +357,8 @@ threshold는 test set을 보지 않고 validation에서만 고른 뒤(`choose_th
 
 재현하려면:
 ```bash
-python dedup_dataset.py                            # 1회 — dataset_group_map.json 생성
-python train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # 현재 배포 모델(v5) 재학습 — batch 40 동일 조건
+python scripts/dedup_dataset.py                            # 1회 — data/dataset_group_map.json 생성
+python scripts/train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # 현재 배포 모델(v5) 재학습 — batch 40 동일 조건
 ```
 >
 > 또한 비-눈 이미지 차단(OOD 검증, `eye_validator.py`)은 ImageNet 사전학습 ResNet18 가중치를 런타임에 받아옵니다. **서버를 처음 띄우는 환경(신규 배포·팀원 PC 등)에서는 최초 1회 인터넷 연결이 필요**하며, 실패하면 눈 클로즈업 분석이 503으로 막힙니다(의도된 fail-closed 동작).
@@ -391,7 +396,7 @@ python train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v5   # 현
 
 | # | 출처 | 라이선스 | 판정 | 왜 그런가 |
 |---|---|---|---|---|
-| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 125장, FAL·Copyrighted free use 5장 | 🟢 안전 | **201장 전부 자유 라이선스이며 저작자까지 확정**. 파일별 원저작자·라이선스·원본 링크를 [brightiris_attributions.csv](brightiris_attributions.csv)에 전수 기록 — CC BY(-SA) 조건인 출처 표기를 이 파일이 담당 |
+| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 125장, FAL·Copyrighted free use 5장 | 🟢 안전 | **201장 전부 자유 라이선스이며 저작자까지 확정**. 파일별 원저작자·라이선스·원본 링크를 [data/brightiris_attributions.csv](data/brightiris_attributions.csv)에 전수 기록 — CC BY(-SA) 조건인 출처 표기를 이 파일이 담당 |
 
 > ✅ **귀속 정보 전수 확정(2026-08-19)**: Commons API로 전 파일을 재조회해 비어 있던 항목을
 > 채웠습니다 — Artist 필드가 공란인 5장은 Commons 관례대로 업로더를 저작자로 기록하고 근거를
@@ -572,8 +577,8 @@ npm ci && npm run build:css
 
 ### 눈 검증기 기준 벡터 재생성
 ```bash
-python build_eye_centroid.py                          # 계산 + 배포본과 비교만 (덮어쓰지 않음)
-python build_eye_centroid.py --non-eye <비-눈 폴더>     # 임계값 근거까지 산출
+python scripts/build_eye_centroid.py                          # 계산 + 배포본과 비교만 (덮어쓰지 않음)
+python scripts/build_eye_centroid.py --non-eye <비-눈 폴더>     # 임계값 근거까지 산출
 ```
 `app/models/eye_centroid.npy`를 만드는 코드가 없어 "왜 임계값이 0.55인가"를 재현할 수 없던 것을
 메운 스크립트입니다. **현재 배포본은 이 레시피로 재현되지 않습니다**(코사인 0.976, 부분집합·표본크기
@@ -604,7 +609,7 @@ python build_eye_centroid.py --non-eye <비-눈 폴더>     # 임계값 근거�
 
 ### 수동 스모크 테스트 (사진 1장)
 ```bash
-python smoke_eye_detect.py <사진경로>   # 얼굴사진 → mode=face / 눈 클로즈업 → mode=eye
+python scripts/smoke_eye_detect.py <사진경로>   # 얼굴사진 → mode=face / 눈 클로즈업 → mode=eye
 ```
 가중치·MTCNN이 실제로 붙어 있는지 눈으로 확인하는 CLI입니다. 파일명이 `test_`로 시작하지
 않는 이유는 pytest가 수집하면 import 시점의 `SystemExit`로 스위트 전체가 죽기 때문입니다.

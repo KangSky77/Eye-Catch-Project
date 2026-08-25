@@ -17,6 +17,18 @@ v3 대비 추가된 것:
 비교:  두 메타데이터 JSON의 best_val_metrics(선택은 반드시 val 기준!)를 비교해
        승자를 고르고, test 지표는 마지막 확인용으로만 본다.
 """
+import os
+import sys
+from pathlib import Path
+
+# scripts/ 안에서 실행돼도 저장소 루트를 기준으로 동작하게 한다.
+# (python scripts/x.py 로 실행하면 sys.path[0]이 scripts/라 app 패키지를 못 찾고,
+#  dataset/ 같은 상대경로도 실행 위치에 따라 달라진다)
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+os.chdir(REPO_ROOT)
+
 import argparse
 import hashlib
 import json

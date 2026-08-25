@@ -18,6 +18,18 @@ MTCNN 눈 크롭 → 눈 검증(OOD) 게이트 → EfficientNet+TTA → 3단계 
       non_eye/    눈이 아닌 사진 (거부되는지 확인용, 선택)
     하위 폴더가 없으면 라벨 없이 예측 결과만 출력한다.
 """
+import os
+import sys
+from pathlib import Path
+
+# scripts/ 안에서 실행돼도 저장소 루트를 기준으로 동작하게 한다.
+# (python scripts/x.py 로 실행하면 sys.path[0]이 scripts/라 app 패키지를 못 찾고,
+#  dataset/ 같은 상대경로도 실행 위치에 따라 달라진다)
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+os.chdir(REPO_ROOT)
+
 import sys
 sys.stdout.reconfigure(encoding="utf-8")   # Windows cp949 콘솔에서도 안전하게
 

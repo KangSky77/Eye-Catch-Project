@@ -44,6 +44,18 @@ app/services/eye_validator.py는 app/models/eye_centroid.npy를 **읽기만** �
     python build_eye_centroid.py --non-eye real_photos/non_eye
     python build_eye_centroid.py --overwrite              # app/models/eye_centroid.npy 교체
 """
+import os
+import sys
+from pathlib import Path
+
+# scripts/ 안에서 실행돼도 저장소 루트를 기준으로 동작하게 한다.
+# (python scripts/x.py 로 실행하면 sys.path[0]이 scripts/라 app 패키지를 못 찾고,
+#  dataset/ 같은 상대경로도 실행 위치에 따라 달라진다)
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+os.chdir(REPO_ROOT)
+
 import argparse
 import sys
 from pathlib import Path

@@ -4,7 +4,7 @@
 v2(train_ai.py) 대비 바뀐 점 — Codex 버전(compare/codex/train_cataract_balanced.py)의
 불균형 대응 기법을 이식하고, 데이터 중복 누수를 차단함:
 
-  1) 그룹 단위 분할: dedup_dataset.py가 만든 dataset_group_map.json을 읽어서
+  1) 그룹 단위 분할: dedup_dataset.py가 만든 data/dataset_group_map.json을 읽어서
      "거의 같은 사진"이 train/val/test에 동시에 들어가지 않도록 그룹 전체를
      하나의 split에만 배정한다. 중복 이미지를 삭제(drop)하는 것은 아니며,
      split 간 누수를 막는 것이 목적이다. (v2는 사진 1장 단위로 무작위 분할 → 누수 가능)
@@ -17,9 +17,21 @@ v2(train_ai.py) 대비 바뀐 점 — Codex 버전(compare/codex/train_cataract_
      나왔는지" 추적 가능하게 함.
 
 ResNet18 전이학습 + 2단계 학습(헤드→전체 미세조정)은 v2 방식을 유지.
-실행:  python dedup_dataset.py   (먼저 1회, dataset_group_map.json 생성)
+실행:  python scripts/dedup_dataset.py   (먼저 1회, data/dataset_group_map.json 생성)
        python train_ai_v3.py
 """
+
+import os
+import sys
+from pathlib import Path
+
+# scripts/ 안에서 실행돼도 저장소 루트를 기준으로 동작하게 한다.
+# (python scripts/x.py 로 실행하면 sys.path[0]이 scripts/라 app 패키지를 못 찾고,
+#  dataset/ 같은 상대경로도 실행 위치에 따라 달라진다)
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+os.chdir(REPO_ROOT)
 
 import json
 import random
@@ -39,7 +51,7 @@ from app.core.config import settings
 
 # ----------------------------- 설정 -----------------------------
 DATA_DIR        = "dataset"
-GROUP_MAP_PATH  = "dataset_group_map.json"   # dedup_dataset.py 출력
+GROUP_MAP_PATH  = "data/dataset_group_map.json"   # dedup_dataset.py 출력
 OUTPUT_PATH     = "cataract_resnet18_v3.pth"
 METADATA_PATH   = "cataract_resnet18_v3_metadata.json"
 IMG_SIZE        = 224
@@ -154,11 +166,11 @@ def group_aware_split(dataset: ImageFolder, group_map: dict, val_ratio: float, t
             }
             for gid in sorted(mixed_group_ids)
         }
-        with open("label_conflicts.json", "w", encoding="utf-8") as f:
+        with open("data/label_conflicts.json", "w", encoding="utf-8") as f:
             json.dump(conflict_report, f, ensure_ascii=False, indent=2)
         print(
             f"⚠️  클래스가 엇갈린 그룹 {len(mixed_group_ids)}개/"
-            f"이미지 {len(excluded_idx)}장 제외 → label_conflicts.json 확인"
+            f"이미지 {len(excluded_idx)}장 제외 → data/label_conflicts.json 확인"
         )
 
     # 클래스별로 그룹을 모아 셔플 후 비율대로 분할
@@ -417,7 +429,7 @@ def main():
         "split_unit": "dedup_group (near-duplicate-safe)",
         "duplicates_are_grouped_not_dropped": True,
         "excluded_label_conflict_images": len(excluded_idx),
-        "label_conflict_report": "label_conflicts.json" if excluded_idx else None,
+        "label_conflict_report": "data/label_conflicts.json" if excluded_idx else None,
         "counts": {
             "train": dict(Counter(train_targets)),
             "val": dict(Counter(val_targets)),
