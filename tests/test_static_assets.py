@@ -294,3 +294,45 @@ def test_질환_사진에_원본_라이선스와_변경_고지가_노출된다()
     assert 'licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/"' in data
     assert 'licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/"' in data
     assert data.count("dis_modal_image_change_reencoded:") == 6
+
+
+def test_맞춤형질문_답변버튼은_문진핸들러가_아니라_전용핸들러에_연결된다():
+    """renderChatOptions가 handleAnswer에 고정돼 있어서, 문진이 끝난 뒤
+    Gemma 맞춤형 질문에 '네'를 눌러도 문진 핸들러가 호출돼 그 자리에서 멈췄다.
+    (handleSymptomAnswer가 범위 밖 문항을 만나 예외로 죽고, 그 직전에 걸어둔
+     chatBusy 잠금이 영영 풀리지 않아 이후 모든 클릭이 무시됐다.)"""
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+
+    # 핸들러를 인자로 받아야 한다
+    assert "function renderChatOptions(opts, onPick)" in chat
+    assert "b.onclick = () => pick(o.value, o.label);" in chat
+
+    # 맞춤형 질문 구간은 handleChatAnswer로 연결돼야 한다
+    assert "v => handleChatAnswer(v === true)" in chat
+
+
+def test_증상핸들러는_범위밖_문항에서_잠금을_걸지_않는다():
+    """잠금을 걸어놓고 예외로 죽으면 이후 입력이 전부 무시된다.
+    q가 없으면 chatBusy를 건드리기 전에 빠져나가야 한다."""
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+    body = chat[chat.index("function handleSymptomAnswer("):]
+    body = body[: body.index("\n}")]
+    assert body.index("if (!q) return;") < body.index("state.chatBusy = true;")
+
+
+def test_암슬러_격자가_아래버튼과_붙지_않는다():
+    """style.css가 tailwind.css보다 뒤에 로드되므로, .amsler-grid에 margin
+    단축 속성을 쓰면 마크업의 mb-6이 0으로 덮여 격자가 버튼에 딱 붙는다."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    rule = css[css.index(".amsler-grid {"):]
+    rule = rule[: rule.index("}")]
+    assert "margin: 0 auto" not in rule, "margin 단축 속성은 mb-6을 덮어쓴다"
+    assert "margin-bottom:" in rule
+
+
+def test_업로드_진행률은_100퍼센트로_차지_않는다():
+    """xhr.upload 진행률은 '내보냈다'는 뜻이지 '서버가 다 받았다'가 아니다.
+    ngrok/모바일망에서 100%를 띄우면 '다 됐는데 왜 안 넘어가지'가 된다."""
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "Math.min(99, Math.round(pct))" in vision
+    assert "is-indeterminate" in vision

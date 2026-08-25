@@ -21,7 +21,7 @@ function startLoadingProgress() {
     const wrapEl = document.getElementById('upload-progress');
     const hintEl = document.getElementById('loading-slow-hint');
 
-    if (barEl) barEl.style.width = '0%';
+    if (barEl) { barEl.style.width = '0%'; barEl.classList.remove('is-indeterminate'); }
     if (wrapEl) wrapEl.setAttribute('aria-valuenow', '0');
     if (hintEl) hintEl.classList.add('hidden');
     if (titleEl) titleEl.textContent = t.loading_uploading || '사진 업로드 중';
@@ -39,15 +39,20 @@ function startLoadingProgress() {
     return {
         // 업로드 진행률(0~100)
         setProgress(pct) {
-            const v = Math.max(0, Math.min(100, Math.round(pct)));
+            // 99%에서 멈춘다. 업로드 바이트를 다 내보냈다고 끝난 게 아니라서,
+            // 100%를 띄우면 '다 됐는데 왜 안 넘어가지?'가 된다.
+            const v = Math.max(0, Math.min(99, Math.round(pct)));
             if (barEl) barEl.style.width = v + '%';
             if (wrapEl) wrapEl.setAttribute('aria-valuenow', String(v));
         },
-        // 업로드가 끝나 서버가 분석하는 구간으로 전환
+        // 업로드가 끝나 서버가 분석하는 구간으로 전환.
+        // 주의: xhr.upload 진행률은 '내보냈다'는 뜻이지 '서버가 다 받았다'는 뜻이 아니다.
+        // ngrok/모바일망에서는 100%가 뜬 뒤에도 실제 도착·처리까지 한참 더 걸린다.
+        // 그래서 여기서 막대를 100%로 채우지 않고, 끝을 모르는 진행(불확정)으로 바꾼다.
         toAnalyzing() {
             if (titleEl) titleEl.textContent = t.loading_analyzing || 'AI가 분석 중';
-            if (barEl) barEl.style.width = '100%';
-            if (wrapEl) wrapEl.setAttribute('aria-valuenow', '100');
+            if (barEl) { barEl.style.width = ''; barEl.classList.add('is-indeterminate'); }
+            if (wrapEl) wrapEl.removeAttribute('aria-valuenow');   // 불확정 상태를 스크린리더에도 알림
         },
         stop() { clearInterval(timer); }
     };

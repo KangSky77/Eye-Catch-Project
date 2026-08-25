@@ -42,18 +42,25 @@ function askRiskQuestion() {
     state.chatBusy = false;
 }
 
-/** 답변 버튼을 질문에 맞게 다시 그린다. 선택지 개수가 달라지므로 매번 재생성. */
-function renderChatOptions(opts) {
+/** 답변 버튼을 질문에 맞게 다시 그린다. 선택지 개수가 달라지므로 매번 재생성.
+ *  onPick을 반드시 받는다 — 예전에는 handleAnswer에 고정돼 있어서, 문진이 끝난 뒤
+ *  Gemma 맞춤형 질문에 답해도 문진 핸들러가 호출돼 문진이 그 자리에서 멈췄다. */
+function renderChatOptions(opts, onPick) {
+    const pick = onPick || handleAnswer;
     const box = document.getElementById('chat-controls');
     box.innerHTML = '';
+    // className을 통째로 덮어쓰므로 hidden 상태가 날아간다 —
+    // 버튼을 그린다는 건 '버튼이 답변 수단'이라는 뜻이므로 자유 입력칸은 닫아준다.
     box.className = 'p-4 bg-white/80 border-t flex flex-wrap gap-2 backdrop-blur-md';
+    const freeBox = document.getElementById('chat-free');
+    if (freeBox) freeBox.classList.add('hidden');
     opts.forEach(o => {
         const b = document.createElement('button');
         b.className = 'flex-1 py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm btn-pop';
         if (o.value === false) b.className = 'flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm btn-pop';
         b.style.minWidth = '30%';
         b.textContent = o.label;
-        b.onclick = () => handleAnswer(o.value, o.label);
+        b.onclick = () => pick(o.value, o.label);
         box.appendChild(b);
     });
 }
@@ -103,10 +110,14 @@ function askSymptomQuestion() {
 
 function handleSymptomAnswer(yes) {
     if (state.chatBusy) return;
-    state.chatBusy = true;
 
     const list = activeSymptomQuestions();
     const q = list[state.symIdx];
+    // 문진이 이미 끝났는데 호출되면(예전 버튼이 남아 있던 경우) q가 undefined다.
+    // 잠금을 걸기 전에 빠져나간다 — 걸어놓고 예외로 죽으면 이후 모든 입력이 무시된다.
+    if (!q) return;
+
+    state.chatBusy = true;
     const t = translations[state.lang];
     const label = yes ? t.chat_yes : t.chat_no;
     addMsg('user', label);
@@ -218,6 +229,14 @@ async function fetchNextQuestion() {
         addMsg('bot', q);
         state.chatHistory.push({ q: q, a: "" });
         setChatAnswerMode(answerType);
+        if (answerType !== 'text') {
+            // 맞춤형 질문 전용 버튼을 새로 그린다(문진 핸들러가 아니라 handleChatAnswer로).
+            const tt = translations[state.lang];
+            renderChatOptions(
+                [{ label: tt.chat_yes, value: true }, { label: tt.chat_no, value: false }],
+                v => handleChatAnswer(v === true)
+            );
+        }
         state.chatBusy = false;   // 새 질문 표시 완료 → 답변 잠금 해제
     }
 }
