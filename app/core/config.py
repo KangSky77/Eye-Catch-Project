@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     model_path: str = "cataract_efficientnet_b0_v4.pth"
     model_backbone: str = "efficientnet_b0"   # 가중치와 짝이 맞아야 함 (resnet18 | efficientnet_b0)
     ollama_url: str = "http://localhost:11434/api/generate"
-    ollama_model: str = "gemma4:e4b-it-qat"
+    # 노트북(6GB급 VRAM)에서는 e4b가 120초 타임아웃에 걸린다 — 경량 e2b를 기본으로.
+    # VRAM이 넉넉한 실습실 PC에서는 .env의 OLLAMA_MODEL로 e4b를 지정하면 된다.
+    ollama_model: str = "gemma4:e2b-it-qat"
     ollama_timeout_seconds: float = 120.0
     kakao_rest_key: str = ""   # 카카오 로컬 REST API 키(.env의 KAKAO_REST_KEY) — 안과 검색용
     max_upload_size_bytes: int = 10 * 1024 * 1024  # .env의 MAX_UPLOAD_SIZE_BYTES로 덮어쓰기 가능
