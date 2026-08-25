@@ -336,3 +336,26 @@ def test_업로드_진행률은_100퍼센트로_차지_않는다():
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
     assert "Math.min(99, Math.round(pct))" in vision
     assert "is-indeterminate" in vision
+
+
+def test_촬영_안내가_플래시를_켜라고_하지_않는다():
+    """측정 근거: 정상으로 잘 판정되던 눈 사진 60장에 플래시 반사를 합성하니
+    캐치라이트 10장(17%), 베일글레어 16장(27%)이 '위험'으로 뒤집혔다.
+    반면 사진 전체 밝기만 올린 대조군은 60장 중 1장만 바뀌었다 —
+    모델이 밝기가 아니라 '눈동자 위 국소 백색 패턴'에 반응한다는 뜻이고,
+    그게 바로 플래시 캐치라이트의 모습이다.
+    앱이 스스로 오탐을 유도하는 안내를 하지 않도록 고정한다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+
+    금지 = [
+        "플래시를 켜주세요", "Turn on the flash", "Encienda el flash",
+        "Activez le flash", "フラッシュをオンに", "请打开闪光灯",
+    ]
+    for phrase in 금지:
+        assert phrase not in data, f"플래시를 켜라는 안내가 되살아났습니다: {phrase!r}"
+
+    # 6개 언어 모두에 '끄라'는 안내가 있어야 한다
+    권장 = ["플래시는 꺼주세요", "Turn the flash off", "Apague el flash",
+            "Désactivez le flash", "フラッシュはオフに", "请关闭闪光灯"]
+    for phrase in 권장:
+        assert phrase in data, f"플래시 끄기 안내가 없습니다: {phrase!r}"
