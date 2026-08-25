@@ -127,6 +127,14 @@ async function runAIAnalysis(droppedFile) {
             return;
         }
 
+        // 플래시 반사가 눈동자를 덮으면 모델이 혼탁으로 오독한다 —
+        // 판정 대신 재촬영을 요청한다(서버의 반사 게이트가 'hold'로 알려준다).
+        if (d.result_code === 'hold') {
+            showToast(translations[state.lang].ai_hold || "플래시 반사가 강해 판독할 수 없어요. 플래시를 끄고 다시 찍어주세요.", 'error', 7000);
+            nextStep('step-photo');
+            return;
+        }
+
         // 눈 사진이 아니라고 판단되면 의료 결과 대신 재촬영 안내
         if (d.result_code === 'invalid') {
             showToast(translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.", 'error', 6000);

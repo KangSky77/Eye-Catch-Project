@@ -359,3 +359,16 @@ def test_촬영_안내가_플래시를_켜라고_하지_않는다():
             "Désactivez le flash", "フラッシュはオフに", "请关闭闪光灯"]
     for phrase in 권장:
         assert phrase in data, f"플래시 끄기 안내가 없습니다: {phrase!r}"
+
+
+def test_반사_판독보류를_프론트가_처리한다():
+    """서버가 result_code='hold'를 주면 의료 판정 대신 재촬영을 안내해야 한다.
+    처리가 없으면 확률 0.0%가 '정상'으로 표시돼 정반대 결과가 나간다."""
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "d.result_code === 'hold'" in vision
+    assert "ai_hold" in vision
+    # hold 처리는 정상 결과 표시보다 먼저 와야 한다
+    assert vision.index("d.result_code === 'hold'") < vision.index("ai-result-display")
+
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("ai_hold:") == 6, "6개 언어 모두에 반사 안내 문구가 있어야 한다"

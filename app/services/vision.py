@@ -92,6 +92,19 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
     except Exception:
         raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
 
+# 플래시 반사 판정 기준 — 근거는 _glare_fraction() 독스트링과 아래 표.
+# 합성 반사점 크기별 실측(정상 눈 60장, 배포 모델 v5, 2026-08-24):
+#     반경  4%: 모델 오탐  0.0%  |  순백비율 0.56%
+#     반경  6%: 모델 오탐  5.0%  |  순백비율 1.27%
+#     반경  8%: 모델 오탐 15.0%  |  순백비율 2.25%   <- 여기부터 문제
+#     반경 10%: 모델 오탐 33.3%  |  순백비율 3.54%
+#     반경 14%: 모델 오탐 70.0%  |  순백비율 6.85%
+# 임계 2.0%는 '오탐 10% 이상을 만드는 크기'를 모두 잡으면서
+# 백내장 오거부 1.2% / 정상 오거부 1.7%로 억제되는 지점이다.
+# 오거부는 '판정 실패'가 아니라 '다시 찍어달라'는 안내이므로, 오탐보다 비용이 훨씬 낮다.
+GLARE_SATURATION_LEVEL = 250   # 세 채널 모두 이 값 이상이면 '순백'
+GLARE_MAX_FRACTION = 0.02      # 중앙부의 2%를 넘으면 판독 보류
+
 def _predict_single(img: Image.Image) -> float:
     """이미지 1장의 백내장 확률(%)을 반환.
 
@@ -117,6 +130,27 @@ def _predict_single(img: Image.Image) -> float:
         probs = torch.nn.functional.softmax(model(batch), dim=1)[:, 1]
     return probs.mean().item() * 100
 
+
+def _glare_fraction(img: Image.Image) -> float:
+    """눈 크롭 중앙부에서 '완전포화된 흰 픽셀'이 차지하는 비율.
+
+    플래시가 각막에 맺히는 반사점(캐치라이트)은 세 채널이 모두 255에 붙는
+    작고 단단한 순백 영역이다. 반면 백내장의 수정체 혼탁은 회백색이라
+    포화까지 가지 않는다 — 이 차이로 둘을 가른다.
+
+    실측(2026-08-24, 배포 모델 v5):
+        순백비율 중앙값 — 정상 0.00% / 백내장 0.01% / 플래시 반사 3.54%
+    """
+    import numpy as np
+    w, h = img.size
+    if w < 8 or h < 8:
+        return 0.0
+    # 동공·홍채가 있는 중앙부만 본다(눈꺼풀·속눈썹·피부 하이라이트 제외)
+    cw, ch = int(w * 0.6), int(h * 0.6)
+    crop = img.convert("RGB").crop(((w - cw) // 2, (h - ch) // 2,
+                                    (w - cw) // 2 + cw, (h - ch) // 2 + ch))
+    a = np.asarray(crop.resize((96, 96)), dtype=np.uint8)
+    return float((a.min(axis=2) >= GLARE_SATURATION_LEVEL).mean())
 
 def _classify(prob: float):
     """확률(%) → (언어중립 코드, 한국어 기본 문구). 임계값 일관 적용.
@@ -169,6 +203,24 @@ def predict_cataract(img: Image.Image):
             }
 
     targets = eye_crops if eye_crops else [img]
+
+    # [반사 게이트] 플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
+    # 실측: 정상 눈에 반사점을 합성하니 최대 70%가 '위험'으로 뒤집혔다(위 상수 주석 표).
+    # 이 경우 판정을 내리지 않고 재촬영을 요청한다 — 틀린 의료 판정보다 다시 찍는 편이 낫다.
+    glare = max((_glare_fraction(t) for t in targets), default=0.0)
+    if glare >= GLARE_MAX_FRACTION:
+        logger.info("판독 보류 — 조명 반사 감지 (순백비율 %.3f)", glare)
+        return {
+            "probability": 0.0,
+            "result": "판독 보류 (강한 조명 반사 감지됨)",
+            "result_code": "hold",         # 프론트가 '플래시를 끄고 다시 찍어주세요'로 안내
+            "mode": mode,
+            "eyes_detected": len(eye_crops),
+            "eye_probs": [],
+            "eyes": [],
+            "asymmetric": False,
+            "glare": round(glare, 4),
+        }
 
     eye_probs = [_predict_single(t) for t in targets]
     # 의료 스크리닝: 두 눈 중 위험도가 높은 쪽 기준으로 판정

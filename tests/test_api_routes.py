@@ -113,3 +113,32 @@ def test_nearby_clinics_정상좌표는_서비스로_전달(client, monkeypatch)
     r = client.get("/api/nearby-clinics", params={"lat": 37.5, "lng": 127.0})
     assert r.status_code == 200
     assert r.json()["echo"] == [37.5, 127.0]
+
+
+def test_반사가_강하면_판정대신_보류를_돌려준다():
+    """플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
+    실측(정상 눈 60장): 반사점 반경 10%에서 33%, 14%에서 70%가 '위험'으로 뒤집혔다.
+    그래서 판정을 내리지 않고 재촬영을 요청한다."""
+    from PIL import Image, ImageDraw
+    from app.services import vision
+
+    # 중앙에 순백 반사점이 있는 합성 눈 사진
+    img = Image.new("RGB", (300, 300), (90, 70, 60))
+    d = ImageDraw.Draw(img)
+    d.ellipse([120, 120, 180, 180], fill=(255, 255, 255))
+    assert vision._glare_fraction(img) >= vision.GLARE_MAX_FRACTION
+
+    # 반사가 없는 사진은 게이트에 걸리지 않는다
+    plain = Image.new("RGB", (300, 300), (90, 70, 60))
+    assert vision._glare_fraction(plain) < vision.GLARE_MAX_FRACTION
+
+
+def test_반사지표는_회백색_혼탁을_포화로_세지_않는다():
+    """백내장의 수정체 혼탁은 회백색이라 포화(255)까지 가지 않는다.
+    이 구분이 무너지면 진짜 백내장 사진이 재촬영 요청으로 반려된다."""
+    from PIL import Image, ImageDraw
+    from app.services import vision
+
+    img = Image.new("RGB", (300, 300), (90, 70, 60))
+    ImageDraw.Draw(img).ellipse([100, 100, 200, 200], fill=(205, 205, 200))  # 회백색
+    assert vision._glare_fraction(img) < vision.GLARE_MAX_FRACTION
