@@ -196,6 +196,23 @@ function vtAnswer(direction) {
     vtAdvanceStage();
 }
 
+/** '안 보여요' — 오답으로 처리한다(건너뛰기가 아니다).
+ *
+ *  왜 오답인가: 이 검사는 4지선다 강제선택 계단식이라, 안 보여도 찍으면 25% 확률로
+ *  맞는다. 3문항 중 2개 통과 규칙이라 순전히 운으로 한 단계를 통과할 확률이 15.6%다
+ *  (C(3,2)*0.25^2*0.75 + 0.25^3). 이걸 '건너뛰기'로 만들어 시행에서 빼버리면
+ *  단계가 끝나지 않아 검사가 멈추고, '통과'로 치면 시력이 부풀려진다.
+ *
+ *  오답 처리는 시력을 살짝 낮게 볼 수 있지만, 스크리닝에서는 그쪽이 안전한 오차다
+ *  — 낮게 보면 안과에 가보라고 안내할 뿐이고, 높게 보면 잘못 안심시킨다.
+ */
+function vtCantSee() {
+    if (vtState.phase !== 'acuity' && vtState.phase !== 'contrast') return;
+    // 실제 방향과 다른 값을 넘겨 오답으로 집계시킨다
+    const wrong = DIRECTIONS.find(d => d !== vtState.current) || 'up';
+    vtAnswer(wrong);
+}
+
 /** 눈/검사 순서: 무작위로 고른 첫 눈의 시력·대비 → 반대쪽 눈의 시력·대비 → 결과 */
 function vtAdvanceStage() {
     if (vtState.phase === 'acuity') {

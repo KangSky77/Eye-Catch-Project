@@ -494,3 +494,30 @@ def test_흔들림_보류를_프론트가_처리한다():
     assert vision.index("d.result_code === 'blurry'") < vision.index("ai-result-display")
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("ai_blurry:") == 6
+
+
+def test_시력검사에_안보여요가_있고_오답으로_처리된다():
+    """4지선다 강제선택이라 안 보여도 찍으면 25%로 맞는다.
+    '건너뛰기'로 만들면 그 단계가 끝나지 않아 검사가 멈추고,
+    '통과'로 치면 시력이 부풀려진다. 그래서 오답으로 집계해야 한다."""
+    vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
+    assert "function vtCantSee()" in vt
+    # 실제 방향과 다른 값을 넘겨 오답 처리
+    assert "DIRECTIONS.find(d => d !== vtState.current)" in vt
+    assert "vtAnswer(wrong)" in vt
+
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    assert "vtCantSee()" in html
+    assert 'data-i18n="vt_guess_hint"' in html, "찍어도 된다는 안내가 있어야 한다"
+
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("vt_cant_see:") == 6
+    assert data.count("vt_guess_hint:") == 6
+
+
+def test_시력검사_UI가_복구되어_있다():
+    """조원 논의 후 재투입(2abec18 revert). 스크립트 2개와 탭이 함께 살아나야 한다."""
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    assert 'id="tab-vision"' in html
+    assert "app-visiontest.js" in html and "calibration.js" in html
+    assert html.count('data-i18n="nav_vision"') == 2, "상단·하단 네비 모두 필요"

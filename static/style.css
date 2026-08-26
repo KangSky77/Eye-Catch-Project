@@ -1244,3 +1244,26 @@ body.modal-open { overflow: hidden; }
     .dm-sim { padding: 13px; }
     .dm-sim-controls { gap: 8px; }
 }
+
+/* 시력검사 — '안 보여요'와 추측 안내 */
+.vt-guess-hint {
+    margin: 12px 0 8px;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--ec-muted);
+}
+.vt-cant-see {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    border: 1px solid var(--ec-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ec-muted);
+    font-size: .82rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+.vt-cant-see:hover { background: #f1f5f9; color: var(--ec-navy); }
+.vt-cant-see:focus-visible { outline: 3px solid rgba(21, 94, 239, .24); outline-offset: 2px; }
