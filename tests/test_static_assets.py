@@ -435,3 +435,54 @@ def test_소견서_실패시_검사전체를_다시_하지_않고_재시도할_�
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("opinion_retry:") == 6, "6개 언어 모두에 재시도 버튼 문구가 있어야 한다"
     assert data.count("opinion_retry_hint:") == 6
+
+
+def test_MTCNN_미설치를_조용히_넘기지_않는다():
+    """facenet-pytorch는 --no-deps 선택 설치라 환경에서 쉽게 사라진다.
+    없으면 얼굴 사진도 전체 이미지로 분석되고 눈별 판정이 사라지는데,
+    예전에는 로그에 아무 표시가 없어 몇 주간 모르고 쓸 수 있었다."""
+    main = (ROOT / "app" / "main.py").read_text(encoding="utf-8")
+    idx = main.index("eye_detector.is_available()")
+    tail = main[idx:idx + 1200]
+    assert "else:" in tail
+    assert "logger.warning" in tail
+    assert "facenet-pytorch" in tail
+
+
+def test_지도가_sticky_헤더를_가리지_않는다():
+    """Leaflet은 내부 pane에 z-index 400~700, 컨트롤에 1000을 쓴다.
+    지도 컨테이너가 z-index:auto면 그 값이 문서 전체 기준으로 쌓여
+    sticky 헤더(z-50) 위로 올라와 로고·메뉴를 가린다(실측 확인됨)."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    embed = css[css.index(".map-embed {"):]
+    embed = embed[: embed.index("}")]
+    assert "z-index: 0" in embed, "지도 컨테이너에 쌓임 맥락이 필요하다"
+    assert "isolation: isolate" in embed
+
+    header = css[css.index(".site-header {"):]
+    header = header[: header.index("}")]
+    assert "z-index:" in header, "헤더도 명시적으로 올려둬야 한다"
+
+
+def test_질환별_시야_체험이_4종_모두_다르게_동작한다():
+    """안저사진은 '의사가 보는 그림'이라 일반 사용자에게 와닿지 않는다.
+    시야 재현은 증상과 직접 연결되므로 질환마다 다른 효과여야 의미가 있다."""
+    disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
+    assert "VISION_SIMS" in disease
+    for key in ["'cataract'", "'amd'", "'glaucoma'", "'dr'"]:
+        assert key in disease, f"{key} 시야 효과가 없습니다"
+    # 외부 이미지·라이브러리 없이 동작해야 한다(발표장 오프라인 대비)
+    assert "/static/assets/vision-scene.svg" in disease
+    assert (STATIC / "assets" / "vision-scene.svg").exists()
+
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["sim_title:", "sim_desc:", "sim_normal:", "sim_strength:", "sim_disclaimer:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+
+
+def test_시야_체험은_진단도구가_아님을_밝힌다():
+    """증상을 재현해 보여주는 기능이라, 사용자가 '내 눈이 이렇구나'로
+    받아들이지 않도록 교육용이라는 고지가 반드시 붙어야 한다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert "진단 도구가 아닙니다" in data
+    assert "Not a diagnostic tool" in data

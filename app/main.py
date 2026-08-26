@@ -51,6 +51,15 @@ async def lifespan(app: FastAPI):
     if eye_detector.is_available():
         spawn(run_in_threadpool(eye_detector.warmup))
         logger.info("🔥 MTCNN 감지기 웜업 시작(백그라운드)")
+    else:
+        # 조용히 넘어가면 안 된다 — MTCNN이 없으면 얼굴 사진에서 눈을 잘라내지 못해
+        # 사진 '전체'가 그대로 모델에 들어가고, 눈별(좌/우) 판정도 사라진다.
+        # 앱은 계속 돌지만 판정 품질이 떨어지므로 기동 로그에 분명히 남긴다.
+        logger.warning(
+            "⚠️  MTCNN(facenet-pytorch) 미설치 — 얼굴→눈 크롭이 비활성화됩니다. "
+            "얼굴 사진도 전체 이미지로 분석되고 눈별(좌/우) 판정이 표시되지 않습니다. "
+            "복구: pip install --no-deps facenet-pytorch"
+        )
 
 
     # DB 풀 초기화 (실패해도 서버는 정상 기동)

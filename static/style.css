@@ -291,6 +291,12 @@ body {
     width: 100%;
     height: 360px;
     background: #e2e8f0;
+    /* Leaflet은 내부 pane에 z-index 400~700, 확대/축소 컨트롤에 1000을 쓴다.
+       컨테이너가 z-index:auto면 그 값들이 문서 전체 기준으로 쌓여서
+       sticky 헤더(z-50) 위로 지도가 올라와 로고·메뉴를 가린다.
+       여기서 쌓임 맥락(stacking context)을 만들어 안쪽 값을 가둔다. */
+    z-index: 0;
+    isolation: isolate;
 }
 .map-embed iframe,
 .map-embed #leaflet-map {
@@ -522,6 +528,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
 }
 
 .site-header {
+    /* 지도(map-embed)를 쌓임 맥락으로 가뒀지만, 앞으로 다른 라이브러리가
+       비슷하게 높은 z-index를 쓸 수 있으므로 헤더 자체도 넉넉히 올려둔다. */
+    z-index: 1100;
     background: rgba(255, 255, 255, 0.96);
     border-bottom: 1px solid var(--ec-line);
     box-shadow: 0 1px 0 rgba(11, 31, 58, 0.02);
@@ -1184,3 +1193,54 @@ body.modal-open { overflow: hidden; }
     cursor: pointer;
 }
 .opinion-retry-btn:hover { background: var(--ec-blue-soft); }
+
+/* ==========================================
+   시야 체험 (질환 모달 하단)
+   ========================================== */
+.dm-sim {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #e1e8f2;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+.dm-sim h3 { margin: 0 0 6px; color: #0b1f3a; font-size: .82rem; font-weight: 900; }
+.dm-sim-desc { margin: 0 0 12px; color: #526277; font-size: .76rem; line-height: 1.5; }
+.dm-sim-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #0b1220;
+    aspect-ratio: 16 / 10;
+}
+.dm-sim-img {
+    display: block;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: filter .12s linear;
+}
+/* 암점·터널시야·출혈은 이미지 '위에' 덮는 층으로 표현한다(필터로는 표현이 안 됨) */
+.dm-sim-veil {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.dm-sim-controls { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.dm-sim-label { flex-shrink: 0; font-size: .72rem; font-weight: 800; color: var(--ec-muted); }
+.dm-sim-range {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--ec-blue);
+    /* 기본 높이가 15px라 손가락으로 잡기 어렵다 — 세로 여백을 줘서
+       실제 터치 영역을 44px로 키운다(막대 두께는 그대로). */
+    height: 44px;
+    background: transparent;
+    cursor: pointer;
+}
+.dm-sim-range:focus-visible { outline: 3px solid rgba(21, 94, 239, .24); outline-offset: 3px; }
+.dm-sim-note { margin: 10px 0 0; color: #64748b; font-size: .68rem; line-height: 1.5; }
+
+@media (max-width: 640px) {
+    .dm-sim { padding: 13px; }
+    .dm-sim-controls { gap: 8px; }
+}

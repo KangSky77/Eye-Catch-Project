@@ -49,6 +49,110 @@ function renderDiseases(lang) {
     }).join('');
 }
 
+// ------------------------------------------
+// 시야 체험 (vision simulator)
+// 질환별로 '환자가 실제로 무엇을 보는가'를 재현한다. 안저사진은 의사가 보는 그림이라
+// 일반 사용자에게 와닿지 않는데, 시야 재현은 증상과 직접 연결된다.
+// 효과는 전부 CSS/SVG 필터로 계산한다(외부 이미지·라이브러리 없음 = 오프라인에서도 동작).
+// 순서는 diseaseData와 같다: 백내장 / 황반변성 / 녹내장 / 당뇨망막병증
+// ------------------------------------------
+const VISION_SIMS = [
+    {   // 백내장 — 수정체 혼탁: 전체가 뿌옇고 노랗게 바래며 빛이 번진다
+        key: 'cataract',
+        filter: t => `blur(${(2.4 * t).toFixed(2)}px) saturate(${(1 - 0.45 * t).toFixed(2)}) `
+                   + `sepia(${(0.5 * t).toFixed(2)}) contrast(${(1 - 0.3 * t).toFixed(2)}) `
+                   + `brightness(${(1 + 0.14 * t).toFixed(2)})`,
+        overlay: t => `radial-gradient(circle at 82% 19%, rgba(255,246,214,${(0.6 * t).toFixed(2)}) 0%, rgba(255,246,214,0) 46%)`
+    },
+    {   // 황반변성 — 중심 암점: 정면으로 보는 대상이 일그러지고 가려진다
+        key: 'amd',
+        filter: t => `contrast(${(1 - 0.06 * t).toFixed(2)})`,
+        overlay: t => `radial-gradient(ellipse 26% 30% at 50% 44%, `
+                    + `rgba(66,58,52,${(0.92 * t).toFixed(2)}) 0%, `
+                    + `rgba(90,80,72,${(0.55 * t).toFixed(2)}) 55%, rgba(0,0,0,0) 78%)`
+    },
+    {   // 녹내장 — 주변 시야 결손: 가운데는 멀쩡한데 바깥부터 사라진다(터널 시야)
+        key: 'glaucoma',
+        filter: () => 'none',
+        overlay: t => `radial-gradient(circle at 50% 50%, `
+                    + `rgba(0,0,0,0) ${(52 - 30 * t).toFixed(0)}%, `
+                    + `rgba(0,0,0,${(0.96 * t).toFixed(2)}) ${(86 - 26 * t).toFixed(0)}%)`
+    },
+    {   // 당뇨망막병증 — 출혈·부유물: 시야 곳곳이 얼룩덜룩 가려지고 흐려진다
+        key: 'dr',
+        filter: t => `blur(${(1.1 * t).toFixed(2)}px) contrast(${(1 - 0.16 * t).toFixed(2)})`,
+        overlay: t => [
+            `radial-gradient(circle at 32% 38%, rgba(24,14,10,${(0.85 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 15%)`,
+            `radial-gradient(circle at 63% 30%, rgba(24,14,10,${(0.7 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 11%)`,
+            `radial-gradient(circle at 48% 66%, rgba(24,14,10,${(0.8 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 17%)`,
+            `radial-gradient(circle at 74% 71%, rgba(24,14,10,${(0.6 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 10%)`,
+            `radial-gradient(circle at 20% 72%, rgba(24,14,10,${(0.55 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 9%)`
+        ].join(', ')
+    }
+];
+
+/** 질환 모달 하단에 시야 체험 카드를 만들어 붙인다. */
+function buildVisionSim(idx, labels) {
+    const sim = VISION_SIMS[idx];
+    if (!sim) return null;
+
+    const wrap = document.createElement('section');
+    wrap.className = 'dm-sim';
+
+    const h = document.createElement('h3');
+    h.textContent = labels.sim_title || 'Vision simulator';
+    const desc = document.createElement('p');
+    desc.className = 'dm-sim-desc';
+    desc.textContent = labels.sim_desc || '';
+    wrap.append(h, desc);
+
+    const stage = document.createElement('div');
+    stage.className = 'dm-sim-stage';
+    const img = document.createElement('img');
+    img.className = 'dm-sim-img';
+    img.src = '/static/assets/vision-scene.svg';
+    img.alt = '';                 // 장식용 — 설명은 아래 문구가 담당
+    img.setAttribute('aria-hidden', 'true');
+    const veil = document.createElement('div');
+    veil.className = 'dm-sim-veil';
+    veil.setAttribute('aria-hidden', 'true');
+    stage.append(img, veil);
+
+    const controls = document.createElement('div');
+    controls.className = 'dm-sim-controls';
+    const label = document.createElement('label');
+    label.className = 'dm-sim-label';
+    const sliderId = 'sim-range-' + sim.key;
+    label.setAttribute('for', sliderId);
+    label.textContent = labels.sim_strength || 'Severity';
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.id = sliderId;
+    range.min = '0'; range.max = '100'; range.value = '0';
+    range.className = 'dm-sim-range';
+    // 스크린리더에는 퍼센트 대신 '정상 시야 ~ 강함'으로 읽히게 한다
+    range.setAttribute('aria-valuetext', labels.sim_normal || 'Normal vision');
+    controls.append(label, range);
+
+    const disclaimer = document.createElement('p');
+    disclaimer.className = 'dm-sim-note';
+    disclaimer.textContent = labels.sim_disclaimer || '';
+
+    wrap.append(stage, controls, disclaimer);
+
+    const apply = () => {
+        const t = Number(range.value) / 100;
+        img.style.filter = sim.filter(t);
+        veil.style.background = t > 0 ? sim.overlay(t) : 'none';
+        range.setAttribute('aria-valuetext',
+            t === 0 ? (labels.sim_normal || 'Normal vision')
+                    : `${labels.sim_strength || 'Severity'} ${Math.round(t * 100)}%`);
+    };
+    range.addEventListener('input', apply);
+    apply();
+    return wrap;
+}
+
 // 카드가 매 언어 전환마다 새로 그려지므로, 리스트 컨테이너에 한 번만 위임 등록한다.
 window.addEventListener('DOMContentLoaded', () => {
     const list = document.getElementById('disease-list');
@@ -204,6 +308,10 @@ function openDisease(idx) {
     noteDiv.className = 'dm-note';
     noteDiv.textContent = note;
     detail.appendChild(noteDiv);
+
+    // 시야 체험 — '자세히 보기' 맨 아래
+    const simCard = buildVisionSim(idx, labels);
+    if (simCard) detail.appendChild(simCard);
 
     if (item.source) {
         const sourceLink = document.createElement('a');
