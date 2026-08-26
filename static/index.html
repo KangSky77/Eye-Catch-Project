@@ -15,7 +15,7 @@
     <meta name="twitter:description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단까지 한 번에 받아보세요.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
-    <link rel="stylesheet" href="/static/tailwind.css?v=20260826d">
+    <link rel="stylesheet" href="/static/tailwind.css?v=20260826e">
 
     <!-- 발표장 인터넷이 끊겨도 화면과 PDF가 그대로 나와야 하므로 핵심 자원은 로컬 번들.
          (SRI integrity는 CDN용이라 로컬 파일에는 쓰지 않는다 — 같은 출처에서 서빙된다)
@@ -25,7 +25,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260826d">
+    <link rel="stylesheet" href="/static/style.css?v=20260826e">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -49,6 +49,7 @@
             <div class="flex items-center gap-5">
                 <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
                     <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</button>
+                    <button type="button" onclick="showTab('tab-vision')" data-tab="tab-vision" data-i18n="nav_vision" class="nav-pill">시력 검사</button>
                     <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</button>
                     <button type="button" onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</button>
                     <button type="button" onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</button>
@@ -217,11 +218,94 @@
         </div>
     </main>
 
-    <!-- 시력 · 대비감도 자가검사 — 조원 논의(2026-08-26) 전까지 UI에서 임시 제외.
-         코드는 그대로 남아 있다(static/app-visiontest.js · static/calibration.js,
-         data.js의 vt_*/dist_* 문자열, style.css의 .vt-* 규칙).
-         되살리려면 이 커밋만 revert 하면 된다 — 아래 4곳을 되돌리는 것과 같다:
-         상단 네비 항목 / <main id="tab-vision"> / 하단 네비 항목 / 스크립트 2개. -->
+    <!-- 시력 · 대비감도 자가검사 -->
+    <main id="tab-vision" class="tab-content max-w-md mx-auto px-4 py-12" tabindex="-1">
+        <h1 class="text-2xl font-black text-center mb-2 text-slate-800 tracking-tight" data-i18n="vt_title">시력 · 대비감도 자가검사</h1>
+        <p class="text-center text-slate-500 text-[13px] font-medium mb-8 leading-relaxed" data-i18n="vt_intro_desc">사진 분석은 겉으로 보이는 변화만 잡습니다.</p>
+
+        <!-- 1단계: 화면 캘리브레이션 -->
+        <div id="vt-calib" class="glass-card p-6 rounded-[2rem] mb-5">
+            <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="vt_calib_title">1단계 · 화면 크기 맞추기</p>
+            <p class="text-[12px] text-slate-500 leading-relaxed mb-4" data-i18n="vt_calib_desc">카드를 화면에 대고 사각형을 실물과 같은 크기로 맞추세요.</p>
+
+            <div class="flex gap-2 mb-3">
+                <button id="vt-edge-long" onclick="vtSetEdge('long')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_long">긴 변 85.6mm</button>
+                <button id="vt-edge-short" onclick="vtSetEdge('short')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_short">짧은 변 54.0mm</button>
+            </div>
+
+            <p id="vt-orient-hint" class="text-[11px] text-slate-500 leading-relaxed mb-3"></p>
+            <div class="vt-cardwrap"><div id="vt-cardbox" class="vt-cardbox"></div></div>
+            <p id="vt-touch-hint" class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed mt-3"></p>
+            <button id="vt-lock-btn" onclick="vtToggleLock()" class="w-full mt-3 py-3 rounded-2xl font-bold text-[13px] btn-pop bg-slate-100 text-slate-700"></button>
+            <input id="vt-slider" type="range" min="80" max="900" value="300" class="w-full my-3">
+            <div class="vt-nudge">
+                <button onclick="vtNudge(-10)" class="vt-nudge-btn" aria-label="-10">−10</button>
+                <button onclick="vtNudge(-1)" class="vt-nudge-btn" aria-label="-1">−1</button>
+                <button onclick="vtNudge(1)" class="vt-nudge-btn" aria-label="+1">+1</button>
+                <button onclick="vtNudge(10)" class="vt-nudge-btn" aria-label="+10">+10</button>
+            </div>
+            <p class="text-center text-[12px] font-black text-slate-700 mb-3"><span id="vt-pxmm">—</span> px/mm</p>
+
+            <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="vt_dist_label">화면에서 눈까지 거리</label>
+            <select id="vt-dist" onchange="vtOnDistChange()" class="w-full bg-slate-50 border-none rounded-xl px-3 py-2.5 text-sm mb-2">
+                <option value="600" selected data-i18n="dist_arm">팔 뻗은 거리 (약 60cm) · 준비물 없음</option>
+                <option value="300">30 cm</option>
+                <option value="400">40 cm</option>
+                <option value="500">50 cm</option>
+                <option value="700">70 cm</option>
+                <option value="custom" data-i18n="vt_dist_custom">직접 입력 (cm)</option>
+            </select>
+            <input id="vt-dist-custom" type="number" min="20" max="200" step="1" value="60"
+                   class="w-full bg-slate-50 border-none rounded-xl px-3 py-2.5 text-sm mb-2 hidden"
+                   oninput="vtPaintCard()">
+            <details class="mb-4">
+                <summary class="text-[11px] font-bold text-blue-700 cursor-pointer py-1" data-i18n="vt_dist_how">거리는 어떻게 재나요?</summary>
+                <p id="vt-dist-guide" class="text-[11px] text-slate-500 leading-relaxed mt-2 bg-slate-50 rounded-xl p-3"></p>
+                <p id="vt-dist-tol" class="text-[11px] text-emerald-700 leading-relaxed mt-2 bg-emerald-50 rounded-xl p-3"></p>
+            </details>
+
+            <button onclick="vtSaveCalibration()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm" data-i18n="vt_calib_save">저장하고 계속</button>
+
+            <div id="vt-verify" class="hidden mt-4">
+                <p class="text-[11px] text-emerald-700 font-bold mb-2" data-i18n="vt_calib_verify">확인: 아래 막대가 자로 정확히 50mm면 보정이 맞습니다.</p>
+                <div id="vt-ruler" class="h-7 bg-emerald-500 rounded-md"></div>
+            </div>
+        </div>
+
+        <!-- 2단계: 시작 -->
+        <div id="vt-intro" class="glass-card p-6 rounded-[2rem] text-center mb-5">
+            <button onclick="vtStart()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="vt_start">검사 시작</button>
+        </div>
+
+        <!-- 눈 가리기 안내 -->
+        <div id="vt-eye-prompt" class="glass-card p-8 rounded-[2rem] text-center hidden">
+            <div class="text-5xl mb-4">🖐️</div>
+            <h2 id="vt-eye-instruction" class="text-lg font-black mb-2"></h2>
+            <p id="vt-eye-sub" class="text-[12px] text-slate-500 leading-relaxed mb-6"></p>
+            <button onclick="vtBeginStage()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm" data-i18n="vt_begin">준비됐어요</button>
+        </div>
+
+        <!-- 검사 화면 -->
+        <div id="vt-test-area" class="glass-card p-5 rounded-[2rem] text-center hidden">
+            <p id="vt-progress" class="text-[11px] font-black text-slate-400 mb-2"></p>
+            <canvas id="vt-canvas" class="vt-canvas"></canvas>
+            <p class="text-[12px] font-bold text-slate-600 mt-3 mb-3" data-i18n="vt_which_dir">E가 향하는 방향은?</p>
+            <div class="vt-pad">
+                <button onclick="vtAnswer('up')"    class="vt-dir" style="grid-area:u" aria-label="up">▲</button>
+                <button onclick="vtAnswer('left')"  class="vt-dir" style="grid-area:l" aria-label="left">◀</button>
+                <button onclick="vtAnswer('right')" class="vt-dir" style="grid-area:r" aria-label="right">▶</button>
+                <button onclick="vtAnswer('down')"  class="vt-dir" style="grid-area:d" aria-label="down">▼</button>
+            </div>
+        </div>
+
+        <!-- 결과 -->
+        <div id="vt-result" class="glass-card p-6 rounded-[2rem] hidden">
+            <p class="text-[10px] font-black text-blue-400 mb-3" data-i18n="vt_result_title">기능검사 결과</p>
+            <div id="vt-result-body"></div>
+            <button onclick="vtStart()" class="w-full mt-4 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm btn-pop" data-i18n="vt_redo">다시 검사</button>
+            <button onclick="vtRecalibrate()" class="w-full mt-2 py-3 bg-white text-blue-700 border border-blue-100 rounded-2xl font-bold text-sm btn-pop" data-i18n="vt_recalibrate">화면 다시 맞추기</button>
+        </div>
+    </main>
     <main id="tab-disease" class="tab-content max-w-3xl mx-auto px-4 py-12" tabindex="-1">
         <h1 class="text-3xl font-black text-center mb-3 text-slate-800 tracking-tight" data-i18n="dis_main_title">4대 주요 안질환 안내</h1>
         <p class="text-center text-slate-500 text-sm font-medium mb-10" data-i18n="dis_card_hint">카드를 누르면 자세한 설명을 확인할 수 있어요.</p>
@@ -352,6 +436,9 @@
         <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" class="bnav-item">
             <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_test">AI 검사</span>
         </button>
+        <button type="button" onclick="showTab('tab-vision')" data-tab="tab-vision" class="bnav-item">
+            <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M2.75 12s3.45-5.25 9.25-5.25S21.25 12 21.25 12 17.8 17.25 12 17.25 2.75 12 2.75 12Z"/><circle cx="12" cy="12" r="2.75"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_vision">시력 검사</span>
+        </button>
         <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
             <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5ZM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 소개</span>
         </button>
@@ -363,15 +450,17 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260826d"></script>
+    <script src="/static/data.js?v=20260826e"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260826d"></script>
-    <script src="/static/app-vision.js?v=20260826d"></script>
-    <script src="/static/app-chat.js?v=20260826d"></script>
-    <script src="/static/app-report.js?v=20260826d"></script>
-    <script src="/static/app-disease.js?v=20260826d"></script>
-    <script src="/static/app-assess.js?v=20260826d"></script>
-    <script src="/static/app-findings.js?v=20260826d"></script>
-    <script src="/static/app-map.js?v=20260826d"></script>
+    <script src="/static/app-core.js?v=20260826e"></script>
+    <script src="/static/app-vision.js?v=20260826e"></script>
+    <script src="/static/app-chat.js?v=20260826e"></script>
+    <script src="/static/app-report.js?v=20260826e"></script>
+    <script src="/static/app-disease.js?v=20260826e"></script>
+    <script src="/static/calibration.js?v=20260826e"></script>
+    <script src="/static/app-assess.js?v=20260826e"></script>
+    <script src="/static/app-findings.js?v=20260826e"></script>
+    <script src="/static/app-visiontest.js?v=20260826e"></script>
+    <script src="/static/app-map.js?v=20260826e"></script>
 </body>
 </html>
