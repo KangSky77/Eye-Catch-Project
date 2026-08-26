@@ -40,8 +40,34 @@ async function finish() {
 
     showTab('tab-report');
 
+    // 소견서 생성은 실패해도 처음부터 다시 하지 않고 이 부분만 재시도할 수 있어야 한다.
+    // (개발 중 --reload 서버 재시작, ngrok 끊김, Ollama 콜드스타트 등으로 흔히 끊긴다)
+    state.opinionRequest = {
+        lang: state.lang,
+        cataract_res: cataractRes,
+        amsler_res: amslerRes,
+        chat_symptoms: symptoms,
+        // RAG용 언어 중립 신호
+        cataract_code: state.aiResultCode,
+        amsler_abnormal: state.hasAmsler,
+        symptom_codes: state.symptomCodes,
+        eye_asymmetric: state.asymmetric   // 편측(한쪽 눈만) 위험 여부
+    };
+    await runAiOpinion();
+}
+
+// 소견서 생성 1회 시도. 실패하면 본문 자리에 '다시 시도' 버튼을 남긴다.
+let _opinionBusy = false;
+
+async function runAiOpinion() {
+    if (_opinionBusy) return;
+    if (!state.opinionRequest) return;
+    _opinionBusy = true;
+
     const loadingContainer = document.getElementById('gemma-loading-container');
     const opinionText = document.getElementById('gemma-opinion-text');
+    const retryBox = document.getElementById('opinion-retry');
+    if (retryBox) retryBox.classList.add('hidden');
 
     // 가짜 진행바 대신 실제 경과 시간을 보여주는 로더 표시
     let opinionLoader = null;
@@ -60,22 +86,21 @@ async function finish() {
         if (loadingContainer) loadingContainer.classList.add('hidden');
         if (opinionText) opinionText.classList.remove('hidden');
     };
+    // 실패 시 공통 처리 — 문구를 남기고 '다시 시도' 버튼을 보여준다
+    const showFailure = () => {
+        stopOpinionLoader();
+        if (opinionText) {
+            opinionText.innerText = translations[state.lang].opinion_error || "로컬 AI 서버와 연결이 끊어졌습니다.";
+            opinionText.classList.add('text-rose-600');
+        }
+        if (retryBox) retryBox.classList.remove('hidden');
+    };
 
     try {
         const response = await fetch('/api/get-ai-opinion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                lang: state.lang,
-                cataract_res: cataractRes,
-                amsler_res: amslerRes,
-                chat_symptoms: symptoms,
-                // RAG용 언어 중립 신호
-                cataract_code: state.aiResultCode,
-                amsler_abnormal: state.hasAmsler,
-                symptom_codes: state.symptomCodes,
-                eye_asymmetric: state.asymmetric   // 편측(한쪽 눈만) 위험 여부
-            })
+            body: JSON.stringify(state.opinionRequest)
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -87,14 +112,10 @@ async function finish() {
         });
         stopOpinionLoader();       // 빈 응답이어도 로더는 정리
         opinionText.innerText = text;
-        const streamError = hasError;
 
         // AI 오류면 의료 소견이 아님 → 에러로 표시하고 완료 알림·DB저장을 건너뜀
-        if (streamError) {
-            opinionText.innerText = translations[state.lang].opinion_error || "AI 서버 응답에 문제가 발생했습니다.";
-            opinionText.classList.add('text-rose-600');
-            return;
-        }
+        if (hasError) { showFailure(); return; }
+
         opinionText.classList.remove('text-rose-600');
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리
         opinionText.innerText = opinionText.innerText.replace(/\*\*/g, '');
@@ -106,17 +127,16 @@ async function finish() {
         }
 
         // 진단 결과 DB 저장 — 건강정보는 민감정보라 '동의한 경우에만' 저장한다.
-        // 이전에는 사용자에게 묻지 않고 저장했다(개인정보보호법상 별도 동의 필요 항목).
         requestSaveConsent({
-            cataract_result: cataractRes,
-            amsler_result: amslerRes,
-            chat_symptoms: symptoms,
+            cataract_result: state.opinionRequest.cataract_res,
+            amsler_result: state.opinionRequest.amsler_res,
+            chat_symptoms: state.opinionRequest.chat_symptoms,
             gemma_opinion: opinionText ? opinionText.innerText : ''
         });
-
     } catch (e) {
-        stopOpinionLoader();
-        if (opinionText) opinionText.innerText = translations[state.lang].opinion_error || "로컬 AI 서버와 연결이 끊어졌습니다.";
+        showFailure();
+    } finally {
+        _opinionBusy = false;
     }
 }
 

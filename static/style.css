@@ -1161,3 +1161,26 @@ body.modal-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
     .upload-progress-bar.is-indeterminate { animation-duration: 2.4s; }
 }
+
+/* 소견서 생성 실패 시 재시도 — 검사 전체를 다시 하게 만들지 않는다 */
+.opinion-retry { margin-top: 12px; }
+.opinion-retry-hint {
+    margin-bottom: 10px;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--ec-muted);
+}
+.opinion-retry-btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid var(--ec-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ec-blue);
+    font-size: .82rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+.opinion-retry-btn:hover { background: var(--ec-blue-soft); }

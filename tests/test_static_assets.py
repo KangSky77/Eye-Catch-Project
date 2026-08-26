@@ -410,3 +410,28 @@ def test_모델_메타데이터는_가중치_옆에_남아있다():
     _metadata.json으로 바꿔 찾는다. 메타데이터만 옮기면 이 짝이 깨진다."""
     metas = list(ROOT.glob("cataract_*_metadata.json"))
     assert metas, "모델 메타데이터가 루트에 있어야 한다(.pth와 같은 위치)"
+
+
+def test_소견서_실패시_검사전체를_다시_하지_않고_재시도할_수_있다():
+    """소견서 생성은 개발 중 --reload 재시작, ngrok 끊김, Ollama 콜드스타트로
+    흔히 끊긴다. 예전에는 finish() 안에 통째로 들어 있어서 실패하면
+    문진부터 다시 해야 했다."""
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+
+    # 재시도 가능한 별도 함수로 분리돼 있어야 한다
+    assert "async function runAiOpinion()" in report
+    # 요청 본문을 보관해야 같은 입력으로 다시 시도할 수 있다
+    assert "state.opinionRequest" in report
+    # 중복 클릭 방지
+    assert "_opinionBusy" in report
+    # 성공/실패 어느 쪽이든 잠금이 풀려야 한다
+    tail = report[report.index("async function runAiOpinion()"):]
+    assert "finally {" in tail and "_opinionBusy = false;" in tail
+
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    assert 'id="opinion-retry"' in html
+    assert "runAiOpinion()" in html
+
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("opinion_retry:") == 6, "6개 언어 모두에 재시도 버튼 문구가 있어야 한다"
+    assert data.count("opinion_retry_hint:") == 6
