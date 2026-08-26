@@ -25,6 +25,8 @@ import os
 import sys
 from pathlib import Path
 
+sys.stdout.reconfigure(encoding="utf-8")   # Windows cp949 콘솔에서도 안전하게
+
 # scripts/ 안에서 실행돼도 저장소 루트를 기준으로 동작하게 한다.
 # (python scripts/x.py 로 실행하면 sys.path[0]이 scripts/라 app 패키지를 못 찾고,
 #  dataset/ 같은 상대경로도 실행 위치에 따라 달라진다)
