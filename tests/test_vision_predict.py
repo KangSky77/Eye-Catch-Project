@@ -13,7 +13,16 @@ from app.services import vision, eye_detector, eye_validator
 
 @pytest.fixture
 def img():
-    return Image.new("RGB", (224, 224), (100, 80, 60))
+    """또렷한 질감이 있는 더미 눈 사진.
+
+    단색으로 만들면 흔들림 게이트(_sharpness == 0)에 걸려 'blurry'로 반려되므로,
+    판정 분기를 검사할 수 없다. 실제 사진처럼 고주파 성분을 넣어준다.
+    """
+    import numpy as np
+    rng = np.random.default_rng(7)
+    base = np.full((224, 224, 3), (100, 80, 60), dtype=np.uint8)
+    noise = rng.integers(-45, 46, (224, 224, 3))
+    return Image.fromarray(np.clip(base.astype(int) + noise, 0, 255).astype(np.uint8))
 
 
 @pytest.fixture

@@ -486,3 +486,11 @@ def test_시야_체험은_진단도구가_아님을_밝힌다():
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert "진단 도구가 아닙니다" in data
     assert "Not a diagnostic tool" in data
+
+
+def test_흔들림_보류를_프론트가_처리한다():
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "d.result_code === 'blurry'" in vision
+    assert vision.index("d.result_code === 'blurry'") < vision.index("ai-result-display")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("ai_blurry:") == 6

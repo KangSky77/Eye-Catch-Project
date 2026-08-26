@@ -92,6 +92,37 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
     except Exception:
         raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
 
+# 흔들림(초점 흐림) 판정 기준 — 라플라시안 분산을 대비로 정규화한 값.
+# 실측(눈 사진 141장, 사진 크기에 비례한 모션 블러, 2026-08-26):
+#     흔들림 없음  선명도 중앙 0.175 | 판정 변화 0/141
+#     0.5%        0.112 | 3/141
+#     1.0%        0.065 | 3/141
+#     2.0%        0.033 | 7/141
+#     3.5%        0.019 | 4/141
+# 임계 0.030에서 심한 흔들림(3.5%)의 74%를 잡고 멀쩡한 사진 거부는 2.1%.
+#
+# ※ 솔직한 한계: 모델 자체는 흔들림에 꽤 강해서(3.5%에서도 판정 변화 2.8%),
+#   이 게이트는 '정확도를 지키는 장치'라기보다 '판독 불가한 입력을 되돌려보내는
+#   입력 위생 장치'다. 가벼운 흔들림은 잡지 못한다.
+BLUR_MIN_SHARPNESS = 0.030
+
+
+def _sharpness(img: Image.Image) -> float:
+    """라플라시안 분산을 대비(표준편차)로 나눈 선명도. 클수록 선명하다.
+
+    128x128 그레이스케일로 맞춰 크기 영향을 없애고, 표준편차로 나눠
+    '어두운 사진이라 값이 작은 것'과 '흔들려서 작은 것'을 구분한다.
+    """
+    import numpy as np
+    g = np.asarray(img.convert("L").resize((128, 128)), dtype=np.float32)
+    p = np.pad(g, 1, mode="edge")
+    k = ((0, 1, 0), (1, -4, 1), (0, 1, 0))
+    lap = sum(k[i][j] * p[i:i + 128, j:j + 128] for i in range(3) for j in range(3))
+    sd = float(g.std())
+    if sd < 1e-3:                      # 완전 단색 — 눈 사진이 아니다
+        return 0.0
+    return float(lap.var() / (sd * sd))
+
 # 플래시 반사 판정 기준 — 근거는 _glare_fraction() 독스트링과 아래 표.
 # 합성 반사점 크기별 실측(정상 눈 60장, 배포 모델 v5, 2026-08-24):
 #     반경  4%: 모델 오탐  0.0%  |  순백비율 0.56%
@@ -203,6 +234,23 @@ def predict_cataract(img: Image.Image):
             }
 
     targets = eye_crops if eye_crops else [img]
+
+    # [흔들림 게이트] 초점이 나간 사진은 사람도 판독할 수 없다.
+    # 반사 게이트보다 먼저 본다 — 흔들려서 뿌연 것을 '반사'라고 안내하면 엉뚱한 재촬영을 시킨다.
+    sharp = max((_sharpness(t) for t in targets), default=0.0)
+    if sharp < BLUR_MIN_SHARPNESS:
+        logger.info("판독 보류 — 흔들림/초점 흐림 (선명도 %.4f)", sharp)
+        return {
+            "probability": 0.0,
+            "result": "판독 보류 (사진이 흔들렸습니다)",
+            "result_code": "blurry",       # 프론트가 '또렷하게 다시 찍어주세요'로 안내
+            "mode": mode,
+            "eyes_detected": len(eye_crops),
+            "eye_probs": [],
+            "eyes": [],
+            "asymmetric": False,
+            "sharpness": round(sharp, 4),
+        }
 
     # [반사 게이트] 플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
     # 실측: 정상 눈에 반사점을 합성하니 최대 70%가 '위험'으로 뒤집혔다(위 상수 주석 표).

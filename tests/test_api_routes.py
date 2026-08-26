@@ -142,3 +142,44 @@ def test_반사지표는_회백색_혼탁을_포화로_세지_않는다():
     img = Image.new("RGB", (300, 300), (90, 70, 60))
     ImageDraw.Draw(img).ellipse([100, 100, 200, 200], fill=(205, 205, 200))  # 회백색
     assert vision._glare_fraction(img) < vision.GLARE_MAX_FRACTION
+
+
+def test_흔들린_사진은_판정대신_재촬영을_요청한다():
+    """초점이 나간 사진은 사람도 판독할 수 없다.
+    실측(눈 사진 141장, 크기 비례 모션 블러): 임계 0.030에서 심한 흔들림(3.5%)의
+    74%를 잡고 멀쩡한 사진 거부는 2.1%."""
+    from PIL import Image, ImageDraw, ImageFilter
+    from app.services import vision
+
+    # 눈처럼 '경계가 뚜렷한 구조'를 가진 그림으로 검사한다.
+    # 랜덤 노이즈는 선명도가 15를 넘어(실제 눈 사진 중앙값 0.175) 기준이 되지 못한다.
+    eye = Image.new("RGB", (224, 224), (120, 95, 80))
+    d = ImageDraw.Draw(eye)
+    d.ellipse([60, 60, 164, 164], fill=(70, 60, 55))     # 홍채
+    d.ellipse([95, 95, 129, 129], fill=(20, 18, 16))     # 동공
+    d.rectangle([0, 0, 224, 40], fill=(180, 160, 140))   # 눈꺼풀
+
+    assert vision._sharpness(eye) >= vision.BLUR_MIN_SHARPNESS
+
+    # 흔들린 사진 — 경계가 뭉개지면 게이트에 걸린다
+    blurred = eye.filter(ImageFilter.GaussianBlur(radius=4))
+    assert vision._sharpness(blurred) < vision.BLUR_MIN_SHARPNESS
+
+    # 흐려질수록 선명도는 단조 감소해야 한다
+    vals = [vision._sharpness(eye.filter(ImageFilter.GaussianBlur(radius=r))) for r in (0, 1, 2)]
+    assert vals[0] > vals[1] > vals[2]
+
+
+def test_단색_이미지는_선명도0으로_처리된다():
+    """대비가 없으면 라플라시안 분산도 0이라 0으로 나눌 뻔한다.
+    눈 사진이 아니므로 어차피 걸러져야 한다."""
+    from PIL import Image
+    from app.services import vision
+    assert vision._sharpness(Image.new("RGB", (200, 200), (128, 128, 128))) == 0.0
+
+
+def test_흔들림을_반사보다_먼저_판정한다():
+    """흔들려서 뿌연 것을 '반사'라고 안내하면 엉뚱한 재촬영을 시키게 된다."""
+    from pathlib import Path
+    src = (Path(__file__).resolve().parent.parent / "app" / "services" / "vision.py").read_text(encoding="utf-8")
+    assert src.index('"blurry"') < src.index('"hold"')

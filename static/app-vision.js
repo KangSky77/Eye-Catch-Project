@@ -127,6 +127,13 @@ async function runAIAnalysis(droppedFile) {
             return;
         }
 
+        // 흔들린 사진은 사람도 판독할 수 없다 — 판정 대신 재촬영을 요청한다
+        if (d.result_code === 'blurry') {
+            showToast(translations[state.lang].ai_blurry || "사진이 흔들려 판독할 수 없어요. 또렷하게 다시 찍어주세요.", 'error', 7000);
+            nextStep('step-photo');
+            return;
+        }
+
         // 플래시 반사가 눈동자를 덮으면 모델이 혼탁으로 오독한다 —
         // 판정 대신 재촬영을 요청한다(서버의 반사 게이트가 'hold'로 알려준다).
         if (d.result_code === 'hold') {
