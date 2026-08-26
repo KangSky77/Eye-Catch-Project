@@ -1,6 +1,9 @@
 """익상편 캐글 데이터셋 정리 — 학습에 넣기 전 1회 실행.
 
-캐글에서 받은 dataset/2_pterygium은 Roboflow 증강본이 섞여 있어 그대로 쓰면 두 가지가 깨진다.
+캐글에서 받은 익상편 데이터는 Roboflow 증강본이 섞여 있어 그대로 쓰면 두 가지가 깨진다.
+
+원본은 dataset_raw/ 에 둔다 — dataset/ 안에 두면 ImageFolder가 하위 폴더를 전부
+클래스로 읽어서 2클래스 모델(cataract_model.py)과 어긋난다(실제로 학습이 즉시 멈췄다).
 
   1) 누수 — 같은 원본의 변형본이 최대 16장. train/val/test로 흩어지면
      v2에서 겪은 근접중복 누수가 재현된다(그때 정확도 99.9%가 부풀려진 원인).
@@ -35,7 +38,7 @@ import shutil
 import numpy as np
 from PIL import Image
 
-SRC = Path("dataset/2_pterygium")
+SRC = Path("dataset_raw/2_pterygium_kaggle_raw")
 DST = Path("dataset/0_normal")
 PREFIX = "pterygium_"
 BLACK_LEVEL = 18        # 이 값 미만이면 '검정'으로 본다

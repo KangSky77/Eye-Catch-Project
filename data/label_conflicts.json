@@ -1,5 +1,29 @@
 {
-  "7991": {
+  "7886": {
+    "count": 4,
+    "labels": {
+      "0": 2,
+      "1": 2
+    },
+    "paths": [
+      "dataset\\0_normal\\pterygium_image_143_png.jpg",
+      "dataset\\0_normal\\pterygium_image_51_png.jpg",
+      "dataset\\1_cataract\\img (175).png",
+      "dataset\\1_cataract\\img (246).png"
+    ]
+  },
+  "8003": {
+    "count": 2,
+    "labels": {
+      "0": 1,
+      "1": 1
+    },
+    "paths": [
+      "dataset\\0_normal\\pterygium_image_296_png.jpg",
+      "dataset\\1_cataract\\img (313).png"
+    ]
+  },
+  "8214": {
     "count": 6,
     "labels": {
       "0": 5,
@@ -14,7 +38,7 @@
       "dataset\\1_cataract\\img (495).jpg"
     ]
   },
-  "8027": {
+  "8250": {
     "count": 21,
     "labels": {
       "0": 19,
@@ -44,7 +68,7 @@
       "dataset\\1_cataract\\img (528).jpg"
     ]
   },
-  "8129": {
+  "8352": {
     "count": 6,
     "labels": {
       "0": 1,

@@ -1,5 +1,5 @@
 {
-  "version": "v5",
+  "version": "v6",
   "backbone": "efficientnet_b0",
   "params_millions": 4.0,
   "class_to_idx": {
@@ -22,88 +22,88 @@
     ]
   },
   "split_unit": "dedup_group (near-duplicate-safe)",
-  "excluded_label_conflict_images": 33,
+  "excluded_label_conflict_images": 39,
   "counts": {
     "train": {
-      "0": 10553,
-      "1": 1265
+      "0": 10829,
+      "1": 1236
     },
     "val": {
-      "0": 2299,
-      "1": 267
+      "0": 2333,
+      "1": 280
     },
     "test": {
-      "0": 2317,
-      "1": 283
+      "0": 2230,
+      "1": 296
     }
   },
   "selection_metric": "balanced_accuracy + 0.25*cataract_f1",
   "best_val_metrics": {
-    "loss": 0.011985209777099281,
-    "accuracy": 0.9976617303195635,
-    "sensitivity": 0.9925093632958801,
-    "specificity": 0.998260113092649,
-    "cataract_precision": 0.9851301115241635,
-    "cataract_f1": 0.9888059701492536,
-    "balanced_accuracy": 0.9953847381942645,
-    "auc": 0.9998322019181113,
+    "loss": 0.011019220206157447,
+    "accuracy": 0.9984691924990432,
+    "sensitivity": 0.9857142857142858,
+    "specificity": 1.0,
+    "cataract_precision": 1.0,
+    "cataract_f1": 0.9928057553956835,
+    "balanced_accuracy": 0.9928571428571429,
+    "auc": 0.9997826220072256,
     "cm": {
-      "tn": 2295,
-      "fp": 4,
-      "fn": 2,
-      "tp": 265
+      "tn": 2333,
+      "fp": 0,
+      "fn": 4,
+      "tp": 276
     }
   },
   "prod_threshold": 0.5,
   "test_metrics_at_prod_threshold": {
-    "loss": 0.012443773936095463,
-    "accuracy": 0.995,
-    "sensitivity": 0.9964664310954063,
-    "specificity": 0.9948208890807078,
-    "cataract_precision": 0.9591836734693877,
-    "cataract_f1": 0.9774696707105719,
-    "balanced_accuracy": 0.995643660088057,
-    "auc": 0.9999023960250781,
+    "loss": 0.04571175882009956,
+    "accuracy": 0.996437054631829,
+    "sensitivity": 0.9763513513513513,
+    "specificity": 0.9991031390134529,
+    "cataract_precision": 0.993127147766323,
+    "cataract_f1": 0.9846678023850085,
+    "balanced_accuracy": 0.9877272451824022,
+    "auc": 0.9975093928008726,
     "cm": {
-      "tn": 2305,
-      "fp": 12,
-      "fn": 1,
-      "tp": 282
+      "tn": 2228,
+      "fp": 2,
+      "fn": 7,
+      "tp": 289
     }
   },
   "test_metrics_at_prod_threshold_tta": {
-    "accuracy": 0.9942307692307693,
-    "sensitivity": 0.9893992932862191,
-    "specificity": 0.9948208890807078,
-    "cataract_precision": 0.958904109589041,
-    "cataract_f1": 0.9739130434782609,
-    "balanced_accuracy": 0.9921100911834635,
-    "auc": 0.9998688446586987,
+    "accuracy": 0.995249406175772,
+    "sensitivity": 0.9695945945945946,
+    "specificity": 0.9986547085201793,
+    "cataract_precision": 0.9896551724137931,
+    "cataract_f1": 0.9795221843003413,
+    "balanced_accuracy": 0.9841246515573869,
+    "auc": 0.9975109077687553,
     "cm": {
-      "tn": 2305,
-      "fp": 12,
-      "fn": 3,
-      "tp": 280
+      "tn": 2227,
+      "fp": 3,
+      "fn": 9,
+      "tp": 287
     }
   },
-  "val_selected_threshold": 0.59,
+  "val_selected_threshold": 0.4,
   "val_selected_threshold_target_sensitivity": 0.99,
   "test_metrics_at_val_selected_threshold": {
-    "loss": 0.012443773936095463,
-    "accuracy": 0.9957692307692307,
-    "sensitivity": 0.9964664310954063,
-    "specificity": 0.9956840742339231,
-    "cataract_precision": 0.9657534246575342,
-    "cataract_f1": 0.9808695652173912,
-    "balanced_accuracy": 0.9960752526646648,
-    "auc": 0.9999023960250781,
+    "loss": 0.04571175882009956,
+    "accuracy": 0.996437054631829,
+    "sensitivity": 0.9763513513513513,
+    "specificity": 0.9991031390134529,
+    "cataract_precision": 0.993127147766323,
+    "cataract_f1": 0.9846678023850085,
+    "balanced_accuracy": 0.9877272451824022,
+    "auc": 0.9975093928008726,
     "cm": {
-      "tn": 2307,
-      "fp": 10,
-      "fn": 1,
-      "tp": 282
+      "tn": 2228,
+      "fp": 2,
+      "fn": 7,
+      "tp": 289
     }
   },
-  "train_minutes": 14.9,
-  "weights_sha256": "3c83d9fd7cadc57fc9142ab116451cea4b90927faf73c1044cca8dcd685c6f16"
+  "train_minutes": 31.0,
+  "weights_sha256": "044e9f14552131b02857a20d737fa130a50090ca8a6b0161ecb87f1e4a37a2cd"
 }

@@ -43,3 +43,5 @@ compare/
 .agents/
 # 디자인 시안 렌더(로컬 참고용 · 앱 코드 아님)
 design/
+# 정리 전 원본 데이터(캐글 등) — dataset/ 밖에 둬야 ImageFolder가 클래스로 읽지 않는다
+dataset_raw/
