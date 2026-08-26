@@ -3,68 +3,66 @@
 ============================================================
 환자의 검사 결과(언어 중립 코드)에 맞는 '검증된 안과 참고지식'을 검색해
 LLM 프롬프트에 주입한다. → 모델이 자기 기억(환각 위험)이 아니라
-아래의 확립된 의학 정보에 근거해 더 정확하고 전문적으로 답하도록 한다.
+확립된 의학 정보에 근거해 더 정확하고 전문적으로 답하도록 한다.
 
 각 항목은 일반적으로 확립된 안과 상식을 간결히 정리한 교육용 요약이며,
 확정 진단이 아니라 '가능성/경향' 수준의 설명을 의도한다.
-의학 내용 수정·검수는 이 파일만 고치면 전체 프롬프트에 반영된다.
+
+의학 내용은 코드가 아니라 **data/medical_knowledge.json**에 있다.
+의학 전공자·조원이 파이썬을 건드리지 않고 문장만 검수·수정할 수 있게 분리했다.
+(이 구조는 Antigravity 버전의 medical_guidelines.json 방식을 가져온 것)
+
+로드 실패는 감추지 않고 즉시 예외로 띄운다 — 참고지식 없이 LLM을 돌리면
+바로 환각 위험으로 이어지므로, 조용히 빈 지식으로 굴러가면 안 된다.
 """
+import json
+from pathlib import Path
+
+# app/services/knowledge.py → 저장소 루트 → data/
+KB_PATH = Path(__file__).resolve().parents[2] / "data" / "medical_knowledge.json"
+
+# 코드·프론트가 실제로 참조하는 키. 프론트가 보내는 disease 코드(static/data.js의
+# `disease:` 값)와 짝이 맞아야 하고, "general"은 아무 이상이 없을 때의 폴백이라 필수다.
+REQUIRED_KEYS = ("cataract", "macular", "glaucoma", "retinopathy", "general")
+
+
+def _load_kb(path: Path = KB_PATH) -> dict:
+    """참고지식 JSON을 읽고 구조를 검증한다.
+
+    손으로 고치다 생기는 실수(키 오타, 항목 누락, 빈 문장)를 서버 기동 시점에
+    잡는다 — 런타임에 소견서가 조용히 부실해지는 것보다 낫다.
+    """
+    try:
+        with open(path, encoding="utf-8") as f:
+            kb = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(f"참고지식 파일이 없습니다: {path}") from None
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"참고지식 JSON 문법 오류: {path} — {e}") from None
+
+    if not isinstance(kb, dict):
+        raise RuntimeError(f"참고지식 JSON의 최상위는 객체여야 합니다: {path}")
+
+    missing = [k for k in REQUIRED_KEYS if k not in kb]
+    if missing:
+        raise RuntimeError(f"참고지식에 필수 항목이 없습니다: {missing} ({path})")
+
+    for key, entry in kb.items():
+        if not isinstance(entry, dict):
+            raise RuntimeError(f"참고지식 '{key}'는 객체여야 합니다 ({path})")
+        for field in ("title", "text"):
+            value = entry.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise RuntimeError(f"참고지식 '{key}'의 '{field}'가 비어 있습니다 ({path})")
+        keywords = entry.get("keywords")
+        if not isinstance(keywords, list) or not all(isinstance(k, str) for k in keywords):
+            raise RuntimeError(f"참고지식 '{key}'의 'keywords'는 문자열 목록이어야 합니다 ({path})")
+
+    return kb
+
 
 # 질환 코드 → 참고지식. code는 프론트(설문/판독)에서 넘어오는 언어 중립 키.
-KB = {
-    "cataract": {
-        "title": "백내장 (Cataract)",
-        "keywords": ["백내장", "수정체", "뿌옇", "눈부심", "번짐", "혼탁",
-                     "cataract", "lens", "blurry", "glare", "cloudy"],
-        "text": (
-            "백내장은 수정체가 혼탁해져 시야가 뿌옇고 빛 번짐·눈부심이 생기는 질환으로, "
-            "노화·자외선·당뇨·흡연이 위험을 높입니다. 세극등 현미경 검사로 혼탁 정도를 "
-            "확인하며, 초기엔 경과 관찰, 일상에 지장이 크면 인공수정체 수술을 고려합니다."
-        ),
-    },
-    "macular": {  # 암슬러 격자 이상 → 황반(AMD) 신호
-        "title": "황반변성 (Macular Degeneration)",
-        "keywords": ["황반", "암슬러", "휘어", "일그러", "중심 시력", "변형시",
-                     "macular", "amsler", "distort", "central vision"],
-        "text": (
-            "암슬러 격자에서 선이 휘거나 가운데가 어둡게 보이면 망막 중심부인 황반의 이상을 "
-            "시사합니다. 황반변성은 중심 시력이 손상돼 사물이 일그러져 보이며 노화·흡연·고혈압이 "
-            "위험요인입니다. 안저 검사와 빛간섭단층촬영(OCT)으로 확인하고, 일부 유형은 항VEGF "
-            "주사로 진행을 늦출 수 있어 조기 발견이 중요합니다."
-        ),
-    },
-    "glaucoma": {
-        "title": "녹내장 (Glaucoma)",
-        "keywords": ["녹내장", "시야가 좁", "주변 시야", "안압",
-                     "glaucoma", "peripheral", "tunnel", "pressure"],
-        "text": (
-            "주변 시야가 좁아지는 느낌은 녹내장 신호일 수 있습니다. 안압 상승 등으로 시신경이 "
-            "서서히 손상돼 초기 증상이 거의 없고, 손상된 시신경은 회복되지 않아 조기 발견이 "
-            "핵심입니다. 안압 측정·안저·시야 검사로 진단하며, 안약으로 안압을 조절해 진행을 "
-            "늦춥니다."
-        ),
-    },
-    "retinopathy": {
-        "title": "당뇨망막병증 (Diabetic Retinopathy)",
-        "keywords": ["당뇨", "비문증", "실오라기", "떠다니", "망막", "혈당",
-                     "diabetic", "retinopathy", "floaters", "blood sugar"],
-        "text": (
-            "눈앞에 점·실오라기가 떠다니는 비문증이나 시야 흐림은 당뇨망막병증과 연관될 수 "
-            "있습니다. 높은 혈당이 망막 미세혈관을 손상시키는 합병증으로, 산동(동공 확대) "
-            "안저 검사와 OCT로 확인하고 혈당·혈압 관리가 기본입니다. 당뇨가 있으면 증상이 "
-            "없어도 정기 안저 검진이 권장됩니다."
-        ),
-    },
-    "general": {
-        "title": "일반 눈 건강 관리",
-        "keywords": ["관리", "예방", "정기 검진", "care", "prevent", "checkup"],
-        "text": (
-            "주요 안질환(백내장·황반변성·녹내장·당뇨망막병증)은 초기에 증상이 없는 경우가 "
-            "많습니다. 40세 이후 1~2년마다 안과 정기 검진(안압·안저 포함)을 받고, 자외선 "
-            "차단·금연·혈당 관리·눈 휴식이 기본 관리 수칙입니다."
-        ),
-    },
-}
+KB = _load_kb()
 
 
 def retrieve_for_opinion(cataract_code: str = "", amsler_abnormal: bool = False,

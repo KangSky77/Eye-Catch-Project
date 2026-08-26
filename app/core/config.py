@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     kakao_rest_key: str = ""   # 카카오 로컬 REST API 키(.env의 KAKAO_REST_KEY) — 안과 검색용
     max_upload_size_bytes: int = 10 * 1024 * 1024  # .env의 MAX_UPLOAD_SIZE_BYTES로 덮어쓰기 가능
 
+    # 이 API를 호출하도록 허용할 외부 origin 목록(쉼표 구분). 기본은 빈 값 = CORS 미적용.
+    # 프론트가 같은 서버(/static)에서 서빙되므로 평소에는 same-origin이라 CORS 헤더 자체가
+    # 필요 없다 — ngrok으로 공유해도 페이지와 API가 같은 도메인이라 마찬가지다.
+    # 예전에는 allow_origins=["*"]로 전부 열어뒀는데, 쓰지도 않는 개방이라 좁혔다.
+    # 프론트를 별도 도메인에 올려 이 API를 부를 때만 여기에 나열한다.
+    #   예) ALLOWED_ORIGINS=http://localhost:8000,https://myapp.example.com
+    allowed_origins: str = ""
+
     # --- 판정 임계값 (여러 서비스 파일에 흩어져 있던 것을 한 곳으로 모음) ---
     # 백내장 위험 판정(%): v2 모델 테스트셋 기준 75%에서는 FN=2, 50%에서는 FN=0.
     # 스크리닝은 FN 최소화가 우선이라 50% 채택.
@@ -34,6 +42,11 @@ class Settings(BaseSettings):
     face_prob_threshold: float = 0.95
     # 눈 분포 중심과의 코사인 유사도 임계값. 실측: 눈 최소 0.62 / 비-눈 최대 0.50 → 중간값 0.55
     eye_sim_threshold: float = 0.55
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        """쉼표 구분 문자열 → origin 리스트. 빈 항목·주변 공백은 버린다."""
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
