@@ -208,6 +208,13 @@ function vtAnswer(direction) {
  */
 function vtCantSee() {
     if (vtState.phase !== 'acuity' && vtState.phase !== 'contrast') return;
+    // 처음 눌렀을 때 한 번만: 왜 같은 버튼을 또 눌러야 하는지 설명한다.
+    // (설계상 단계는 끝까지 진행하는데, 라벨만 보면 '검사가 끝난다'고 읽힌다)
+    const hint = document.getElementById('vt-cant-see-hint');
+    if (hint && hint.classList.contains('hidden')) {
+        hint.textContent = translations[state.lang].vt_cant_see_hint || '';
+        hint.classList.remove('hidden');
+    }
     // 실제 방향과 다른 값을 넘겨 오답으로 집계시킨다
     const wrong = DIRECTIONS.find(d => d !== vtState.current) || 'up';
     vtAnswer(wrong);
@@ -255,6 +262,11 @@ function vtRefreshDynamicUI() {
         vtUpdateProgress();
     }
     if (vtState.phase === 'done' && state.visionTest) vtRenderResult();
+    // 이미 띄워둔 '안 보여요' 설명도 현재 언어로
+    const hint = document.getElementById('vt-cant-see-hint');
+    if (hint && !hint.classList.contains('hidden')) {
+        hint.textContent = translations[state.lang].vt_cant_see_hint || '';
+    }
 }
 
 function vtBeginStage() {

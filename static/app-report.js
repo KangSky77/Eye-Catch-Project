@@ -10,15 +10,11 @@ async function finish() {
     const d = new Date();
     document.getElementById('report-date').innerText = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ISSUED`;
 
-    const cataractRes = state.aiResult || "-";
+    refreshReportResults();
+    const cataractRes = formatCataractResult();
     // 암슬러는 좌우를 따로 보므로 어느 쪽 눈인지까지 표기한다
-    const amslerRes = state.amslerLabel
-        || (state.hasAmsler ? translations[state.lang].res_ams_bad : translations[state.lang].res_ams_ok);
-    const symptoms = state.chatSymptoms;
-
-    document.getElementById('pdf-ai-result').innerText = cataractRes;
-    document.getElementById('pdf-amsler-result').innerText = amslerRes;
-    document.getElementById('pdf-chat-result').innerText = symptoms.length > 0 ? symptoms.join(", ") : translations[state.lang].res_chat_none;
+    const amslerRes = formatAmslerResult();
+    const symptoms = formatSymptoms();
 
     // 행동 권고 — 등급이 아니라 '언제 병원에 가야 하는가'를 먼저 보여준다
     const risk = computeRiskScore(state.riskAnswers || {});
@@ -54,6 +50,47 @@ async function finish() {
         eye_asymmetric: state.asymmetric   // 편측(한쪽 눈만) 위험 여부
     };
     await runAiOpinion();
+}
+
+/** 리포트의 '값' 3칸을 현재 언어로 다시 그린다.
+ *
+ *  왜 필요한가: 예전에는 분석 시점 언어로 만든 문자열을 그대로 넣어놨기 때문에
+ *  언어를 바꾸면 라벨만 번역되고 값은 이전 언어로 남았다(영어 리포트에 한국어가 섞임).
+ *  updateUI(app-core.js)가 언어 전환 때 이 함수를 부른다. */
+function refreshReportResults() {
+    const t = translations[state.lang];
+    const set = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    };
+    set('pdf-ai-result', formatCataractResult());
+    set('pdf-amsler-result', formatAmslerResult());
+    const symptoms = formatSymptoms();
+    set('pdf-chat-result', symptoms.length ? symptoms.join(', ') : (t.res_chat_none || '-'));
+
+    // LLM 소견서는 생성 시점 언어로 고정된다 — 자동 번역하지 않고, 다시 생성할 수
+    // 있다는 사실만 알린다(재생성은 수 초가 걸리므로 사용자가 고르게 한다).
+    const stale = document.getElementById('opinion-stale');
+    if (stale) {
+        const mismatch = !!state.opinionLang && state.opinionLang !== state.lang;
+        stale.classList.toggle('hidden', !mismatch);
+        const msg = stale.querySelector('[data-role="msg"]');
+        if (msg) msg.textContent = t.opinion_stale || '';
+        const btn = stale.querySelector('[data-role="regen"]');
+        if (btn) btn.textContent = t.opinion_regen || '';
+    }
+}
+
+/** 현재 언어로 소견서를 다시 생성한다(언어 전환 후 사용자가 눌렀을 때). */
+function regenerateOpinion() {
+    if (!state.opinionRequest) return;
+    state.opinionRequest.lang = state.lang;
+    state.opinionRequest.cataract_res = formatCataractResult();
+    state.opinionRequest.amsler_res = formatAmslerResult();
+    state.opinionRequest.chat_symptoms = formatSymptoms();
+    const stale = document.getElementById('opinion-stale');
+    if (stale) stale.classList.add('hidden');
+    runAiOpinion();
 }
 
 // 소견서 생성 1회 시도. 실패하면 본문 자리에 '다시 시도' 버튼을 남긴다.
@@ -119,6 +156,10 @@ async function runAiOpinion() {
         opinionText.classList.remove('text-rose-600');
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리
         opinionText.innerText = opinionText.innerText.replace(/\*\*/g, '');
+        // 어떤 언어로 쓰였는지 기록 — 이후 언어를 바꾸면 재생성을 안내한다
+        state.opinionLang = state.opinionRequest.lang || state.lang;
+        const staleBox = document.getElementById('opinion-stale');
+        if (staleBox) staleBox.classList.add('hidden');
 
         if ("Notification" in window && Notification.permission === "granted") {
             new Notification(translations[state.lang].notif_title || "Eye-Catch 진단 완료", {
@@ -343,7 +384,7 @@ let _pdfBusy = false;
 function downloadPDF() {
     if (_pdfBusy) return;   // 생성에 몇 초 걸려 연타하면 PDF가 여러 장 만들어진다
     const t = translations[state.lang];
-    if (!state.aiResult) {  // 전부 "-"인 빈 리포트를 내려받는 일 방지
+    if (!state.aiResultData) {  // 전부 "-"인 빈 리포트를 내려받는 일 방지
         showToast(t.report_hint_empty || "Run the AI analysis first.", 'info');
         return;
     }

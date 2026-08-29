@@ -10,8 +10,10 @@
 const state = {
     lang: 'ko',              // 현재 언어
     stepIdx: 0,              // 고정 질문 인덱스
-    aiResult: "",            // 백내장 분석 결과
+    aiResultData: null,      // 백내장 분석 원자료 {code, probability, twoEyes, eyes} — 언어 중립
     aiResultCode: "",        // 백내장 판독 코드 'risk'/'normal' (RAG 검색용)
+    amslerResult: {},        // 암슬러 응답 {left: bool, right: bool} — 언어 중립
+    opinionLang: "",         // AI 참고 정보를 생성한 언어 (언어를 바꾸면 재생성 안내)
     eyeBreakdown: [],        // 눈별 결과 [{side, probability, code}]
     asymmetric: false,       // 편측(한쪽 눈만) 위험 여부
     hasAmsler: false,        // 황반변성 이상 여부
@@ -23,6 +25,56 @@ const state = {
     chatBusy: false,         // 문진 답변 처리 중 잠금 (중복 클릭 방지)
     step: 'step-intro'       // 검사 흐름의 현재 단계 (진행 표시용)
 };
+
+// ------------------------------------------
+// 1-b. 리포트 표시 문자열 — 언어 중립 상태에서 '그릴 때' 만든다
+//
+// 왜 함수인가:
+//   예전에는 분석이 끝난 시점의 언어로 완성된 문장을 state에 저장하고 리포트가 그걸
+//   그대로 그렸다. 그래서 언어를 바꾸면 라벨만 번역되고 값은 이전 언어로 남아
+//   영어 리포트 안에 "백내장 위험 단계 (정밀 검사 권장)", "오른쪽 눈 이상"이 섞였다.
+//   원자료만 저장하고 표시 문자열은 매번 현재 언어로 만든다.
+//
+// 왜 '%'를 쓰지 않는가:
+//   모델 출력은 보정(calibration)되지 않은 softmax 값이라 확률이 아니다
+//   (data.js의 score_label 주석 참고). 결과 카드는 '%' 없이 'AI 위험 점수'로
+//   표기하는데 리포트만 "(100%)"로 찍혀, 같은 값이 두 가지 의미로 읽혔다.
+// ------------------------------------------
+
+/** 백내장 결과를 현재 언어 문자열로. 원자료가 없으면 "-". */
+function formatCataractResult() {
+    const r = state.aiResultData;
+    if (!r) return "-";
+    const t = translations[state.lang];
+    const text = t['ai_' + r.code] || r.code;
+    const score = t.score_label || 'AI 위험 점수';
+    if (r.twoEyes) {
+        const by = {};
+        (r.eyes || []).forEach(e => { by[e.side] = e; });
+        const lp = by.left ? by.left.probability : '-';
+        const rp = by.right ? by.right.probability : '-';
+        return `${text} · ${score} ${t.eye_left} ${lp} / ${t.eye_right} ${rp}`;
+    }
+    return `${text} · ${score} ${r.probability}`;
+}
+
+/** 암슬러 결과(좌/우)를 현재 언어 문자열로. 아직 안 했으면 "-". */
+function formatAmslerResult() {
+    const r = state.amslerResult;
+    if (!r || !Object.keys(r).length) return "-";
+    const t = translations[state.lang];
+    const L = !!r.left, R = !!r.right;
+    return (L && R) ? (t.ams_result_bad || '양쪽 이상')
+         : L ? (t.ams_result_left || '왼쪽 눈 이상')
+         : R ? (t.ams_result_right || '오른쪽 눈 이상')
+             : (t.ams_result_both || '양쪽 정상');
+}
+
+/** 문진 소견을 현재 언어 문자열 배열로. state.chatSymptoms에는 i18n 키가 들어 있다. */
+function formatSymptoms() {
+    const t = translations[state.lang];
+    return (state.chatSymptoms || []).map(k => t[k] || k);
+}
 
 // 백엔드(llm.py)가 AI 오류를 정상 토큰과 구분하기 위해 붙이는 마커 — 프론트는 감지 시 에러 처리
 const ERROR_MARKER = "⛔__ECERR__";
@@ -123,6 +175,16 @@ function updateUI(lang) {
     // (리포트 게이트·해석·시력검사 안내는 JS가 textContent로 넣으므로
     //  언어만 바꾸면 이전 언어 문장이 그대로 남는다)
     if (typeof updateReportGate === 'function') updateReportGate();
+    // 리포트의 '값'(백내장·암슬러·문진 소견)은 data-i18n으로 덮이지 않는다 —
+    // 언어 중립 상태에서 현재 언어로 다시 만든다.
+    if (typeof refreshReportResults === 'function') refreshReportResults();
+    // 암슬러 격자 안내(거리·보정)도 현재 언어로
+    if (typeof renderAmslerGrid === 'function' && document.getElementById('amsler-box')) {
+        renderAmslerGrid();
+    }
+    // 결과 화면의 사진 캡션
+    const rpc = document.getElementById('result-photo-caption');
+    if (rpc && translations[lang].result_photo_label) rpc.textContent = translations[lang].result_photo_label;
     if (typeof vtRefreshCalibrationUI === 'function' && document.getElementById('vt-cardbox')) {
         vtRefreshCalibrationUI();
     }

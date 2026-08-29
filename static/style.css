@@ -393,6 +393,9 @@ body {
 /* ==========================================
    암슬러 격자 및 왜곡 효과
    ========================================== */
+/* 크기는 renderAmslerGrid()가 캘리브레이션(px/mm)에 맞춰 인라인으로 덮어쓴다.
+   여기 값은 JS가 아직 안 돈 순간을 위한 대비책이며, 칸 수는 임상 규격과 같은
+   20x20(= 240 / 12)로 맞춰 둔다. 예전엔 24px 칸이라 10x10 밖에 없었다. */
 .amsler-grid {
     width: 240px;
     height: 240px;
@@ -404,13 +407,16 @@ body {
     margin-right: auto;
     margin-bottom: 28px;
     background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-size: 12px 12px;
     background-position: center;
     border: 2px solid #cbd5e1;
     border-radius: 12px;
     position: relative;
     background-color: white;
-    transition: all 0.3s ease;
+    /* transition: all 은 쓰지 않는다 — 크기(width/height)까지 애니메이션되면
+       JS가 방금 설정한 폭을 되읽을 때 중간값이 나오고, 격자 칸 수가 어긋난다.
+       이 전환은 '휘어보임' 버튼 미리보기(.amsler-distorted)용이므로 filter만 준다. */
+    transition: filter 0.3s ease;
 }
 .amsler-dot { width: 8px; height: 8px; background-color: #0f172a; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 .amsler-distorted { filter: url(#wavy) blur(1px); }
@@ -1267,3 +1273,29 @@ body.modal-open { overflow: hidden; }
 }
 .vt-cant-see:hover { background: #f1f5f9; color: var(--ec-navy); }
 .vt-cant-see:focus-visible { outline: 3px solid rgba(21, 94, 239, .24); outline-offset: 2px; }
+
+/* ==========================================
+   데스크톱 세로 여백
+   모바일 우선으로 만든 검사 단계 카드가 큰 화면에서는 위쪽에만 붙어 있고
+   아래 절반 이상이 통째로 비어 보였다. 큰 화면에서만 세로 가운데로 맞춘다.
+   (모바일에서는 스크롤이 자연스러우므로 건드리지 않는다)
+   ========================================== */
+@media (min-width: 1024px) {
+    #tab-test .step-content.active {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        /* 9rem(144px) = 상단 네비(74px) + main 위아래 여백(20px) + 단계 표시 점(44px)
+           보다 조금 넉넉하게. 이보다 적게 빼면 세로 스크롤바가 새로 생기고
+           카드가 위로 치우친다 — 여백이 조금 남는 쪽이 눈에 덜 띈다. */
+        min-height: calc(100vh - 9rem);
+        min-height: calc(100dvh - 9rem);
+    }
+    /* flex 컨테이너가 되면 mx-auto(margin:auto)가 세로로도 늘어나
+       가운데 정렬이 어긋난다 — 가로 가운데 정렬만 명시적으로 유지한다. */
+    #tab-test .step-content.active > * {
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+    }
+}

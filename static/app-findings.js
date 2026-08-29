@@ -32,7 +32,7 @@ function buildFindings() {
 
     // --- 암슬러(황반 자가검사) — 반드시 '황반만 본다'는 범위를 함께 말한다 ---
     if (state.hasAmsler) {
-        const eye = state.amslerLabel || '';
+        const eye = formatAmslerResult();
         out.push((t.find_ams_abnormal || '').replace('{eye}', eye));
     } else if (state.amslerResult && Object.keys(state.amslerResult).length) {
         out.push(t.find_ams_normal);
@@ -48,7 +48,7 @@ function buildFindings() {
 
     // --- 문진 ---
     if (state.chatSymptoms && state.chatSymptoms.length) {
-        out.push((t.find_sym || '').replace('{items}', state.chatSymptoms.join(', ')));
+        out.push((t.find_sym || '').replace('{items}', formatSymptoms().join(', ')));
     } else {
         out.push(t.find_nosym);
     }

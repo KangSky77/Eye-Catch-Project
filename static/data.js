@@ -4,7 +4,7 @@ const translations = {
         intro_title: "당신의 눈 건강,<br>AI가 지켜드립니다", intro_desc: "안구 사진 자동 분석과 전문 문진을 통해 주요 안질환 위험도를 체크합니다.",
         flow_photo: "사진 분석", flow_check: "자가진단", flow_report: "맞춤 리포트",
         start_btn: "분석 시작하기", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송",
-        guide_title: "정확한 분석 가이드", guide_list: "<li>정면에서 촬영하세요.</li><li>빛 반사에 주의하세요.</li>",
+        guide_title: "정확한 분석 가이드", guide_list: "<li>후면 카메라로 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>30cm 거리를 유지하세요.</li>",
         tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "전면보다는 후면 카메라!", tip1_d: "후면 카메라가 화질이 좋고 빛 반사가 적어요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사가 눈동자에 하얗게 맺히면 혼탁으로 잘못 읽힐 수 있어요. 창가나 밝은 실내에서 찍어주세요.", tip3_t: "30cm 거리를 유지하세요", tip3_d: "너무 가까우면 초점이 흐려질 수 있어요.", tips_btn: "이해했습니다!",
         loading_title: "AI 딥러닝 분석 중...", ai_res_title: "백내장 판별 결과", next_amsler: "2단계: 황반변성 테스트",
         ams_title: "황반변성 자가진단", ams_ok: "정상 (곧게 보임)", ams_bad: "휘어보임/암점",
@@ -37,7 +37,7 @@ const translations = {
         pdf_doc_title: "Eye-Catch 정밀 진단 리포트", pdf_issued: "발급일자", pdf_s1: "1. 백내장 AI 분석 결과", pdf_s2: "2. 황반변성 자가진단 (Amsler Grid)", pdf_s3: "3. AI 문진 주요 소견", pdf_s4: "4. 종합 AI 소견서 (Powered by Gemma)",
         pdf_footer: "본 리포트는 인공지능 기반의 자가진단 보조 자료입니다.<br>정확한 진단 및 처방을 위해서는 반드시 안과 전문의와 상담하시기 바랍니다.",
         back_btn: "← 이전", step_progress: "{total}단계 중 {n}단계",
-        ams_howto: "한쪽 눈을 가리고 약 30cm 거리에서 가운데 점을 바라보세요. 반대쪽 눈도 같은 방법으로 확인합니다.",
+        ams_howto: "한쪽 눈을 가리고 가운데 점을 바라보세요. 반대쪽 눈도 같은 방법으로 확인합니다.",
         err_file_type: "이미지 파일만 올릴 수 있어요.", err_file_size: "사진 용량이 너무 커요. {n}MB 이하 사진을 올려주세요.",
         pdf_making: "PDF를 만드는 중...", pdf_err: "PDF 생성에 실패했어요. 잠시 후 다시 시도해 주세요.",
         aria_lang: "언어 선택", aria_send: "질문 보내기", aria_home: "처음 화면으로", aria_nav_main: "주 메뉴", aria_flow: "검사 진행 과정",
@@ -49,7 +49,7 @@ const translations = {
         intro_title: "Your Eye Health,<br>Protected by AI", intro_desc: "AI photo analysis and survey to check major eye disease risks.",
         flow_photo: "Photo analysis", flow_check: "Self-check", flow_report: "Personal report",
         start_btn: "Start Analysis", upload_title: "Upload Photo", upload_btn: "Select & Send",
-        guide_title: "Analysis Guide", guide_list: "<li>Face front.</li><li>Avoid glare/reflections.</li>",
+        guide_title: "Analysis Guide", guide_list: "<li>Use the rear camera.</li><li>Turn the flash off.</li><li>Keep about 30cm distance.</li>",
         tips_title: "Photo Tips for<br>Accurate Analysis", tip1_t: "Use the rear camera!", tip1_d: "The rear camera has better quality and less glare.", tip2_t: "Turn the flash off", tip2_d: "A flash reflection on the pupil can be misread as clouding. Shoot in window light or a well-lit room instead.", tip3_t: "Keep about 30cm distance", tip3_d: "Too close and the photo may be out of focus.", tips_btn: "Got it!",
         loading_title: "AI Analyzing...", ai_res_title: "Cataract Result", next_amsler: "Step 2: Macular Test",
         ams_title: "Amsler Grid Test", ams_ok: "Normal (Straight)", ams_bad: "Distorted/Spot",
@@ -82,7 +82,7 @@ const translations = {
         pdf_doc_title: "Eye-Catch Diagnostic Report", pdf_issued: "Issued", pdf_s1: "1. Cataract AI Analysis", pdf_s2: "2. Macular Self-Test (Amsler Grid)", pdf_s3: "3. AI Survey Findings", pdf_s4: "4. Comprehensive AI Opinion (Powered by Gemma)",
         pdf_footer: "This report is an AI-assisted self-screening aid.<br>Please consult an ophthalmologist for an accurate diagnosis and treatment.",
         back_btn: "← Back", step_progress: "Step {n} of {total}",
-        ams_howto: "Cover one eye and look at the center dot from about 30 cm away. Then repeat with the other eye.",
+        ams_howto: "Cover one eye and look at the center dot. Then repeat with the other eye.",
         err_file_type: "Please upload an image file.", err_file_size: "That photo is too large. Please upload a file under {n} MB.",
         pdf_making: "Creating your PDF...", pdf_err: "Could not create the PDF. Please try again.",
         aria_lang: "Select language", aria_send: "Send question", aria_home: "Back to start", aria_nav_main: "Main menu", aria_flow: "Screening steps",
@@ -94,7 +94,7 @@ const translations = {
         intro_title: "Tu salud ocular,<br>protegida por IA", intro_desc: "Análisis de fotos y encuesta para detectar riesgos oculares.",
         flow_photo: "Análisis de foto", flow_check: "Autoevaluación", flow_report: "Informe personal",
         start_btn: "Iniciar análisis", upload_title: "Subir foto", upload_btn: "Seleccionar foto",
-        guide_title: "Guía", guide_list: "<li>Mira al frente.</li><li>Evita reflejos.</li>",
+        guide_title: "Guía", guide_list: "<li>Use la cámara trasera.</li><li>Apague el flash.</li><li>Mantenga unos 30 cm de distancia.</li>",
         tips_title: "Consejos de foto para<br>un análisis preciso", tip1_t: "¡Use la cámara trasera!", tip1_d: "La cámara trasera tiene mejor calidad y menos reflejos.", tip2_t: "Apague el flash", tip2_d: "El reflejo del flash sobre la pupila puede confundirse con opacidad. Use luz de ventana o una sala bien iluminada.", tip3_t: "Mantenga unos 30 cm de distancia", tip3_d: "Si está muy cerca, la foto puede salir desenfocada.", tips_btn: "¡Entendido!",
         loading_title: "IA analizando...", ai_res_title: "Resultado de Cataratas", next_amsler: "Paso 2: Mácula",
         ams_title: "Prueba de Amsler", ams_ok: "Normal (Recto)", ams_bad: "Distorsionado/Mancha",
@@ -127,7 +127,7 @@ const translations = {
         pdf_doc_title: "Informe Diagnóstico Eye-Catch", pdf_issued: "Fecha de emisión", pdf_s1: "1. Análisis de Cataratas por IA", pdf_s2: "2. Autoprueba Macular (Rejilla de Amsler)", pdf_s3: "3. Hallazgos de la Encuesta IA", pdf_s4: "4. Opinión Integral de IA (Powered by Gemma)",
         pdf_footer: "Este informe es una ayuda de autodetección asistida por IA.<br>Consulte a un oftalmólogo para un diagnóstico y tratamiento precisos.",
         back_btn: "← Atrás", step_progress: "Paso {n} de {total}",
-        ams_howto: "Tápese un ojo y mire el punto central a unos 30 cm. Repita con el otro ojo.",
+        ams_howto: "Tápese un ojo y mire el punto central. Repita con el otro ojo.",
         err_file_type: "Suba un archivo de imagen.", err_file_size: "La foto es demasiado grande. Suba un archivo de menos de {n} MB.",
         pdf_making: "Creando el PDF...", pdf_err: "No se pudo crear el PDF. Inténtelo de nuevo.",
         aria_lang: "Seleccionar idioma", aria_send: "Enviar pregunta", aria_home: "Volver al inicio", aria_nav_main: "Menú principal", aria_flow: "Pasos del examen",
@@ -139,7 +139,7 @@ const translations = {
         intro_title: "Votre santé oculaire,<br>protégée par l'IA", intro_desc: "Analyse photo et sondage pour détecter les risques oculaires.",
         flow_photo: "Analyse photo", flow_check: "Auto-évaluation", flow_report: "Rapport personnel",
         start_btn: "Démarrer l'analyse", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo",
-        guide_title: "Guide", guide_list: "<li>Regardez de face.</li><li>Évitez les reflets.</li>",
+        guide_title: "Guide", guide_list: "<li>Utilisez la caméra arrière.</li><li>Désactivez le flash.</li><li>Gardez environ 30 cm de distance.</li>",
         tips_title: "Conseils photo pour<br>une analyse précise", tip1_t: "Utilisez la caméra arrière !", tip1_d: "La caméra arrière offre une meilleure qualité et moins de reflets.", tip2_t: "Désactivez le flash", tip2_d: "Un reflet de flash sur la pupille peut être pris pour une opacité. Photographiez près d'une fenêtre ou dans une pièce bien éclairée.", tip3_t: "Gardez environ 30 cm de distance", tip3_d: "Trop près, la photo peut être floue.", tips_btn: "Compris !",
         loading_title: "IA en analyse...", ai_res_title: "Résultat Cataracte", next_amsler: "Étape 2: Macula",
         ams_title: "Test de la grille d'Amsler", ams_ok: "Normal (Droit)", ams_bad: "Déformé/Tache",
@@ -172,7 +172,7 @@ const translations = {
         pdf_doc_title: "Rapport de Diagnostic Eye-Catch", pdf_issued: "Date d'émission", pdf_s1: "1. Analyse Cataracte par IA", pdf_s2: "2. Autotest Maculaire (Grille d'Amsler)", pdf_s3: "3. Conclusions du Questionnaire IA", pdf_s4: "4. Avis Global de l'IA (Powered by Gemma)",
         pdf_footer: "Ce rapport est une aide d'auto-dépistage assistée par IA.<br>Veuillez consulter un ophtalmologiste pour un diagnostic et un traitement précis.",
         back_btn: "← Retour", step_progress: "Étape {n} sur {total}",
-        ams_howto: "Couvrez un œil et fixez le point central à environ 30 cm. Répétez avec l'autre œil.",
+        ams_howto: "Couvrez un œil et fixez le point central. Répétez avec l'autre œil.",
         err_file_type: "Veuillez importer un fichier image.", err_file_size: "Cette photo est trop volumineuse. Importez un fichier de moins de {n} Mo.",
         pdf_making: "Création du PDF...", pdf_err: "Impossible de créer le PDF. Veuillez réessayer.",
         aria_lang: "Choisir la langue", aria_send: "Envoyer la question", aria_home: "Revenir au début", aria_nav_main: "Menu principal", aria_flow: "Étapes du dépistage",
@@ -184,7 +184,7 @@ const translations = {
         intro_title: "あなたの目の健康、<br>AIがお守りします", intro_desc: "AI写真分析と問診で主要な眼疾患のリスクをチェックします。",
         flow_photo: "写真分析", flow_check: "セルフチェック", flow_report: "個別レポート",
         start_btn: "検査開始", upload_title: "写真アップロード", upload_btn: "写真を選択して送信",
-        guide_title: "正確な分析のために", guide_list: "<li>正面から撮影してください。</li><li>光の反射に注意してください。</li>",
+        guide_title: "正確な分析のために", guide_list: "<li>背面カメラで撮影してください。</li><li>フラッシュはオフにしてください。</li><li>30cmの距離を保ってください。</li>",
         tips_title: "正確な分析のための<br>撮影のコツ", tip1_t: "前面より背面カメラで！", tip1_d: "背面カメラの方が画質が良く、光の反射も少ないです。", tip2_t: "フラッシュはオフに", tip2_d: "フラッシュの反射が瞳に白く写ると、濁りと誤読されることがあります。窓際や明るい室内で撮ってください。", tip3_t: "30cmの距離を保って", tip3_d: "近すぎるとピントがぼやけることがあります。", tips_btn: "わかりました！",
         loading_title: "AI分析中...", ai_res_title: "白内障判定結果", next_amsler: "ステップ2：黄斑変性テスト",
         ams_title: "アムスラーグリッドテスト", ams_ok: "正常（まっすぐ）", ams_bad: "歪み/暗点",
@@ -217,7 +217,7 @@ const translations = {
         pdf_doc_title: "Eye-Catch 精密診断レポート", pdf_issued: "発行日", pdf_s1: "1. 白内障 AI 分析結果", pdf_s2: "2. 黄斑自己検査（アムスラーグリッド）", pdf_s3: "3. AI問診の主な所見", pdf_s4: "4. 総合AI所見（Powered by Gemma）",
         pdf_footer: "本レポートはAIによる自己スクリーニング補助資料です。<br>正確な診断と治療のため、必ず眼科医にご相談ください。",
         back_btn: "← 戻る", step_progress: "{total}ステップ中 {n}ステップ目",
-        ams_howto: "片目を手で覆い、約30cm離れて中央の点を見つめてください。反対の目も同じように確認します。",
+        ams_howto: "片目を手で覆い、中央の点を見つめてください。反対の目も同じように確認します。",
         err_file_type: "画像ファイルのみアップロードできます。", err_file_size: "写真のサイズが大きすぎます。{n}MB以下のファイルをアップロードしてください。",
         pdf_making: "PDFを作成中...", pdf_err: "PDFの作成に失敗しました。しばらくしてからもう一度お試しください。",
         aria_lang: "言語を選択", aria_send: "質問を送信", aria_home: "最初の画面へ", aria_nav_main: "メインメニュー", aria_flow: "検査の流れ",
@@ -229,7 +229,7 @@ const translations = {
         intro_title: "您的眼部健康，<br>由AI来守护", intro_desc: "通过AI照片分析和问卷调查检查主要眼部疾病风险。",
         flow_photo: "照片分析", flow_check: "自我检测", flow_report: "个性化报告",
         start_btn: "开始检测", upload_title: "上传照片", upload_btn: "选择并发送照片",
-        guide_title: "准确分析指南", guide_list: "<li>请正面拍摄。</li><li>请注意避免反光。</li>",
+        guide_title: "准确分析指南", guide_list: "<li>请使用后置摄像头拍摄。</li><li>请关闭闪光灯。</li><li>请保持约30厘米距离。</li>",
         tips_title: "拍摄小技巧<br>让分析更准确", tip1_t: "请使用后置摄像头！", tip1_d: "后置摄像头画质更好，反光更少。", tip2_t: "请关闭闪光灯", tip2_d: "闪光灯在瞳孔上的反光可能被误判为混浊。请在窗边或明亮的室内拍摄。", tip3_t: "保持约30厘米距离", tip3_d: "太近可能会导致焦点模糊。", tips_btn: "明白了！",
         loading_title: "AI分析中...", ai_res_title: "白内障判定结果", next_amsler: "第二步：黄斑变性测试",
         ams_title: "阿姆斯勒方格表", ams_ok: "正常（线条笔直）", ams_bad: "扭曲/黑影",
@@ -262,7 +262,7 @@ const translations = {
         pdf_doc_title: "Eye-Catch 精密诊断报告", pdf_issued: "签发日期", pdf_s1: "1. 白内障 AI 分析结果", pdf_s2: "2. 黄斑自测（阿姆斯勒方格表）", pdf_s3: "3. AI问诊主要发现", pdf_s4: "4. 综合AI意见书（Powered by Gemma）",
         pdf_footer: "本报告为AI辅助的自我筛查参考资料。<br>为获得准确的诊断和治疗，请务必咨询眼科医生。",
         back_btn: "← 返回", step_progress: "第 {n} 步，共 {total} 步",
-        ams_howto: "遮住一只眼睛，在约30厘米处注视中心圆点。然后用另一只眼睛重复。",
+        ams_howto: "遮住一只眼睛，注视中心圆点。然后用另一只眼睛重复。",
         err_file_type: "只能上传图片文件。", err_file_size: "照片太大了。请上传小于 {n}MB 的文件。",
         pdf_making: "正在生成 PDF...", pdf_err: "PDF 生成失败，请稍后重试。",
         aria_lang: "选择语言", aria_send: "发送问题", aria_home: "返回首页", aria_nav_main: "主菜单", aria_flow: "检查流程",
@@ -782,7 +782,13 @@ const symptomQuestions = [
   { code: 'dr_floaters', key: 'q_dr_floaters', disease: 'retinopathy', weight: 2, showIf: 'diabetes' },
 
   // ── 공통: 검진 공백 ────────────────────────────────────
-  { code: 'chk_recent', key: 'q_chk_recent', disease: 'general', weight: 2, invert: true },
+  // skipIf: 이미 답이 정해진 질문은 묻지 않는다.
+  //   안저 검사(1년 내)를 받았다면 '2년 내 안과 검진'은 논리적으로 참이다.
+  //   물으면 같은 걸 두 번 묻는 셈이고, 사용자가 '아니오'를 고르면 모순된 기록이 남는다.
+  //   [제약] skipIf 대상은 반드시 판단 근거 문항보다 '뒤'에 있어야 한다 —
+  //   진행 중에 앞쪽 문항이 빠지면 symIdx가 가리키는 문항이 밀린다.
+  { code: 'chk_recent', key: 'q_chk_recent', disease: 'general', weight: 2, invert: true,
+    skipIf: { code: 'dr_fundus', answer: true } },
 ];
 
 Object.assign(translations.ko, {
@@ -1182,4 +1188,75 @@ Object.assign(translations.zh, {
   save_saving: "保存中...", save_done: "已保存。",
   save_failed: "未能保存。结果仍会显示在屏幕上。", save_retry: "重试",
   calib_stale: "屏幕设置似乎已更改（旋转、缩放、窗口大小）。请重新校准以确保测量准确。"
+});
+
+// ==========================================================================
+// UX 리뷰(2026-08-29) 대응 문구
+//   - ams_*      : 암슬러 격자를 화면 캘리브레이션으로 실물 크기에 맞추면서
+//                  실제 보아야 할 거리와 커버되는 시야각을 사용자에게 알려준다.
+//   - result_*   : 결과 화면에 '무엇을 분석했는지'를 되돌려 보여준다.
+//   - vt_cant_see_hint : '안 보여요'는 건너뛰기가 아니라 오답 집계다(설계 의도).
+//                  같은 버튼을 여러 번 눌러야 하는 이유를 한 번만 설명한다.
+//   - opinion_*  : LLM 소견서는 생성 시점 언어로 고정된다 — 언어를 바꾸면
+//                  자동 번역하지 않고, 다시 생성할 수 있다는 사실을 알린다.
+// ==========================================================================
+Object.assign(translations.ko, {
+  ams_dist_note: "이 화면에서는 약 {d}cm 거리에서 보세요 — 중심 {deg}° 범위를 확인합니다.",
+  ams_uncal: "화면 크기를 보정하면 격자를 실제 크기(10cm)로 그릴 수 있어요. 지금은 대략적인 크기입니다.",
+  ams_cal_go: "화면 크기 보정하기",
+  result_photo_label: "분석한 사진",
+  vt_cant_see_hint: "안 보이면 남은 문항도 이 버튼을 눌러주세요. 정확한 측정을 위해 단계는 끝까지 진행합니다.",
+  opinion_stale: "아래 AI 참고 정보는 이전 언어로 작성되었습니다.",
+  opinion_regen: "현재 언어로 다시 생성",
+  sym_glaucoma: "녹내장 의심", sym_retinopathy: "당뇨망막병증 의심"
+});
+Object.assign(translations.en, {
+  ams_dist_note: "On this screen, view from about {d}cm — this covers the central {deg}°.",
+  ams_uncal: "Calibrate your screen size to draw the grid at its true size (10cm). For now the size is approximate.",
+  ams_cal_go: "Calibrate screen size",
+  result_photo_label: "Analysed photo",
+  vt_cant_see_hint: "If you can't see it, press this for the remaining items too. Each level runs to the end so the measurement stays accurate.",
+  opinion_stale: "The AI notes below were written in a different language.",
+  opinion_regen: "Regenerate in the current language",
+  sym_glaucoma: "Glaucoma suspected", sym_retinopathy: "Retinopathy suspected"
+});
+Object.assign(translations.es, {
+  ams_dist_note: "En esta pantalla, mire desde unos {d} cm: cubre los {deg}° centrales.",
+  ams_uncal: "Calibre el tamaño de pantalla para dibujar la cuadrícula a tamaño real (10 cm). Por ahora el tamaño es aproximado.",
+  ams_cal_go: "Calibrar tamaño de pantalla",
+  result_photo_label: "Foto analizada",
+  vt_cant_see_hint: "Si no lo ve, pulse también en los ítems restantes. Cada nivel se completa para que la medición sea precisa.",
+  opinion_stale: "Las notas de IA siguientes se redactaron en otro idioma.",
+  opinion_regen: "Regenerar en el idioma actual",
+  sym_glaucoma: "Sospecha de glaucoma", sym_retinopathy: "Sospecha de retinopatía"
+});
+Object.assign(translations.fr, {
+  ams_dist_note: "Sur cet écran, regardez à environ {d} cm : cela couvre les {deg}° centraux.",
+  ams_uncal: "Calibrez la taille de l'écran pour afficher la grille à sa taille réelle (10 cm). Pour l'instant, la taille est approximative.",
+  ams_cal_go: "Calibrer la taille de l'écran",
+  result_photo_label: "Photo analysée",
+  vt_cant_see_hint: "Si vous ne le voyez pas, appuyez aussi pour les items restants. Chaque niveau va jusqu'au bout pour une mesure fiable.",
+  opinion_stale: "Les notes IA ci-dessous ont été rédigées dans une autre langue.",
+  opinion_regen: "Régénérer dans la langue actuelle",
+  sym_glaucoma: "Suspicion de glaucome", sym_retinopathy: "Suspicion de rétinopathie"
+});
+Object.assign(translations.ja, {
+  ams_dist_note: "この画面では約{d}cmの距離で見てください — 中心{deg}°の範囲を確認します。",
+  ams_uncal: "画面サイズを調整すると、格子を実物大（10cm）で描けます。現在はおおよその大きさです。",
+  ams_cal_go: "画面サイズを調整する",
+  result_photo_label: "解析した写真",
+  vt_cant_see_hint: "見えない場合は残りの問題もこのボタンを押してください。正確な測定のため、段階は最後まで進みます。",
+  opinion_stale: "以下のAI参考情報は別の言語で作成されました。",
+  opinion_regen: "現在の言語で再生成",
+  sym_glaucoma: "緑内障の疑い", sym_retinopathy: "糖尿病網膜症の疑い"
+});
+Object.assign(translations.zh, {
+  ams_dist_note: "在此屏幕上请从约{d}厘米处观看 — 覆盖中心{deg}°范围。",
+  ams_uncal: "校准屏幕尺寸后可按实际大小（10厘米）绘制网格。目前为近似大小。",
+  ams_cal_go: "校准屏幕尺寸",
+  result_photo_label: "已分析的照片",
+  vt_cant_see_hint: "看不清时，剩余题目也请按此按钮。为保证测量准确，每个级别都会做完。",
+  opinion_stale: "以下AI参考信息是用其他语言撰写的。",
+  opinion_regen: "用当前语言重新生成",
+  sym_glaucoma: "疑似青光眼", sym_retinopathy: "疑似糖尿病视网膜病变"
 });

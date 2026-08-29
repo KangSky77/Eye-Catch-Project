@@ -155,17 +155,16 @@ async function runAIAnalysis(droppedFile) {
         state.eyeBreakdown = d.eyes || [];
         state.asymmetric = !!d.asymmetric;
 
-        // 얼굴 모드(눈 2개)면 좌/우 분리 결과를, 아니면 단일 결과를 리포트/소견서 문자열에 반영
+        // 얼굴 모드(눈 2개)면 좌/우 분리 결과를, 아니면 단일 결과.
+        // 표시 문자열이 아니라 원자료를 저장한다 — 언어를 바꾸면 formatCataractResult()가
+        // 현재 언어로 다시 만든다(app-core.js 주석 참고).
         const twoEyes = d.mode === 'face' && Array.isArray(d.eyes) && d.eyes.length === 2;
-        if (twoEyes) {
-            const bySide = {}; d.eyes.forEach(e => bySide[e.side] = e);
-            const lp = bySide.left ? bySide.left.probability : '-';
-            const rp = bySide.right ? bySide.right.probability : '-';
-            // 좌/우 수치 자체가 비대칭을 드러내므로 문자열은 간결하게(스키마 길이 제한 대비)
-            state.aiResult = `${resultText} (${t.eye_left} ${lp}%, ${t.eye_right} ${rp}%)`;
-        } else {
-            state.aiResult = `${resultText} (${d.probability}%)`;
-        }
+        state.aiResultData = {
+            code: d.result_code,
+            probability: d.probability,
+            twoEyes: twoEyes,
+            eyes: d.eyes || [],
+        };
 
         const disp = document.getElementById('ai-result-display');
         disp.innerHTML = '';
@@ -196,6 +195,10 @@ async function runAIAnalysis(droppedFile) {
             pFace.textContent = tmpl.replace('{n}', d.eyes_detected);
             disp.appendChild(pFace);
         }
+
+        // 어떤 사진이 분석됐는지 결과 화면에서도 확인할 수 있어야 한다.
+        // (로딩 화면에만 있어서, 사진을 잘못 고른 것을 결과에서 알아챌 방법이 없었다)
+        showAnalyzedPhoto();
 
         setTimeout(() => nextStep('step-ai-result'), 1000);
     } catch (e) {
@@ -235,7 +238,8 @@ function renderEyeBreakdown(container, eyes) {
         label.textContent = sideLabel[e.side] || e.side;
         const val = document.createElement('span');
         val.className = `text-sm font-black px-2.5 py-0.5 rounded-full ${codeStyle[e.code] || codeStyle.normal}`;
-        val.textContent = `${e.probability}%`;
+        // '%'를 붙이지 않는다 — 위의 'AI 위험 점수'와 같은 값이므로 표기도 같아야 한다
+        val.textContent = `${e.probability}`;
         row.appendChild(label);
         row.appendChild(val);
         wrap.appendChild(row);
@@ -264,14 +268,115 @@ function renderEyeBreakdown(container, eyes) {
 function startAmslerStep() {
     state.amslerEye = 'left';
     state.amslerResult = {};
-    updateAmslerPrompt();
+    // 격자 크기는 부모의 실제 폭을 재서 정한다 — 화면에 붙이기 전에 계산하면
+    // 폭이 0이라 잘못된 크기가 나온다. 그래서 nextStep() 다음에 그린다.
     nextStep('step-amsler');
+    updateAmslerPrompt();
 }
 
 function updateAmslerPrompt() {
     const t = translations[state.lang];
     const el = document.getElementById('amsler-eye-instruction');
     if (el) el.textContent = t['ams_which_' + state.amslerEye] || '';
+    renderAmslerGrid();
+}
+
+// ------------------------------------------------------------------
+// 암슬러 격자를 '실물 크기'로 그린다.
+//
+// 왜 필요한가:
+//   임상 암슬러는 10cm x 10cm를 5mm 칸 20x20으로 나눠 약 28~30cm에서 본다 —
+//   중심 20°(편심 10°)를 덮고 칸 하나가 정확히 1°가 되도록 설계된 크기다.
+//   기존 구현은 240 CSS px 고정 + 24px 칸(10x10)이었다. 같은 30cm에서 약 12°만
+//   덮고 칸도 1°가 아니라서, 중심에서 6° 바깥의 암점은 구조적으로 볼 수 없었다.
+//
+// 어떻게:
+//   시력검사에서 이미 받아둔 카드 캘리브레이션(px/mm)을 그대로 쓴다. 화면이 10cm를
+//   담지 못하면 담을 수 있는 만큼 줄이고, '그 크기가 20°가 되는 거리'를 계산해
+//   안내한다 — 물리 크기를 고정하는 것보다 시야각을 지키는 쪽이 임상적으로 맞다.
+//   캘리브레이션이 없으면 CSS 기준 해상도(96dpi ≒ 3.78 px/mm)로 근사하고,
+//   근사치임을 명시한 뒤 보정 화면으로 갈 수 있게 한다.
+// ------------------------------------------------------------------
+const AMSLER_SIDE_MM = 100;    // 표준 격자 한 변
+const AMSLER_CELLS = 20;       // 표준 칸 수 (5mm 칸 = 1°)
+const AMSLER_FIELD_DEG = 20;   // 격자가 덮는 시야각(편심 ±10°)
+const CSS_PX_PER_MM = 96 / 25.4;   // CSS px의 기준 해상도(96dpi)
+
+function renderAmslerGrid() {
+    const box = document.getElementById('amsler-box');
+    if (!box) return;
+    // 아직 화면에 붙지 않았으면(폭 0) 재봤자 0이다 — 다음 프레임에 다시 시도한다.
+    // 이걸 빼면 숨겨진 상태에서 잰 값으로 그려져 칸 수와 안내 거리가 어긋난다.
+    if (!box.offsetParent && box.getBoundingClientRect().width === 0) {
+        requestAnimationFrame(renderAmslerGrid);
+        return;
+    }
+    const t = translations[state.lang];
+
+    const cal = (typeof loadCalibration === 'function') ? loadCalibration() : null;
+    const calibrated = !!cal && !(typeof calibrationStale === 'function' && calibrationStale(cal));
+    const pxPerMm = calibrated ? cal.pxPerMm : CSS_PX_PER_MM;
+
+    // 격자가 들어갈 수 있는 폭 = 부모의 '콘텐츠 폭'(패딩 제외).
+    // clientWidth에는 패딩이 포함돼 있어서 그대로 쓰면 카드 밖으로 넘치고,
+    // .amsler-grid의 max-width:100%에 잘려 칸 크기와 실제 폭이 어긋난다.
+    let availPx = Math.max(160, window.innerWidth - 32);
+    const parent = box.parentElement;
+    if (parent) {
+        const pcs = getComputedStyle(parent);
+        const inner = parent.clientWidth
+            - parseFloat(pcs.paddingLeft || 0) - parseFloat(pcs.paddingRight || 0);
+        if (inner > 0) availPx = inner;
+    }
+
+    // availPx가 이미 부모의 콘텐츠 폭이므로 max-width:100%가 더 잘라낼 일이 없다.
+    // (되읽기로 확인하려 들면 안 된다 — .amsler-grid에 transition이 걸려 있으면
+    //  방금 설정한 값이 아니라 애니메이션 중간값이 돌아온다. 실제로 그렇게 해서
+    //  칸 크기가 이전 폭 기준으로 계산돼 20칸이 아니라 23칸이 그려졌다.)
+    const sidePx = Math.round(Math.min(AMSLER_SIDE_MM * pxPerMm, availPx));
+    const sideMm = sidePx / pxPerMm;
+    const cellPx = sidePx / AMSLER_CELLS;
+
+    box.style.width = sidePx + 'px';
+    box.style.height = sidePx + 'px';
+    box.style.backgroundSize = `${cellPx}px ${cellPx}px`;
+
+    // 이 크기가 AMSLER_FIELD_DEG를 덮는 거리:  d = side / (2 * tan(deg/2))
+    const half = Math.tan((AMSLER_FIELD_DEG / 2) * Math.PI / 180);
+    const distCm = Math.round(sideMm / (2 * half) / 10);
+
+    const note = document.getElementById('amsler-dist-note');
+    if (note) {
+        note.textContent = (t.ams_dist_note || '')
+            .replace('{d}', distCm).replace('{deg}', AMSLER_FIELD_DEG);
+    }
+    const uncal = document.getElementById('amsler-uncal');
+    if (uncal) {
+        uncal.classList.toggle('hidden', calibrated);
+        const msg = uncal.querySelector('[data-role="msg"]');
+        if (msg) msg.textContent = t.ams_uncal || '';
+        const btn = uncal.querySelector('[data-role="go"]');
+        if (btn) btn.textContent = t.ams_cal_go || '';
+    }
+}
+
+// 회전·창 크기 변경으로 사용할 수 있는 폭이 바뀌면 격자도 다시 그린다.
+window.addEventListener('resize', () => {
+    const step = document.getElementById('step-amsler');
+    if (step && step.classList.contains('active')) renderAmslerGrid();
+});
+
+/** 분석에 사용한 사진을 결과 화면에도 보여준다(로딩 화면의 미리보기를 복사). */
+function showAnalyzedPhoto() {
+    const src = document.getElementById('preview-image');
+    const dst = document.getElementById('result-photo');
+    if (!src || !dst || !src.src) return;
+    dst.src = src.src;
+    dst.alt = translations[state.lang].result_photo_label || '';
+    const wrap = document.getElementById('result-photo-wrap');
+    if (wrap) wrap.classList.remove('hidden');
+    const cap = document.getElementById('result-photo-caption');
+    if (cap) cap.textContent = translations[state.lang].result_photo_label || '';
 }
 
 function recordAmsler(bad) {
@@ -285,11 +390,7 @@ function recordAmsler(bad) {
 
     const L = !!state.amslerResult.left, R = !!state.amslerResult.right;
     state.hasAmsler = L || R;         // 한쪽이라도 이상이면 이상 소견
-    const t = translations[state.lang];
-    state.amslerLabel = (L && R) ? (t.ams_result_bad || '양쪽 이상')
-                      : L ? (t.ams_result_left || '왼쪽 눈 이상')
-                      : R ? (t.ams_result_right || '오른쪽 눈 이상')
-                          : (t.ams_result_both || '양쪽 정상');
+    // 표시 문구는 formatAmslerResult()가 현재 언어로 만든다 — 여기서 문자열로 굳히지 않는다
     nextStep('step-chat');
     startChat();
 }
