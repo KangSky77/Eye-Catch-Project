@@ -471,9 +471,11 @@ def test_질환별_시야_체험이_4종_모두_다르게_동작한다():
     assert "VISION_SIMS" in disease
     for key in ["'cataract'", "'amd'", "'glaucoma'", "'dr'"]:
         assert key in disease, f"{key} 시야 효과가 없습니다"
-    # 외부 이미지·라이브러리 없이 동작해야 한다(발표장 오프라인 대비)
-    assert "/static/assets/vision-scene.svg" in disease
-    assert (STATIC / "assets" / "vision-scene.svg").exists()
+    # 외부 이미지·라이브러리 없이 동작해야 한다(발표장 오프라인 대비) — 장면 사진은 로컬 CC0 실사진
+    assert "/static/assets/vision-scene.jpg" in disease
+    assert (STATIC / "assets" / "vision-scene.jpg").exists()
+    assert (STATIC / "assets" / "ATTRIBUTION-vision-scene.md").exists()
+    assert "VISION_SCENE_CREDIT" in disease and "sim-credit" in disease, "화면에 사진 출처가 있어야 한다"
 
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     for key in ["sim_title:", "sim_desc:", "sim_normal:", "sim_strength:", "sim_disclaimer:"]:
@@ -521,3 +523,100 @@ def test_시력검사_UI가_복구되어_있다():
     assert 'id="tab-vision"' in html
     assert "app-visiontest.js" in html and "calibration.js" in html
     assert html.count('data-i18n="nav_vision"') == 2, "상단·하단 네비 모두 필요"
+
+
+def test_촬영_예시_갤러리가_있고_사진과_출처가_존재한다():
+    """팀 요청(2026-09-02): 찍기 전에 잘 찍은 얼굴 사진/흔들린 얼굴 사진을 보여준다.
+    예시 사진은 CC0 원본 한 장을 가공한 것이므로 출처 파일도 같이 있어야 한다."""
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    guide = html[html.index('id="step-guide"'):html.index('id="step-photo"')]
+    for name in ["face-good", "face-blurry"]:
+        assert f"/static/assets/examples/{name}.jpg" in guide, f"{name} 예시가 촬영 안내 단계에 없습니다"
+        assert (STATIC / "assets" / "examples" / f"{name}.jpg").exists()
+    assert (STATIC / "assets" / "examples" / "ATTRIBUTION.md").exists()
+
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["ex_title:", "ex_good:", "ex_bad_blur:", "ex_hint:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+
+
+def test_촬영_안내가_후면카메라_대신_흔들림_방지를_말한다():
+    """팀 결정(2026-09-02): 1번 팁은 '후면 카메라 권장'을 빼고 '흔들리지 않게'로."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for phrase in ["후면 카메라", "rear camera", "cámara trasera", "caméra arrière", "背面カメラ", "后置摄像头"]:
+        assert phrase not in data, f"후면 카메라 권장 문구가 남아 있습니다: {phrase!r}"
+    for phrase in ["흔들리지 않게", "Hold the phone steady", "Mantenga el teléfono firme",
+                   "Tenez le téléphone bien stable", "手ブレしないように", "拍摄时请保持稳定"]:
+        assert phrase in data, f"흔들림 방지 안내가 없습니다: {phrase!r}"
+
+
+def test_글자_크기_조절이_있고_저장값을_먼저_적용한다():
+    """모바일 가독성: A−/A+ 로 3단계, 선택은 localStorage에 저장돼 첫 화면부터 적용된다."""
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert 'id="fs-dec"' in html and 'id="fs-inc"' in html
+    assert html.index("localStorage.getItem('ec_font')") < html.index("<body"), "저장값 복원은 <head>에서 먼저"
+    core = (STATIC / "app-core.js").read_text(encoding="utf-8")
+    assert "function applyFontSize" in core and "applyFontSize(loadFontLevel())" in core
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert 'html[data-font="1"]' in css and 'html[data-font="2"]' in css
+    # px 임의값 텍스트 클래스는 root를 따라가지 않으므로 rem 재정의가 있어야 실제로 커진다
+    assert r".text-\[11px\] { font-size: .6875rem; }" in css
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("font_size:") == 6
+
+
+def test_리포트_AI_요약_라벨이_3줄_요약을_말한다():
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("rep_info_title:") == 6
+    for phrase in ["AI 3줄 요약", "AI 3-line summary", "3 líneas", "3 lignes", "AI 3行要約", "AI 三行摘要"]:
+        assert phrase in data, f"3줄 요약 라벨이 없습니다: {phrase!r}"
+
+
+def test_소견_완료후_부가동작_실패가_연결끊김으로_보이지_않는다():
+    """S25 Ultra 실기기 재현(2026-09-02): 안드로이드 크롬은 페이지 컨텍스트의 new Notification()이
+    예외를 던진다. 그 예외가 스트림 try/catch로 흘러 완성된 소견을 '연결 끊김'으로 덮어썼다."""
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    assert "function notifyOpinionDone()" in report
+    body = report[report.index("function notifyOpinionDone()"):]
+    body = body[: body.index("\n}")]
+    assert "try {" in body and "new Notification" in body, "알림 생성은 반드시 try 안에서"
+    # runAiOpinion 본문 안에는 new Notification이 직접 등장하면 안 된다
+    run = report[report.index("async function runAiOpinion()"):report.index("function notifyOpinionDone()")]
+    assert "new Notification(translations" not in run   # 주석의 언급은 제외, 실제 호출만
+    assert "notifyOpinionDone();" in run
+
+
+def test_모바일_카메라로_바로_찍기_버튼이_있다():
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert 'id="cataract-camera"' in html and " capture " in html, "capture 속성이 있어야 카메라가 바로 열린다"
+    assert 'for="cataract-camera"' in html
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("camera_btn:") == 6
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert ".touch-device .camera-btn { display: block; }" in css
+    # (hover: none) 미디어쿼리로 판별하면 S펜 갤럭시(Ultra)에서 숨겨진다 — JS 터치 판별을 써야 한다
+    assert "(hover: none)" not in css.split(".camera-btn")[0][-400:]
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "navigator.maxTouchPoints" in vision and "classList.add('touch-device')" in vision
+
+
+def test_큰_글자_단계에서도_브랜드명을_숨기지_않는다():
+    """실기기 피드백: A+ 최대에서 Eye-Catch 이름이 사라지면 앱이 바뀐 것처럼 보인다."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert '.brand-name { display: none; }' not in css
+    assert "#gemma-opinion-text { font-size: .9rem" in css, "3줄 요약 본문도 root 크기를 따라 커져야 한다"
+
+
+def test_시야_체험은_모달_밖_패널에_있고_버튼으로_연다():
+    """팀 요청(2026-09-02): 질환 상세 모달 안에 있던 시야 체험을 질환 탭 맨 아래 버튼 → 패널로."""
+    disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
+    open_body = disease[disease.index("function openDisease("):disease.index("function openDiseaseModal")]
+    assert "buildVisionSim(" not in open_body, "시야 체험이 다시 모달 안으로 들어갔습니다"
+    assert "function toggleVisionSim(" in disease and "function renderVisionSimPanel(" in disease
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    disease_tab = html[html.index('id="tab-disease"'):html.index('id="tab-report"')]
+    assert 'id="sim-open-btn"' in disease_tab and 'id="vision-sim-panel"' in disease_tab
+    assert disease_tab.index('id="disease-list"') < disease_tab.index('id="sim-open-btn"'), "버튼은 카드 목록 아래(맨 밑)에"
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["sim_open_btn:", "sim_close_btn:", "sim_pick:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"

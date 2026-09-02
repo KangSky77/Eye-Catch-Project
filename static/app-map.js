@@ -11,6 +11,7 @@ let _map = null, _userMarker = null, _clinicLayer = null;
 
 function ensureMap() {
     if (_map) { _map.invalidateSize(); return _map; }
+    if (typeof L === 'undefined') return null;   // Leaflet 번들 로드 실패 → 호출자가 안내
 
     // 마커 아이콘 경로를 명시 — Leaflet은 기본적으로 스크립트 URL에서 images/ 위치를
     // 추론하는데, 로컬 번들 경로에서는 추론이 빗나가 마커가 안 보일 수 있다.
@@ -72,6 +73,10 @@ function findNearbyClinics() {
     const status = document.getElementById('map-status');
     const t = translations[state.lang];
     const map = ensureMap();
+    if (!map) {
+        status.innerText = t.map_offline_short || "지도 오프라인";
+        return;
+    }
     if (!navigator.geolocation) {
         status.innerText = t.map_status_unsupported || "이 브라우저는 위치 기능을 지원하지 않아요.";
         return;

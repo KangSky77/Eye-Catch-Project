@@ -119,13 +119,19 @@ async function runAiOpinion() {
         opinionText.classList.remove('text-rose-600');
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리
         opinionText.innerText = opinionText.innerText.replace(/\*\*/g, '');
+    } catch (e) {
+        showFailure();
+        return;
+    } finally {
+        _opinionBusy = false;
+    }
 
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(translations[state.lang].notif_title || "Eye-Catch 진단 완료", {
-                body: translations[state.lang].notif_body || "Gemma AI의 맞춤형 소견서 작성이 완료되었습니다! 결과를 확인해보세요.",
-            });
-        }
-
+    // ── 여기부터는 소견을 이미 다 받은 뒤의 '부가 동작'이다. 위 try 안에 두면 안 된다:
+    // 안드로이드 크롬은 new Notification()이 "Illegal constructor"로 예외를 던지는데(서비스워커
+    // 알림만 허용), 그 예외가 catch로 흘러 멀쩡히 완성된 소견을 '로컬 AI 서버와 연결이
+    // 끊어졌습니다'로 덮어썼다 (S25 Ultra 실기기 재현, 2026-09-02). 부가 동작 실패는 소견과 무관하다.
+    notifyOpinionDone();
+    try {
         // 진단 결과 DB 저장 — 건강정보는 민감정보라 '동의한 경우에만' 저장한다.
         requestSaveConsent({
             cataract_result: state.opinionRequest.cataract_res,
@@ -134,9 +140,20 @@ async function runAiOpinion() {
             gemma_opinion: opinionText ? opinionText.innerText : ''
         });
     } catch (e) {
-        showFailure();
-    } finally {
-        _opinionBusy = false;
+        console.warn('save-consent UI failed (opinion is intact)', e);
+    }
+}
+
+// 완료 알림 — 데스크톱 브라우저에서만 동작한다. 모바일(안드로이드 크롬)은 페이지 컨텍스트의
+// new Notification()을 금지해 예외를 던지므로 반드시 삼킨다. 알림은 있으면 좋은 것이지 소견의 일부가 아니다.
+function notifyOpinionDone() {
+    try {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        new Notification(translations[state.lang].notif_title || "Eye-Catch 진단 완료", {
+            body: translations[state.lang].notif_body || "Gemma AI의 맞춤형 소견서 작성이 완료되었습니다! 결과를 확인해보세요.",
+        });
+    } catch (e) {
+        /* 모바일: Illegal constructor — 무시 */
     }
 }
 
@@ -152,7 +169,8 @@ async function askGemmaMore() {
 
     if (!userMsg) { inputEl.focus(); return; }
 
-    const context = document.getElementById('gemma-opinion-text').innerText;
+    // 서버 스키마 상한(ChatRequest.context 5000자)에 맞춰 자름 — 넘기면 422가 나서 '서버 연결 불가'로 오인
+    const context = document.getElementById('gemma-opinion-text').innerText.slice(0, 5000);
 
     _followupBusy = true;
     if (sendBtn) { sendBtn.disabled = true; sendBtn.setAttribute('aria-busy', 'true'); }
@@ -222,6 +240,8 @@ window.addEventListener('DOMContentLoaded', () => {
 // 입력은 이미 escapeHTML된 텍스트라 문장 분리/삽입이 안전하다.
 function toAvoidBreakParagraphs(escapedText) {
     let paras = escapedText.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+    // 3줄 요약은 줄 하나가 한 항목 — 줄마다 문단으로 남겨 PDF에서도 3줄로 보이게
+    if (paras.length <= 1) paras = escapedText.split(/\n/).map(s => s.trim()).filter(Boolean);
     if (paras.length <= 1) {
         const sentences = escapedText.replace(/\n/g, ' ')
             .split(/(?<=[.!?。！？])\s+/).map(s => s.trim()).filter(Boolean);

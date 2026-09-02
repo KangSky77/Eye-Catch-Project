@@ -75,11 +75,42 @@ window.addEventListener('DOMContentLoaded', () => {
     const lang = (saved && translations[saved]) ? saved
                : (translations[browser] ? browser : 'en');
     updateUI(lang);
+    applyFontSize(loadFontLevel());   // 저장된 글자 크기 복원 + 버튼 활성 상태 동기화
     showTab('tab-test', false); // 네비 활성 상태 초기화 (포커스는 문서 맨 앞에 그대로 둔다)
 });
 
 function changeLanguage(lang) {
     updateUI(lang);
+}
+
+// ------------------------------------------
+// 글자 크기 조절 (모바일 가독성) — html[data-font]에 단계(0~2)를 기록하고
+// style.css가 단계별 root font-size를 정한다(Tailwind 텍스트 클래스가 rem 기반이라 전체가 함께 커짐).
+// index.html <head>의 인라인 스크립트가 저장값을 먼저 적용해 첫 화면 깜빡임을 막는다.
+// ------------------------------------------
+const FONT_LEVEL_MAX = 2;
+
+function loadFontLevel() {
+    let v = 0;
+    try { v = parseInt(localStorage.getItem('ec_font'), 10); } catch (e) { /* 저장소 차단(시크릿 모드 등) */ }
+    return Number.isInteger(v) ? Math.min(Math.max(v, 0), FONT_LEVEL_MAX) : 0;
+}
+
+function applyFontSize(level) {
+    document.documentElement.setAttribute('data-font', String(level));
+    try { localStorage.setItem('ec_font', String(level)); } catch (e) { /* 저장 못 해도 이번 세션엔 적용 */ }
+    const dec = document.getElementById('fs-dec'), inc = document.getElementById('fs-inc');
+    if (dec) dec.disabled = level <= 0;
+    if (inc) inc.disabled = level >= FONT_LEVEL_MAX;
+    // 지도·시력검사 카드는 컨테이너 크기에 맞춰 그리므로 다시 계산시킨다
+    if (typeof _map !== 'undefined' && _map) setTimeout(() => _map.invalidateSize(), 250);
+    if (typeof vtRefreshCalibrationUI === 'function' && document.getElementById('vt-cardbox')) {
+        setTimeout(vtRefreshCalibrationUI, 250);
+    }
+}
+
+function changeFontSize(delta) {
+    applyFontSize(Math.min(Math.max(loadFontLevel() + delta, 0), FONT_LEVEL_MAX));
 }
 
 function updateUI(lang) {
@@ -108,6 +139,12 @@ function updateUI(lang) {
     document.querySelectorAll('[data-i18n-aria]').forEach(el => {
         const key = el.getAttribute('data-i18n-aria');
         if (translations[lang][key]) el.setAttribute('aria-label', translations[lang][key]);
+    });
+
+    // 마우스 툴팁(title)도 번역 (data-i18n-title="키") — 글자 크기 버튼 묶음 등
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (translations[lang][key]) el.title = translations[lang][key];
     });
 
     renderStepProgress();   // "5단계 중 2단계" 라벨도 선택 언어로

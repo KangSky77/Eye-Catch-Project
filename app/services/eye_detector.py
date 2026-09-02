@@ -82,7 +82,10 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image]:
         return []
 
     # 랜드마크 순서: [왼눈, 오른눈, 코, 입왼쪽, 입오른쪽]
-    left_eye, right_eye = landmarks[best][0], landmarks[best][1]
+    # 단, 순서를 믿지 않고 사진 기준 x좌표로 좌/우를 확정한다 — 얼굴이 기울어진 사진에서
+    # 순서가 뒤집히면 vision.py의 ["left","right"] 라벨(=프론트 '왼쪽/오른쪽 눈')이 바뀐다.
+    left_eye, right_eye = sorted(
+        (landmarks[best][0], landmarks[best][1]), key=lambda p: float(p[0]))
     eye_dist = float(np.linalg.norm(np.array(right_eye) - np.array(left_eye)))
     half = max(eye_dist * EYE_CROP_RATIO, MIN_CROP_PX / 2)
 

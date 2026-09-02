@@ -809,8 +809,89 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
 .bnav-ico { width: 23px; height: 23px; display: grid; place-items: center; }
 .bnav-ico svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 
+/* 모바일에서 카메라로 바로 찍기 — 터치 기기(hover 없음)에서만 보이고, 데스크톱은 파일 선택만 */
+.camera-btn {
+    display: none; width: 100%; padding: 1rem; margin-bottom: .6rem;
+    border-radius: 1rem; background: var(--ec-blue); color: #fff; font-weight: 800; text-align: center;
+    box-shadow: 0 10px 20px -12px rgba(21, 94, 239, .8); cursor: pointer;
+}
+.camera-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; margin-right: 6px; }
+/* 터치 기기 판별은 app-vision.js가 body.touch-device 로 한다.
+   CSS 미디어쿼리 (hover: none) and (pointer: coarse) 를 썼더니 S펜이 있는 갤럭시 Ultra(S25 Ultra 실기기)는
+   크롬이 hover: hover 로 보고해 버튼이 숨겨졌다. */
+.touch-device .camera-btn { display: block; }
+.touch-device .camera-btn + input + .upload-pick { background: #fff; color: var(--ec-blue); border: 1px solid var(--ec-line); box-shadow: none; }
+
+/* ==========================================
+   글자 크기 조절 — html[data-font] 단계별 root font-size (app-core.js applyFontSize)
+   Tailwind 텍스트/여백 클래스가 rem 기반이라 root만 키우면 화면 전체가 같은 비율로 커진다.
+   ========================================== */
+html { font-size: 16px; }
+html[data-font="1"] { font-size: 18px; }
+html[data-font="2"] { font-size: 20px; }
+/* Tailwind 임의값(px) 텍스트 클래스는 root를 따라가지 않으므로 같은 크기의 rem으로 재정의 */
+.text-\[10px\] { font-size: .625rem; }
+.text-\[11px\] { font-size: .6875rem; }
+.text-\[12px\] { font-size: .75rem; }
+.text-\[13px\] { font-size: .8125rem; }
+.text-\[15px\] { font-size: .9375rem; }
+
+.font-ctl {
+    display: flex; align-items: center;
+    background: #fff; border: 1px solid var(--ec-line); border-radius: var(--ec-radius-sm); padding: 2px;
+}
+.font-ctl button {
+    min-width: 34px; height: 34px; padding: 0 8px;
+    border: none; background: transparent; border-radius: 8px;
+    color: #3b4b63; font-weight: 800; line-height: 1; cursor: pointer;
+    font-size: .78rem;
+}
+.font-ctl button + button { font-size: 1rem; }
+.font-ctl button:hover { background: var(--ec-blue-soft); color: var(--ec-blue); }
+.font-ctl button[disabled] { opacity: .35; cursor: default; background: transparent; color: #3b4b63; }
+.brand-name { white-space: nowrap; }
+
+/* 3줄 요약 본문 — 리포트에서 가장 중요한 글이므로 기본 글씨(12px)보다 키우고 root 크기를 따라가게 한다.
+   (실기기 피드백: A+를 눌러도 요약 글씨가 작게 느껴짐 → .9rem이면 기본 14.4px, 최대 단계 18px) */
+#gemma-opinion-text { font-size: .9rem; line-height: 1.75; font-style: normal; white-space: pre-line; }
+#followup-response { font-size: .85rem; line-height: 1.7; }
+
+/* ==========================================
+   촬영 예시 갤러리 (step-guide) — 좋은 예 1장 + 잘못된 예 4장
+   ========================================== */
+.ex-title { font-size: .8rem; font-weight: 800; color: #3b4b63; margin-bottom: .6rem; }
+.ex-card { margin: 0; border-radius: 14px; overflow: hidden; background: #fff; border: 1px solid var(--ec-line); }
+.ex-card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+.ex-card figcaption {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 9px; font-size: .68rem; font-weight: 700; line-height: 1.35; color: #3b4b63;
+}
+.ex-mark {
+    flex: none; width: 18px; height: 18px; border-radius: 999px;
+    display: grid; place-items: center; font-size: .7rem; font-weight: 900; color: #fff;
+}
+.ex-good { border-color: rgba(16, 185, 129, .45); }
+.ex-good .ex-mark { background: #10b981; }
+.ex-good figcaption { color: #047857; }
+.ex-bad { border-color: rgba(244, 63, 94, .35); }
+.ex-bad .ex-mark { background: #f43f5e; }
+.ex-bad figcaption { color: #9f1239; }
+.ex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.ex-hint { margin-top: .5rem; font-size: .62rem; color: #94a3b8; line-height: 1.4; }
+
 @media (max-width: 767px) {
     .site-header .max-w-6xl { padding: .72rem 1rem; }
+    /* 큰 글자 단계에서 좁은 화면의 헤더가 넘치지 않도록.
+       헤더의 로고·언어 선택·글자 크기 버튼은 '본문'이 아니라 도구이므로 root 크기를 따라가지 않게 px로 고정한다.
+       (처음엔 최대 단계에서 브랜드명을 숨겼는데, 실기기 피드백: 이름이 사라지면 앱이 바뀐 것처럼 보인다) */
+    /* 아래의 .brand-name { font-size: 1.05rem } 같은 기존 규칙보다 뒤에 오지 않으므로 선택자 우선순위로 이긴다 */
+    .site-header .gap-5 { gap: .5rem; }
+    .site-header .brand-name { font-size: 17px; overflow: hidden; text-overflow: ellipsis; }   /* 모자라면 숨기지 말고 말줄임 */
+    .site-header .brand-btn { min-width: 0; }
+    .site-header .font-ctl { padding: 1px; }
+    .site-header .font-ctl button { min-width: 30px; height: 32px; padding: 0 6px; font-size: 12px; }
+    .site-header .font-ctl button + button { font-size: 15px; }
+    .site-header .language-select { width: 112px; max-width: 112px; min-height: 34px; padding-left: 8px; font-size: 11px; }
     .brand-mark { width: 34px; height: 34px; border-radius: 9px; }
     .brand-mark svg { width: 22px; height: 22px; }
     .brand-name { font-size: 1.05rem; }
@@ -1267,3 +1348,59 @@ body.modal-open { overflow: hidden; }
 }
 .vt-cant-see:hover { background: #f1f5f9; color: var(--ec-navy); }
 .vt-cant-see:focus-visible { outline: 3px solid rgba(21, 94, 239, .24); outline-offset: 2px; }
+
+/* 폴더블 커버 화면(갤럭시 Z 폴드 접힘 ≈ 320px)·구형 소형 기기 — 헤더 한 줄에 로고·이름·글자크기·언어가 다 들어가야 한다.
+   실측(2026-09-02): 320px에서 위 규칙만으로는 'Eye-Ca…'로 잘려서 한 단계 더 줄인다. */
+@media (max-width: 340px) {
+    .site-header .max-w-6xl { padding: .6rem .7rem; }
+    .site-header .brand-btn { gap: 6px; }
+    .site-header .brand-mark { width: 30px; height: 30px; }
+    .site-header .brand-mark svg { width: 20px; height: 20px; }
+    .site-header .brand-name { font-size: 15px; }
+    .site-header .gap-5 { gap: .35rem; }
+    .site-header .font-ctl button { min-width: 26px; padding: 0 4px; }
+    .site-header .language-select { width: 94px; max-width: 94px; padding: 0 22px 0 6px; background-position: right 6px center; }
+}
+
+/* 와이드 폴더블 펼침(갤럭시 Z 폴드 ≈ 730~800px)·소형 태블릿.
+   Tailwind md(768px)부터 상단 메뉴 5개가 나오는데, 글자크기 버튼·언어 선택까지 한 줄에 안 들어가
+   메뉴 글자가 세로로 쪼개졌다(실측 800px·1000px, 2026-09-02). 1024px 미만은 폰과 같은 하단 탭으로 통일한다. */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .site-header .md\:flex { display: none; }
+    .mobile-nav { display: flex; }
+    body.pb-24 { padding-bottom: 6rem; }
+}
+/* 데스크톱 메뉴는 어떤 글자 크기에서도 낱글자로 줄바꿈되지 않게 */
+.nav-pill { white-space: nowrap; }
+@media (min-width: 1024px) and (max-width: 1199px) {
+    .nav-pill { padding-left: 8px; padding-right: 8px; }
+    .site-header .gap-5 { gap: .75rem; }
+}
+
+/* ==========================================
+   시야 체험 패널 (질환 탭 맨 아래) — 카드 스타일은 모달 시절의 .dm-sim 을 그대로 재사용
+   ========================================== */
+.sim-cta { margin-top: 28px; text-align: center; }
+.sim-open-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: min(100%, 420px); min-height: 54px; padding: 0 22px;
+    border-radius: 16px; border: 1.5px solid var(--ec-blue);
+    background: #fff; color: var(--ec-blue); font-weight: 800; font-size: .95rem; cursor: pointer;
+    box-shadow: 0 10px 22px -16px rgba(21, 94, 239, .7);
+}
+.sim-open-btn svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sim-open-btn[aria-expanded="true"] { background: var(--ec-blue); color: #fff; }
+.sim-panel { margin: 18px auto 0; max-width: 640px; }
+.sim-panel-title { margin: 0; font-size: 1.25rem; font-weight: 900; color: #0b1f3a; text-align: center; }
+.sim-panel-desc { margin: 6px 0 0; text-align: center; color: #526277; font-size: .82rem; }
+.sim-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 14px 0 12px; }
+.sim-chip {
+    padding: 9px 14px; border-radius: 999px; border: 1.5px solid var(--ec-line);
+    background: #fff; color: #3b4b63; font-weight: 800; font-size: .82rem; cursor: pointer;
+}
+.sim-chip.active { background: var(--accent, var(--ec-blue)); border-color: var(--accent, var(--ec-blue)); color: #fff; }
+.sim-chip:focus-visible { outline: 3px solid rgba(21, 94, 239, .24); outline-offset: 2px; }
+.sim-panel .dm-sim { margin-top: 0; background: #fff; }
+.sim-panel .dm-sim h3 { display: none; }   /* 패널 제목이 이미 있으므로 카드 안 제목은 생략 */
+.sim-credit { display: block; margin-top: 8px; text-align: right; font-size: .66rem; color: #94a3b8; text-decoration: none; }
+.sim-credit:hover { color: var(--ec-blue); text-decoration: underline; }

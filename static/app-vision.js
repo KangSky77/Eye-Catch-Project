@@ -298,6 +298,12 @@ function recordAmsler(bad) {
 // 사진 업로드 카드 드래그&드롭 — 데스크톱에서 파일 선택창을 거치지 않고 바로 분석
 // ------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
+    // '카메라로 바로 찍기' 버튼 노출 — 터치 기기에서만.
+    // CSS (hover: none) 조건은 S펜이 있는 갤럭시 Ultra에서 hover: hover 로 잡혀 버튼이 안 보였다(S25 Ultra 실기기, 2026-09-02).
+    // maxTouchPoints 가 가장 믿을 만하고, 못 읽는 구형 브라우저는 UA 로 보조 판별한다.
+    const isTouch = (navigator.maxTouchPoints || 0) > 0 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isTouch) document.body.classList.add('touch-device');
+
     const zone = document.getElementById('dropzone');
     if (zone) {
         ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => {

@@ -56,14 +56,15 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 - 한 문장에서 서로 다른 질환을 연결짓지 마세요. (예: 암슬러 결과로 녹내장을 논하는 것)
 - 진단하지 마세요.
 
-[해야 할 일]
-- 환자분이라고 부르며 짧게 시작하세요.
-- 위 [참고 의학 정보]에 근거해, 안과에 가면 받게 될 검사를 1~2개 소개해 마음의 준비를 돕세요.
-  (예: 세극등 현미경 검사, 안저 검사, 안압 측정, OCT)
-- 문진에서 확인된 항목과 관련된 생활 관리 조언을 2~3개 구체적으로 알려주세요.
-  (자외선 차단, 금연, 혈당·혈압 관리, 눈 휴식, 정기 검진 등 참고 정보에 있는 것)
-- "눈은 소중합니다" 같은 뻔한 일반론은 쓰지 마세요.
-- 4~6문장, 마크다운 없이 자연스러운 평문으로 작성하세요.""".strip()
+[해야 할 일 — 정확히 3줄 요약]
+아래 순서로 딱 3줄만 쓰세요. 한 줄은 한 문장이고, 줄과 줄 사이는 줄바꿈 하나로만 구분합니다.
+번호·글머리 기호·마크다운·제목·인사말은 쓰지 마세요. 3줄을 넘기면 답변이 폐기됩니다.
+1줄째: 위 [참고 의학 정보]에 근거해, 안과에 가면 받게 될 검사 1~2개를 소개해 마음의 준비를 돕는 문장.
+       (예: 세극등 현미경 검사, 안저 검사, 안압 측정, OCT)
+2줄째: 문진에서 확인된 항목과 직접 관련된 생활 관리 조언 한 가지.
+       (자외선 차단, 금연, 혈당·혈압 관리, 눈 휴식 등 참고 정보에 있는 것)
+3줄째: 또 다른 생활 관리 조언 한 가지, 또는 정기 검진 권유.
+- "눈은 소중합니다" 같은 뻔한 일반론은 쓰지 마세요. 각 줄은 이 환자의 문진 항목과 연결돼야 합니다.""".strip()
     else:
         return f"""You help someone prepare for an eye clinic visit with practical lifestyle advice.
 [CRITICAL] Write your entire response ONLY in {lang_name}.
@@ -80,14 +81,15 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 - Do NOT link two different conditions in one sentence (e.g. drawing a glaucoma conclusion from an Amsler result).
 - Do NOT diagnose.
 
-[What to do]
-- Start with a short, polite greeting in {lang_name}.
-- Based on the [Reference Medical Information], name 1-2 exams they may receive at the clinic
-  (e.g. slit-lamp exam, fundus exam, intraocular pressure measurement, OCT) so they know what to expect.
-- Give 2-3 concrete lifestyle tips related to the flagged questionnaire items
-  (UV protection, smoking cessation, blood sugar/pressure control, eye rest, regular check-ups).
-- Avoid generic filler like "eyes are precious".
-- 4-6 sentences, plain prose, no markdown.""".strip()
+[What to do — exactly a 3-line summary]
+Write exactly 3 lines in this order. Each line is one sentence; separate lines with a single line break only.
+No numbering, bullets, markdown, headings, or greetings. More than 3 lines and the answer is discarded.
+Line 1: Based on the [Reference Medical Information], name 1-2 exams they may receive at the clinic
+        (e.g. slit-lamp exam, fundus exam, intraocular pressure measurement, OCT) so they know what to expect.
+Line 2: One concrete lifestyle tip directly related to the flagged questionnaire items
+        (UV protection, smoking cessation, blood sugar/pressure control, eye rest — from the reference).
+Line 3: One more lifestyle tip, or a reminder to get regular check-ups.
+- Avoid generic filler like "eyes are precious". Every line must connect to this patient's flagged items.""".strip()
 
 
 def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = "") -> str:
@@ -337,7 +339,13 @@ def _is_yes_no_question(q: str) -> bool:
 async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, chat_history: list) -> tuple[str, str]:
     """(질문, 답변형식) 반환. 답변형식은 "yesno" | "text"."""
     # ChatHistoryItem은 Pydantic 모델이므로 .q / .a 속성으로 접근
-    history_text = "\n".join([f"- 의사: {item.q}\n- 환자: {item.a}" for item in chat_history]).strip() or "아직 진행된 문진 대화가 없습니다."
+    if lang == "ko":
+        q_label, a_label, empty = "의사", "환자", "아직 진행된 문진 대화가 없습니다."
+    else:   # 프롬프트 언어 일관성 — 한국어 라벨이 섞이면 모델이 한국어로 답할 확률이 올라간다
+        q_label, a_label, empty = "Doctor", "Patient", "No screening conversation yet."
+    history_text = "\n".join(
+        [f"- {q_label}: {item.q}\n- {a_label}: {item.a}" for item in chat_history]
+    ).strip() or empty
     try:
         # 실패/빈 응답이면 빈 문자열 반환 → 프론트(app-chat.js)가 선택 언어의
         # 기본 질문(nextq_fallback)으로 대체한다. 여기서 한국어 문장을 고정 반환하면

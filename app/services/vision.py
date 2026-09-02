@@ -61,11 +61,11 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
     # (무인자 read()로 전부 읽은 뒤 검사하면, 거부할 업로드도 일단 통째로 메모리에 올라와
     #  MAX_FILE_SIZE가 사실상 방어 역할을 못 한다.)
     if file.size is not None and file.size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="파일 크기는 10MB 이하여야 합니다.")
+        raise HTTPException(status_code=413, detail=f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
 
     contents = await file.read(MAX_FILE_SIZE + 1)
     if len(contents) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="파일 크기는 10MB 이하여야 합니다.")
+        raise HTTPException(status_code=413, detail=f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
 
     try:
         # 헤더만 먼저 읽어 크기 확인(이 시점엔 전체 픽셀 디코딩 전)

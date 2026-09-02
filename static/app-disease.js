@@ -47,15 +47,25 @@ function renderDiseases(lang) {
             <p class="dc-more" aria-hidden="true">${moreLabel}</p>
         </div>`;
     }).join('');
+    // 언어가 바뀌면 열려 있는 시야 체험 패널의 칩·문구도 다시 그린다 (스크롤은 움직이지 않음)
+    if (typeof _simOpen !== 'undefined' && _simOpen) toggleVisionSim(true, false);
 }
 
 // ------------------------------------------
 // 시야 체험 (vision simulator)
 // 질환별로 '환자가 실제로 무엇을 보는가'를 재현한다. 안저사진은 의사가 보는 그림이라
 // 일반 사용자에게 와닿지 않는데, 시야 재현은 증상과 직접 연결된다.
-// 효과는 전부 CSS/SVG 필터로 계산한다(외부 이미지·라이브러리 없음 = 오프라인에서도 동작).
+// 효과는 전부 CSS 필터와 덮개 층으로 계산한다(로컬 사진 1장 외 외부 자원 없음 = 오프라인에서도 동작).
 // 순서는 diseaseData와 같다: 백내장 / 황반변성 / 녹내장 / 당뇨망막병증
+// 팀 요청(2026-09-02): 질환 상세 모달 안에 있던 것을 질환 탭 맨 아래 버튼 → 패널로 옮김.
 // ------------------------------------------
+// 체험용 장면 사진(실사진, CC0) — 출처·라이선스는 static/assets/ATTRIBUTION-vision-scene.md
+const VISION_SCENE_SRC = '/static/assets/vision-scene.jpg';
+const VISION_SCENE_CREDIT = {
+    text: 'Terry Kearney · CC0 · Wikimedia Commons',
+    page: 'https://commons.wikimedia.org/wiki/File:World_Museum_,_William_Brown_Library_and_Museum._(_Explored_)_-_Flickr_-_Oneterry_AKA_Terry_Kearney.jpg'
+};
+
 const VISION_SIMS = [
     {   // 백내장 — 수정체 혼탁: 전체가 뿌옇고 노랗게 바래며 빛이 번진다
         key: 'cataract',
@@ -110,7 +120,7 @@ function buildVisionSim(idx, labels) {
     stage.className = 'dm-sim-stage';
     const img = document.createElement('img');
     img.className = 'dm-sim-img';
-    img.src = '/static/assets/vision-scene.svg';
+    img.src = VISION_SCENE_SRC;
     img.alt = '';                 // 장식용 — 설명은 아래 문구가 담당
     img.setAttribute('aria-hidden', 'true');
     const veil = document.createElement('div');
@@ -151,6 +161,69 @@ function buildVisionSim(idx, labels) {
     range.addEventListener('input', apply);
     apply();
     return wrap;
+}
+
+// ------------------------------------------
+// 시야 체험 패널 — 질환 탭 맨 아래 '질환별 시야 체험하기' 버튼으로 열고 닫는다.
+// 질환은 칩(탭)으로 고르고, 슬라이더는 질환을 바꿀 때마다 '정상 시야'(0)에서 다시 시작한다
+// (각 질환에서 정상→진행을 비교해 보는 것이 목적).
+// ------------------------------------------
+let _simIdx = 0;
+let _simOpen = false;
+
+function toggleVisionSim(force, scroll = true) {
+    _simOpen = typeof force === 'boolean' ? force : !_simOpen;
+    const panel = document.getElementById('vision-sim-panel');
+    const btn = document.getElementById('sim-open-btn');
+    if (!panel || !btn) return;
+    panel.classList.toggle('hidden', !_simOpen);
+    btn.setAttribute('aria-expanded', String(_simOpen));
+    const t = translations[state.lang];
+    const label = btn.querySelector('[data-i18n]');
+    if (label) label.textContent = _simOpen ? (t.sim_close_btn || '시야 체험 닫기') : (t.sim_open_btn || '질환별 시야 체험하기');
+    if (_simOpen) {
+        renderVisionSimPanel();
+        if (scroll) setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    }
+}
+
+function selectVisionSim(idx) {
+    _simIdx = idx;
+    renderVisionSimPanel();
+}
+
+function renderVisionSimPanel() {
+    const panel = document.getElementById('vision-sim-panel');
+    if (!panel || !_simOpen) return;
+    const lang = state.lang, labels = translations[lang], items = diseaseData[lang] || [];
+
+    const chips = document.getElementById('sim-chips');
+    chips.innerHTML = '';
+    items.forEach((item, idx) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sim-chip' + (idx === _simIdx ? ' active' : '');
+        b.setAttribute('role', 'tab');
+        b.setAttribute('aria-selected', String(idx === _simIdx));
+        b.style.setProperty('--accent', getDiseaseTheme(idx).accent);
+        b.textContent = item.t;
+        b.onclick = () => selectVisionSim(idx);
+        chips.appendChild(b);
+    });
+
+    const body = document.getElementById('sim-body');
+    body.innerHTML = '';
+    const card = buildVisionSim(_simIdx, labels);
+    if (card) body.appendChild(card);
+
+    // 사진 출처 — CC0라 의무는 없지만 질환 사진과 같은 기준으로 화면에도 남긴다
+    const credit = document.createElement('a');
+    credit.className = 'sim-credit';
+    credit.href = VISION_SCENE_CREDIT.page;
+    credit.target = '_blank';
+    credit.rel = 'noopener';
+    credit.textContent = (labels.sim_photo_credit || 'Photo') + ': ' + VISION_SCENE_CREDIT.text + ' ↗';
+    body.appendChild(credit);
 }
 
 // 카드가 매 언어 전환마다 새로 그려지므로, 리스트 컨테이너에 한 번만 위임 등록한다.
@@ -308,10 +381,6 @@ function openDisease(idx) {
     noteDiv.className = 'dm-note';
     noteDiv.textContent = note;
     detail.appendChild(noteDiv);
-
-    // 시야 체험 — '자세히 보기' 맨 아래
-    const simCard = buildVisionSim(idx, labels);
-    if (simCard) detail.appendChild(simCard);
 
     if (item.source) {
         const sourceLink = document.createElement('a');
