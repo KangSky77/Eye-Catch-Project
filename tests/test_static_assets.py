@@ -677,3 +677,167 @@ def test_낮은_점수_구간과_클로즈업_권유가_프론트에_있다():
     assert "d.closeup_suggested" in vision and "uncertain:" in vision
     findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
     assert "find_cat_uncertain" in findings
+
+
+# ==========================================================================
+# 2026-08-29 실사용 리뷰 대응 회귀 테스트
+# ==========================================================================
+
+def test_리포트_값이_언어전환에_따라_다시_그려진다():
+    """회귀: 분석 시점 언어로 완성한 문자열을 state에 굳혀 놓아서, 언어를 바꾸면
+    라벨만 번역되고 값은 이전 언어로 남았다(영어 리포트에 한국어가 섞임)."""
+    core = (STATIC / "app-core.js").read_text(encoding="utf-8")
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
+
+    # 언어 중립 원자료만 저장하고, 표시 문자열은 포매터가 만든다
+    assert "function formatCataractResult()" in core
+    assert "function formatAmslerResult()" in core
+    assert "function formatSymptoms()" in core
+    assert "state.aiResultData = {" in vision
+
+    # 굳은 문자열을 다시 만들지 않는다
+    assert "state.aiResult =" not in vision
+    assert "state.amslerLabel" not in vision
+    assert "state.amslerLabel" not in findings
+
+    # 언어를 바꾸면 리포트 값도 다시 그린다
+    assert "function refreshReportResults()" in report
+    assert "refreshReportResults()" in core
+
+
+def test_리포트가_위험점수를_확률로_표기하지_않는다():
+    """모델 출력은 보정되지 않은 softmax라 확률이 아니다.
+    결과 카드는 '%' 없이 쓰는데 리포트만 '(100%)'로 찍혀 두 가지로 읽혔다."""
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    core = (STATIC / "app-core.js").read_text(encoding="utf-8")
+
+    assert "${d.probability}%" not in vision
+    assert "${e.probability}%" not in vision, "눈별 배지도 '%'를 붙이면 안 된다"
+    assert "score_label" in core, "리포트도 결과 카드와 같은 '위험 점수' 표기를 쓴다"
+
+
+def test_암슬러_격자가_화면_캘리브레이션을_사용한다():
+    """회귀: 240 CSS px 고정 + 24px 칸(10x10)이라 30cm에서 약 12°만 덮었다.
+    임상 규격은 10cm / 5mm 칸(20x20) = 중심 20°."""
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+
+    assert "function renderAmslerGrid()" in vision
+    assert "loadCalibration" in vision, "시력검사의 px/mm 보정을 재사용해야 한다"
+    assert "AMSLER_CELLS = 20" in vision
+    assert "AMSLER_FIELD_DEG = 20" in vision
+    # JS가 못 돈 순간의 대비책도 칸 수는 20x20이어야 한다 (240 / 12)
+    assert "background-size: 12px 12px;" in css
+
+    # 크기까지 애니메이션되면, 방금 설정한 폭을 되읽을 때 중간값이 나온다 —
+    # 실제로 그 때문에 칸이 20개가 아니라 23개로 그려졌다.
+    # (설명 주석에도 같은 문자열이 나오므로 주석을 지우고 선언만 본다)
+    body = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    rule = body[body.index(".amsler-grid"):]
+    rule = rule[:rule.index("}")]
+    assert "transition:" in rule and "all" not in rule.split("transition:")[1].split(";")[0], (
+        f"격자 크기가 애니메이션되면 칸 계산이 어긋난다: {rule.split('transition:')[1].split(';')[0]!r}")
+
+    # 숨겨진 상태(폭 0)에서 재면 크기가 틀어진다 — 보일 때까지 미룬다
+    assert "requestAnimationFrame(renderAmslerGrid)" in vision
+
+    # 계산된 거리를 안내하므로 안내문에 30cm를 박아두면 안 된다
+    assert data.count("ams_dist_note:") == 6
+    assert "30cm 거리에서 가운데 점" not in data
+
+
+def test_결과화면에_분석한_사진이_보인다():
+    """회귀: 미리보기가 로딩 화면에만 있어, 사진을 잘못 골라도 결과에서 알 수 없었다."""
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert 'id="result-photo"' in html
+    assert "function showAnalyzedPhoto()" in vision
+    assert "showAnalyzedPhoto();" in vision
+    assert data.count("result_photo_label:") == 6
+
+
+def test_문진_답변버튼의_시각무게가_같다():
+    """'네'만 파란 primary면 의학 문진에서 묵종 편향을 만든다."""
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+
+    assert "if (o.value === false) b.className" not in chat, "선택지별로 스타일을 달리하지 않는다"
+    # 말풍선(addMsg) 스타일과 섞이지 않도록 renderChatOptions 본문만 본다
+    body = chat[chat.index("function renderChatOptions"):]
+    body = body[:body.index(chr(10) + "}" + chr(10))]
+    assert body.count("b.className =") == 1, "선택지마다 다른 스타일을 주면 편향이 생긴다"
+    assert "bg-blue-600 text-white" not in body, "답변 버튼에 primary 스타일을 쓰지 않는다"
+
+    yes = re.search(r'id="chat-yes-btn"[^>]*class="([^"]*)"', html).group(1)
+    no = re.search(r'id="chat-no-btn"[^>]*class="([^"]*)"', html).group(1)
+    assert yes == no, f"네/아니오 버튼 스타일이 달라 편향을 만든다: {yes!r} vs {no!r}"
+
+
+def test_이미_답이_정해진_문진문항은_묻지_않는다():
+    """안저 검사(1년 내)를 받았다면 '2년 내 안과 검진'은 논리적으로 참이다.
+    두 번 물으면 사용자가 모순된 답을 남길 수 있다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+
+    assert "skipIf: { code: 'dr_fundus', answer: true }" in data
+    assert "q.skipIf" in chat and "state.symptomAnswers[q.skipIf.code]" in chat
+    assert "state.symptomAnswers[q.code] = yes" in chat
+
+    # skipIf 대상은 판단 근거 문항보다 뒤에 있어야 symIdx가 밀리지 않는다
+    assert data.index("code: 'dr_fundus'") < data.index("code: 'chk_recent'")
+
+
+def test_문진_진행률이_처음부터_끝까지_이어진다():
+    """회귀: 위험요인 5문항엔 진행률이 없고 증상 문항부터 1/13이 시작돼
+    사용자가 전체 길이를 끝까지 알 수 없었다."""
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+    assert "function surveyProgress()" in chat
+    assert chat.count("surveyProgress()") >= 3, "위험요인·증상 양쪽에서 써야 한다"
+    assert "riskQuestions.length + symCount" in chat
+
+
+def test_촬영안내가_두_화면에서_같은_말을_한다():
+    """회귀: 팁 화면은 후면카메라/플래시끄기/30cm, 업로드 화면은 정면촬영/빛반사주의로
+    서로 다른 말을 했다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert "정면에서 촬영하세요." not in data
+    # 9/2 팀 결정: '후면 카메라 권장'은 빼고 흔들림 방지·플래시 끄기·눈 클로즈업 — 업로드 화면 목록도 같은 세 가지
+    guide_ko = data[data.index('guide_list: "'):]; guide_ko = guide_ko[: guide_ko.index('",')]
+    for phrase in ["흔들리지 않게", "플래시는 꺼주세요", "가까이"]:
+        assert phrase in guide_ko, f"업로드 화면 안내에 '{phrase}'가 없다 — 팁 화면과 같은 말을 해야 한다"
+    assert "후면 카메라" not in data
+    assert data.count("guide_list:") == 6
+
+
+def test_안보여요를_왜_또_눌러야_하는지_설명한다():
+    """오답 집계는 의도된 설계다(psychometrics). 다만 라벨만 보면 검사가 끝난다고
+    읽히므로, 처음 한 번은 이유를 설명해야 한다."""
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert 'id="vt-cant-see-hint"' in html
+    assert "vt_cant_see_hint" in vt
+    assert data.count("vt_cant_see_hint:") == 6
+
+
+def test_소견서_언어불일치를_사용자에게_알린다():
+    """LLM 소견서는 생성 시점 언어로 고정된다. 자동 번역하지 않는 대신
+    다시 생성할 수 있다는 사실을 알려야 한다."""
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert 'id="opinion-stale"' in html
+    assert "function regenerateOpinion()" in report
+    assert "state.opinionLang" in report
+    assert data.count("opinion_stale:") == 6 and data.count("opinion_regen:") == 6
+
+
+def test_데스크톱에서_검사카드가_세로로_치우치지_않는다():
+    """모바일 우선 레이아웃이라 큰 화면에서 아래 절반이 통째로 비어 보였다."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert "@media (min-width: 1024px)" in css
+    assert "#tab-test .step-content.active" in css

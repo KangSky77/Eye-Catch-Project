@@ -17,6 +17,7 @@ function startChat() {
     state.riskIdx = 0;
     state.riskAnswers = {};
     state.symIdx = 0;
+    state.symptomAnswers = {};
     state.symptomScore = 0;
     state.redFlags = [];
 
@@ -30,7 +31,7 @@ function startChat() {
 function askRiskQuestion() {
     const q = riskQuestions[state.riskIdx];
     const t = translations[state.lang];
-    addMsg('bot', t[q.key] || q.key);
+    addMsg('bot', t[q.key] || q.key, surveyProgress());
     if (q.type === 'choice') {
         renderChatOptions(q.options.map(o => ({ label: t[o.key] || o.v, value: o.v })));
     } else {
@@ -56,8 +57,9 @@ function renderChatOptions(opts, onPick) {
     if (freeBox) freeBox.classList.add('hidden');
     opts.forEach(o => {
         const b = document.createElement('button');
-        b.className = 'flex-1 py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm btn-pop';
-        if (o.value === false) b.className = 'flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm btn-pop';
+        // '네'만 파란 primary, '아니오'는 회색이면 의학 문진에서 응답 편향을 만든다
+        // (묵종 편향). 두 선택지의 시각 무게를 같게 둔다.
+        b.className = 'flex-1 py-3.5 bg-white text-blue-700 border-2 border-blue-200 rounded-2xl font-bold text-sm btn-pop';
         b.style.minWidth = '30%';
         b.textContent = o.label;
         b.onclick = () => pick(o.value, o.label);
@@ -90,9 +92,33 @@ function handleAnswer(value, label) {
 // 비당뇨에게 "당뇨 10년 넘었나요?"를 묻는 것은 시간 낭비이자 결과 왜곡이다.
 // ------------------------------------------------------------------
 
-/** 이 사용자에게 실제로 물어볼 문항 목록(분기 반영). */
+/** 이 사용자에게 실제로 물어볼 문항 목록(분기 반영).
+ *  showIf: 조건이 참일 때만 묻는다(당뇨망막병증 문항 → 당뇨 있는 사람만).
+ *  skipIf: 앞선 답으로 이미 정해진 문항은 묻지 않는다(안저검사 1년 내 → 2년 내 검진). */
 function activeSymptomQuestions() {
-    return symptomQuestions.filter(q => !q.showIf || state.riskAnswers[q.showIf] === true);
+    return symptomQuestions.filter(q => {
+        if (q.showIf && state.riskAnswers[q.showIf] !== true) return false;
+        if (q.skipIf && state.symptomAnswers[q.skipIf.code] === q.skipIf.answer) return false;
+        return true;
+    });
+}
+
+/** 문진 전체(위험요인 + 증상) 기준 진행 위치 "n / N".
+ *
+ *  왜 통합하는가: 위험요인 5문항에는 진행률이 없고 증상 문항부터 1/13이 시작돼,
+ *  사용자가 전체 길이를 끝까지 알 수 없었다.
+ *
+ *  총수가 도중에 바뀌는 문제: 분기(showIf)는 당뇨 답변에, skipIf는 안저검사 답변에
+ *  달려 있다. 아직 모르는 동안에는 '최대치'로 잡아 총수가 줄기만 하게 한다 —
+ *  늘어나면 끝이 멀어지는 느낌을 준다. */
+function surveyProgress() {
+    const branchKnown = state.riskAnswers.diabetes !== undefined;
+    const symCount = branchKnown ? activeSymptomQuestions().length : symptomQuestions.length;
+    const total = riskQuestions.length + symCount;
+    const pos = state.riskIdx < riskQuestions.length
+        ? state.riskIdx + 1
+        : riskQuestions.length + state.symIdx + 1;
+    return `${Math.min(pos, total)} / ${total}`;
 }
 
 function askSymptomQuestion() {
@@ -100,7 +126,7 @@ function askSymptomQuestion() {
     if (state.symIdx >= list.length) { finishSurvey(); return; }
     const q = list[state.symIdx];
     const t = translations[state.lang];
-    addMsg('bot', t[q.key] || q.key, `${state.symIdx + 1} / ${list.length}`);
+    addMsg('bot', t[q.key] || q.key, surveyProgress());
     renderChatOptions([
         { label: t.chat_yes, value: true },
         { label: t.chat_no,  value: false },
@@ -122,12 +148,15 @@ function handleSymptomAnswer(yes) {
     const label = yes ? t.chat_yes : t.chat_no;
     addMsg('user', label);
     state.chatHistory.push({ q: t[q.key] || q.key, a: label });
+    state.symptomAnswers[q.code] = yes;   // skipIf 판단용(언어 중립)
 
     // invert: '아니오'가 위험 신호인 문항(최근 검진 없음, 안저검사 미시행 등)
     const flagged = q.invert ? (yes === false) : (yes === true);
     if (flagged) {
         state.symptomScore = (state.symptomScore || 0) + (q.weight || 0);
-        state.chatSymptoms.push(t['sym_' + q.code] || q.code);
+        // 번역된 문장이 아니라 i18n 키를 저장한다 — 언어를 바꾸면 리포트가
+        // formatSymptoms()로 현재 언어에 맞춰 다시 만든다.
+        state.chatSymptoms.push('sym_' + q.code);
         // RAG 검색은 질환 코드 기준 — 중복 없이 모은다
         if (q.disease && q.disease !== 'general' && !state.symptomCodes.includes(q.disease)) {
             state.symptomCodes.push(q.disease);
@@ -195,7 +224,7 @@ function removeLoadingMsg() {
 }
 
 async function fetchNextQuestion() {
-    const cataractRes = state.aiResult || "-";
+    const cataractRes = formatCataractResult();
     // finish()와 동일하게 선택 언어로 전달 (LLM 프롬프트 컨텍스트 언어 일관성)
     const amslerRes = state.hasAmsler
         ? (translations[state.lang].res_ams_bad || "이상 있음")
@@ -251,7 +280,7 @@ async function handleChatAnswer(yes) {
     // [1단계] 고정 질문 구간
     if (state.stepIdx < questions[state.lang].length) {
         const currentQ = questions[state.lang][state.stepIdx];
-        if (yes) { state.chatSymptoms.push(currentQ.type); state.symptomCodes.push(currentQ.code); }
+        if (yes) { state.chatSymptoms.push('sym_' + currentQ.code); state.symptomCodes.push(currentQ.code); }
 
         state.chatHistory.push({ q: currentQ.t, a: answerText });
         state.stepIdx++;
@@ -268,7 +297,7 @@ async function handleChatAnswer(yes) {
     // [2단계] Gemma 맞춤형 질문 구간
     else {
         state.chatHistory[state.chatHistory.length - 1].a = answerText;
-        if (yes) { state.chatSymptoms.push(translations[state.lang].symptom_extra || "기타 의심 증상 추가 발견"); state.symptomCodes.push('other'); }
+        if (yes) { state.chatSymptoms.push('symptom_extra'); state.symptomCodes.push('other'); }
 
         state.dynamicCount++;
         advanceAfterDynamicAnswer();

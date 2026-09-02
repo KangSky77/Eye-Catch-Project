@@ -75,3 +75,24 @@ def test_가중치_파일이_메타데이터와_같은_학습본():
         "로컬 가중치가 메타데이터에 기록된 학습본과 다릅니다 — "
         "오래된 .pth를 쓰고 있을 가능성 (팀원에게 최신 가중치를 받으세요)"
     )
+
+
+def test_눈_OOD_게이트_임계값이_실측_근거와_함께_있다():
+    """2026-08-29: 0.55는 '단색 배경 + 가운데 블롭' 계열을 통과시켰다.
+    (실사용 테스트에서 초록 배경 + 빨간 사각형이 '경계 단계 - 안과 검진 권장'을 받음)
+
+    재실측 근거는 config.py 주석에, 재현 방법은 scripts/probe_eye_gate.py에 있다.
+    임계값을 다시 만질 때는 반드시 그 스크립트로 재측정할 것."""
+    from pathlib import Path
+
+    assert settings.eye_sim_threshold == 0.62
+
+    root = Path(__file__).resolve().parent.parent
+    probe = root / "scripts" / "probe_eye_gate.py"
+    assert probe.exists(), "임계값 재현 스크립트가 있어야 근거를 다시 뽑을 수 있다"
+
+    src = probe.read_text(encoding="utf-8")
+    assert "blob_" in src, "게이트를 뚫었던 블롭 계열이 회귀 표본으로 남아 있어야 한다"
+
+    cfg = (root / "app" / "core" / "config.py").read_text(encoding="utf-8")
+    assert "probe_eye_gate.py" in cfg, "임계값 옆에 재현 방법이 적혀 있어야 한다"
