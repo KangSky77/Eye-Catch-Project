@@ -10,7 +10,7 @@ from tests.conftest import make_image_bytes
 
 
 CANNED = {
-    "probability": 3.2, "result": "특이 소견 없음 (정상)", "result_code": "normal",
+    "probability": 3.2, "result": "백내장 의심 소견 없음", "result_code": "normal",
     "mode": "eye", "eyes_detected": 0, "eye_probs": [3.2],
     "eyes": [{"side": "single", "probability": 3.2, "code": "normal"}],
     "asymmetric": False,

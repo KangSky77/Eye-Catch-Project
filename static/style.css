@@ -147,7 +147,7 @@ body {
     display: none;
     position: fixed;
     inset: 0;
-    z-index: 100;
+    z-index: 1200;   /* .site-header(1100)보다 위 — 100이던 시절엔 모달 상단·닫기 버튼이 헤더 뒤에 가려졌다(외부 리뷰) */
     background: rgba(15, 23, 42, 0.5);
     backdrop-filter: blur(4px);
     align-items: center;
@@ -1404,3 +1404,34 @@ body.modal-open { overflow: hidden; }
 .sim-panel .dm-sim h3 { display: none; }   /* 패널 제목이 이미 있으므로 카드 안 제목은 생략 */
 .sim-credit { display: block; margin-top: 8px; text-align: right; font-size: .66rem; color: #94a3b8; text-decoration: none; }
 .sim-credit:hover { color: var(--ec-blue); text-decoration: underline; }
+
+/* ==========================================
+   외부 리뷰 반영 (2026-09-02): 업로드 오류 배너 · 개인정보 안내 · 지도 예시 위치 · 시력 보정 2열
+   ========================================== */
+.upload-error {
+    margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; text-align: left;
+    background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; font-size: .82rem; font-weight: 800; line-height: 1.5;
+}
+.upload-privacy { margin: 0 0 12px; font-size: .72rem; line-height: 1.55; color: #526277; }
+.upload-privacy > p { margin: 0 0 4px; }
+.upload-privacy summary { cursor: pointer; font-weight: 800; color: var(--ec-blue); font-size: .72rem; padding: 2px 0; }
+.upload-privacy details > p { margin: 6px 0 0; padding: 8px 10px; background: #f8fafc; border-radius: 10px; color: #64748b; }
+
+.map-embed.is-example #leaflet-map { filter: grayscale(.55) opacity(.75); }
+.map-example-badge {
+    position: absolute; left: 12px; right: 12px; top: 12px; z-index: 900;
+    padding: 8px 12px; border-radius: 12px; text-align: center;
+    background: rgba(11, 31, 58, .82); color: #fff; font-size: .74rem; font-weight: 800; line-height: 1.4;
+    pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+    /* 데스크톱에서는 카드 폭이 좁고 세로로 길어 '저장하고 계속'이 첫 화면 아래로 내려갔다 → 2열 */
+    #tab-vision { max-width: 56rem !important; }
+    #vt-calib .vt-cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; align-items: start; }
+    #vt-calib .vt-col-l .vt-cardwrap { margin-left: 0; margin-right: 0; }
+}
+
+/* 애매한 신호 → 눈 클로즈업 재촬영 권유 (결과 카드 안) */
+.closeup-hint { margin: 12px 0 8px; font-size: .78rem; line-height: 1.5; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 8px 10px; text-align: left; }
+.closeup-btn { width: 100%; padding: 12px; border-radius: 14px; border: 1.5px solid var(--ec-blue); background: #fff; color: var(--ec-blue); font-weight: 800; font-size: .85rem; cursor: pointer; }

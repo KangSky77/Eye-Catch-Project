@@ -27,6 +27,7 @@ function buildFindings() {
     // --- 백내장 사진 판독 ---
     if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
     else if (state.aiResultCode === 'borderline') out.push(t.find_cat_borderline);
+    else if (state.aiResultCode === 'uncertain') out.push(t.find_cat_uncertain);
     else if (state.aiResultCode === 'normal') out.push(t.find_cat_normal);
     if (state.asymmetric) out.push(t.find_cat_asym);
 

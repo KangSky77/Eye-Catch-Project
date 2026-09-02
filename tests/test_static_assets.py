@@ -365,10 +365,10 @@ def test_반사_판독보류를_프론트가_처리한다():
     """서버가 result_code='hold'를 주면 의료 판정 대신 재촬영을 안내해야 한다.
     처리가 없으면 확률 0.0%가 '정상'으로 표시돼 정반대 결과가 나간다."""
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
-    assert "d.result_code === 'hold'" in vision
-    assert "ai_hold" in vision
+    # 재촬영 코드는 retake 맵으로 한꺼번에 처리한다(2026-09-02) — hold 항목과 문구 키가 있어야 한다
+    assert "hold:" in vision and "ai_hold" in vision
     # hold 처리는 정상 결과 표시보다 먼저 와야 한다
-    assert vision.index("d.result_code === 'hold'") < vision.index("ai-result-display")
+    assert vision.index("hold:") < vision.index("ai-result-display")
 
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("ai_hold:") == 6, "6개 언어 모두에 반사 안내 문구가 있어야 한다"
@@ -492,8 +492,8 @@ def test_시야_체험은_진단도구가_아님을_밝힌다():
 
 def test_흔들림_보류를_프론트가_처리한다():
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
-    assert "d.result_code === 'blurry'" in vision
-    assert vision.index("d.result_code === 'blurry'") < vision.index("ai-result-display")
+    assert "blurry:" in vision and "ai_blurry" in vision
+    assert vision.index("blurry:") < vision.index("ai-result-display")
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("ai_blurry:") == 6
 
@@ -620,3 +620,60 @@ def test_시야_체험은_모달_밖_패널에_있고_버튼으로_연다():
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     for key in ["sim_open_btn:", "sim_close_btn:", "sim_pick:"]:
         assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+
+
+def test_외부리뷰_반영_모달_zindex_배너_개인정보_예시위치():
+    """2026-09-02 외부 리뷰: 모달이 헤더에 가림 / 오류 토스트 놓침 / 사진 개인정보 안내 없음 / 기본 지도가 '내 주변'처럼 보임."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    overlay = css[css.index(".dm-overlay {"):]; overlay = overlay[: overlay.index("}")]
+    z = int(overlay.split("z-index:")[1].split(";")[0])
+    header = css[css.index(".site-header {"):]; header = header[: header.index("}")]
+    hz = int(header.split("z-index:")[1].split(";")[0])
+    assert z > hz, "질환 모달은 고정 헤더보다 위에 있어야 한다"
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    photo = html[html.index('id="step-photo"'):html.index('id="step-ai-loading"')]
+    assert 'id="upload-error"' in photo and photo.index('id="upload-error"') < photo.index('id="upload-guide"'), "오류 배너는 카드 상단에"
+    assert 'data-i18n="upload_privacy"' in photo and photo.index('data-i18n="upload_privacy"') < photo.index('id="cataract-camera"'), "개인정보 안내는 업로드 버튼 위에"
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "function showUploadError" in vision and "clearUploadError();" in vision
+    for code in ["blurry", "hold", "eyes_hidden", "invalid"]:
+        assert f"{code}:" in vision, f"{code} 재촬영 안내가 배너로 나가야 한다"
+    mapjs = (STATIC / "app-map.js").read_text(encoding="utf-8")
+    assert "map-example-badge" in mapjs and "clearMapExample();" in mapjs
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["ai_eyes_hidden:", "upload_privacy:", "upload_privacy_title:", "upload_privacy_more:", "map_example_badge:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+
+
+def test_외부리뷰_문구_진단_아닌_리포트_점수는_100점만점_범위_명시():
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert "진단 리포트" not in data and "Diagnostic Report" not in data, "'진단'은 서비스 안내와 충돌한다 → 눈 건강 리포트"
+    assert data.count("AI 특징 점수") >= 1 and "AI 위험 점수" not in data
+    assert "특이 소견 없음 (정상)" not in data, "모델은 백내장만 본다 → '백내장 의심 소견 없음'"
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "/100" in vision and "${d.probability}%" not in vision, "리포트의 % 표기는 질병 확률로 읽힌다"
+    assert "진행성 수정체 혼탁 특징만 확인합니다" in data, "첫 화면에서 사진 AI의 범위(보이는 진행성 혼탁만)를 밝혀야 한다"
+    assert "검사는 모두 마쳤지만" in data, "시력검사 실패 문구는 '완료됐지만 계산 불가'로"
+    disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
+    assert "_simLevel" in disease, "언어 전환 시 시야 체험 강도가 초기화되면 안 된다"
+
+
+def test_눈게이트_파일과_얼굴모드_검증():
+    assert (ROOT / "app" / "models" / "eye_gate.npz").exists(), "scripts/build_eye_gate.py 산출물이 있어야 한다"
+    src = (ROOT / "app" / "services" / "vision.py").read_text(encoding="utf-8")
+    body = src[src.index("def predict_cataract("):]
+    assert 'if mode == "face":' in body and '"eyes_hidden"' in body
+
+
+def test_낮은_점수_구간과_클로즈업_권유가_프론트에_있다():
+    """외부 테스트(AI 생성 얼굴 5장, 2026-09-02): 옅은 초기 혼탁이 0~4.9점 → '정상'. 낮은 점수는 '판단 어려움'으로
+    분리하고, 얼굴 사진은 편의 기능이며 눈 클로즈업을 우선하도록 안내한다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["ai_uncertain:", "closeup_hint:", "closeup_btn:", "find_cat_uncertain:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+    assert "백내장 판별 결과" not in data and "백내장 위험 단계" not in data, "판별/위험 단계 → 혼탁 특징 표현으로"
+    assert "눈을 한쪽씩 가까이 찍어주세요" in data
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "d.closeup_suggested" in vision and "uncertain:" in vision
+    findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
+    assert "find_cat_uncertain" in findings

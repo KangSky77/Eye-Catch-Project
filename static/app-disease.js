@@ -170,6 +170,7 @@ function buildVisionSim(idx, labels) {
 // ------------------------------------------
 let _simIdx = 0;
 let _simOpen = false;
+let _simLevel = 0;   // 슬라이더 값(0~100) — 언어 전환으로 패널을 다시 그려도 유지 (외부 리뷰)
 
 function toggleVisionSim(force, scroll = true) {
     _simOpen = typeof force === 'boolean' ? force : !_simOpen;
@@ -189,6 +190,7 @@ function toggleVisionSim(force, scroll = true) {
 
 function selectVisionSim(idx) {
     _simIdx = idx;
+    _simLevel = 0;               // 질환을 바꿀 때만 정상 시야(0)에서 다시 시작
     renderVisionSimPanel();
 }
 
@@ -214,7 +216,15 @@ function renderVisionSimPanel() {
     const body = document.getElementById('sim-body');
     body.innerHTML = '';
     const card = buildVisionSim(_simIdx, labels);
-    if (card) body.appendChild(card);
+    if (card) {
+        body.appendChild(card);
+        const range = card.querySelector('.dm-sim-range');
+        if (range) {
+            range.value = String(_simLevel);
+            range.dispatchEvent(new Event('input'));
+            range.addEventListener('input', () => { _simLevel = Number(range.value); });
+        }
+    }
 
     // 사진 출처 — CC0라 의무는 없지만 질환 사진과 같은 기준으로 화면에도 남긴다
     const credit = document.createElement('a');

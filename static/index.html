@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260902e">
+    <link rel="stylesheet" href="/static/style.css?v=20260902f">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -165,12 +165,21 @@
             <div id="dropzone" class="glass-card p-10 rounded-[2.5rem] max-w-md mx-auto border-2 border-dashed border-blue-300 dropzone">
                 <div class="upload-icon mx-auto mb-6" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
                 <h2 class="text-2xl font-black mb-2" data-i18n="upload_title">사진 업로드</h2>
+                <div id="upload-error" class="upload-error hidden" role="alert" aria-live="assertive"></div>
                 <div id="upload-guide" class="mt-4 mb-8 text-left bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm">
                     <p class="text-amber-800 font-bold text-sm mb-1" data-i18n="guide_title">정확한 분석 가이드</p>
                     <ul class="text-[11px] text-amber-700 space-y-1 list-disc list-inside" data-i18n="guide_list">
                         <li>정면에서 촬영하세요.</li>
                         <li>빛 반사에 주의하세요.</li>
                     </ul>
+                </div>
+                <!-- 얼굴·눈 사진은 민감정보 — 무엇이 전송되고 무엇이 남는지 업로드 버튼 위에 먼저 알린다 (외부 리뷰) -->
+                <div class="upload-privacy text-left">
+                    <p data-i18n="upload_privacy">사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.</p>
+                    <details>
+                        <summary data-i18n="upload_privacy_title">개인정보 안내</summary>
+                        <p data-i18n="upload_privacy_more">검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.</p>
+                    </details>
                 </div>
                 <!-- 모바일: 카메라 앱을 바로 연다(capture). 값 없는 capture는 기기 기본 카메라이며 카메라 앱에서 전·후면을 바꿀 수 있다.
                      데스크톱에서는 CSS로 숨긴다(터치 없는 기기에선 파일 선택창과 다를 게 없다). -->
@@ -255,6 +264,8 @@
             <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="vt_calib_title">1단계 · 화면 크기 맞추기</p>
             <p class="text-[12px] text-slate-500 leading-relaxed mb-4" data-i18n="vt_calib_desc">카드를 화면에 대고 사각형을 실물과 같은 크기로 맞추세요.</p>
 
+            <div class="vt-cols">
+            <div class="vt-col-l">
             <div class="flex gap-2 mb-3">
                 <button id="vt-edge-long" onclick="vtSetEdge('long')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_long">긴 변 85.6mm</button>
                 <button id="vt-edge-short" onclick="vtSetEdge('short')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_short">짧은 변 54.0mm</button>
@@ -264,6 +275,8 @@
             <div class="vt-cardwrap"><div id="vt-cardbox" class="vt-cardbox"></div></div>
             <p id="vt-touch-hint" class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed mt-3"></p>
             <button id="vt-lock-btn" onclick="vtToggleLock()" class="w-full mt-3 py-3 rounded-2xl font-bold text-[13px] btn-pop bg-slate-100 text-slate-700"></button>
+            </div>
+            <div class="vt-col-r">
             <input id="vt-slider" type="range" min="80" max="900" value="300" class="w-full my-3">
             <div class="vt-nudge">
                 <button onclick="vtNudge(-10)" class="vt-nudge-btn" aria-label="-10">−10</button>
@@ -290,6 +303,8 @@
                 <p id="vt-dist-guide" class="text-[11px] text-slate-500 leading-relaxed mt-2 bg-slate-50 rounded-xl p-3"></p>
                 <p id="vt-dist-tol" class="text-[11px] text-emerald-700 leading-relaxed mt-2 bg-emerald-50 rounded-xl p-3"></p>
             </details>
+            </div>
+            </div>
 
             <button onclick="vtSaveCalibration()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm" data-i18n="vt_calib_save">저장하고 계속</button>
 
@@ -493,17 +508,17 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260902c"></script>
+    <script src="/static/data.js?v=20260902d"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-core.js?v=20260902a"></script>
-    <script src="/static/app-vision.js?v=20260902a"></script>
+    <script src="/static/app-vision.js?v=20260902b"></script>
     <script src="/static/app-chat.js?v=20260826f"></script>
     <script src="/static/app-report.js?v=20260902b"></script>
-    <script src="/static/app-disease.js?v=20260902a"></script>
+    <script src="/static/app-disease.js?v=20260902b"></script>
     <script src="/static/calibration.js?v=20260826f"></script>
     <script src="/static/app-assess.js?v=20260826f"></script>
     <script src="/static/app-findings.js?v=20260826f"></script>
     <script src="/static/app-visiontest.js?v=20260826f"></script>
-    <script src="/static/app-map.js?v=20260902a"></script>
+    <script src="/static/app-map.js?v=20260902b"></script>
 </body>
 </html>
