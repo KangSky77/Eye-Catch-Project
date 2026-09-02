@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-02",
+  "what": "1_cataract 클래스에 들어 있던 정상 눈(라벨 오류) 10장. dataset_raw/label_errors_1_cataract/ 로 옮겨 학습·평가에서 제외.",
+  "how_found": "v6 가중치가 test에서 0~2%로 판정한 백내장 라벨 사진을 전부 육안 확인 — 홍채가 맑은 정상 눈(1장은 검은 조각 사진). v5는 같은 사진을 100%로 판정했는데, 12장 중 10장이 v5 학습 분할(train)·2장이 val에 있어 외운 결과였다.",
+  "files": [
+    {
+      "file": "img (1136).jpg",
+      "group_id": 7605,
+      "v6_score_pct": 0.0,
+      "v5_score_pct": 100.0
+    },
+    {
+      "file": "img (1311).jpg",
+      "group_id": 8056,
+      "v6_score_pct": 0.0,
+      "v5_score_pct": 100.0
+    },
+    {
+      "file": "img (1314).jpg",
+      "group_id": 8059,
+      "v6_score_pct": 0.0,
+      "v5_score_pct": 100.0
+    },
+    {
+      "file": "img (168).png",
+      "group_id": 7754,
+      "v6_score_pct": 0.0,
+      "v5_score_pct": 100.0
+    },
+    {
+      "file": "img (174).png",
+      "group_id": 7766,
+      "v6_score_pct": 0.3,
+      "v5_score_pct": 100.0
+    },
+    {
+      "file": "img (286).png",
+      "group_id": 7950,
+      "v6_score_pct": 1.7,
+      "v5_score_pct": 99.9
+    },
+    {
+      "file": "img (308).png",
+      "group_id": 7993,
+      "v6_score_pct": 0.1,
+      "v5_score_pct": 99.9
+    },
+    {
+      "file": "img (322).png",
+      "group_id": 8021,
+      "v6_score_pct": 0.0,
+      "v5_score_pct": 100.0
+    },
+    {
+      "file": "img (354).jpg",
+      "group_id": 8056,
+      "v6_score_pct": 0.0,
+      "v5_score_pct": 100.0
+    },
+    {
+      "file": "img (357).jpg",
+      "group_id": 8059,
+      "v6_score_pct": 0.0,
+      "v5_score_pct": 100.0
+    }
+  ],
+  "not_moved": [
+    "img (1294).jpg",
+    "img (335).jpg — 각막 혼탁이 보이는 실제 병변 사진(v6 37.6%, 경계 안내). 라벨 유지."
+  ],
+  "effect_on_metadata": "cataract_efficientnet_b0_v4_metadata.json 의 label_corrections 항목 참고 (같은 분할에서 test의 해당 8장만 제외해 재계산)."
+}

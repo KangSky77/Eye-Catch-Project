@@ -11,6 +11,7 @@ let _map = null, _userMarker = null, _clinicLayer = null;
 
 function ensureMap() {
     if (_map) { _map.invalidateSize(); return _map; }
+    if (typeof L === 'undefined') return null;   // Leaflet 번들 로드 실패 → 호출자가 안내
 
     // 마커 아이콘 경로를 명시 — Leaflet은 기본적으로 스크립트 URL에서 images/ 위치를
     // 추론하는데, 로컬 번들 경로에서는 추론이 빗나가 마커가 안 보일 수 있다.
@@ -31,6 +32,19 @@ function ensureMap() {
     });
     tiles.addTo(_map);
     _clinicLayer = L.layerGroup().addTo(_map);
+
+    // 위치 확인 전의 기본 지도(강남)는 '내 주변'처럼 오해된다(외부 리뷰). 예시 위치임을 지도 위에 명시하고
+    // 흐리게 보여주다가, 실제 위치를 받으면 없앤다.
+    const embed = document.querySelector('.map-embed');
+    if (embed && !document.getElementById('map-example-badge')) {
+        const badge = document.createElement('div');
+        badge.id = 'map-example-badge';
+        badge.className = 'map-example-badge';
+        badge.setAttribute('data-i18n', 'map_example_badge');
+        badge.textContent = translations[state.lang].map_example_badge || '예시 위치(서울 강남) — 아직 내 위치를 확인하지 않았어요';
+        embed.appendChild(badge);
+        embed.classList.add('is-example');
+    }
     setTimeout(() => _map.invalidateSize(), 200);   // 숨겨진 탭 init 보정
     return _map;
 }
@@ -42,6 +56,7 @@ function showMapOffline() {
     const box = document.getElementById('leaflet-map');
     const t = translations[state.lang];
     if (!box) return;
+    clearMapExample();
     box.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'map-offline';
@@ -55,6 +70,13 @@ function showMapOffline() {
     box.appendChild(wrap);
     const status = document.getElementById('map-status');
     if (status) status.innerText = t.map_offline_short || '지도 오프라인';
+}
+
+function clearMapExample() {
+    const badge = document.getElementById('map-example-badge');
+    if (badge) badge.remove();
+    const embed = document.querySelector('.map-embed');
+    if (embed) embed.classList.remove('is-example');
 }
 
 function haversine(aLat, aLng, bLat, bLng) {
@@ -72,6 +94,10 @@ function findNearbyClinics() {
     const status = document.getElementById('map-status');
     const t = translations[state.lang];
     const map = ensureMap();
+    if (!map) {
+        status.innerText = t.map_offline_short || "지도 오프라인";
+        return;
+    }
     if (!navigator.geolocation) {
         status.innerText = t.map_status_unsupported || "이 브라우저는 위치 기능을 지원하지 않아요.";
         return;
@@ -86,6 +112,7 @@ function findNearbyClinics() {
         pos => {
             done();
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            clearMapExample();
             map.setView([lat, lng], 15);
             if (_userMarker) _userMarker.remove();
             _userMarker = L.marker([lat, lng]).addTo(map)

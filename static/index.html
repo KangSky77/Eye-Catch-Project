@@ -14,6 +14,8 @@
     <meta name="twitter:title" content="Eye-Catch | Premium Eye Care">
     <meta name="twitter:description" content="AI 안구 사진 분석으로 백내장 위험도를 확인하고, 황반변성 자가진단까지 한 번에 받아보세요.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <!-- 저장된 글자 크기를 스타일 적용 전에 복원 (첫 화면이 기본 크기로 깜빡이는 것 방지) -->
+    <script>try{var f=localStorage.getItem('ec_font');if(f==='1'||f==='2')document.documentElement.setAttribute('data-font',f);}catch(e){}</script>
 
     <link rel="stylesheet" href="/static/tailwind.css?v=20260829a">
 
@@ -25,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260829a">
+    <link rel="stylesheet" href="/static/style.css?v=20260902g">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -55,6 +57,10 @@
                     <button type="button" onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</button>
                 </div>
 
+                <div class="font-ctl" role="group" title="글자 크기" aria-label="글자 크기" data-i18n-title="font_size" data-i18n-aria="font_size">
+                    <button type="button" id="fs-dec" onclick="changeFontSize(-1)" aria-label="A−">A−</button>
+                    <button type="button" id="fs-inc" onclick="changeFontSize(1)" aria-label="A+">A+</button>
+                </div>
                 <select id="lang-selector" onchange="changeLanguage(this.value)" class="language-select" data-i18n-aria="aria_lang" aria-label="언어 선택">
                     <option value="ko">KR 한국어</option>
                     <option value="en">EN English</option>
@@ -113,8 +119,8 @@
                     <div class="flex items-start gap-3 p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
                         <span class="tip-number">01</span>
                         <div>
-                            <p class="font-bold text-sm" data-i18n="tip1_t">전면보다는 후면 카메라!</p>
-                            <p class="text-[11px] text-slate-500" data-i18n="tip1_d">후면 카메라가 화질이 좋고 빛 반사가 적어요.</p>
+                            <p class="font-bold text-sm" data-i18n="tip1_t">흔들리지 않게 촬영하세요</p>
+                            <p class="text-[11px] text-slate-500" data-i18n="tip1_d">팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3 p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -133,6 +139,23 @@
                     </div>
                 </div>
 
+                <!-- 잘 찍은 예 / 잘못 찍은 예 — 글로 된 팁보다 사진 한 장이 빠르다.
+                     예시는 CC0 사진 한 장을 가공한 것(static/assets/examples/ATTRIBUTION.md) -->
+                <div class="ex-block text-left mb-8">
+                    <p class="ex-title" data-i18n="ex_title">이렇게 찍어주세요 — 예시</p>
+                    <div class="ex-grid">
+                        <figure class="ex-card ex-good">
+                            <img src="/static/assets/examples/face-good.jpg" alt="" loading="lazy" width="480" height="360">
+                            <figcaption><span class="ex-mark" aria-hidden="true">✓</span><span data-i18n="ex_good">좋은 예: 정면, 눈이 또렷하게 보임</span></figcaption>
+                        </figure>
+                        <figure class="ex-card ex-bad">
+                            <img src="/static/assets/examples/face-blurry.jpg" alt="" loading="lazy" width="480" height="360">
+                            <figcaption><span class="ex-mark" aria-hidden="true">✕</span><span data-i18n="ex_bad_blur">흔들린 예: 눈을 읽을 수 없어 재촬영</span></figcaption>
+                        </figure>
+                    </div>
+                    <p class="ex-hint" data-i18n="ex_hint">예시는 퍼블릭 도메인(CC0) 사진을 가공한 것입니다.</p>
+                </div>
+
                 <button type="button" onclick="nextStep('step-photo')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg btn-pop" data-i18n="tips_btn">이해했습니다!</button>
                 <button type="button" onclick="nextStep('step-intro')" class="back-link" data-i18n="back_btn">← 이전</button>
             </div>
@@ -142,6 +165,7 @@
             <div id="dropzone" class="glass-card p-10 rounded-[2.5rem] max-w-md mx-auto border-2 border-dashed border-blue-300 dropzone">
                 <div class="upload-icon mx-auto mb-6" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
                 <h2 class="text-2xl font-black mb-2" data-i18n="upload_title">사진 업로드</h2>
+                <div id="upload-error" class="upload-error hidden" role="alert" aria-live="assertive"></div>
                 <div id="upload-guide" class="mt-4 mb-8 text-left bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm">
                     <p class="text-amber-800 font-bold text-sm mb-1" data-i18n="guide_title">정확한 분석 가이드</p>
                     <ul class="text-[11px] text-amber-700 space-y-1 list-disc list-inside" data-i18n="guide_list">
@@ -149,8 +173,20 @@
                         <li>빛 반사에 주의하세요.</li>
                     </ul>
                 </div>
+                <!-- 얼굴·눈 사진은 민감정보 — 무엇이 전송되고 무엇이 남는지 업로드 버튼 위에 먼저 알린다 (외부 리뷰) -->
+                <div class="upload-privacy text-left">
+                    <p data-i18n="upload_privacy">사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.</p>
+                    <details>
+                        <summary data-i18n="upload_privacy_title">개인정보 안내</summary>
+                        <p data-i18n="upload_privacy_more">검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.</p>
+                    </details>
+                </div>
+                <!-- 모바일: 카메라 앱을 바로 연다(capture). 값 없는 capture는 기기 기본 카메라이며 카메라 앱에서 전·후면을 바꿀 수 있다.
+                     데스크톱에서는 CSS로 숨긴다(터치 없는 기기에선 파일 선택창과 다를 게 없다). -->
+                <input type="file" id="cataract-camera" class="sr-only" accept="image/*" capture onchange="runAIAnalysis(this.files[0]); this.value='';" aria-describedby="upload-guide">
+                <label for="cataract-camera" class="camera-btn btn-pop"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg><span data-i18n="camera_btn">카메라로 바로 찍기</span></label>
                 <input type="file" id="cataract-file" class="sr-only" accept="image/*" onchange="runAIAnalysis()" aria-describedby="upload-guide">
-                <label for="cataract-file" class="block w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-xl btn-pop cursor-pointer" data-i18n="upload_btn">사진 선택 및 전송</label>
+                <label for="cataract-file" class="upload-pick block w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-xl btn-pop cursor-pointer" data-i18n="upload_btn">사진 선택 및 전송</label>
                 <p class="dropzone-hint" data-i18n="upload_drop_hint">여기로 사진을 끌어다 놓아도 됩니다.</p>
                 <button type="button" onclick="nextStep('step-guide')" class="back-link" data-i18n="back_btn">← 이전</button>
             </div>
@@ -242,6 +278,8 @@
             <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="vt_calib_title">1단계 · 화면 크기 맞추기</p>
             <p class="text-[12px] text-slate-500 leading-relaxed mb-4" data-i18n="vt_calib_desc">카드를 화면에 대고 사각형을 실물과 같은 크기로 맞추세요.</p>
 
+            <div class="vt-cols">
+            <div class="vt-col-l">
             <div class="flex gap-2 mb-3">
                 <button id="vt-edge-long" onclick="vtSetEdge('long')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_long">긴 변 85.6mm</button>
                 <button id="vt-edge-short" onclick="vtSetEdge('short')" class="flex-1 py-2 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600" data-i18n="vt_calib_edge_short">짧은 변 54.0mm</button>
@@ -251,6 +289,8 @@
             <div class="vt-cardwrap"><div id="vt-cardbox" class="vt-cardbox"></div></div>
             <p id="vt-touch-hint" class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed mt-3"></p>
             <button id="vt-lock-btn" onclick="vtToggleLock()" class="w-full mt-3 py-3 rounded-2xl font-bold text-[13px] btn-pop bg-slate-100 text-slate-700"></button>
+            </div>
+            <div class="vt-col-r">
             <input id="vt-slider" type="range" min="80" max="900" value="300" class="w-full my-3">
             <div class="vt-nudge">
                 <button onclick="vtNudge(-10)" class="vt-nudge-btn" aria-label="-10">−10</button>
@@ -277,6 +317,8 @@
                 <p id="vt-dist-guide" class="text-[11px] text-slate-500 leading-relaxed mt-2 bg-slate-50 rounded-xl p-3"></p>
                 <p id="vt-dist-tol" class="text-[11px] text-emerald-700 leading-relaxed mt-2 bg-emerald-50 rounded-xl p-3"></p>
             </details>
+            </div>
+            </div>
 
             <button onclick="vtSaveCalibration()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm" data-i18n="vt_calib_save">저장하고 계속</button>
 
@@ -329,6 +371,20 @@
         <h1 class="text-3xl font-black text-center mb-3 text-slate-800 tracking-tight" data-i18n="dis_main_title">4대 주요 안질환 안내</h1>
         <p class="text-center text-slate-500 text-sm font-medium mb-10" data-i18n="dis_card_hint">카드를 누르면 자세한 설명을 확인할 수 있어요.</p>
         <div id="disease-list" class="disease-grid"></div>
+
+        <!-- 시야 체험 — 질환 상세 모달 안에 있던 것을 맨 아래 버튼으로 (팀 요청 2026-09-02) -->
+        <div class="sim-cta">
+            <button type="button" id="sim-open-btn" class="sim-open-btn btn-pop" onclick="toggleVisionSim()" aria-expanded="false" aria-controls="vision-sim-panel">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.75 12s3.45-5.25 9.25-5.25S21.25 12 21.25 12 17.8 17.25 12 17.25 2.75 12 2.75 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
+                <span data-i18n="sim_open_btn">질환별 시야 체험하기</span>
+            </button>
+        </div>
+        <section id="vision-sim-panel" class="sim-panel hidden" aria-labelledby="sim-panel-title">
+            <h2 id="sim-panel-title" class="sim-panel-title" data-i18n="sim_title">시야 체험</h2>
+            <p class="sim-panel-desc" data-i18n="sim_pick">체험할 질환을 고르고 아래 슬라이더를 움직여 보세요.</p>
+            <div id="sim-chips" class="sim-chips" role="tablist"></div>
+            <div id="sim-body"></div>
+        </section>
     </main>
 
     <main id="tab-report" class="tab-content max-w-md mx-auto px-4 py-12" tabindex="-1">
@@ -397,7 +453,7 @@
             <div class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <p class="text-xs font-bold text-slate-500 mb-2" id="followup-label" data-i18n="rep_followup_title">AI에게 더 궁금한 점 물어보기</p>
                 <div class="flex gap-2">
-                    <input type="text" id="user-followup-input" class="flex-1 min-w-0 bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="예: 관리 방법 알려줘" data-i18n-ph="rep_followup_ph" aria-labelledby="followup-label" enterkeyhint="send">
+                    <input type="text" id="user-followup-input" maxlength="1000" class="flex-1 min-w-0 bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="예: 관리 방법 알려줘" data-i18n-ph="rep_followup_ph" aria-labelledby="followup-label" enterkeyhint="send">
                     <button type="button" id="followup-send-btn" onclick="askGemmaMore()" class="icon-button shrink-0 px-3 bg-blue-600 text-white rounded-xl btn-pop" data-i18n-aria="aria_send" aria-label="질문 보내기">
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 5 16 7-16 7 3-7-3-7Z"/><path d="M7 12h13"/></svg>
                     </button>
@@ -476,17 +532,17 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260829a"></script>
+    <script src="/static/data.js?v=20260902g"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260829a"></script>
-    <script src="/static/app-vision.js?v=20260829a"></script>
-    <script src="/static/app-chat.js?v=20260829a"></script>
-    <script src="/static/app-report.js?v=20260829a"></script>
-    <script src="/static/app-disease.js?v=20260829a"></script>
-    <script src="/static/calibration.js?v=20260829a"></script>
-    <script src="/static/app-assess.js?v=20260829a"></script>
-    <script src="/static/app-findings.js?v=20260829a"></script>
-    <script src="/static/app-visiontest.js?v=20260829a"></script>
-    <script src="/static/app-map.js?v=20260829a"></script>
+    <script src="/static/app-core.js?v=20260902g"></script>
+    <script src="/static/app-vision.js?v=20260902g"></script>
+    <script src="/static/app-chat.js?v=20260902g"></script>
+    <script src="/static/app-report.js?v=20260902g"></script>
+    <script src="/static/app-disease.js?v=20260902g"></script>
+    <script src="/static/calibration.js?v=20260902g"></script>
+    <script src="/static/app-assess.js?v=20260902g"></script>
+    <script src="/static/app-findings.js?v=20260902g"></script>
+    <script src="/static/app-visiontest.js?v=20260902g"></script>
+    <script src="/static/app-map.js?v=20260902g"></script>
 </body>
 </html>

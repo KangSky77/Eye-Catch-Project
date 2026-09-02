@@ -147,3 +147,29 @@ def test_generate_next_question은_질문과_답변형식을_함께_돌려준다
 
     q, t = asyncio.run(run("   "))
     assert q == "" and t == "yesno"
+
+
+def test_소견서_프롬프트는_3줄_요약을_요구한다():
+    """팀 결정(2026-09-02): 리포트의 AI 소견은 3줄 요약. 6개 언어 모두 같은 구조."""
+    ko = llm._build_opinion_prompt("판독", "정상", ["눈부심"], "ko")
+    assert "정확히 3줄" in ko and "1줄째" in ko and "3줄째" in ko
+    assert "4~6문장" not in ko
+    en = llm._build_opinion_prompt("reading", "normal", ["glare"], "en")
+    assert "exactly a 3-line summary" in en and "Line 1" in en and "Line 3" in en
+    assert "4-6 sentences" not in en
+
+
+@pytest.mark.anyio
+async def test_문진내역_라벨은_언어를_따른다(monkeypatch):
+    """영어 사용자 프롬프트에 '의사/환자' 한국어 라벨이 섞이면 모델이 한국어로 답하는 경향이 있다."""
+    seen = {}
+    async def fake_generate(prompt):
+        seen["prompt"] = prompt
+        return "Do you see halos at night?"
+    monkeypatch.setattr(llm, "generate_ollama", fake_generate)
+    history = [ChatHistoryItem(q="Any floaters?", a="No")]
+    await llm.generate_next_question("en", "normal", "normal", history)
+    assert "- Doctor: Any floaters?" in seen["prompt"] and "- Patient: No" in seen["prompt"]
+    assert "의사" not in seen["prompt"]
+    await llm.generate_next_question("ko", "정상", "정상", [])
+    assert "아직 진행된 문진 대화가 없습니다." in seen["prompt"]

@@ -105,5 +105,43 @@
     }
   },
   "train_minutes": 31.0,
-  "weights_sha256": "044e9f14552131b02857a20d737fa130a50090ca8a6b0161ecb87f1e4a37a2cd"
+  "weights_sha256": "044e9f14552131b02857a20d737fa130a50090ca8a6b0161ecb87f1e4a37a2cd",
+  "label_corrections": {
+    "date": "2026-09-02",
+    "removed_from_test": [
+      "img (357).jpg",
+      "img (1311).jpg",
+      "img (354).jpg",
+      "img (1314).jpg",
+      "img (357).jpg",
+      "img (168).png",
+      "img (322).png",
+      "img (286).png"
+    ],
+    "manifest": "data/label_errors.json",
+    "test_metrics_at_prod_threshold_no_tta": {
+      "n_cataract": 288,
+      "n_normal": 2230,
+      "sensitivity": 1.0,
+      "specificity": 0.9991,
+      "auc": 1.0,
+      "cm": {
+        "fn": 0,
+        "fp": 2,
+        "tp": 288,
+        "tn": 2228
+      },
+      "missed_as_normal_below_borderline": 0
+    },
+    "note": "같은 분할(seed 42, 익상편 포함 그룹맵)에서 라벨 오류 8장만 test에서 제외해 재계산한 값. 재학습 결과가 아님. 정정 전 test_metrics_at_prod_threshold(FN 7)의 FN은 전부 이 라벨 오류였다."
+  },
+  "tta": {
+    "recommended": false,
+    "measured": "2026-09-02, test 2,526장(정정 전): TTA 없음 FN 7/FP 2, TTA 적용 FN 9/FP 3 → settings.use_tta 기본 OFF"
+  },
+  "temperature_scaling": {
+    "fitted_T_on_val": 2.06,
+    "adopted": false,
+    "note": "val NLL 0.0110→0.0078로 개선되지만 출력이 양극단(0/100%)이라 test 판정·경계 구간이 사실상 변하지 않아 도입하지 않음"
+  }
 }

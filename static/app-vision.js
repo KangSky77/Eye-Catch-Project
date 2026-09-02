@@ -81,6 +81,19 @@ function uploadWithProgress(url, formData, onProgress, onUploaded) {
     });
 }
 
+// 업로드 카드 상단 고정 오류 배너 — 토스트는 카드 아래쪽에 잠깐 떠서 놓치기 쉬웠다(외부 리뷰).
+// 다음 사진을 고를 때까지 남는다.
+function showUploadError(msg) {
+    const el = document.getElementById('upload-error');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+}
+function clearUploadError() {
+    const el = document.getElementById('upload-error');
+    if (el) { el.textContent = ''; el.classList.add('hidden'); }
+}
+
 async function runAIAnalysis(droppedFile) {
     const fileInput = document.getElementById('cataract-file');
     const file = droppedFile || fileInput.files[0];
@@ -90,12 +103,15 @@ async function runAIAnalysis(droppedFile) {
     if (!file) return;
 
     const t = translations[state.lang];
+    clearUploadError();
     if (!file.type.startsWith('image/')) {
         showToast(t.err_file_type || "Please upload an image file.", 'error');
+        showUploadError(t.err_file_type || "Please upload an image file.");
         return;
     }
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
-        showToast((t.err_file_size || "File too large ({n} MB max).").replace('{n}', MAX_UPLOAD_MB), 'error');
+        const m = (t.err_file_size || "File too large ({n} MB max).").replace('{n}', MAX_UPLOAD_MB);
+        showToast(m, 'error'); showUploadError(m);
         return;
     }
 
@@ -122,29 +138,21 @@ async function runAIAnalysis(droppedFile) {
         if (!res.ok) {
             // detail이 문자열이 아닐 수 있음(422 검증 오류는 객체 배열) → 그대로 alert하면 [object Object]
             const msg = typeof d.detail === 'string' ? d.detail : (translations[state.lang].srv_err || "Error");
-            showToast(msg, 'error');
+            showToast(msg, 'error'); showUploadError(msg);
             nextStep('step-photo');
             return;
         }
 
-        // 흔들린 사진은 사람도 판독할 수 없다 — 판정 대신 재촬영을 요청한다
-        if (d.result_code === 'blurry') {
-            showToast(translations[state.lang].ai_blurry || "사진이 흔들려 판독할 수 없어요. 또렷하게 다시 찍어주세요.", 'error', 7000);
-            nextStep('step-photo');
-            return;
-        }
-
-        // 플래시 반사가 눈동자를 덮으면 모델이 혼탁으로 오독한다 —
-        // 판정 대신 재촬영을 요청한다(서버의 반사 게이트가 'hold'로 알려준다).
-        if (d.result_code === 'hold') {
-            showToast(translations[state.lang].ai_hold || "플래시 반사가 강해 판독할 수 없어요. 플래시를 끄고 다시 찍어주세요.", 'error', 7000);
-            nextStep('step-photo');
-            return;
-        }
-
-        // 눈 사진이 아니라고 판단되면 의료 결과 대신 재촬영 안내
-        if (d.result_code === 'invalid') {
-            showToast(translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.", 'error', 6000);
+        // 판정 대신 재촬영을 요청하는 코드들 — 토스트 + 업로드 카드 상단 배너(다음 사진까지 유지)
+        const retake = {
+            blurry: translations[state.lang].ai_blurry || "사진이 흔들려 판독할 수 없어요. 또렷하게 다시 찍어주세요.",
+            hold: translations[state.lang].ai_hold || "플래시 반사가 강해 판독할 수 없어요. 플래시를 끄고 다시 찍어주세요.",
+            eyes_hidden: translations[state.lang].ai_eyes_hidden || "눈이 감겨 있거나 가려진 것 같아요. 눈을 크게 뜨고 안경·선글라스를 벗은 뒤 다시 찍어주세요.",
+            invalid: translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요."
+        };
+        if (retake[d.result_code]) {
+            showToast(retake[d.result_code], 'error', 7000);
+            showUploadError(retake[d.result_code]);
             nextStep('step-photo');
             return;
         }
@@ -169,12 +177,12 @@ async function runAIAnalysis(droppedFile) {
         const disp = document.getElementById('ai-result-display');
         disp.innerHTML = '';
         // 판정별 색상: 위험=장미색 / 경계=호박색 / 정상=파랑(기존 톤 유지)
-        const probColor = { risk: 'text-rose-600', borderline: 'text-amber-600', normal: 'text-blue-700' };
+        const probColor = { risk: 'text-rose-600', borderline: 'text-amber-600', uncertain: 'text-amber-600', normal: 'text-blue-700' };
         // 모델 출력은 보정되지 않은 softmax 값이라 '확률'로 읽히면 안 된다.
         // (Brier/ECE/temperature scaling 미적용) 표기와 각주로 명시한다.
         const pProb = document.createElement('p');
         pProb.className = `text-xs font-black mb-1 ${probColor[d.result_code] || probColor.normal}`;
-        pProb.textContent = `${t.score_label || 'AI 위험 점수'} ${d.probability}`;
+        pProb.textContent = `${t.score_label || 'AI 특징 점수'} ${d.probability}/100`;
         const pRes = document.createElement('p');
         pRes.className = 'text-xl font-bold';
         pRes.textContent = resultText;
@@ -184,6 +192,21 @@ async function runAIAnalysis(droppedFile) {
         pNote.className = 'text-[10px] text-slate-400 mt-2 leading-relaxed';
         pNote.textContent = t.score_note || '';
         disp.appendChild(pNote);
+
+        // 애매한 신호(uncertain / 얼굴 모드의 borderline) → 눈 클로즈업 재촬영 권유.
+        // 얼굴 사진은 편의 기능이고, 정확도는 눈을 한쪽씩 가까이 찍는 쪽이 훨씬 높다.
+        if (d.closeup_suggested) {
+            const hint = document.createElement('p');
+            hint.className = 'closeup-hint';
+            hint.textContent = t.closeup_hint || '얼굴 사진보다 눈을 한쪽씩 가까이(20~30cm) 찍으면 훨씬 정확해요.';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'closeup-btn btn-pop';
+            btn.textContent = t.closeup_btn || '눈 클로즈업으로 다시 찍기';
+            btn.onclick = () => nextStep('step-photo');
+            disp.appendChild(hint);
+            disp.appendChild(btn);
+        }
 
         // 눈별 분석 카드 (얼굴 모드 + 눈 2개일 때만)
         if (twoEyes) {
@@ -203,6 +226,7 @@ async function runAIAnalysis(droppedFile) {
         setTimeout(() => nextStep('step-ai-result'), 1000);
     } catch (e) {
         showToast(translations[state.lang].srv_err || "Server Connection Error", 'error');
+        showUploadError(translations[state.lang].srv_err || "Server Connection Error");
         nextStep('step-photo');
     } finally {
         // 성공·실패·중간 return 어느 경로로 나가든 경과 시간 타이머는 반드시 멈춘다
@@ -228,6 +252,7 @@ function renderEyeBreakdown(container, eyes) {
     const codeStyle = {
         risk: 'bg-rose-100 text-rose-600',
         borderline: 'bg-amber-100 text-amber-600',
+        uncertain: 'bg-amber-100 text-amber-600',
         normal: 'bg-emerald-100 text-emerald-600'
     };
     eyes.forEach(e => {
@@ -238,8 +263,8 @@ function renderEyeBreakdown(container, eyes) {
         label.textContent = sideLabel[e.side] || e.side;
         const val = document.createElement('span');
         val.className = `text-sm font-black px-2.5 py-0.5 rounded-full ${codeStyle[e.code] || codeStyle.normal}`;
-        // '%'를 붙이지 않는다 — 위의 'AI 위험 점수'와 같은 값이므로 표기도 같아야 한다
-        val.textContent = `${e.probability}`;
+        // '%'를 붙이지 않는다(보정되지 않은 softmax) — 결과 카드·리포트와 같은 x/100 표기
+        val.textContent = `${e.probability}/100`;
         row.appendChild(label);
         row.appendChild(val);
         wrap.appendChild(row);
@@ -399,6 +424,12 @@ function recordAmsler(bad) {
 // 사진 업로드 카드 드래그&드롭 — 데스크톱에서 파일 선택창을 거치지 않고 바로 분석
 // ------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
+    // '카메라로 바로 찍기' 버튼 노출 — 터치 기기에서만.
+    // CSS (hover: none) 조건은 S펜이 있는 갤럭시 Ultra에서 hover: hover 로 잡혀 버튼이 안 보였다(S25 Ultra 실기기, 2026-09-02).
+    // maxTouchPoints 가 가장 믿을 만하고, 못 읽는 구형 브라우저는 UA 로 보조 판별한다.
+    const isTouch = (navigator.maxTouchPoints || 0) > 0 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isTouch) document.body.classList.add('touch-device');
+
     const zone = document.getElementById('dropzone');
     if (zone) {
         ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => {

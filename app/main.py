@@ -10,6 +10,7 @@ from app.services.vision import load_trained_weights
 from app.services.llm import warmup_ollama
 from app.services import eye_validator, eye_detector
 from app.services.database import init_db_pool, close_db_pool
+from app.core.config import settings
 import asyncio
 import os
 
@@ -75,16 +76,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# CORS 설정
-# 프론트가 같은 서버(/static)에서 서빙되므로 사실상 same-origin.
-# 와일드카드 origin + credentials 조합은 스펙 위반이라 credentials는 끔.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS 설정 — 화이트리스트 방식(기본은 아예 미적용)
+# 프론트가 같은 서버(/static)에서 서빙되므로 평소에는 same-origin이고, ngrok으로
+# 공유해도 페이지와 API가 같은 도메인이라 CORS 헤더가 필요 없다. 예전에는
+# allow_origins=["*"]로 전부 열어뒀는데 쓰지도 않는 개방이라, 필요한 origin만
+# .env의 ALLOWED_ORIGINS에 나열하는 방식으로 좁혔다.
+# 와일드카드가 아니어도 이 API는 쿠키 인증을 쓰지 않으므로 credentials는 계속 끈다.
+_allowed_origins = settings.allowed_origins_list
+if _allowed_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_allowed_origins,
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    logger.info(f"🔒 CORS 허용 origin: {_allowed_origins}")
+else:
+    logger.info("🔒 CORS 미들웨어 미적용 — same-origin 요청만 받습니다")
 
 # 라우터 등록
 app.include_router(router)

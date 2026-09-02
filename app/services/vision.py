@@ -61,11 +61,11 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
     # (무인자 read()로 전부 읽은 뒤 검사하면, 거부할 업로드도 일단 통째로 메모리에 올라와
     #  MAX_FILE_SIZE가 사실상 방어 역할을 못 한다.)
     if file.size is not None and file.size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="파일 크기는 10MB 이하여야 합니다.")
+        raise HTTPException(status_code=413, detail=f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
 
     contents = await file.read(MAX_FILE_SIZE + 1)
     if len(contents) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="파일 크기는 10MB 이하여야 합니다.")
+        raise HTTPException(status_code=413, detail=f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
 
     try:
         # 헤더만 먼저 읽어 크기 확인(이 시점엔 전체 픽셀 디코딩 전)
@@ -139,6 +139,9 @@ GLARE_MAX_FRACTION = 0.02      # 중앙부의 2%를 넘으면 판독 보류
 def _predict_single(img: Image.Image) -> float:
     """이미지 1장의 백내장 확률(%)을 반환.
 
+    TTA는 settings.use_tta(기본 OFF). v6 가중치 재측정(2026-09-02, test 2,526장, 라벨 정정 전):
+        TTA 없음 FN 7 / FP 2  |  TTA 적용 FN 9 / FP 3  → 이득이 없어 끈다. 아래 표는 v5 시절 근거.
+
     TTA(좌우반전 평균): 원본과 거울상 두 뷰의 예측을 평균한다. 눈은 좌우 대칭이고
     학습 때도 RandomHorizontalFlip을 썼으므로 분포상 안전한 앙상블.
     배포 모델(efficientnet_b0 v5) 실측 — test 2,600장, 2026-08-20:
@@ -156,7 +159,8 @@ def _predict_single(img: Image.Image) -> float:
       '무득실'이라는 수치도 v4 시절 것이라 배포 모델(v5)과 맞지 않았다. 위 표로 교체함.
       백본·데이터를 바꾸면 반드시 재측정할 것(resnet18 v4는 TTA가 FN 7→10으로 해로웠다)."""
     x = preprocess(img)
-    batch = torch.stack([x, torch.flip(x, dims=[2])]).to(device)   # dims=[2] = W(좌우)축
+    views = [x, torch.flip(x, dims=[2])] if settings.use_tta else [x]   # dims=[2] = W(좌우)축
+    batch = torch.stack(views).to(device)
     with torch.no_grad():
         probs = torch.nn.functional.softmax(model(batch), dim=1)[:, 1]
     return probs.mean().item() * 100
@@ -189,11 +193,17 @@ def _classify(prob: float):
     3단계 판정: risk(≥risk_threshold) / borderline(경계 구간) / normal.
     경계 구간은 '정상'으로 안심시키기엔 애매한 확률대(임계값 근거는 config.py 주석)를
     재촬영·검진 권장으로 안내해, 문턱 바로 아래에서 놓치는 백내장(FN)을 줄인다."""
+    # 4단계: 강한 특징 / 특징 감지 / 판단 어려움 / 뚜렷한 특징 없음.
+    # 문구는 '백내장 판별'이 아니라 '사진에서 보이는 진행성 혼탁 특징'으로 범위를 좁힌다 — 외부 테스트에서
+    # 옅은 초기 혼탁(AI 생성 얼굴)은 0~4.9점으로 반응하지 않았고, 초기 백내장은 겉사진에 나타나지 않을 수
+    # 있다(NEI). '정상'이라 쓰면 눈 전체가 정상이라는 뜻으로 읽히므로 쓰지 않는다 (2026-09-02).
     if prob >= settings.risk_threshold:
-        return "risk", "백내장 위험 단계 (정밀 검사 권장)"
+        return "risk", "강한 혼탁 특징 감지 (안과 정밀 검사 권장)"
     if prob >= settings.borderline_threshold:
-        return "borderline", "경계 단계 (재촬영 후 재검사 또는 안과 검진 권장)"
-    return "normal", "특이 소견 없음 (정상)"
+        return "borderline", "혼탁 특징 감지 (재촬영 후 재검사 또는 안과 검진 권장)"
+    if prob >= settings.uncertain_threshold:
+        return "uncertain", "사진만으로 판단이 어렵습니다 (약한 혼탁 특징 신호)"
+    return "normal", "뚜렷한 진행성 혼탁 특징이 감지되지 않았습니다 (초기 백내장은 사진으로 확인이 어렵습니다)"
 
 
 def predict_cataract(img: Image.Image):
@@ -208,6 +218,28 @@ def predict_cataract(img: Image.Image):
     # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주
     eye_crops = eye_detector.extract_eye_crops(img)
     mode = "face" if eye_crops else "eye"
+
+    targets = eye_crops if eye_crops else [img]
+
+    # [흔들림 게이트] 초점이 나간 사진은 사람도 판독할 수 없다.
+    # 반사 게이트보다 먼저 본다 — 흔들려서 뿌연 것을 '반사'라고 안내하면 엉뚱한 재촬영을 시킨다.
+    sharp = max((_sharpness(t) for t in targets), default=0.0)
+    if sharp < BLUR_MIN_SHARPNESS:
+        logger.info("판독 보류 — 흔들림/초점 흐림 (선명도 %.4f)", sharp)
+        return {
+            "probability": 0.0,
+            "result": "판독 보류 (사진이 흔들렸습니다)",
+            "result_code": "blurry",       # 프론트가 '또렷하게 다시 찍어주세요'로 안내
+            "mode": mode,
+            "eyes_detected": len(eye_crops),
+            "eye_probs": [],
+            "eyes": [],
+            "asymmetric": False,
+            "sharpness": round(sharp, 4),
+        }
+
+    # 흔들림 게이트가 먼저다: 흐린 눈 사진을 눈 게이트에 먼저 넣으면 '눈이 아님/가려짐'으로 잘못 안내된다
+    # (실측 2026-09-02: 흔들린 얼굴 사진의 눈 크롭 게이트 점수 0.106 → eyes_hidden). 흐림은 흐림이라고 말한다.
 
     # [검증] 얼굴(MTCNN)이 안 잡힌 'eye 모드'는 눈 클로즈업인지 확신할 수 없으므로,
     # 임베딩 OOD 게이트로 '진짜 눈 사진인가'를 확인. 비-눈이면 의료 결과 대신 거부.
@@ -233,31 +265,44 @@ def predict_cataract(img: Image.Image):
                 "eye_score": round(score, 3),
             }
 
-    targets = eye_crops if eye_crops else [img]
-
-    # [흔들림 게이트] 초점이 나간 사진은 사람도 판독할 수 없다.
-    # 반사 게이트보다 먼저 본다 — 흔들려서 뿌연 것을 '반사'라고 안내하면 엉뚱한 재촬영을 시킨다.
-    sharp = max((_sharpness(t) for t in targets), default=0.0)
-    if sharp < BLUR_MIN_SHARPNESS:
-        logger.info("판독 보류 — 흔들림/초점 흐림 (선명도 %.4f)", sharp)
-        return {
-            "probability": 0.0,
-            "result": "판독 보류 (사진이 흔들렸습니다)",
-            "result_code": "blurry",       # 프론트가 '또렷하게 다시 찍어주세요'로 안내
-            "mode": mode,
-            "eyes_detected": len(eye_crops),
-            "eye_probs": [],
-            "eyes": [],
-            "asymmetric": False,
-            "sharpness": round(sharp, 4),
-        }
+    # [검증·얼굴 모드] MTCNN은 얼굴 '기하'에서 눈 위치를 추정할 뿐, 그 자리에 눈이 보이는지는 모른다.
+    # 눈을 감았거나 선글라스·안대로 가린 얼굴도 눈 좌표를 돌려주므로, 피부·검정·흰색 조각이 모델에
+    # 들어가 '정상 0.0%'가 자신 있게 나갔다(2026-09-02 실측). 크롭마다 눈/비-눈 게이트를 통과시킨다.
+    if mode == "face":
+        checks = [eye_validator.check_eye(c) for c in eye_crops]
+        if any(ok is None for ok, _ in checks):
+            raise HTTPException(
+                status_code=503,
+                detail="눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            )
+        if not all(ok for ok, _ in checks):
+            return {
+                "probability": 0.0,
+                "result": "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
+                "result_code": "eyes_hidden",   # 프론트가 '눈을 뜨고 안경·선글라스를 벗고 다시 찍어주세요'로 안내
+                "mode": mode,
+                "eyes_detected": len(eye_crops),
+                "eye_probs": [],
+                "eyes": [],
+                "asymmetric": False,
+                "eye_score": round(min(s for _, s in checks), 3),
+            }
 
     # [반사 게이트] 플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
     # 실측: 정상 눈에 반사점을 합성하니 최대 70%가 '위험'으로 뒤집혔다(위 상수 주석 표).
-    # 이 경우 판정을 내리지 않고 재촬영을 요청한다 — 틀린 의료 판정보다 다시 찍는 편이 낫다.
+    # 반사는 판정을 '위험' 쪽으로만 밀므로, 반사가 있어도 모델이 '정상'이라 하면 그 결과는 믿을 수 있다.
+    # 반면 '위험/경계'는 반사 때문일 수 있어 판정을 내리지 않고 재촬영을 요청한다.
+    # (예전엔 반사가 있으면 무조건 보류했는데, 데이터셋 백내장 사진의 3.0%(54/1,823)·정상 0.1%가 걸렸다.
+    #  이 규칙으로 정상 눈의 불필요한 재촬영은 사라지고, 반사 낀 진짜 백내장은 여전히 재촬영을 요청한다 —
+    #  놓치는 것이 아니라 플래시를 끄고 다시 찍으면 판정된다. 2026-09-02)
     glare = max((_glare_fraction(t) for t in targets), default=0.0)
-    if glare >= GLARE_MAX_FRACTION:
-        logger.info("판독 보류 — 조명 반사 감지 (순백비율 %.3f)", glare)
+
+    eye_probs = [_predict_single(t) for t in targets]
+    # 의료 스크리닝: 두 눈 중 위험도가 높은 쪽 기준으로 판정
+    cat_p = max(eye_probs)
+
+    if glare >= GLARE_MAX_FRACTION and _classify(cat_p)[0] != "normal":
+        logger.info("판독 보류 — 조명 반사 감지 (순백비율 %.3f, 모델 %.1f%%)", glare, cat_p)
         return {
             "probability": 0.0,
             "result": "판독 보류 (강한 조명 반사 감지됨)",
@@ -269,10 +314,6 @@ def predict_cataract(img: Image.Image):
             "asymmetric": False,
             "glare": round(glare, 4),
         }
-
-    eye_probs = [_predict_single(t) for t in targets]
-    # 의료 스크리닝: 두 눈 중 위험도가 높은 쪽 기준으로 판정
-    cat_p = max(eye_probs)
 
     # result_code: 프론트엔드에서 언어별로 번역할 수 있도록 언어 중립적 코드 제공
     # 참고: 과거 'cat_p>=99 → 조명 반사 보류' 규칙은 약한 모델의 오탐을 막으려던
@@ -297,6 +338,10 @@ def predict_cataract(img: Image.Image):
     risk_count = sum(1 for e in eyes if e["code"] == "risk")
     asymmetric = mode == "face" and len(eyes) == 2 and risk_count == 1
 
+    # 애매한 신호는 눈 클로즈업으로 확인시킨다 — 얼굴 사진의 눈 크롭은 해상도가 낮고, 외부 테스트에서
+    # 옅은 혼탁은 얼굴 사진으로 거의 잡히지 않았다. uncertain은 어느 모드든, borderline은 얼굴 모드일 때.
+    closeup_suggested = code == "uncertain" or (mode == "face" and code == "borderline")
+
     # 백내장 확률만 표시 (max 사용 시 정상이어도 높은 숫자 표시되는 혼란 방지)
     return {
         "probability": round(cat_p, 1),
@@ -307,4 +352,5 @@ def predict_cataract(img: Image.Image):
         "eye_probs": [round(p, 1) for p in eye_probs],
         "eyes": eyes,                              # 눈별 [{side, probability, code}]
         "asymmetric": asymmetric,                  # 편측만 위험이면 True
+        "closeup_suggested": closeup_suggested,    # 프론트가 '눈을 한쪽씩 가까이 다시 찍기'를 권함
     }

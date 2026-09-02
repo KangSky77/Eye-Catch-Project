@@ -365,10 +365,10 @@ def test_반사_판독보류를_프론트가_처리한다():
     """서버가 result_code='hold'를 주면 의료 판정 대신 재촬영을 안내해야 한다.
     처리가 없으면 확률 0.0%가 '정상'으로 표시돼 정반대 결과가 나간다."""
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
-    assert "d.result_code === 'hold'" in vision
-    assert "ai_hold" in vision
+    # 재촬영 코드는 retake 맵으로 한꺼번에 처리한다(2026-09-02) — hold 항목과 문구 키가 있어야 한다
+    assert "hold:" in vision and "ai_hold" in vision
     # hold 처리는 정상 결과 표시보다 먼저 와야 한다
-    assert vision.index("d.result_code === 'hold'") < vision.index("ai-result-display")
+    assert vision.index("hold:") < vision.index("ai-result-display")
 
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("ai_hold:") == 6, "6개 언어 모두에 반사 안내 문구가 있어야 한다"
@@ -471,9 +471,11 @@ def test_질환별_시야_체험이_4종_모두_다르게_동작한다():
     assert "VISION_SIMS" in disease
     for key in ["'cataract'", "'amd'", "'glaucoma'", "'dr'"]:
         assert key in disease, f"{key} 시야 효과가 없습니다"
-    # 외부 이미지·라이브러리 없이 동작해야 한다(발표장 오프라인 대비)
-    assert "/static/assets/vision-scene.svg" in disease
-    assert (STATIC / "assets" / "vision-scene.svg").exists()
+    # 외부 이미지·라이브러리 없이 동작해야 한다(발표장 오프라인 대비) — 장면 사진은 로컬 CC0 실사진
+    assert "/static/assets/vision-scene.jpg" in disease
+    assert (STATIC / "assets" / "vision-scene.jpg").exists()
+    assert (STATIC / "assets" / "ATTRIBUTION-vision-scene.md").exists()
+    assert "VISION_SCENE_CREDIT" in disease and "sim-credit" in disease, "화면에 사진 출처가 있어야 한다"
 
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     for key in ["sim_title:", "sim_desc:", "sim_normal:", "sim_strength:", "sim_disclaimer:"]:
@@ -490,8 +492,8 @@ def test_시야_체험은_진단도구가_아님을_밝힌다():
 
 def test_흔들림_보류를_프론트가_처리한다():
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
-    assert "d.result_code === 'blurry'" in vision
-    assert vision.index("d.result_code === 'blurry'") < vision.index("ai-result-display")
+    assert "blurry:" in vision and "ai_blurry" in vision
+    assert vision.index("blurry:") < vision.index("ai-result-display")
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("ai_blurry:") == 6
 
@@ -521,6 +523,160 @@ def test_시력검사_UI가_복구되어_있다():
     assert 'id="tab-vision"' in html
     assert "app-visiontest.js" in html and "calibration.js" in html
     assert html.count('data-i18n="nav_vision"') == 2, "상단·하단 네비 모두 필요"
+
+
+def test_촬영_예시_갤러리가_있고_사진과_출처가_존재한다():
+    """팀 요청(2026-09-02): 찍기 전에 잘 찍은 얼굴 사진/흔들린 얼굴 사진을 보여준다.
+    예시 사진은 CC0 원본 한 장을 가공한 것이므로 출처 파일도 같이 있어야 한다."""
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    guide = html[html.index('id="step-guide"'):html.index('id="step-photo"')]
+    for name in ["face-good", "face-blurry"]:
+        assert f"/static/assets/examples/{name}.jpg" in guide, f"{name} 예시가 촬영 안내 단계에 없습니다"
+        assert (STATIC / "assets" / "examples" / f"{name}.jpg").exists()
+    assert (STATIC / "assets" / "examples" / "ATTRIBUTION.md").exists()
+
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["ex_title:", "ex_good:", "ex_bad_blur:", "ex_hint:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+
+
+def test_촬영_안내가_후면카메라_대신_흔들림_방지를_말한다():
+    """팀 결정(2026-09-02): 1번 팁은 '후면 카메라 권장'을 빼고 '흔들리지 않게'로."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for phrase in ["후면 카메라", "rear camera", "cámara trasera", "caméra arrière", "背面カメラ", "后置摄像头"]:
+        assert phrase not in data, f"후면 카메라 권장 문구가 남아 있습니다: {phrase!r}"
+    for phrase in ["흔들리지 않게", "Hold the phone steady", "Mantenga el teléfono firme",
+                   "Tenez le téléphone bien stable", "手ブレしないように", "拍摄时请保持稳定"]:
+        assert phrase in data, f"흔들림 방지 안내가 없습니다: {phrase!r}"
+
+
+def test_글자_크기_조절이_있고_저장값을_먼저_적용한다():
+    """모바일 가독성: A−/A+ 로 3단계, 선택은 localStorage에 저장돼 첫 화면부터 적용된다."""
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert 'id="fs-dec"' in html and 'id="fs-inc"' in html
+    assert html.index("localStorage.getItem('ec_font')") < html.index("<body"), "저장값 복원은 <head>에서 먼저"
+    core = (STATIC / "app-core.js").read_text(encoding="utf-8")
+    assert "function applyFontSize" in core and "applyFontSize(loadFontLevel())" in core
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert 'html[data-font="1"]' in css and 'html[data-font="2"]' in css
+    # px 임의값 텍스트 클래스는 root를 따라가지 않으므로 rem 재정의가 있어야 실제로 커진다
+    assert r".text-\[11px\] { font-size: .6875rem; }" in css
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("font_size:") == 6
+
+
+def test_리포트_AI_요약_라벨이_3줄_요약을_말한다():
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("rep_info_title:") == 6
+    for phrase in ["AI 3줄 요약", "AI 3-line summary", "3 líneas", "3 lignes", "AI 3行要約", "AI 三行摘要"]:
+        assert phrase in data, f"3줄 요약 라벨이 없습니다: {phrase!r}"
+
+
+def test_소견_완료후_부가동작_실패가_연결끊김으로_보이지_않는다():
+    """S25 Ultra 실기기 재현(2026-09-02): 안드로이드 크롬은 페이지 컨텍스트의 new Notification()이
+    예외를 던진다. 그 예외가 스트림 try/catch로 흘러 완성된 소견을 '연결 끊김'으로 덮어썼다."""
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    assert "function notifyOpinionDone()" in report
+    body = report[report.index("function notifyOpinionDone()"):]
+    body = body[: body.index("\n}")]
+    assert "try {" in body and "new Notification" in body, "알림 생성은 반드시 try 안에서"
+    # runAiOpinion 본문 안에는 new Notification이 직접 등장하면 안 된다
+    run = report[report.index("async function runAiOpinion()"):report.index("function notifyOpinionDone()")]
+    assert "new Notification(translations" not in run   # 주석의 언급은 제외, 실제 호출만
+    assert "notifyOpinionDone();" in run
+
+
+def test_모바일_카메라로_바로_찍기_버튼이_있다():
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert 'id="cataract-camera"' in html and " capture " in html, "capture 속성이 있어야 카메라가 바로 열린다"
+    assert 'for="cataract-camera"' in html
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert data.count("camera_btn:") == 6
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert ".touch-device .camera-btn { display: block; }" in css
+    # (hover: none) 미디어쿼리로 판별하면 S펜 갤럭시(Ultra)에서 숨겨진다 — JS 터치 판별을 써야 한다
+    assert "(hover: none)" not in css.split(".camera-btn")[0][-400:]
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "navigator.maxTouchPoints" in vision and "classList.add('touch-device')" in vision
+
+
+def test_큰_글자_단계에서도_브랜드명을_숨기지_않는다():
+    """실기기 피드백: A+ 최대에서 Eye-Catch 이름이 사라지면 앱이 바뀐 것처럼 보인다."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert '.brand-name { display: none; }' not in css
+    assert "#gemma-opinion-text { font-size: .9rem" in css, "3줄 요약 본문도 root 크기를 따라 커져야 한다"
+
+
+def test_시야_체험은_모달_밖_패널에_있고_버튼으로_연다():
+    """팀 요청(2026-09-02): 질환 상세 모달 안에 있던 시야 체험을 질환 탭 맨 아래 버튼 → 패널로."""
+    disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
+    open_body = disease[disease.index("function openDisease("):disease.index("function openDiseaseModal")]
+    assert "buildVisionSim(" not in open_body, "시야 체험이 다시 모달 안으로 들어갔습니다"
+    assert "function toggleVisionSim(" in disease and "function renderVisionSimPanel(" in disease
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    disease_tab = html[html.index('id="tab-disease"'):html.index('id="tab-report"')]
+    assert 'id="sim-open-btn"' in disease_tab and 'id="vision-sim-panel"' in disease_tab
+    assert disease_tab.index('id="disease-list"') < disease_tab.index('id="sim-open-btn"'), "버튼은 카드 목록 아래(맨 밑)에"
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["sim_open_btn:", "sim_close_btn:", "sim_pick:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+
+
+def test_외부리뷰_반영_모달_zindex_배너_개인정보_예시위치():
+    """2026-09-02 외부 리뷰: 모달이 헤더에 가림 / 오류 토스트 놓침 / 사진 개인정보 안내 없음 / 기본 지도가 '내 주변'처럼 보임."""
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    overlay = css[css.index(".dm-overlay {"):]; overlay = overlay[: overlay.index("}")]
+    z = int(overlay.split("z-index:")[1].split(";")[0])
+    header = css[css.index(".site-header {"):]; header = header[: header.index("}")]
+    hz = int(header.split("z-index:")[1].split(";")[0])
+    assert z > hz, "질환 모달은 고정 헤더보다 위에 있어야 한다"
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    photo = html[html.index('id="step-photo"'):html.index('id="step-ai-loading"')]
+    assert 'id="upload-error"' in photo and photo.index('id="upload-error"') < photo.index('id="upload-guide"'), "오류 배너는 카드 상단에"
+    assert 'data-i18n="upload_privacy"' in photo and photo.index('data-i18n="upload_privacy"') < photo.index('id="cataract-camera"'), "개인정보 안내는 업로드 버튼 위에"
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "function showUploadError" in vision and "clearUploadError();" in vision
+    for code in ["blurry", "hold", "eyes_hidden", "invalid"]:
+        assert f"{code}:" in vision, f"{code} 재촬영 안내가 배너로 나가야 한다"
+    mapjs = (STATIC / "app-map.js").read_text(encoding="utf-8")
+    assert "map-example-badge" in mapjs and "clearMapExample();" in mapjs
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["ai_eyes_hidden:", "upload_privacy:", "upload_privacy_title:", "upload_privacy_more:", "map_example_badge:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+
+
+def test_외부리뷰_문구_진단_아닌_리포트_점수는_100점만점_범위_명시():
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert "진단 리포트" not in data and "Diagnostic Report" not in data, "'진단'은 서비스 안내와 충돌한다 → 눈 건강 리포트"
+    assert data.count("AI 특징 점수") >= 1 and "AI 위험 점수" not in data
+    assert "특이 소견 없음 (정상)" not in data, "모델은 백내장만 본다 → '백내장 의심 소견 없음'"
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "/100" in vision and "${d.probability}%" not in vision, "리포트의 % 표기는 질병 확률로 읽힌다"
+    assert "진행성 수정체 혼탁 특징만 확인합니다" in data, "첫 화면에서 사진 AI의 범위(보이는 진행성 혼탁만)를 밝혀야 한다"
+    assert "검사는 모두 마쳤지만" in data, "시력검사 실패 문구는 '완료됐지만 계산 불가'로"
+    disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
+    assert "_simLevel" in disease, "언어 전환 시 시야 체험 강도가 초기화되면 안 된다"
+
+
+def test_눈게이트_파일과_얼굴모드_검증():
+    assert (ROOT / "app" / "models" / "eye_gate.npz").exists(), "scripts/build_eye_gate.py 산출물이 있어야 한다"
+    src = (ROOT / "app" / "services" / "vision.py").read_text(encoding="utf-8")
+    body = src[src.index("def predict_cataract("):]
+    assert 'if mode == "face":' in body and '"eyes_hidden"' in body
+
+
+def test_낮은_점수_구간과_클로즈업_권유가_프론트에_있다():
+    """외부 테스트(AI 생성 얼굴 5장, 2026-09-02): 옅은 초기 혼탁이 0~4.9점 → '정상'. 낮은 점수는 '판단 어려움'으로
+    분리하고, 얼굴 사진은 편의 기능이며 눈 클로즈업을 우선하도록 안내한다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    for key in ["ai_uncertain:", "closeup_hint:", "closeup_btn:", "find_cat_uncertain:"]:
+        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+    assert "백내장 판별 결과" not in data and "백내장 위험 단계" not in data, "판별/위험 단계 → 혼탁 특징 표현으로"
+    assert "눈을 한쪽씩 가까이 찍어주세요" in data
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "d.closeup_suggested" in vision and "uncertain:" in vision
+    findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
+    assert "find_cat_uncertain" in findings
 
 
 # ==========================================================================
@@ -649,7 +805,11 @@ def test_촬영안내가_두_화면에서_같은_말을_한다():
     서로 다른 말을 했다."""
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert "정면에서 촬영하세요." not in data
-    assert "후면 카메라로 찍어주세요." in data
+    # 9/2 팀 결정: '후면 카메라 권장'은 빼고 흔들림 방지·플래시 끄기·눈 클로즈업 — 업로드 화면 목록도 같은 세 가지
+    guide_ko = data[data.index('guide_list: "'):]; guide_ko = guide_ko[: guide_ko.index('",')]
+    for phrase in ["흔들리지 않게", "플래시는 꺼주세요", "가까이"]:
+        assert phrase in guide_ko, f"업로드 화면 안내에 '{phrase}'가 없다 — 팁 화면과 같은 말을 해야 한다"
+    assert "후면 카메라" not in data
     assert data.count("guide_list:") == 6
 
 

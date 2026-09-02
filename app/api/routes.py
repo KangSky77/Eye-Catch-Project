@@ -37,7 +37,10 @@ async def analyze_eye(file: UploadFile = File(...)):
         "eye_probs": result["eye_probs"],
         "eyes": result["eyes"],                    # 눈별 [{side, probability, code}]
         "asymmetric": result["asymmetric"],        # 편측만 위험이면 True
-        "eye_score": result.get("eye_score"),      # 눈 OOD 유사도(invalid 판정일 때만 존재, 디버깅용)
+        "closeup_suggested": result.get("closeup_suggested", False),   # 애매한 신호 → 눈 클로즈업 재촬영 권유
+        "eye_score": result.get("eye_score"),      # 눈 게이트 점수(invalid/eyes_hidden 판정일 때만 존재, 디버깅용)
+        "sharpness": result.get("sharpness"),      # 흔들림 보류 근거
+        "glare": result.get("glare"),              # 반사 보류 근거
     }
 
 @router.post("/api/get-ai-opinion")
