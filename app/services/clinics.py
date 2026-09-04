@@ -8,8 +8,11 @@
 - 키가 없으면 빈 목록 + reason 반환 → 프론트가 외부 검색 링크로 폴백
 """
 import httpx
+import logging
 from math import radians, sin, cos, asin, sqrt
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 KAKAO_KEYWORD_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
@@ -38,7 +41,8 @@ async def _search_overpass(lat: float, lng: float, radius: int = 4000, size: int
             r = await client.post(OVERPASS_URL, data={"data": q})
             r.raise_for_status()
             elements = r.json().get("elements", [])
-    except Exception:
+    except Exception as exc:
+        logger.warning("Overpass 안과 검색 실패: %s", type(exc).__name__)
         return []
 
     seen, out = set(), []
@@ -91,7 +95,8 @@ async def search_eye_clinics(lat: float, lng: float, radius: int = 5000, size: i
             r = await client.get(KAKAO_KEYWORD_URL, headers=headers, params=params)
             r.raise_for_status()
             docs = r.json().get("documents", [])
-    except Exception:
+    except Exception as exc:
+        logger.warning("카카오 안과 검색 실패: %s", type(exc).__name__)
         docs = []   # 카카오 실패 → 아래에서 Overpass로 폴백
 
     clinics = []

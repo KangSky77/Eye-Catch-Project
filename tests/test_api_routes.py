@@ -9,6 +9,28 @@ import app.api.routes as routes
 from tests.conftest import make_image_bytes
 
 
+def test_healthz는_항상_liveness를_반환한다(client):
+    r = client.get("/healthz")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok"}
+
+
+def test_readyz는_모델이_없으면_503(client, monkeypatch):
+    from app.services import vision
+    monkeypatch.setattr(vision, "weights_loaded", False)
+    r = client.get("/readyz")
+    assert r.status_code == 503
+    assert r.json() == {"status": "not_ready", "model": "unavailable"}
+
+
+def test_readyz는_모델이_로드되면_200(client, monkeypatch):
+    from app.services import vision
+    monkeypatch.setattr(vision, "weights_loaded", True)
+    r = client.get("/readyz")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ready", "model": "ready"}
+
+
 CANNED = {
     "probability": 3.2, "result": "백내장 의심 소견 없음", "result_code": "normal",
     "mode": "eye", "eyes_detected": 0, "eye_probs": [3.2],

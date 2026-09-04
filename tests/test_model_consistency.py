@@ -29,6 +29,8 @@ def test_임계값_구조가_말이_됨():
     {"risk_threshold": 101.0},
     {"max_upload_size_bytes": 0},
     {"ollama_timeout_seconds": 0},
+    {"max_inference_concurrency": 0},
+    {"max_llm_concurrency": 0},
 ])
 def test_위험한_런타임설정은_기동전에_거부(overrides):
     with pytest.raises(ValueError):

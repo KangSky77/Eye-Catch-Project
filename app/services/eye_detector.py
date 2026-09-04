@@ -15,10 +15,13 @@
    이미 설치된 torch 2.12+cu130을 다운그레이드하려는 것을 방지)
 """
 import threading
+import logging
 import numpy as np
 import torch
 from PIL import Image
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 try:
     from facenet_pytorch import MTCNN
@@ -70,7 +73,8 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image]:
 
     try:
         boxes, probs, landmarks = mtcnn.detect(img, landmarks=True)
-    except Exception:
+    except Exception as exc:
+        logger.warning("MTCNN 얼굴 검출 실패: %s", type(exc).__name__)
         return []  # 검출 실패는 조용히 클로즈업 경로로
 
     if boxes is None or landmarks is None:

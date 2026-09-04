@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     ollama_timeout_seconds: float = 120.0
     kakao_rest_key: str = ""   # 카카오 로컬 REST API 키(.env의 KAKAO_REST_KEY) — 안과 검색용
     max_upload_size_bytes: int = 10 * 1024 * 1024  # .env의 MAX_UPLOAD_SIZE_BYTES로 덮어쓰기 가능
+    # 무거운 추론/LLM 작업이 동시에 몰릴 때 CPU·VRAM이 고갈되지 않도록 제한한다.
+    max_inference_concurrency: int = 1
+    max_llm_concurrency: int = 2
 
     # 이 API를 호출하도록 허용할 외부 origin 목록(쉼표 구분). 기본은 빈 값 = CORS 미적용.
     # 프론트가 같은 서버(/static)에서 서빙되므로 평소에는 same-origin이라 CORS 헤더 자체가
@@ -105,6 +108,10 @@ class Settings(BaseSettings):
             raise ValueError("MAX_UPLOAD_SIZE_BYTES는 0보다 커야 합니다.")
         if self.ollama_timeout_seconds <= 0:
             raise ValueError("OLLAMA_TIMEOUT_SECONDS는 0보다 커야 합니다.")
+        if self.max_inference_concurrency <= 0:
+            raise ValueError("MAX_INFERENCE_CONCURRENCY는 0보다 커야 합니다.")
+        if self.max_llm_concurrency <= 0:
+            raise ValueError("MAX_LLM_CONCURRENCY는 0보다 커야 합니다.")
         return self
 
     # IDE·서비스 관리자가 저장소 밖 cwd에서 서버를 띄워도 같은 설정을 읽는다.
