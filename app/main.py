@@ -1,18 +1,19 @@
+import asyncio
 import logging
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
+
 from app.api.routes import router
-from app.services.vision import load_trained_weights
-from app.services.llm import warmup_ollama
+from app.core.config import PROJECT_ROOT, settings
 from app.services import eye_validator, eye_detector
 from app.services.database import init_db_pool, close_db_pool
-from app.core.config import settings
-import asyncio
-import os
+from app.services.llm import warmup_ollama
+from app.services.vision import load_trained_weights
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,16 +30,13 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("⚠️  AI 모델 가중치 미로드 — 사진 분석 API는 503으로 차단됩니다")
 
-    # 백그라운드 워밍업 태스크는 반드시 참조를 붙들어 둔다 —
-    # 이벤트루프는 태스크에 강한 참조를 유지하지 않아서, 로컬 변수조차 없이 만들면
-    # 실행 도중 GC에 수거돼 워밍업이 조용히 사라질 수 있다(파이썬 공식 문서 경고).
     warmup_tasks: set[asyncio.Task] = set()
 
-    def spawn(coro):
+    def spawn(coro) -> None:
+        """워밍업 태스크를 종료할 때까지 추적한다."""
         task = asyncio.create_task(coro)
         warmup_tasks.add(task)
         task.add_done_callback(warmup_tasks.discard)
-        return task
 
     # Gemma(Ollama) 모델 백그라운드 워밍업 — 첫 소견서 콜드스타트 제거
     # (서버 기동을 막지 않도록 백그라운드 태스크로 실행)
@@ -54,15 +52,14 @@ async def lifespan(app: FastAPI):
         logger.info("🔥 MTCNN 감지기 웜업 시작(백그라운드)")
     else:
         # 조용히 넘어가면 안 된다 — MTCNN이 없으면 얼굴 사진에서 눈을 잘라내지 못해
-        # 사진 '전체'가 그대로 모델에 들어가고, 눈별(좌/우) 판정도 사라진다.
-        # 앱은 계속 돌지만 판정 품질이 떨어지므로 기동 로그에 분명히 남긴다.
+        # 얼굴 전체가 눈 게이트에서 거부될 수 있고 눈별(좌/우) 판정도 사라진다.
+        # 눈 클로즈업은 계속 쓸 수 있지만 얼굴 사진 편의 기능이 빠지므로 로그에 남긴다.
         logger.warning(
             "⚠️  MTCNN(facenet-pytorch) 미설치 — 얼굴→눈 크롭이 비활성화됩니다. "
-            "얼굴 사진도 전체 이미지로 분석되고 눈별(좌/우) 판정이 표시되지 않습니다. "
+            "얼굴 사진은 거부될 수 있으며 눈별(좌/우) 판정이 표시되지 않습니다. "
+            "그동안은 눈을 한쪽씩 가까이 찍어주세요. "
             "복구: pip install --no-deps facenet-pytorch"
         )
-
-
     # DB 풀 초기화 (실패해도 서버는 정상 기동)
     try:
         await init_db_pool()
@@ -70,9 +67,15 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.warning("⚠️  DB 연결 실패 — 진단 저장 기능이 비활성화됩니다", exc_info=True)
 
-    yield
-
-    await close_db_pool()
+    try:
+        yield
+    finally:
+        # 워밍업 도중 서버가 종료돼도 미완료 태스크와 네트워크 연결을 남기지 않는다.
+        for task in warmup_tasks:
+            task.cancel()
+        if warmup_tasks:
+            await asyncio.gather(*warmup_tasks, return_exceptions=True)
+        await close_db_pool()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -98,10 +101,7 @@ else:
 # 라우터 등록
 app.include_router(router)
 
-# 정적 파일 설정 — 경로를 이 파일 기준으로 고정.
-# 상대경로 "static"은 프로세스 cwd에 따라 달라져서, 저장소 밖에서 uvicorn/pytest를
-# 실행하면 'Directory static does not exist'로 죽는다(IDE 테스트 러너 등).
-STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+STATIC_DIR = PROJECT_ROOT / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/")
@@ -109,6 +109,6 @@ async def read_index():
     # index.html은 항상 재검증 → 정적 파일의 ?v= 버전이 바뀌면 즉시 반영됨
     # (모바일은 하드 새로고침이 어려워 캐시 무효화가 중요)
     return FileResponse(
-        os.path.join(STATIC_DIR, "index.html"),
+        STATIC_DIR / "index.html",
         headers={"Cache-Control": "no-cache, must-revalidate"},
     )

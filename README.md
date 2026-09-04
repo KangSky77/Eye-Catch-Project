@@ -1,16 +1,16 @@
 # 👁️ Eye-Catch — 안구질환 AI 스크리닝 앱
 
-> **AI 사진 분석 + LLM 맞춤형 소견서**로 안구질환을 조기 발견하세요.
+> **AI 사진 분석 + LLM 생활 관리 요약**으로 안과 검진 전 스크리닝을 돕습니다.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.11+-blue" />
-  <img src="https://img.shields.io/badge/FastAPI-Latest-green" />
+  <img src="https://img.shields.io/badge/FastAPI-0.136.3-green" />
   <img src="https://img.shields.io/badge/PyTorch-2.12-red" />
   <img src="https://img.shields.io/badge/Languages-6-orange" />
-  <img src="https://img.shields.io/badge/tests-186%20passed-brightgreen" />
+  <img src="https://github.com/KangSky77/Eye-Catch-Project/actions/workflows/tests.yml/badge.svg" />
 </p>
 
-> ⚕️ **이 앱은 의료기기가 아닙니다.** 비상업적 학술 연구(졸업작품) 목적의 자가진단 보조
+> ⚕️ **이 앱은 의료기기가 아닙니다.** 비상업적 학술 연구(졸업작품) 목적의 자가 스크리닝 보조
 > 도구이며, 진단을 대체하지 않습니다. 성능 수치는 **공개 데이터셋 내부 기준**이고,
 > 실제 폰 사진에서의 성능은 아직 검증되지 않았습니다. 한계는
 > [모델의 한계](#️-모델의-한계-읽고-시작하세요)에 정리해두었습니다.
@@ -37,12 +37,12 @@
 
 ## 🎯 주요 기능
 
-### 1️⃣ **백내장 AI 자동 진단 (눈별 판정)**
+### 1️⃣ **백내장 AI 혼탁 특징 분석 (눈별 판정)**
 - **전이학습 EfficientNet-B0** 모델 (ImageNet 사전학습) — v4 백본 비교에서 ResNet18을 이겨 채택
 - v5(밝은 홍채 보강): 그룹 단위 분할(근접중복 누수 차단) 기준 테스트셋 민감도 **98.9%** | 특이도 **99.5%** | AUC **0.9999**, 밝은 홍채 정상 눈 오탐 **86%→18%** (자세한 내용은 "모델 성능" 섹션 참고)
 - ⚠️ **현재 서빙 중인 가중치는 v6**(2026-08-26, 익상편 226장을 정상 클래스에 편입해 재학습)입니다.
   특이도는 99.9%로 올랐지만 민감도가 97.6%로 내려가(FN 1→7) **재검토 중**이며, v5 가중치는
-  `cataract_efficientnet_b0_v5_prepterygium.pth`로 보관돼 한 줄로 되돌릴 수 있습니다 → [모델 성능](#-모델-성능), `docs_retrain_v6.md`
+  `model_archive/cataract_efficientnet_b0_v5_prepterygium.pth`로 보관돼 한 줄로 되돌릴 수 있습니다 → [모델 성능](#-모델-성능), `docs/retraining-v6.md`
 - 전체 17,017장 중 절반가량이 근접중복 그룹에 속합니다. 이미지를 삭제하지 않고, 같은 그룹이 서로 다른 split에 갈라지지 않도록 분할합니다.
 - 좌우반전 TTA는 `USE_TTA`로 켜고 끕니다(**기본 OFF**). v5에서는 사용자 관점 동률이었지만 v6에서는
   test FN 7→9, FP 2→3으로 손해였습니다(2026-09-02 재측정).
@@ -169,6 +169,8 @@ Eye-Catch (C:\eye_catch)
 │   │   ├── label_conflicts.json      # 학습에서 제외한 라벨 충돌 이미지 목록
 │   │   └── brightiris_attributions.csv  # v5 보강분 201장 출처·라이선스 전수 기록
 │   ├── tests/                   # 🆕 pytest 자동 테스트 (수 초 완료, GPU·Ollama·DB 불필요)
+│   ├── docs/                    # 재학습 절차와 버전 기록
+│   ├── model_archive/           # 이전 모델 메타데이터(.pth는 Git 제외)
 │   ├── requirements.txt         # 의존성 (CUDA torch) — 나머지는 requirements-base.txt
 │   ├── .github/workflows/       # 🆕 CI — PR마다 pytest 자동 실행
 │   └── dataset/                 # 이미지 데이터셋 (17,243장, 근접중복 그룹 단위 분할)
@@ -194,9 +196,13 @@ Eye-Catch (C:\eye_catch)
 └── 📦 배포 & 설정
     ├── .env                     # 환경변수 (DB 비번, LLM 설정)
     ├── .gitignore              # Git 제외 규칙
-    ├── ngrok.exe               # 외부 공유 도구
+    ├── tools/ngrok.exe         # 로컬 외부 공유 도구 (Git 제외)
     └── .venv/                  # 가상환경 (저장소에 제외)
 ```
+
+`.venv/`, `node_modules/`, `dataset/`, `dataset_raw/`, `*.pth`, `tools/ngrok.exe`는
+로컬 실행·학습용이라 GitHub에는 올라가지 않습니다. 현재 서비스 가중치인
+`cataract_efficientnet_b0_v4.pth`는 발표 PC에 별도로 전달해야 합니다.
 
 ---
 
@@ -308,7 +314,7 @@ ngrok http 8000
 v5는 **익상편**(결막이 각막 위로 자라는 질환)을 백내장으로 88.0% 오분류했습니다(정리된 원본 150장 중
 위험 120 + 경계 12). 모델이 "수정체 혼탁"이 아니라 "눈이 하얗게 덮였는가"를 학습한 결과이고, 밝은 홍채·
 플래시 반사 오탐과 뿌리가 같습니다. 캐글 익상편 데이터 226장(225그룹)을 `0_normal`에 넣어 그 경계를 다시
-가르쳤습니다(2026-08-26, 절차는 `docs_retrain_v6.md`). 배포 파일명은 그대로 `cataract_efficientnet_b0_v4.pth`이고
+가르쳤습니다(2026-08-26, 절차는 `docs/retraining-v6.md`). 배포 파일명은 그대로 `cataract_efficientnet_b0_v4.pth`이고
 메타데이터 `version`이 `v6`입니다.
 
 test 2,526장(정상 2,230 + 백내장 296, 그룹 단위 분할, 임계값 50%):
@@ -332,8 +338,8 @@ test 2,526장(정상 2,230 + 백내장 296, 그룹 단위 분할, 임계값 50%)
   지표가 다시 나옵니다.
 - 남은 오탐 2건은 밝은 개암색·녹색 홍채입니다. 출력이 0/100점 양극단이라 온도 보정(val T=2.06)도 test 판정·경계
   구간을 바꾸지 못해 도입하지 않았습니다(메타데이터 `temperature_scaling`).
-- 되돌리기: `cataract_efficientnet_b0_v5_prepterygium.pth`와 `..._v5_prepterygium_metadata.json`을 v4 파일명으로
-  복사하면 됩니다(`docs_retrain_v6.md` 5장). `pytest`의 `weights_sha256` 대조가 어느 세대가 서빙 중인지 알려줍니다.
+- 되돌리기: `model_archive/cataract_efficientnet_b0_v5_prepterygium.pth`와 해당 메타데이터를 v4 파일명으로
+  복사하면 됩니다(`docs/retraining-v6.md` 5장). `pytest`의 `weights_sha256` 대조가 어느 세대가 서빙 중인지 알려줍니다.
 
 ### EfficientNet-B0 v5 (밝은 홍채 데이터 보강 — v6 이전 배포 모델, 백업 보관)
 
@@ -342,7 +348,7 @@ Commons에서 밝은 홍채(청록·파랑·녹색) 정상 눈 사진 **201장**
 같은 레시피로 재학습했습니다(파일별 출처·라이선스는 `data/brightiris_attributions.csv`에 전수 기록).
 dedup 전수 비교 결과 201장 중 **196장이 기존 데이터와 겹치지 않는 신규 그룹**이라, 부족하던
 서브그룹을 실제로 늘린 것이 확인됐습니다. 배포 파일명은 `cataract_efficientnet_b0_v4.pth`
-그대로 덮어썼고, 보강 전 모델은 `cataract_efficientnet_b0_v4_preaug.pth`로 백업해뒀습니다.
+그대로 덮어썼고, 보강 전 모델은 `model_archive/cataract_efficientnet_b0_v4_preaug.pth`로 백업해뒀습니다.
 **파일명만으로는 세대를 알 수 없으므로**, 메타데이터 JSON의 `version` 필드가 유일한 구분자입니다
 (`train_ai_v4.py --version` 로 기록). 로컬 `.pth`가 그 메타데이터와 같은 학습본인지는
 `weights_sha256`으로 `pytest`가 대조합니다.
@@ -811,7 +817,7 @@ pytest        # tests/ 전체 — 수 초 안에 완료
   눈 검증기 fail-closed, 편측(asymmetric) 판정, API 계약(fr/es 110자 회귀 방지 포함),
   LLM 오류 마커·폴백 체인, RAG 검색, **학습↔서빙 전처리 일관성**(모델 메타데이터 교차검증),
   눈 좌/우 결정(MTCNN 랜드마크 순서 무관), 3줄 요약 프롬프트 구조, 정적 자원·번역 키 6개 언어 완비,
-  모바일 회귀(알림 예외 격리·카메라 버튼·글자 크기·촬영 예시·시야 체험 위치). 2026-09-02 기준 **162개**.
+  모바일 회귀(알림 예외 격리·카메라 버튼·글자 크기·촬영 예시·시야 체험 위치).
 - 코드를 고치면 커밋 전에 한 번 돌려보세요 — 특히 vision.py·schemas·config 임계값을 만질 때.
 
 ### 오프라인 동작 (발표장 대비)
@@ -835,7 +841,7 @@ pytest        # tests/ 전체 — 수 초 안에 완료
 러너라 torch는 CPU wheel을 쓰고(테스트는 추론을 전부 모킹), 나머지는 `requirements-base.txt`의
 고정 버전을 설치합니다. `.pth`가 없으므로 가중치 관련 2건은 자동 skip됩니다.
 Python **3.11·3.13 매트릭스**로 돌려 README가 광고하는 최소 버전(3.11)이 실제로 지켜지는지도
-함께 확인합니다 — 3.11 + CPU torch + 고정 버전 조합은 클린 venv에서 68 passed 검증했습니다.
+함께 확인합니다.
 
 ### ⚠️ 프론트 스타일을 고칠 때 (Tailwind 재빌드)
 `static/tailwind.css`는 **빌드 산출물이 저장소에 커밋된 것**이고 `node_modules`는 없습니다.
@@ -892,8 +898,10 @@ python scripts/build_eye_centroid.py --non-eye <비-눈 폴더>     # 임계값 
 ### 수동 스모크 테스트 (사진 1장)
 ```bash
 python scripts/smoke_eye_detect.py <사진경로>   # 얼굴사진 → mode=face / 눈 클로즈업 → mode=eye
+python scripts/eval_capture_robustness.py --sample 100  # 구도·밝기 변화 스트레스 테스트
 ```
-가중치·MTCNN이 실제로 붙어 있는지 눈으로 확인하는 CLI입니다. 파일명이 `test_`로 시작하지
+첫 명령은 가중치·MTCNN이 실제로 붙어 있는지 확인하고, 두 번째 명령은 동일 눈 사진의
+위치·밝기 변형에서 판정이 얼마나 바뀌는지 측정합니다. 파일명이 `test_`로 시작하지
 않는 이유는 pytest가 수집하면 import 시점의 `SystemExit`로 스위트 전체가 죽기 때문입니다.
 
 ### 프론트엔드 수정 후 캐시 무효화

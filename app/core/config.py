@@ -1,4 +1,10 @@
+from pathlib import Path
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
     db_host: str = "localhost"
@@ -6,8 +12,8 @@ class Settings(BaseSettings):
     db_user: str = "postgres"
     db_password: str = ""  # .env에서 읽어옴
     db_port: int = 5432
-    # 현재 배포 모델 = EfficientNet-B0 v5(밝은 홍채 보강). v5는 v4 파일명을 그대로
-    # 덮어쓰는 운영 방식이라 경로에 _v4가 남아 있다(README "모델 성능" 참고).
+    # 현재 배포 모델 = EfficientNet-B0 v6(익상편 정상군 편입). v6도 v4 파일명을 그대로
+    # 덮어쓰는 운영 방식이라 경로에 _v4가 남아 있다(메타데이터 version 필드 참고).
     # .env가 없는 새 클론도 배포 모델을 그대로 쓰도록 기본값을 여기에 맞춘다 —
     # 기본값이 구세대(v3)면 학습↔서빙 일관성 테스트가 엉뚱한 메타데이터를 검증하게 된다.
     model_path: str = "cataract_efficientnet_b0_v4.pth"
@@ -76,6 +82,32 @@ class Settings(BaseSettings):
         """쉼표 구분 문자열 → origin 리스트. 빈 항목·주변 공백은 버린다."""
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    @property
+    def model_file(self) -> Path:
+        """상대 MODEL_PATH를 프로세스 cwd가 아니라 저장소 루트 기준으로 해석한다."""
+        path = Path(self.model_path).expanduser()
+        return path if path.is_absolute() else PROJECT_ROOT / path
+
+    @property
+    def model_metadata_path(self) -> Path:
+        path = self.model_file
+        return path.with_name(f"{path.stem}_metadata.json")
+
+    @model_validator(mode="after")
+    def validate_runtime_ranges(self):
+        """잘못된 환경변수로 판정 구간이 겹치는 상태는 기동 전에 차단한다."""
+        if not (0 <= self.uncertain_threshold < self.borderline_threshold < self.risk_threshold <= 100):
+            raise ValueError(
+                "임계값은 0 <= UNCERTAIN_THRESHOLD < BORDERLINE_THRESHOLD "
+                "< RISK_THRESHOLD <= 100 이어야 합니다."
+            )
+        if self.max_upload_size_bytes <= 0:
+            raise ValueError("MAX_UPLOAD_SIZE_BYTES는 0보다 커야 합니다.")
+        if self.ollama_timeout_seconds <= 0:
+            raise ValueError("OLLAMA_TIMEOUT_SECONDS는 0보다 커야 합니다.")
+        return self
+
+    # IDE·서비스 관리자가 저장소 밖 cwd에서 서버를 띄워도 같은 설정을 읽는다.
+    model_config = SettingsConfigDict(env_file=PROJECT_ROOT / ".env", extra="ignore")
 
 settings = Settings()

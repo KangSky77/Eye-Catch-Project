@@ -226,6 +226,9 @@ async def stream_with_keepalive(prompt: str):
             yield val                      # 실제 토큰
     finally:
         task.cancel()
+        # 취소를 요청만 하고 버리면 종료 시 "Task was destroyed" 경고가 날 수 있다.
+        # 생산자가 정상 종료된 경우에도 gather는 즉시 끝난다.
+        await asyncio.gather(task, return_exceptions=True)
 
 async def sanitized_stream(prompt: str):
     """스트림을 문장 단위로 버퍼링해 안전 필터를 통과한 문장만 내보낸다.

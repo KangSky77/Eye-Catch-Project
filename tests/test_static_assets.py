@@ -361,6 +361,15 @@ def test_촬영_안내가_플래시를_켜라고_하지_않는다():
         assert phrase in data, f"플래시 끄기 안내가 없습니다: {phrase!r}"
 
 
+def test_촬영_안내가_정면중앙과_고른조명을_요청한다():
+    """구도·밝기 스트레스 테스트 결과를 과도한 직사광선 권유로 되돌리지 않는다."""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assert "정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요" in data
+    assert "직접 비치지 않는 고른 실내 조명" in data
+    assert "Look straight ahead and center one eye at a time" in data
+    assert "soft, even room light" in data
+
+
 def test_반사_판독보류를_프론트가_처리한다():
     """서버가 result_code='hold'를 주면 의료 판정 대신 재촬영을 안내해야 한다.
     처리가 없으면 확률 0.0%가 '정상'으로 표시돼 정반대 결과가 나간다."""
@@ -672,11 +681,20 @@ def test_낮은_점수_구간과_클로즈업_권유가_프론트에_있다():
     for key in ["ai_uncertain:", "closeup_hint:", "closeup_btn:", "find_cat_uncertain:"]:
         assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
     assert "백내장 판별 결과" not in data and "백내장 위험 단계" not in data, "판별/위험 단계 → 혼탁 특징 표현으로"
-    assert "눈을 한쪽씩 가까이 찍어주세요" in data
+    assert "눈을 한쪽씩 가까이(20~30cm) 찍으면" in data
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
     assert "d.closeup_suggested" in vision and "uncertain:" in vision
     findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
     assert "find_cat_uncertain" in findings
+
+
+def test_사진분석은_중복요청을_취소하고_무한대기하지_않는다():
+    """사진을 연속 선택했을 때 늦은 옛 응답이 최신 결과를 덮으면 안 된다."""
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "ANALYSIS_TIMEOUT_MS" in vision and "xhr.timeout = ANALYSIS_TIMEOUT_MS" in vision
+    assert "_analysisAbortController.abort()" in vision
+    assert "xhr.onabort" in vision
+    assert "requestId !== _analysisRequestId" in vision
 
 
 # ==========================================================================
@@ -801,13 +819,12 @@ def test_문진_진행률이_처음부터_끝까지_이어진다():
 
 
 def test_촬영안내가_두_화면에서_같은_말을_한다():
-    """회귀: 팁 화면은 후면카메라/플래시끄기/30cm, 업로드 화면은 정면촬영/빛반사주의로
-    서로 다른 말을 했다."""
+    """팁 화면과 업로드 화면이 흔들림·플래시·정면 중앙 구도를 함께 안내한다."""
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert "정면에서 촬영하세요." not in data
-    # 9/2 팀 결정: '후면 카메라 권장'은 빼고 흔들림 방지·플래시 끄기·눈 클로즈업 — 업로드 화면 목록도 같은 세 가지
+    # 두 화면 모두 같은 핵심 촬영 조건을 사용한다.
     guide_ko = data[data.index('guide_list: "'):]; guide_ko = guide_ko[: guide_ko.index('",')]
-    for phrase in ["흔들리지 않게", "플래시는 꺼주세요", "가까이"]:
+    for phrase in ["흔들리지 않게", "플래시는 꺼주세요", "정면", "중앙"]:
         assert phrase in guide_ko, f"업로드 화면 안내에 '{phrase}'가 없다 — 팁 화면과 같은 말을 해야 한다"
     assert "후면 카메라" not in data
     assert data.count("guide_list:") == 6

@@ -1,14 +1,17 @@
 import io
+import hashlib
+import json
 import logging
-import os
+
+import numpy as np
 import torch
-from PIL import Image, ImageOps
 from fastapi import UploadFile, HTTPException
+from PIL import Image, ImageOps
 from torchvision import transforms
-from app.models.cataract_model import build_model
+
 from app.core.config import settings
-from app.services import eye_detector
-from app.services import eye_validator
+from app.models.cataract_model import build_model
+from app.services import eye_detector, eye_validator
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +35,46 @@ preprocess = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
+def _weights_match_metadata(weights_path, metadata_path) -> bool:
+    """기록된 SHA-256과 실제 가중치가 다르면 잘못된 모델 서빙을 막는다."""
+    if not metadata_path.exists():
+        logger.error("⚠️  모델 메타데이터가 없어 가중치 출처를 검증할 수 없습니다: %s", metadata_path)
+        return False
+    try:
+        with open(metadata_path, encoding="utf-8") as f:
+            expected = json.load(f).get("weights_sha256")
+        if not expected:
+            logger.error("⚠️  모델 메타데이터에 weights_sha256이 없습니다: %s", metadata_path)
+            return False
+        digest = hashlib.sha256()
+        with open(weights_path, "rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != expected:
+            logger.error("⚠️  가중치 SHA-256 불일치 — 오래되거나 손상된 모델은 서빙하지 않습니다")
+            return False
+        return True
+    except Exception:
+        logger.error("⚠️  모델 메타데이터 검증 실패", exc_info=True)
+        return False
+
+
 def load_trained_weights() -> bool:
     """학습된 가중치를 로드합니다. 파일이 없거나 호환되지 않으면
     경고만 출력하고 서버는 계속 기동합니다 (train_ai.py로 먼저 학습 필요)."""
     global weights_loaded
-    if not os.path.exists(settings.model_path):
-        logger.warning(f"⚠️  가중치 파일이 없습니다: {settings.model_path} — train_ai.py로 먼저 학습하세요.")
+    model_path = settings.model_file
+    if not model_path.exists():
+        logger.warning(f"⚠️  가중치 파일이 없습니다: {model_path} — train_ai.py로 먼저 학습하세요.")
+        model.eval()
+        weights_loaded = False
+        return False
+    if not _weights_match_metadata(model_path, settings.model_metadata_path):
         model.eval()
         weights_loaded = False
         return False
     try:
-        model.load_state_dict(torch.load(settings.model_path, map_location=device, weights_only=True))
+        model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
         model.eval()
         weights_loaded = True
         return True
@@ -113,7 +145,6 @@ def _sharpness(img: Image.Image) -> float:
     128x128 그레이스케일로 맞춰 크기 영향을 없애고, 표준편차로 나눠
     '어두운 사진이라 값이 작은 것'과 '흔들려서 작은 것'을 구분한다.
     """
-    import numpy as np
     g = np.asarray(img.convert("L").resize((128, 128)), dtype=np.float32)
     p = np.pad(g, 1, mode="edge")
     k = ((0, 1, 0), (1, -4, 1), (0, 1, 0))
@@ -176,7 +207,6 @@ def _glare_fraction(img: Image.Image) -> float:
     실측(2026-08-24, 배포 모델 v5):
         순백비율 중앙값 — 정상 0.00% / 백내장 0.01% / 플래시 반사 3.54%
     """
-    import numpy as np
     w, h = img.size
     if w < 8 or h < 8:
         return 0.0
@@ -206,6 +236,21 @@ def _classify(prob: float):
     return "normal", "뚜렷한 진행성 혼탁 특징이 감지되지 않았습니다 (초기 백내장은 사진으로 확인이 어렵습니다)"
 
 
+def _empty_result(code: str, message: str, mode: str, eyes_detected: int, **details) -> dict:
+    """판정을 내리지 않는 품질 실패 응답의 공통 필드를 만든다."""
+    return {
+        "probability": 0.0,
+        "result": message,
+        "result_code": code,
+        "mode": mode,
+        "eyes_detected": eyes_detected,
+        "eye_probs": [],
+        "eyes": [],
+        "asymmetric": False,
+        **details,
+    }
+
+
 def predict_cataract(img: Image.Image):
     # 학습된 가중치 없이 예측하면 무작위 결과가 나가므로 명시적으로 거부
     if not weights_loaded:
@@ -226,17 +271,10 @@ def predict_cataract(img: Image.Image):
     sharp = max((_sharpness(t) for t in targets), default=0.0)
     if sharp < BLUR_MIN_SHARPNESS:
         logger.info("판독 보류 — 흔들림/초점 흐림 (선명도 %.4f)", sharp)
-        return {
-            "probability": 0.0,
-            "result": "판독 보류 (사진이 흔들렸습니다)",
-            "result_code": "blurry",       # 프론트가 '또렷하게 다시 찍어주세요'로 안내
-            "mode": mode,
-            "eyes_detected": len(eye_crops),
-            "eye_probs": [],
-            "eyes": [],
-            "asymmetric": False,
-            "sharpness": round(sharp, 4),
-        }
+        return _empty_result(
+            "blurry", "판독 보류 (사진이 흔들렸습니다)", mode, len(eye_crops),
+            sharpness=round(sharp, 4),
+        )
 
     # 흔들림 게이트가 먼저다: 흐린 눈 사진을 눈 게이트에 먼저 넣으면 '눈이 아님/가려짐'으로 잘못 안내된다
     # (실측 2026-09-02: 흔들린 얼굴 사진의 눈 크롭 게이트 점수 0.106 → eyes_hidden). 흐림은 흐림이라고 말한다.
@@ -253,17 +291,10 @@ def predict_cataract(img: Image.Image):
                 detail="눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not is_eye:
-            return {
-                "probability": 0.0,
-                "result": "눈 사진이 아닌 것 같습니다",
-                "result_code": "invalid",      # 프론트가 '눈 사진을 올려주세요'로 안내
-                "mode": mode,
-                "eyes_detected": 0,
-                "eye_probs": [],
-                "eyes": [],
-                "asymmetric": False,
-                "eye_score": round(score, 3),
-            }
+            return _empty_result(
+                "invalid", "눈 사진이 아닌 것 같습니다", mode, 0,
+                eye_score=round(score, 3),
+            )
 
     # [검증·얼굴 모드] MTCNN은 얼굴 '기하'에서 눈 위치를 추정할 뿐, 그 자리에 눈이 보이는지는 모른다.
     # 눈을 감았거나 선글라스·안대로 가린 얼굴도 눈 좌표를 돌려주므로, 피부·검정·흰색 조각이 모델에
@@ -276,17 +307,10 @@ def predict_cataract(img: Image.Image):
                 detail="눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not all(ok for ok, _ in checks):
-            return {
-                "probability": 0.0,
-                "result": "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
-                "result_code": "eyes_hidden",   # 프론트가 '눈을 뜨고 안경·선글라스를 벗고 다시 찍어주세요'로 안내
-                "mode": mode,
-                "eyes_detected": len(eye_crops),
-                "eye_probs": [],
-                "eyes": [],
-                "asymmetric": False,
-                "eye_score": round(min(s for _, s in checks), 3),
-            }
+            return _empty_result(
+                "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
+                mode, len(eye_crops), eye_score=round(min(s for _, s in checks), 3),
+            )
 
     # [반사 게이트] 플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
     # 실측: 정상 눈에 반사점을 합성하니 최대 70%가 '위험'으로 뒤집혔다(위 상수 주석 표).
@@ -303,17 +327,10 @@ def predict_cataract(img: Image.Image):
 
     if glare >= GLARE_MAX_FRACTION and _classify(cat_p)[0] != "normal":
         logger.info("판독 보류 — 조명 반사 감지 (순백비율 %.3f, 모델 %.1f%%)", glare, cat_p)
-        return {
-            "probability": 0.0,
-            "result": "판독 보류 (강한 조명 반사 감지됨)",
-            "result_code": "hold",         # 프론트가 '플래시를 끄고 다시 찍어주세요'로 안내
-            "mode": mode,
-            "eyes_detected": len(eye_crops),
-            "eye_probs": [],
-            "eyes": [],
-            "asymmetric": False,
-            "glare": round(glare, 4),
-        }
+        return _empty_result(
+            "hold", "판독 보류 (강한 조명 반사 감지됨)", mode, len(eye_crops),
+            glare=round(glare, 4),
+        )
 
     # result_code: 프론트엔드에서 언어별로 번역할 수 있도록 언어 중립적 코드 제공
     # 참고: 과거 'cat_p>=99 → 조명 반사 보류' 규칙은 약한 모델의 오탐을 막으려던

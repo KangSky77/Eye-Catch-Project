@@ -29,18 +29,11 @@ async def analyze_eye(file: UploadFile = File(...)):
     result = await run_in_threadpool(predict_cataract, img)
     return {
         "status": "success",
-        "probability": result["probability"],
-        "result": result["result"],
-        "result_code": result["result_code"],
-        "mode": result["mode"],                    # "face"면 얼굴에서 눈을 찾아 분석한 것
-        "eyes_detected": result["eyes_detected"],
-        "eye_probs": result["eye_probs"],
-        "eyes": result["eyes"],                    # 눈별 [{side, probability, code}]
-        "asymmetric": result["asymmetric"],        # 편측만 위험이면 True
-        "closeup_suggested": result.get("closeup_suggested", False),   # 애매한 신호 → 눈 클로즈업 재촬영 권유
-        "eye_score": result.get("eye_score"),      # 눈 게이트 점수(invalid/eyes_hidden 판정일 때만 존재, 디버깅용)
-        "sharpness": result.get("sharpness"),      # 흔들림 보류 근거
-        "glare": result.get("glare"),              # 반사 보류 근거
+        "closeup_suggested": False,
+        "eye_score": None,
+        "sharpness": None,
+        "glare": None,
+        **result,
     }
 
 @router.post("/api/get-ai-opinion")

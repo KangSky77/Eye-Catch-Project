@@ -38,7 +38,6 @@ os.chdir(REPO_ROOT)
 import json
 import random
 from collections import Counter
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -54,8 +53,8 @@ from app.core.config import settings
 # ----------------------------- 설정 -----------------------------
 DATA_DIR        = "dataset"
 GROUP_MAP_PATH  = "data/dataset_group_map.json"   # dedup_dataset.py 출력
-OUTPUT_PATH     = "cataract_resnet18_v3.pth"
-METADATA_PATH   = "cataract_resnet18_v3_metadata.json"
+OUTPUT_PATH     = REPO_ROOT / "model_archive" / "cataract_resnet18_v3.pth"
+METADATA_PATH   = REPO_ROOT / "model_archive" / "cataract_resnet18_v3_metadata.json"
 IMG_SIZE        = 224
 BATCH_SIZE      = 64
 NUM_WORKERS     = 4
@@ -398,6 +397,7 @@ def main():
 
     if best_state["model"] is not None:
         model.load_state_dict(best_state["model"])
+    OUTPUT_PATH.parent.mkdir(exist_ok=True)
     torch.save(model.state_dict(), OUTPUT_PATH)
     print(f"\n💾 best 가중치 저장: {OUTPUT_PATH}")
 

@@ -1,6 +1,6 @@
 name: tests
 
-# 테스트 66건은 GPU·Ollama·PostgreSQL·카카오 API를 전부 모킹해서 10초 안에 끝난다.
+# 회귀 테스트는 GPU·Ollama·PostgreSQL·카카오 API를 모킹해 외부 서비스 없이 실행된다.
 # 사람 기억("커밋 전에 돌려보세요")에 맡기지 않고 PR마다 자동으로 돌린다.
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       matrix:
         # 3.11 = README가 광고하는 최소 버전(실제로 지켜지는지 확인), 3.13 = 최신 안정.
         # 로컬 개발은 3.14지만 러너 wheel 사정이 달라 CI는 이 둘로 고정한다.
-        # 3.11 + CPU torch + 아래 고정 버전 조합은 로컬 클린 venv에서 68 passed 확인됨.
+        # 3.11 + CPU torch + 아래 고정 버전 조합도 PR마다 이 작업으로 검증한다.
         python-version: ["3.11", "3.13"]
     name: pytest (py${{ matrix.python-version }})
     steps:

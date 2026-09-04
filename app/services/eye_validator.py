@@ -17,17 +17,20 @@
 - centroid는 dataset으로 사전 계산해 app/models/eye_centroid.npy에 저장(데이터셋 비포함 대비).
 - 로드는 Lock으로 보호: warmup()과 동시에 들어온 요청이 모델을 중복 로드하지 않도록 함.
 """
-import os
 import logging
 import threading
+from pathlib import Path
+
 import numpy as np
 import torch
 from torchvision import models, transforms
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-_CENTROID_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "eye_centroid.npy")
+_MODEL_DIR = Path(__file__).resolve().parents[1] / "models"
+_CENTROID_PATH = _MODEL_DIR / "eye_centroid.npy"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -46,7 +49,7 @@ _loaded = False      # 성공적으로 로드된 경우에만 True (실패는 �
 # 눈을 가린 얼굴 크롭(피부·선글라스·안대)도 0.69~0.83으로 통과했다. 같은 임베딩 위에 음성(가려진 눈·
 # 모서리 피부·단색·풍경) 1.2만 장으로 학습한 1층 분류기는 홀드아웃 눈 99.7% 통과 / 음성 91.7% 거부,
 # 가려진 눈 크롭 0.003~0.016(거부), 실제 눈 크롭 0.98(통과).
-_GATE_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "eye_gate.npz")
+_GATE_PATH = _MODEL_DIR / "eye_gate.npz"
 _gate_w = None       # (512,) 가중치
 _gate_b = 0.0
 _gate_thr = None     # 게이트 임계값 (npz에 기록된 값)
@@ -69,10 +72,11 @@ def _try_load() -> bool:
             centroid = centroid / (np.linalg.norm(centroid) + 1e-8)
             _net = net
             _centroid = torch.from_numpy(centroid).to(device)
-            if os.path.exists(_GATE_PATH):
+            if _GATE_PATH.exists():
                 g = np.load(_GATE_PATH)
                 _gate_w = torch.from_numpy(g["w"].astype(np.float32)).to(device)
-                _gate_b = float(g["b"][0]); _gate_thr = float(g["threshold"])
+                _gate_b = float(g["b"][0])
+                _gate_thr = float(g["threshold"])
                 logger.info("눈 게이트 로드: 임계값 %.3f", _gate_thr)
             else:
                 logger.warning("⚠️  eye_gate.npz 없음 — 중심 벡터 유사도로 폴백(비-눈·가려진 눈 판별력 낮음)")
@@ -95,20 +99,20 @@ def warmup() -> bool:
 
 
 @torch.no_grad()
-def _similarity(img) -> float:
+def _embedding(img) -> torch.Tensor:
     x = _preprocess(img.convert("RGB")).unsqueeze(0).to(device)
     feat = _net(x)[0]
-    feat = feat / (feat.norm() + 1e-8)
-    return float(torch.dot(feat, _centroid).item())
+    return feat / (feat.norm() + 1e-8)
+
+
+def _similarity(img) -> float:
+    return float(torch.dot(_embedding(img), _centroid).item())
 
 
 @torch.no_grad()
 def _gate_prob(img) -> float:
     """눈일 확률(0~1) — L2 정규화 임베딩에 로지스틱 1층."""
-    x = _preprocess(img.convert("RGB")).unsqueeze(0).to(device)
-    feat = _net(x)[0]
-    feat = feat / (feat.norm() + 1e-8)
-    return float(torch.sigmoid(torch.dot(feat, _gate_w) + _gate_b).item())
+    return float(torch.sigmoid(torch.dot(_embedding(img), _gate_w) + _gate_b).item())
 
 
 def gate_available() -> bool:

@@ -12,6 +12,9 @@ const MAX_UPLOAD_MB = 10;
 // 그래서 fetch 대신 XHR을 쓴다 — fetch는 업로드 진행률(upload.onprogress)을 주지 않는다.
 // ------------------------------------------
 const SLOW_HINT_AFTER_MS = 8000;   // 이 시간을 넘기면 "느릴 수 있다" 안내를 띄운다
+const ANALYSIS_TIMEOUT_MS = 180000; // 끊긴 모바일망에서 로딩 화면이 영원히 남지 않게 3분 상한
+let _analysisAbortController = null;
+let _analysisRequestId = 0;
 
 function startLoadingProgress() {
     const t = translations[state.lang];
@@ -59,11 +62,12 @@ function startLoadingProgress() {
 }
 
 /** XHR 업로드 — fetch와 달리 진행률을 받을 수 있다. fetch Response와 비슷한 형태로 돌려준다. */
-function uploadWithProgress(url, formData, onProgress, onUploaded) {
+function uploadWithProgress(url, formData, onProgress, onUploaded, signal) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);
         xhr.responseType = 'text';
+        xhr.timeout = ANALYSIS_TIMEOUT_MS;
         if (xhr.upload) {
             xhr.upload.onprogress = e => {
                 if (e.lengthComputable && onProgress) onProgress((e.loaded / e.total) * 100);
@@ -77,6 +81,15 @@ function uploadWithProgress(url, formData, onProgress, onUploaded) {
         };
         xhr.onerror = () => reject(new Error('network'));
         xhr.ontimeout = () => reject(new Error('timeout'));
+        xhr.onabort = () => {
+            const err = new Error('aborted');
+            err.name = 'AbortError';
+            reject(err);
+        };
+        if (signal) {
+            signal.addEventListener('abort', () => xhr.abort(), { once: true });
+            if (signal.aborted) xhr.abort();
+        }
         xhr.send(formData);
     });
 }
@@ -101,6 +114,12 @@ async function runAIAnalysis(droppedFile) {
     // (에러 후 같은 사진을 재시도하면 아무 반응이 없던 문제)
     fileInput.value = '';
     if (!file) return;
+
+    // 빠르게 사진을 다시 고르면 이전 응답이 나중에 도착해 최신 결과를 덮을 수 있다.
+    // 이전 전송을 취소하고, 취소가 늦게 반영되더라도 requestId로 오래된 응답을 무시한다.
+    const requestId = ++_analysisRequestId;
+    if (_analysisAbortController) _analysisAbortController.abort();
+    _analysisAbortController = null;
 
     const t = translations[state.lang];
     clearUploadError();
@@ -128,12 +147,16 @@ async function runAIAnalysis(droppedFile) {
     fd.append('file', file);
 
     const progress = startLoadingProgress();
+    const controller = new AbortController();
+    _analysisAbortController = controller;
     try {
         const res = await uploadWithProgress(
             '/api/analyze-eye', fd,
             pct => progress.setProgress(pct),
-            () => progress.toAnalyzing()
+            () => progress.toAnalyzing(),
+            controller.signal
         );
+        if (requestId !== _analysisRequestId) return;
         const d = res.data;
         if (!res.ok) {
             // detail이 문자열이 아닐 수 있음(422 검증 오류는 객체 배열) → 그대로 alert하면 [object Object]
@@ -223,8 +246,11 @@ async function runAIAnalysis(droppedFile) {
         // (로딩 화면에만 있어서, 사진을 잘못 고른 것을 결과에서 알아챌 방법이 없었다)
         showAnalyzedPhoto();
 
-        setTimeout(() => nextStep('step-ai-result'), 1000);
+        setTimeout(() => {
+            if (requestId === _analysisRequestId) nextStep('step-ai-result');
+        }, 1000);
     } catch (e) {
+        if (e && e.name === 'AbortError') return;
         showToast(translations[state.lang].srv_err || "Server Connection Error", 'error');
         showUploadError(translations[state.lang].srv_err || "Server Connection Error");
         nextStep('step-photo');
@@ -232,6 +258,7 @@ async function runAIAnalysis(droppedFile) {
         // 성공·실패·중간 return 어느 경로로 나가든 경과 시간 타이머는 반드시 멈춘다
         // (안 멈추면 결과 화면으로 넘어간 뒤에도 초가 계속 올라간다)
         progress.stop();
+        if (requestId === _analysisRequestId) _analysisAbortController = null;
     }
 }
 

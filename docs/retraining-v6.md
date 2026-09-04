@@ -54,7 +54,7 @@ python scripts/train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v6
 - 출력: `cataract_efficientnet_b0_v4.pth` (파일명은 _v4 고정, 메타데이터에 v6 기록)
 - **학습 전 기존 가중치를 백업**할 것:
   ```bash
-  cp cataract_efficientnet_b0_v4.pth cataract_efficientnet_b0_v5_prepterygium.pth
+  cp cataract_efficientnet_b0_v4.pth model_archive/cataract_efficientnet_b0_v5_prepterygium.pth
   ```
 
 시작 로그가 아래와 같으면 정상이다:
@@ -78,6 +78,6 @@ python scripts/train_ai_v4.py --backbone efficientnet_b0 --batch 40 --version v6
 ## 5. 결과가 나쁘면 되돌리기
 
 ```bash
-cp cataract_efficientnet_b0_v5_prepterygium.pth cataract_efficientnet_b0_v4.pth
-cp cataract_efficientnet_b0_v5_prepterygium_metadata.json cataract_efficientnet_b0_v4_metadata.json
+cp model_archive/cataract_efficientnet_b0_v5_prepterygium.pth cataract_efficientnet_b0_v4.pth
+cp model_archive/cataract_efficientnet_b0_v5_prepterygium_metadata.json cataract_efficientnet_b0_v4_metadata.json
 ```

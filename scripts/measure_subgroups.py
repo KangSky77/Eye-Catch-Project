@@ -1,7 +1,7 @@
 """하위그룹별 오분류 측정 — 익상편 · 밝은 홍채 · 백내장을 같은 held-out에서 비교.
 
 왜 필요한가:
-    docs_retrain_v6.md의 성공 기준 세 가지(익상편 오분류율 / 백내장 민감도 /
+    docs/retraining-v6.md의 성공 기준 세 가지(익상편 오분류율 / 백내장 민감도 /
     밝은 홍채 오탐) 중 익상편과 밝은 홍채는 메타데이터에 안 남는다. 그런데 두
     데이터 모두 이제 dataset/0_normal 안에 있어서, 폴더째 채점하면 학습에 쓴
     사진으로 채점하는 누수가 된다.
@@ -39,7 +39,6 @@ import argparse
 from collections import Counter
 
 import torch
-from PIL import Image
 from torchvision.datasets import ImageFolder
 
 from train_ai_v3 import (

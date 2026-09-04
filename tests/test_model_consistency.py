@@ -2,25 +2,46 @@
 메타데이터(학습 시 기록)와 서빙 코드(vision.py)를 교차 검증한다."""
 import hashlib
 import json
-import os
+from pathlib import Path
 
 import pytest
 from torchvision import transforms
 
-from app.core.config import settings
+from app.core.config import Settings, settings
 from app.services import vision
 
 
 def _metadata():
-    path = settings.model_path.replace(".pth", "_metadata.json")
-    if not os.path.exists(path):
+    path = settings.model_metadata_path
+    if not path.exists():
         pytest.skip(f"메타데이터 없음: {path} (학습 산출물 없는 환경)")
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def test_임계값_구조가_말이_됨():
-    assert 0 < settings.borderline_threshold < settings.risk_threshold <= 100
+    assert 0 <= settings.uncertain_threshold < settings.borderline_threshold < settings.risk_threshold <= 100
+
+
+@pytest.mark.parametrize("overrides", [
+    {"uncertain_threshold": 25.0, "borderline_threshold": 25.0},
+    {"borderline_threshold": 60.0, "risk_threshold": 50.0},
+    {"risk_threshold": 101.0},
+    {"max_upload_size_bytes": 0},
+    {"ollama_timeout_seconds": 0},
+])
+def test_위험한_런타임설정은_기동전에_거부(overrides):
+    with pytest.raises(ValueError):
+        Settings(**overrides)
+
+
+def test_설정과_모델경로는_실행_cwd가_아니라_저장소_기준():
+    """IDE·서비스 관리자에서 다른 cwd로 실행해도 .env와 가중치를 찾아야 한다."""
+    root = Path(__file__).resolve().parent.parent
+    assert Path(settings.model_config["env_file"]).is_absolute()
+    assert Path(settings.model_config["env_file"]).resolve() == root / ".env"
+    assert settings.model_file.is_absolute()
+    assert settings.model_file == root / settings.model_path
 
 
 def test_클래스_인덱스_계약():
@@ -49,8 +70,8 @@ def test_서빙_전처리가_학습과_동일():
 
 def test_배포_가중치가_로드_가능():
     # .pth는 git 미포함(용량) — 파일이 있는 환경(노트북/실습실)에서만 실제 로드 검증
-    if not os.path.exists(settings.model_path):
-        pytest.skip(f"가중치 없음: {settings.model_path}")
+    if not settings.model_file.exists():
+        pytest.skip(f"가중치 없음: {settings.model_file}")
     try:
         assert vision.load_trained_weights() is True
         assert vision.weights_loaded is True
@@ -67,14 +88,35 @@ def test_가중치_파일이_메타데이터와_같은_학습본():
     expected = meta.get("weights_sha256")
     if not expected:
         pytest.skip("메타데이터에 weights_sha256 미기록(구버전 학습 산출물)")
-    if not os.path.exists(settings.model_path):
-        pytest.skip(f"가중치 없음: {settings.model_path}")
-    with open(settings.model_path, "rb") as f:
+    if not settings.model_file.exists():
+        pytest.skip(f"가중치 없음: {settings.model_file}")
+    with open(settings.model_file, "rb") as f:
         actual = hashlib.sha256(f.read()).hexdigest()
     assert actual == expected, (
         "로컬 가중치가 메타데이터에 기록된 학습본과 다릅니다 — "
         "오래된 .pth를 쓰고 있을 가능성 (팀원에게 최신 가중치를 받으세요)"
     )
+
+
+def test_런타임도_가중치_sha256_불일치를_차단한다(tmp_path):
+    weights = tmp_path / "model.pth"
+    metadata = tmp_path / "model_metadata.json"
+    weights.write_bytes(b"known-good")
+    digest = hashlib.sha256(b"known-good").hexdigest()
+    metadata.write_text(json.dumps({"weights_sha256": digest}), encoding="utf-8")
+    assert vision._weights_match_metadata(weights, metadata) is True
+    weights.write_bytes(b"corrupted-or-stale")
+    assert vision._weights_match_metadata(weights, metadata) is False
+
+
+@pytest.mark.parametrize("metadata_payload", [None, {}])
+def test_출처를_검증할_수_없는_가중치는_차단한다(tmp_path, metadata_payload):
+    weights = tmp_path / "model.pth"
+    metadata = tmp_path / "model_metadata.json"
+    weights.write_bytes(b"unverifiable")
+    if metadata_payload is not None:
+        metadata.write_text(json.dumps(metadata_payload), encoding="utf-8")
+    assert vision._weights_match_metadata(weights, metadata) is False
 
 
 def test_눈_OOD_게이트_임계값이_실측_근거와_함께_있다():

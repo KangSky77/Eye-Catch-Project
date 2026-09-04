@@ -1,6 +1,11 @@
 # 파이썬 캐시
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # 가상환경 (용량이 커서 올리면 안 됩니다)
 .venv/
