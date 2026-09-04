@@ -130,6 +130,45 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
 Patient Question: {user_msg}""".strip()
 
 
+# 고정 문진 18문항(static/data.js의 riskQuestions + symptomQuestions)이 이미 다루는 주제.
+# 프롬프트에 금지 목록으로 넣지 않으면 LLM이 거의 매번 이 중 하나를 되묻는다 —
+# 실사용에서 "안개가 낀 것처럼 뿌옇게 보이나요?"(고정 문항)를 물은 직후
+# "사물의 경계가 흐릿하게 보이나요?"를 생성했다(2026-09-04 실기기 확인).
+# data.js의 문항을 고치면 이 목록도 함께 갱신할 것.
+_COVERED_TOPICS_KO = (
+    "나이, 당뇨, 고혈압, 가족력, 흡연, "
+    "급성 눈 통증·두통·무지개 테, 갑작스러운 시력 저하, "
+    "빛 번짐·눈부심, 안개처럼 뿌옇게 보임, 안경 도수 변경, "
+    "중심 시야의 글자 빠짐, 안압, 고도근시, 주변 시야, "
+    "당뇨 유병 기간, 안저 검사 여부, 비문증, 최근 안과 검진 여부"
+)
+_COVERED_TOPICS_EN = (
+    "age, diabetes, hypertension, family history, smoking, "
+    "acute eye pain with headache/halos, sudden vision loss, "
+    "glare/light scatter, foggy or hazy vision, changing glasses prescription, "
+    "missing letters in central vision, intraocular pressure, high myopia, peripheral vision, "
+    "diabetes duration, fundus exam history, floaters, recent eye check-up"
+)
+
+# 고정 문항이 의도적으로 다루지 않는 영역. 여기로 유도해야 새로운 정보가 들어온다.
+_OPEN_AREAS_KO = (
+    "- 증상이 언제부터 시작됐는지 / 최근 몇 달 사이 빠르게 나빠졌는지\n"
+    "- 한쪽 눈만 그런지, 양쪽 다 그런지 (편측성)\n"
+    "- 일상 활동에 미치는 영향 (밤 운전을 피하게 됐는지, 책이나 휴대폰 글씨를 예전보다 키웠는지, 계단·문턱에서 불안한지)\n"
+    "- 스테로이드(먹는 약·안약·연고)를 오래 쓴 적이 있는지\n"
+    "- 눈 수술이나 눈을 다친 적이 있는지\n"
+    "- 야외에서 오래 일하거나 자외선에 많이 노출되는지"
+)
+_OPEN_AREAS_EN = (
+    "- When the symptoms started / whether they worsened quickly in recent months\n"
+    "- Whether it affects one eye only or both (laterality)\n"
+    "- Impact on daily life (avoiding night driving, enlarging text on books or phone, feeling unsure on stairs)\n"
+    "- Long-term steroid use (oral, eye drops, or ointment)\n"
+    "- Past eye surgery or eye injury\n"
+    "- Working outdoors for long hours or heavy UV exposure"
+)
+
+
 def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, history_text: str) -> str:
     lang_name = _lang_name(lang)
     if lang == "ko":
@@ -140,13 +179,24 @@ def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, h
 - 황반변성 자가진단: {amsler_res}
 [지금까지의 문진 내역]
 {history_text}
-위 상태와 문진 내역을 바탕으로, 환자의 눈 건강 상태를 더 자세히 파악하기 위한 새로운 맞춤형 질문을 딱 1개만 생성해주세요.
+위 상태와 문진 내역을 바탕으로, 아직 확인되지 않은 정보를 얻기 위한 질문을 딱 1개만 생성해주세요.
+
+[이미 물어본 주제 — 절대 다시 묻지 마세요]
+{_COVERED_TOPICS_KO}
+위 주제를 표현만 바꿔서 되묻는 것도 금지입니다.
+(예: '뿌옇게 보이나요'를 이미 물었으므로 '흐릿하게 보이나요', '선명하지 않나요'도 금지)
+[지금까지의 문진 내역]에 이미 나온 질문과 비슷한 것도 금지입니다.
+
+[대신 이런 영역에서 고르세요 — 아직 아무도 묻지 않았습니다]
+{_OPEN_AREAS_KO}
 
 [반드시 지켜야 할 제약]
 - 화면에는 '네'와 '아니오' 버튼 두 개뿐입니다. 환자는 그 둘 중 하나로만 답할 수 있습니다.
 - 따라서 반드시 '네' 또는 '아니오'로 답할 수 있는 질문만 만드세요.
 - 서술형 질문은 절대 금지입니다: "설명해 주시겠어요", "어떤가요", "어떻게", "얼마나", "무엇을", "말씀해 주세요" 같은 표현을 쓰지 마세요.
-- 좋은 예: "밝은 곳에서 눈이 부시는 느낌이 있나요?" / "야간 운전이 예전보다 힘드신가요?"
+- 진단하거나 질환 이름을 말하지 마세요. 증상·이력·생활만 물으세요.
+- 한 문장, 60자 이내로 쓰세요.
+- 좋은 예: "요즘 밤에는 운전을 되도록 피하게 되셨나요?" / "한쪽 눈만 유독 불편하신가요?"
 - 나쁜 예: "시력 변화에 대해 자세히 설명해 주시겠어요?" (네/아니오로 답할 수 없음)
 
 부가 설명 없이 질문 한 문장만 출력하세요.""".strip()
@@ -160,13 +210,23 @@ Current Patient State:
 [Ophthalmology Screening History]
 {history_text}
 
-Based on the patient's state and history, generate exactly one new personalized question to better understand their eye health.
+Generate exactly one question that gathers information not yet collected.
+
+[ALREADY ASKED — never ask about these again]
+{_COVERED_TOPICS_EN}
+Rewording them is also forbidden (e.g. "foggy vision" was asked, so "blurry" or "not sharp" is also banned).
+Anything similar to a question already in the screening history above is forbidden.
+
+[Choose from these areas instead — nothing has asked about them yet]
+{_OPEN_AREAS_EN}
 
 [HARD CONSTRAINTS]
 - The screen has only two buttons: "Yes" and "No". The patient can answer ONLY with one of those.
 - Therefore the question MUST be answerable with a plain Yes or No.
 - Open-ended questions are forbidden. Never use "describe", "explain", "how", "how much", "what", "which", "tell me about".
-- Good: "Do bright lights feel glaring to you?" / "Is night driving harder than it used to be?"
+- Do NOT diagnose or name a disease. Ask only about symptoms, history, or daily life.
+- One sentence, under 100 characters.
+- Good: "Have you started avoiding driving at night?" / "Is only one of your eyes bothering you?"
 - Bad: "Could you describe your vision changes in detail?" (cannot be answered Yes/No)
 
 Output ONLY the question sentence itself, with no explanations, greetings, or extra words.""".strip()
@@ -251,7 +311,7 @@ async def sanitized_stream(prompt: str):
         buf += chunk
         # 완성된 문장이 생길 때마다 검사해서 내보낸다
         while True:
-            m = safety._SENT_SPLIT.search(buf)
+            m = safety.SENT_SPLIT.search(buf)
             if not m:
                 break
             sentence, buf = buf[:m.end()], buf[m.end():]
@@ -332,6 +392,11 @@ _OPEN_ENDED_MARKERS = (
 )
 
 
+# 생성된 질문 길이 상한. app/schemas/ai.py의 ChatHistoryItem.q(max_length=500)와 맞춘다 —
+# 맞춤 질문은 다음 회차 요청에 chat_history로 되돌아오므로 이 상한을 넘으면 422가 난다.
+MAX_QUESTION_CHARS = 500
+
+
 def _is_yes_no_question(q: str) -> bool:
     """네/아니오로 답할 수 있는 질문인지 대략 판별한다(보수적: 애매하면 거부)."""
     if not q or not q.strip():
@@ -354,7 +419,15 @@ async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, 
         # 기본 질문(nextq_fallback)으로 대체한다. 여기서 한국어 문장을 고정 반환하면
         # 영어 등 다른 언어 사용자에게 한국어 질문이 나가므로 폴백은 프론트에 위임.
         q = await generate_ollama(_build_next_question_prompt(lang, cataract_res, amsler_res, history_text))
-        if not (q or "").strip():
+        q = (q or "").strip()
+        if not q:
+            return "", "yesno"
+        # 맞춤 질문이 2회차부터는 chat_history로 되돌아오는데, ChatHistoryItem.q의 상한이
+        # 500자다(app/schemas/ai.py). 넘기면 다음 요청이 422로 거부되고 프론트는 그것을
+        # 조용히 기본 질문으로 폴백해버린다. 애초에 이 길이면 '한 문장 질문'이 아니라
+        # 모델이 장황하게 늘어놓은 것이므로, 자르지 말고 버려서 기본 질문을 쓰게 한다.
+        if len(q) > MAX_QUESTION_CHARS:
+            logger.warning("⚠️  동적 문진 질문이 너무 김(%d자) — 기본 질문으로 폴백", len(q))
             return "", "yesno"
         # 프롬프트로 예/아니오를 요구하지만 LLM이 가끔 서술형을 낸다.
         # 예전에는 그런 질문을 버렸는데, 좋은 질문인 경우가 많아 버리기 아깝다.

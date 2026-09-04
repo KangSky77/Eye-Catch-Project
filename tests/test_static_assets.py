@@ -858,3 +858,167 @@ def test_데스크톱에서_검사카드가_세로로_치우치지_않는다():
     css = (STATIC / "style.css").read_text(encoding="utf-8")
     assert "@media (min-width: 1024px)" in css
     assert "#tab-test .step-content.active" in css
+
+
+def test_번역_키정합성과_서버_스키마_길이상한():
+    """6개국어 키 누락과 판정 문구 길이 초과를 CI에서 잡는다.
+
+    왜 필요한가:
+        · 키 누락 — 한 언어에만 키를 추가해도 브라우저는 에러 없이 폴백 문구를 쓴다.
+        · 길이 초과 — ai_* 판정 문구는 formatCataractResult()에서 합쳐져
+          cataract_res(app/schemas/ai.py, 상한 200자)로 서버에 간다. 넘으면 422가 나고
+          사용자에게는 '서버 연결 오류'로 보인다. 실제로 상한 100자 시절 fr/es에서
+          터져 200으로 올린 이력이 있어, 문구를 늘릴 때 다시 밟기 쉬운 자리다.
+
+    실패하면 `node scripts/check_i18n_limits.js`를 직접 돌려 어느 언어인지 확인할 것.
+    (data.js는 브라우저 전역 스크립트라 정규식 대신 node로 실제 평가한다)
+    """
+    completed = subprocess.run(
+        ["node", str(ROOT / "scripts" / "check_i18n_limits.js")],
+        cwd=ROOT, capture_output=True, text=True,
+        # 스크립트가 한국어로 보고한다. encoding을 지정하지 않으면 윈도우에서 로캘(cp949)로
+        # 디코딩하려다 UnicodeDecodeError가 나서 실패 원인이 안 보인다.
+        encoding="utf-8", errors="replace",
+    )
+    assert completed.returncode == 0, (
+        "번역 키 정합성/길이 상한 검사 실패:\n"
+        + completed.stdout + "\n" + completed.stderr
+    )
+
+
+def test_자유답변_입력칸이_서버_상한을_넘기지_못하게_막는다():
+    """chat-free-input의 값은 chatHistory[].a → ChatHistoryItem.a(상한 500자)로 간다.
+
+    상한을 넘기면 422가 나는데 fetchNextQuestion()은 그것을 조용히 기본 질문으로
+    폴백해버려서, 사용자가 쓴 답변이 아무 안내 없이 사라진다. 입력 단계에서 막는다."""
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    schema = (ROOT / "app" / "schemas" / "ai.py").read_text(encoding="utf-8")
+
+    block = html.split('id="chat-free-input"', 1)
+    assert len(block) == 2, "chat-free-input 입력칸이 사라졌다"
+    tag_rest = block[1].split(">", 1)[0]
+    assert 'maxlength="500"' in tag_rest, "자유 답변 입력칸에 maxlength=500이 없다"
+
+    # 스키마 쪽 상한이 바뀌면 이 테스트가 알려주도록 함께 확인한다
+    assert 'a: str = Field(default="", max_length=500)' in schema
+
+
+def test_저장소_접근이_초기화를_중단시키지_않는다():
+    """'모든 사이트 데이터 차단' 브라우저에서는 localStorage 읽기만 해도 예외가 난다.
+
+    감싸지 않은 호출이 DOMContentLoaded 블록 안에 있으면 번역·글자 크기·탭 활성화가
+    통째로 중단돼 앱이 빈 화면처럼 보인다. 접근은 readStore/writeStore로만 한다."""
+    core = (STATIC / "app-core.js").read_text(encoding="utf-8")
+    calib = (STATIC / "calibration.js").read_text(encoding="utf-8")
+
+    assert "function readStore(" in core and "function writeStore(" in core
+    # 헬퍼 본체(각 1회)를 빼면 app-core.js에 날것의 localStorage 호출이 남아 있으면 안 된다
+    assert core.count("localStorage.getItem") == 1, "app-core.js에 감싸지 않은 getItem이 있다"
+    assert core.count("localStorage.setItem") == 1, "app-core.js에 감싸지 않은 setItem이 있다"
+    # calibration.js는 읽기·쓰기 모두 try/catch 안에 있어야 한다
+    for call in ("localStorage.getItem", "localStorage.setItem"):
+        idx = calib.index(call)
+        assert "try" in calib[max(0, idx - 200):idx], f"calibration.js의 {call}이 try 밖에 있다"
+
+
+def test_안과검색_실패를_결과없음으로_안내하지_않는다():
+    """422/500이면 본문이 {"detail": ...}라 clinics가 비어 보인다.
+
+    ok를 확인하지 않으면 '검색 실패'가 아니라 '주변에 안과가 없다'는 엉뚱한 안내가 나간다."""
+    mp = (STATIC / "app-map.js").read_text(encoding="utf-8")
+    fetch_idx = mp.index("/api/nearby-clinics")
+    after = mp[fetch_idx:fetch_idx + 500]
+    assert "res.ok" in after, "nearby-clinics 응답의 상태 코드를 확인하지 않는다"
+    assert after.index("res.ok") < after.index("res.json()"), "ok 확인이 json() 파싱보다 뒤에 있다"
+
+
+def test_판독어려움_판정이_권장조치와_모순되지_않는다():
+    """'uncertain'은 판정 4단계가 생길 때 computeTriage()에 반영되지 않았다.
+
+    그 결과 같은 리포트 화면에서 검사 요약은 "판단이 어려우니 다시 찍어보라"고 하는데
+    권장 조치는 "빠른 확인을 권할 신호는 없었습니다"라고 정반대로 말했다.
+    진료 시점(level)은 근거가 없어 올리지 않되, 재촬영 안내는 반드시 함께 나가야 한다.
+    """
+    assess = (STATIC / "app-assess.js").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    vision = (ROOT / "app" / "services" / "vision.py").read_text(encoding="utf-8")
+
+    assert "ctx.cataractCode === 'uncertain'" in assess, "computeTriage가 uncertain을 모른다"
+    assert "tri_note_uncertain" in assess
+    assert "triage.note" in assess, "renderTriage가 안내 문구를 그리지 않는다"
+    assert data.count("tri_note_uncertain:") == 6, "6개국어 문구가 갖춰지지 않았다"
+    # 서버의 판정 코드와 짝이 맞는지 — 코드가 늘면 이 테스트가 먼저 알려준다
+    assert '"uncertain"' in vision
+
+
+def test_맞춤질문이_고정문항_주제를_되묻지_않게_막는다():
+    """LLM 프롬프트에 '이미 물어본 주제' 금지 목록이 없으면 거의 매번 중복 질문이 나온다.
+
+    실기기에서 고정 문항 '안개가 낀 것처럼 뿌옇게 보이나요?' 직후
+    '사물의 경계가 흐릿하게 보이나요?'를 생성했다(2026-09-04).
+    data.js의 문항을 고치면 llm.py의 금지 목록도 함께 갱신해야 한다."""
+    llm = (ROOT / "app" / "services" / "llm.py").read_text(encoding="utf-8")
+    assert "_COVERED_TOPICS_KO" in llm and "_COVERED_TOPICS_EN" in llm
+    assert "_OPEN_AREAS_KO" in llm and "_OPEN_AREAS_EN" in llm
+    # 고정 문항이 다루는 대표 주제가 금지 목록에 실제로 들어 있는지
+    for topic in ("뿌옇게", "눈부심", "안경 도수", "비문증", "안압"):
+        assert topic in llm, f"금지 목록에 '{topic}'이 없다"
+    # 아무도 묻지 않는 영역으로 유도하고 있는지
+    for area in ("편측성", "스테로이드", "자외선"):
+        assert area in llm, f"유도 영역에 '{area}'가 없다"
+
+
+def test_검수되지_않은_맞춤질문이_진료시점을_바꾸지_않는다():
+    """computeTriage는 '사람이 검수한 문항'만으로 진료 시점을 정해야 한다(그 함수 주석).
+
+    젬마가 즉석에서 만든 질문의 '네' 하나가 symptomCodes에 들어가면서
+    권장 조치가 monitor → weeks로 올라가고 있었다(2026-09-04 확인).
+    자유 입력 경로는 원래부터 symptomCodes를 건드리지 않았으므로,
+    답변 수단에 따라 의료 판정이 달라지는 불일치이기도 했다."""
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+    assert "state.symptomCodes.push('other')" not in chat, (
+        "검수되지 않은 맞춤 질문의 답이 다시 symptomCodes로 들어가고 있다 "
+        "— computeTriage의 anySymptom이 이것을 세어 진료 시점을 올린다."
+    )
+    # 소견서 문맥·리포트 표시용으로는 계속 남겨야 한다
+    assert "state.chatSymptoms.push('symptom_extra')" in chat
+
+
+def test_맞춤질문_길이가_스키마_상한_안에_있다():
+    """맞춤 질문은 다음 회차에 chat_history로 되돌아온다(ChatHistoryItem.q, 상한 500자).
+
+    maxDynamic이 2 이상이면 실제로 왕복하므로, 너무 긴 질문은 서버가 버리고
+    프론트 기본 질문을 쓰게 해야 한다 — 자르면 문장이 중간에 끊긴다."""
+    llm = (ROOT / "app" / "services" / "llm.py").read_text(encoding="utf-8")
+    schema = (ROOT / "app" / "schemas" / "ai.py").read_text(encoding="utf-8")
+    assert "MAX_QUESTION_CHARS = 500" in llm
+    assert "len(q) > MAX_QUESTION_CHARS" in llm
+    assert "q: str = Field(..., min_length=1, max_length=500)" in schema
+
+
+def test_나이_구간이_고령쪽에서_뭉쳐있지_않다():
+    """70대와 80대는 백내장 유병률 차이가 커서 한 칸으로 묶으면 안 된다.
+    (반대로 40세 미만은 쪼개도 배점이 전부 0이라 나누지 않는다.)"""
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+    assess = (STATIC / "app-assess.js").read_text(encoding="utf-8")
+    assert "age_70plus" not in data, "옛 age_70plus 참조가 남아 있다"
+    assert data.count("age_70s:") == 6 and data.count("age_80plus:") == 6
+    assert "{ v: '80plus'" in data
+    # 배점 상한(RISK_MAX)이 새 최고 점수와 맞는지 — 안 맞으면 리포트 표시가 어긋난다
+    scores = [int(m) for m in re.findall(r"key: 'age_\w+',\s*score: (\d+)", data)]
+    assert scores and max(scores) == 5, f"나이 배점: {scores}"
+    assert "const RISK_MAX = 13;" in assess, "RISK_MAX가 새 배점(5+3+2+2+1)과 안 맞는다"
+
+
+def test_diagnoses_테이블_스키마를_기동시점에_검증한다():
+    """CREATE TABLE IF NOT EXISTS는 '이름'만 본다.
+
+    예전 설계의 테이블(diag_id·cataract_score·ai_result)이 남은 DB에서는 조용히 성공하고,
+    사용자가 저장에 동의한 순간에야 UndefinedColumnError로 터진다 — 실제로 겪었다."""
+    db = (ROOT / "app" / "services" / "database.py").read_text(encoding="utf-8")
+    assert "REQUIRED_COLUMNS" in db and "_verify_schema" in db
+    assert "information_schema.columns" in db
+    assert "RENAME TO" in db, "고치는 방법을 에러 메시지에 알려줘야 한다"
+    # INSERT가 실제로 쓰는 컬럼이 검증 목록에 다 들어 있는지
+    for col in ("id", "cataract_result", "amsler_result", "symptoms", "gemma_opinion"):
+        assert f'"{col}"' in db, f"검증 목록에 {col}이 없다"

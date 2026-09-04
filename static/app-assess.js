@@ -13,13 +13,18 @@
 // ==========================================
 
 // 위험 점수 배점 근거(교육용 단순 모델 — 임상 검증된 위험예측식이 아님):
-//   나이 0~4   노화가 백내장·황반변성·녹내장 공통 최대 위험요인
+//   나이 0~5   노화가 백내장·황반변성·녹내장 공통 최대 위험요인
 //   당뇨 3     당뇨망막병증의 직접 원인이며 백내장도 앞당긴다
 //   가족력 2   녹내장·황반변성은 가족력 기여가 크다
 //   흡연 2     황반변성·백내장 위험을 뚜렷이 높인다
 //   고혈압 1   망막혈관 손상에 기여
-// 최대 12점.
-const RISK_MAX = 12;
+// 최대 13점.
+//
+// 나이 구간(data.js의 riskQuestions): 40세 미만 0 / 40대 1 / 50대 2 / 60대 3 / 70대 4 / 80세 이상 5.
+// 40세 미만을 더 잘게 쪼개지 않는 이유: 노화성 백내장·황반변성은 이 나이대 유병률이 매우 낮아
+// 20대와 30대를 나눠도 배점이 똑같이 0이다 — 문진만 길어지고 결과는 안 바뀐다.
+// 반대로 위쪽은 나눴다: 70대와 80대는 백내장 유병률 차이가 실제로 크다 (2026-09-04).
+const RISK_MAX = 13;
 
 /** 문진에서 모은 위험요인 답변 → 총점과 해당 항목 라벨. */
 function computeRiskScore(answers) {
@@ -86,10 +91,21 @@ function computeTriage(ctx) {
     }
 
     const t = translations[state.lang];
+    // 'uncertain'(사진만으로 판단 어려움)은 일부러 진료 시점을 올리지 않는다.
+    //   근거: v6 test 분포에서 이 구간(2~25점)에 들어온 것은 정상 2,230장 중 8장(0.4%)이고
+    //   백내장은 0장이었다. 임상 검증된 근거 없이 이 구간을 '수 주 내 검진'으로 올리면
+    //   대부분 정상인 사람에게 불필요한 진료를 권하게 된다.
+    // 대신 안내 문구를 덧붙인다. 이 처리가 없던 동안, 같은 리포트 화면에서 검사 요약은
+    // "판단이 어려우니 다시 찍어보라"고 하는데 권장 조치는 "빠른 확인을 권할 신호는
+    // 없었습니다"라고 정반대로 말했다. 판정 4단계가 추가될 때 이 함수가 함께 갱신되지 않은
+    // 누락이었다(vision.py의 _classify()와 짝을 맞춰야 한다).
+    const retakeNote = ctx.cataractCode === 'uncertain' ? (t.tri_note_uncertain || '') : '';
+
     return {
         level,
         label: t['tri_' + level] || level,
         why: t['tri_' + level + '_why'] || '',
+        note: retakeNote,        // 진료 시점은 그대로 두고 덧붙이는 안내 (없으면 빈 문자열)
         riskScore: risk,
         riskMax: RISK_MAX,
     };
@@ -141,8 +157,18 @@ function renderTriage(container, triage, factors) {
     why.textContent = triage.why;
     box.appendChild(why);
 
+    // 판정이 'uncertain'일 때만 붙는 재촬영 안내. 진료 시점(triage.level)은 바꾸지 않고,
+    // "이번 사진으로는 판단이 어려웠다"는 사실만 권장 조치 자리에서도 말해준다 —
+    // 바로 위 검사 요약과 서로 반대되는 말을 하지 않도록.
+    if (triage.note) {
+        const note = document.createElement('p');
+        note.className = 'text-[11px] font-bold text-slate-600 mt-2 leading-relaxed';
+        note.textContent = triage.note;
+        box.appendChild(note);
+    }
+
     if (factors && factors.length) {
-        // 총점(n/12)은 표시하지 않는다 — 임상 검증된 지표가 아닌데 숫자로 보여주면
+        // 총점(RISK_MAX 만점)은 표시하지 않는다 — 임상 검증된 지표가 아닌데 숫자로 보여주면
         // 사용자가 의료 등급으로 받아들인다. 항목만 '정기검진을 권하는 이유'로 제시한다.
         const f = document.createElement('p');
         f.className = 'text-[11px] text-slate-500 mt-2 leading-relaxed';

@@ -28,7 +28,7 @@
 | [⚠️ 모델의 한계](#️-모델의-한계-읽고-시작하세요) | **먼저 읽어야 할 것** |
 | [🔦 플래시 반사 대응](#-플래시-반사-대응) | 오탐 원인과 차단 방법 |
 | [📜 데이터 출처 및 라이선스](#-데이터-출처-및-라이선스) | 출처별 위험도 전수 공개 |
-| [🔍 API 엔드포인트](#-api-엔드포인트) | 6개 라우트 |
+| [🔍 API 엔드포인트](#-api-엔드포인트) | 상태 점검 2개 + 기능 6개 라우트 |
 | [🛠️ 개발 팁](#️-개발-팁) | 테스트·CI·캐시·오프라인 |
 | [📱 모바일·접근성](#-모바일접근성) | 글자 크기·카메라·폴더블·시야 체험 |
 | [🐛 알려진 이슈](#-알려진-이슈--해결책) | 증상별 해결 |
@@ -109,11 +109,15 @@
 - 다국어 자동 번역
 - 페이지 경계 깔끔하게 분할
 
-### 7️⃣ **외부 공유** (ngrok)
+### 7️⃣ **외부 공유** (ngrok · Cloudflare Tunnel · Tailscale Funnel)
 ```bash
-ngrok http 8000
-# 공개 HTTPS URL 자동 생성 → 모바일·원격 공유 가능
+ngrok http 8000                                   # 계정 필요, 무료는 동시 1세션
+cloudflared tunnel --url http://localhost:8000    # 계정 불필요, 경고 페이지 없음
+tailscale funnel 8000                             # 주소가 매번 바뀌지 않음
 ```
+공개 HTTPS URL이 생성돼 모바일·원격에서 접속할 수 있습니다.
+설정 변경은 필요 없습니다(프론트가 같은 서버에서 서빙돼 same-origin).
+자세한 내용은 시작 가이드의 **7️⃣ (선택) 외부 공유 — 터널** 항목을 참고하세요.
 
 ### 8️⃣ **모바일 촬영·접근성** (2026-09-02 팀 피드백)
 - 📷 **카메라로 바로 찍기** — 터치 기기에서는 파일 선택 대신 카메라 앱이 바로 열립니다(`capture`).
@@ -291,19 +295,38 @@ ollama pull gemma4:e2b-it-qat
 
 ### 6️⃣ FastAPI 서버 실행
 ```bash
-# 포트 8000 (또는 .env에서 수정)
 uvicorn app.main:app --port 8000 --reload
 
 # ✅ http://localhost:8000 에서 앱 실행
 ```
+> ⚠️ **포트는 `.env`가 아니라 이 명령의 `--port`로만 정해집니다.** 설정에 포트 항목은 없습니다.
+> VS Code 프리뷰(F5, [아래](#vs-code-프리뷰))는 **8001**을 씁니다 — F5로 띄워놓고
+> `ngrok http 8000`을 하면 아무것도 안 나오니, 터널 명령의 포트를 실제 실행 포트에 맞추세요.
 
-### 7️⃣ (선택) 외부 공유 — Ollama
 ```bash
-# 별도 터미널에서
+curl -s http://localhost:8000/readyz   # {"status":"ready"} 여야 사진 분석이 됩니다
+```
+
+### 7️⃣ (선택) 외부 공유 — 터널
+프론트가 같은 서버(`/static`)에서 서빙되므로 어떤 터널을 쓰든 same-origin이라
+`ALLOWED_ORIGINS`는 비워 두면 됩니다. 넷 다 HTTPS라 위치 권한·카메라 촬영도 동작합니다.
+
+```bash
+# A. ngrok (계정 필요, 무료 플랜은 동시 1세션)
 ngrok http 8000
 
-# 💬 공개 HTTPS URL 출력됨 → 모바일·원격 접속 가능
+# B. Cloudflare Tunnel (계정 불필요, 중간 경고 페이지 없음)
+#    winget install --id Cloudflare.cloudflared
+cloudflared tunnel --url http://localhost:8000
+
+# C. Tailscale Funnel (계정 필요, 주소가 매번 바뀌지 않음)
+#    winget install tailscale.tailscale
+tailscale funnel 8000
 ```
+> 두 대(실습실 PC·노트북)를 동시에 공유해야 하면 서로 다른 도구를 쓰세요 —
+> ngrok 무료 플랜은 계정당 세션이 1개뿐입니다.
+> 소견서는 스트리밍 응답이라, 새 터널을 처음 쓸 때 **글자가 한 자씩 흘러나오는지** 확인하세요.
+> 통째로 한 번에 뜨면 그 터널이 응답을 버퍼링하는 것입니다(기능은 동작하지만 체감이 나쁩니다).
 
 ---
 
@@ -698,6 +721,25 @@ OOD 게이트가 안저사진을 '눈'으로 통과시킵니다(실측 eye_score
 
 ## 🔍 API 엔드포인트
 
+### 🩺 상태 점검 (liveness / readiness)
+```bash
+GET /healthz
+# → 200 {"status": "ok"}
+#    프로세스가 HTTP 요청을 받을 수 있는지만 본다(모델 상태는 보지 않음).
+
+GET /readyz
+# → 200 {"status": "ready", "model": "ready"}
+#   503 {"status": "not_ready", "model": "unavailable"}
+#    가중치가 실제로 로드됐는지까지 확인한다. 사진 분석을 받을 준비가 됐다는 뜻.
+```
+가중치 파일이 없거나 메타데이터의 SHA-256과 다르면 서버는 기동하되 `/readyz`가 503을
+돌려준다(`/api/analyze-eye`도 503). **발표 직전 점검은 `/healthz`가 아니라 `/readyz`로** 하세요 —
+서버는 떠 있는데 모델만 안 올라온 상태를 `/healthz`는 잡지 못합니다.
+
+```bash
+curl -s http://localhost:8000/readyz
+```
+
 ### 📸 백내장 AI 분석
 ```bash
 POST /api/analyze-eye
@@ -705,8 +747,8 @@ Content-Type: multipart/form-data
 
 # 응답
 {
-  "probability": 72.5,           # 전체 판정 확률(높은 쪽 눈 기준, %)
-  "result": "백내장 위험 단계",
+  "probability": 72.5,           # 전체 판정 점수(높은 쪽 눈 기준) — 보정된 확률이 아님
+  "result": "강한 혼탁 특징 감지 (안과 정밀 검사 권장)",
   "result_code": "risk",         # normal | uncertain | borderline | risk | invalid | hold | blurry | eyes_hidden
   "mode": "face",                # "face" 얼굴 크롭 | "eye" 원본
   "eyes_detected": 2,            # 감지된 눈 개수

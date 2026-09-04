@@ -20,7 +20,10 @@ const state = {
     chatSymptoms: [],        // 수집된 증상들 (리포트용)
     symptomCodes: [],        // 증상 언어 중립 코드 (RAG 검색용)
     dynamicCount: 0,         // 젬마가 질문한 횟수
-    maxDynamic: 1,           // 젬마 질문 최대 횟수
+    // 젬마 질문 최대 횟수. 1개는 문진이 갑자기 끝나는 느낌이라 2로 올렸다.
+    // 더 올리기 전에 알아둘 것: 질문 하나당 Ollama 왕복이 1회 늘고(스트리밍이 아니라
+    // 응답을 다 받을 때까지 기다린다), 중복 질문이 나올 확률도 개수만큼 늘어난다.
+    maxDynamic: 2,
     chatHistory: [],         // 젬마에게 넘길 전체 대화 기록
     chatBusy: false,         // 문진 답변 처리 중 잠금 (중복 클릭 방지)
     step: 'step-intro'       // 검사 흐름의 현재 단계 (진행 표시용)
@@ -117,12 +120,32 @@ async function readAiStream(response, onUpdate) {
 }
 
 // ------------------------------------------
+// 1-c. localStorage 안전 접근
+//
+// 브라우저 설정('모든 사이트 데이터 차단')이나 일부 시크릿 모드에서는 localStorage를
+// 읽기만 해도 SecurityError를, 쓰면 QuotaExceededError를 던진다. 이 앱의 저장값은
+// 전부 '있으면 좋은 것'(언어·글자 크기·화면 보정)이라 실패해도 이번 세션은 그대로
+// 굴러가야 한다. 감싸지 않은 호출 하나가 초기화 블록 전체를 중단시킨 적이 있어
+// 접근을 이 두 함수로 모은다.
+// ------------------------------------------
+function readStore(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function writeStore(key, value) {
+    try { localStorage.setItem(key, value); return true; } catch (e) { return false; }
+}
+
+// ------------------------------------------
 // 2. 초기화 및 UI 제어 (UI & Navigation)
 // ------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
     // 1순위: 사용자가 이전에 직접 고른 언어(localStorage) → 기기/브라우저 언어와 무관하게 유지
     // 2순위: 브라우저 언어  3순위: 영어
-    const saved = localStorage.getItem('ec_lang');
+    // localStorage 접근은 반드시 감싼다 — '모든 쿠키/사이트 데이터 차단' 설정이나
+    // 일부 시크릿 모드에서는 읽기만 해도 예외를 던진다. 여기서 던지면 이 초기화 블록이
+    // 통째로 중단돼 번역·글자크기·탭 활성화가 전부 안 되고 앱이 빈 화면처럼 보인다.
+    // (loadFontLevel/applyFontSize·index.html의 인라인 스크립트는 이미 감싸져 있었다)
+    const saved = readStore('ec_lang');
     const browser = (navigator.language || navigator.userLanguage || 'en').substring(0, 2);
     const lang = (saved && translations[saved]) ? saved
                : (translations[browser] ? browser : 'en');
@@ -143,14 +166,13 @@ function changeLanguage(lang) {
 const FONT_LEVEL_MAX = 2;
 
 function loadFontLevel() {
-    let v = 0;
-    try { v = parseInt(localStorage.getItem('ec_font'), 10); } catch (e) { /* 저장소 차단(시크릿 모드 등) */ }
+    const v = parseInt(readStore('ec_font'), 10);   // 저장소 차단(시크릿 모드 등)이면 null → NaN
     return Number.isInteger(v) ? Math.min(Math.max(v, 0), FONT_LEVEL_MAX) : 0;
 }
 
 function applyFontSize(level) {
     document.documentElement.setAttribute('data-font', String(level));
-    try { localStorage.setItem('ec_font', String(level)); } catch (e) { /* 저장 못 해도 이번 세션엔 적용 */ }
+    writeStore('ec_font', String(level));   // 저장 못 해도 이번 세션엔 적용된다
     const dec = document.getElementById('fs-dec'), inc = document.getElementById('fs-inc');
     if (dec) dec.disabled = level <= 0;
     if (inc) inc.disabled = level >= FONT_LEVEL_MAX;
@@ -167,13 +189,12 @@ function changeFontSize(delta) {
 
 function updateUI(lang) {
     state.lang = lang;
-    localStorage.setItem('ec_lang', lang);   // 선택 언어 저장 → 새로고침/재방문 시 복원
-    // 문서 언어도 함께 바꾼다 — 스크린리더 발음, 브라우저 번역 제안, CJK 폰트 선택이
-    // 모두 이 속성을 본다. index.html에 lang="ko"로 박혀 있으면 6개국어가 전부 한국어로 읽힌다.
+    writeStore('ec_lang', lang);   // 선택 언어 저장 → 새로고침/재방문 시 복원 (실패해도 계속 진행)
+    // 문서 언어도 함께 바꾼다 — 스크린리더 발음, 브라우저 번역 제안, 검색엔진, CJK 폰트
+    // 선택이 모두 이 속성을 본다. index.html에 lang="ko"로 박혀 있으면 6개국어가 전부
+    // 한국어로 읽힌다. (병합 과정에서 .lang 대입과 setAttribute가 중복돼 있던 것을 하나로 정리)
     document.documentElement.lang = lang;
     document.getElementById('lang-selector').value = lang;
-    // 스크린리더·번역기·검색엔진이 실제 표시 언어를 알 수 있도록 <html lang>도 함께 바꾼다
-    document.documentElement.setAttribute('lang', lang);
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');

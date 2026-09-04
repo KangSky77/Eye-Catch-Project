@@ -19,7 +19,11 @@ dataset/
 *.pth
 
 # 환경변수 (DB 비밀번호 등 비밀 정보 — 절대 깃에 올리면 안 됩니다)
+# 백업본(.env.bak*)도 같은 비밀을 그대로 담고 있으므로 함께 제외한다.
+# (.env.example은 값이 비어 있는 템플릿이라 추적 대상)
 .env
+.env.bak*
+.env.local
 
 # 외부 실행파일 / 로그
 ngrok.exe

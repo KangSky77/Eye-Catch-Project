@@ -60,8 +60,12 @@ _EXCL = [re.compile(p, re.I) for p in EXCLUSION_PATTERNS]
 _PROB = [re.compile(p, re.I) for p in PROBABILITY_PATTERNS]
 _DIAG = [re.compile(p, re.I) for p in DIAGNOSIS_PATTERNS]
 
-# 문장 분리 — 한국어 마침표/일본어 구두점/영문 종결부호
-_SENT_SPLIT = re.compile(r"(?<=[.!?。！？])\s+|\n+")
+# 문장 분리 — 한국어 마침표/일본어 구두점/영문 종결부호.
+# 공개 이름으로 둔다: llm.py의 스트리밍 필터(sanitized_stream)가 같은 규칙으로 문장을
+# 잘라야 하는데, 예전에는 비공개 이름(_SENT_SPLIT)을 밖에서 참조하고 있었다.
+# 여기서만 규칙을 고치면 스트리밍·일괄(sanitize) 양쪽이 함께 바뀐다.
+SENT_SPLIT = re.compile(r"(?<=[.!?。！？])\s+|\n+")
+_SENT_SPLIT = SENT_SPLIT   # 이전 이름 호환(외부 참조가 남아 있어도 깨지지 않도록)
 
 
 def _diseases_in(sentence: str) -> set:
@@ -93,7 +97,7 @@ def sanitize(text: str) -> tuple[str, list[str]]:
     사라지고, 반대로 통째로 통과시키면 틀린 의학 문장이 그대로 노출된다.
     """
     kept, reasons = [], []
-    for raw in _SENT_SPLIT.split(text or ""):
+    for raw in SENT_SPLIT.split(text or ""):
         s = raw.strip()
         if not s:
             continue
