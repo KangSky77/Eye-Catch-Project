@@ -241,6 +241,7 @@ async def sanitized_stream(prompt: str):
     """
     buf = ""
     dropped: list[str] = []
+    emitted = False
     async for chunk in stream_with_keepalive(prompt):
         if chunk == KEEPALIVE:
             yield chunk                     # 연결 유지용 — 내용이 아니다
@@ -260,6 +261,7 @@ async def sanitized_stream(prompt: str):
                 dropped.append(why)
                 logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, sentence.strip()[:120])
             else:
+                emitted = True
                 yield sentence
     # 마지막 문장(종결부호 없이 끝난 경우)
     tail = buf.strip()
@@ -269,9 +271,12 @@ async def sanitized_stream(prompt: str):
             dropped.append(why)
             logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, tail[:120])
         else:
+            emitted = True
             yield tail
     if dropped:
         logger.warning("⚠️  LLM 안전 필터 제거 %d문장 (사유: %s)", len(dropped), ", ".join(sorted(set(dropped))))
+    if dropped and not emitted:
+        yield ERROR_MARKER + "AI_FILTER_EMPTY"
 
 
 async def generate_ollama(prompt: str) -> str:

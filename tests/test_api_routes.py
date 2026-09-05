@@ -25,7 +25,9 @@ def test_readyz는_모델이_없으면_503(client, monkeypatch):
 
 def test_readyz는_모델이_로드되면_200(client, monkeypatch):
     from app.services import vision
+    from app.services import eye_validator
     monkeypatch.setattr(vision, "weights_loaded", True)
+    monkeypatch.setattr(eye_validator, "is_ready", lambda: True)
     r = client.get("/readyz")
     assert r.status_code == 200
     assert r.json() == {"status": "ready", "model": "ready"}

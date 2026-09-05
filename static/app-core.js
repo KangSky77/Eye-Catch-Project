@@ -215,6 +215,7 @@ function updateUI(lang) {
     // 리포트의 '값'(백내장·암슬러·문진 소견)은 data-i18n으로 덮이지 않는다 —
     // 언어 중립 상태에서 현재 언어로 다시 만든다.
     if (typeof refreshReportResults === 'function') refreshReportResults();
+    if (typeof refreshAiResultDisplay === 'function') refreshAiResultDisplay();
     // 암슬러 격자 안내(거리·보정)도 현재 언어로
     if (typeof renderAmslerGrid === 'function' && document.getElementById('amsler-box')) {
         renderAmslerGrid();
@@ -222,6 +223,8 @@ function updateUI(lang) {
     // 결과 화면의 사진 캡션
     const rpc = document.getElementById('result-photo-caption');
     if (rpc && translations[lang].result_photo_label) rpc.textContent = translations[lang].result_photo_label;
+    const rpi = document.getElementById('result-photo');
+    if (rpi && translations[lang].result_photo_label) rpi.alt = translations[lang].result_photo_label;
     if (typeof vtRefreshCalibrationUI === 'function' && document.getElementById('vt-cardbox')) {
         vtRefreshCalibrationUI();
     }
@@ -316,8 +319,22 @@ function renderStepProgress() {
 
 // 로고 클릭 — 새로고침(입력한 내용이 전부 날아감) 대신 첫 화면으로 돌아간다
 function goHome() {
+    resetScreeningState();
     nextStep('step-intro');
     showTab('tab-test');
+}
+
+/** Start a new screening session without carrying results or generated opinion over. */
+function resetScreeningState() {
+    state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
+    state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
+    state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
+    const opinion = document.getElementById('gemma-opinion-text');
+    if (opinion) { opinion.textContent = ''; opinion.classList.add('hidden'); }
+    const stale = document.getElementById('opinion-stale'); if (stale) stale.classList.add('hidden');
+    const consent = document.getElementById('consent-box'); if (consent) consent.classList.add('hidden');
+    const findings = document.getElementById('findings-box'); if (findings) findings.innerHTML = '';
+    const triage = document.getElementById('triage-box'); if (triage) triage.innerHTML = '';
 }
 
 function openMap() {

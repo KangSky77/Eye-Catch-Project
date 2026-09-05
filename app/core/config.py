@@ -76,6 +76,10 @@ class Settings(BaseSettings):
     #   실사용 사진에서 오거부가 보고되면 이 값을 먼저 의심하고 재실측할 것.
     # 재현: python scripts/probe_eye_gate.py --dataset dataset --n 300
     eye_sim_threshold: float = 0.62
+    # The bundled gate was trained with a 0.207 threshold, but that threshold
+    # admitted the bundled library scene (0.390). The review audit found 0.4
+    # rejects that scene while retaining 99.7% of the sampled cataract eyes.
+    eye_gate_threshold: float = 0.40
     # 좌우반전 TTA. v5에서는 사용자 관점(3단계 안내)으로 동률이었지만, v6(익상편 편입 재학습)에서는
     # test FN 7→9, FP 2→3으로 손해(2026-09-02 재측정)라 기본 OFF. 백본·데이터를 바꾸면 재측정 후 결정.
     use_tta: bool = False
@@ -112,6 +116,8 @@ class Settings(BaseSettings):
             raise ValueError("MAX_INFERENCE_CONCURRENCY는 0보다 커야 합니다.")
         if self.max_llm_concurrency <= 0:
             raise ValueError("MAX_LLM_CONCURRENCY는 0보다 커야 합니다.")
+        if not (0 < self.eye_gate_threshold < 1):
+            raise ValueError("EYE_GATE_THRESHOLD는 0과 1 사이여야 합니다.")
         return self
 
     # IDE·서비스 관리자가 저장소 밖 cwd에서 서버를 띄워도 같은 설정을 읽는다.

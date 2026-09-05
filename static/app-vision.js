@@ -134,6 +134,8 @@ async function runAIAnalysis(droppedFile) {
         return;
     }
 
+    if (typeof resetScreeningState === 'function') resetScreeningState();
+
     const r = new FileReader();
     r.onload = e => {
         const p = document.getElementById('preview-image');
@@ -312,6 +314,23 @@ function renderEyeBreakdown(container, eyes) {
     container.appendChild(wrap);
 }
 
+/** Repaint the already displayed analysis when the language changes. */
+function refreshAiResultDisplay() {
+    const r = state.aiResultData, disp = document.getElementById('ai-result-display');
+    if (!r || !disp) return;
+    const t = translations[state.lang];
+    const paragraphs = disp.querySelectorAll(':scope > p');
+    if (paragraphs[0]) paragraphs[0].textContent = `${t.score_label || 'AI feature score'} ${r.probability}/100`;
+    if (paragraphs[1]) paragraphs[1].textContent = t['ai_' + r.code] || r.code;
+    if (paragraphs[2]) paragraphs[2].textContent = t.score_note || '';
+    const labels = disp.querySelectorAll('.mt-4 .text-sm.font-bold');
+    (r.eyes || []).forEach((e, i) => { if (labels[i]) labels[i].textContent = ({left:t.eye_left,right:t.eye_right}[e.side] || e.side); });
+    const unilateral = disp.querySelector('.mt-4 .text-rose-600.bg-rose-50');
+    if (unilateral) unilateral.textContent = t.eye_unilateral || 'Unilateral finding';
+    const note = disp.querySelector('.mt-4 .text-slate-400');
+    if (note) note.textContent = t.eye_ref_note || '';
+}
+
 // ------------------------------------------------------------------
 // 암슬러 격자 — 반드시 한쪽 눈씩 따로 본다.
 // 양안으로 보면 한쪽 눈의 결손을 반대쪽 눈이 메워버려 이상을 놓친다.
@@ -320,6 +339,8 @@ function renderEyeBreakdown(container, eyes) {
 function startAmslerStep() {
     state.amslerEye = 'left';
     state.amslerResult = {};
+    const box = document.getElementById('amsler-box');
+    if (box) box.classList.remove('amsler-distorted');
     // 격자 크기는 부모의 실제 폭을 재서 정한다 — 화면에 붙이기 전에 계산하면
     // 폭이 0이라 잘못된 크기가 나온다. 그래서 nextStep() 다음에 그린다.
     nextStep('step-amsler');
@@ -435,6 +456,8 @@ function recordAmsler(bad) {
     state.amslerResult[state.amslerEye] = bad;
 
     if (state.amslerEye === 'left') {
+        const grid = document.getElementById('amsler-box');
+        if (grid) grid.classList.remove('amsler-distorted');
         state.amslerEye = 'right';
         updateAmslerPrompt();
         return;                       // 아직 반대쪽 눈이 남았다

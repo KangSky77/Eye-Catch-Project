@@ -18,6 +18,11 @@ async function finish() {
 
     // 행동 권고 — 등급이 아니라 '언제 병원에 가야 하는가'를 먼저 보여준다
     const risk = computeRiskScore(state.riskAnswers || {});
+    // 위험요인 문진도 소견서의 생활 조언 근거로 전달한다. 기존에는 증상 문항만
+    // 전달되어 사용자가 당뇨·흡연 등을 답해도 AI가 개인화할 수 없었다.
+    const yes = translations[state.lang].chat_yes, no = translations[state.lang].chat_no;
+    const freeAnswers = (state.chatHistory || []).map(item => item.a).filter(a => a && a !== yes && a !== no);
+    const opinionSymptoms = symptoms.concat(risk.factors || [], freeAnswers);
     state.triage = computeTriage({
         cataractCode: state.aiResultCode,
         amslerAbnormal: state.hasAmsler,
@@ -42,7 +47,7 @@ async function finish() {
         lang: state.lang,
         cataract_res: cataractRes,
         amsler_res: amslerRes,
-        chat_symptoms: symptoms,
+        chat_symptoms: opinionSymptoms,
         // RAG용 언어 중립 신호
         cataract_code: state.aiResultCode,
         amsler_abnormal: state.hasAmsler,
@@ -87,7 +92,11 @@ function regenerateOpinion() {
     state.opinionRequest.lang = state.lang;
     state.opinionRequest.cataract_res = formatCataractResult();
     state.opinionRequest.amsler_res = formatAmslerResult();
-    state.opinionRequest.chat_symptoms = formatSymptoms();
+    const yes = translations[state.lang].chat_yes, no = translations[state.lang].chat_no;
+    const freeAnswers = (state.chatHistory || []).map(item => item.a).filter(a => a && a !== yes && a !== no);
+    state.opinionRequest.chat_symptoms = formatSymptoms().concat(
+        (computeRiskScore(state.riskAnswers || {}).factors || []), freeAnswers
+    );
     const stale = document.getElementById('opinion-stale');
     if (stale) stale.classList.add('hidden');
     runAiOpinion();

@@ -119,6 +119,11 @@ def gate_available() -> bool:
     return _gate_w is not None
 
 
+def is_ready() -> bool:
+    """True only after the embedding network and centroid are loaded."""
+    return bool(_loaded and _net is not None and _centroid is not None)
+
+
 def check_eye(img):
     """(is_eye, score) 반환. 눈 클로즈업뿐 아니라 얼굴 사진의 눈 크롭에도 쓴다.
     - (True, score)  : 눈으로 판단
@@ -131,7 +136,8 @@ def check_eye(img):
     try:
         if _gate_w is not None:
             p = _gate_prob(img)
-            return p >= _gate_thr, p
+            threshold = max(float(_gate_thr), settings.eye_gate_threshold)
+            return p >= threshold, p
         score = _similarity(img)
     except Exception:
         logger.warning("⚠️  눈 검증 계산 실패", exc_info=True)

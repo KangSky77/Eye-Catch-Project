@@ -268,8 +268,9 @@ def predict_cataract(img: Image.Image):
 
     # [흔들림 게이트] 초점이 나간 사진은 사람도 판독할 수 없다.
     # 반사 게이트보다 먼저 본다 — 흔들려서 뿌연 것을 '반사'라고 안내하면 엉뚱한 재촬영을 시킨다.
-    sharp = max((_sharpness(t) for t in targets), default=0.0)
-    if sharp < BLUR_MIN_SHARPNESS:
+    sharpnesses = [_sharpness(t) for t in targets]
+    sharp = min(sharpnesses, default=0.0)
+    if any(s < BLUR_MIN_SHARPNESS for s in sharpnesses):
         logger.info("판독 보류 — 흔들림/초점 흐림 (선명도 %.4f)", sharp)
         return _empty_result(
             "blurry", "판독 보류 (사진이 흔들렸습니다)", mode, len(eye_crops),

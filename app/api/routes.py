@@ -5,8 +5,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from app.core.config import settings
 from app.services.vision import predict_cataract, validate_and_read_image
-from app.services import vision
-from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_next_question
+from app.services import vision, eye_validator
+from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_next_question, KEEPALIVE, KEEPALIVE_INTERVAL
 from app.services.clinics import search_eye_clinics
 from app.services.database import save_diagnosis
 from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, SaveDiagnosisRequest
@@ -26,16 +26,31 @@ async def healthz():
 @router.get("/readyz")
 async def readyz():
     """실제 이미지 분석을 받을 준비가 됐는지 확인하는 readiness 체크."""
-    if not vision.weights_loaded:
+    if not vision.weights_loaded or not eye_validator.is_ready():
         return JSONResponse(status_code=503, content={"status": "not_ready", "model": "unavailable"})
     return {"status": "ready", "model": "ready"}
 
 
 async def _limited_stream(stream):
     """LLM 스트림 수를 제한하고 클라이언트 취소 시 슬롯을 즉시 반납한다."""
-    async with _llm_slots:
+    acquire = asyncio.create_task(_llm_slots.acquire())
+    acquired = False
+    try:
+        while not acquire.done():
+            try:
+                await asyncio.wait_for(asyncio.shield(acquire), timeout=KEEPALIVE_INTERVAL)
+            except asyncio.TimeoutError:
+                yield KEEPALIVE
+        await acquire
+        acquired = True
         async for chunk in stream:
             yield chunk
+    finally:
+        if not acquire.done():
+            acquire.cancel()
+            await asyncio.gather(acquire, return_exceptions=True)
+        if acquired:
+            _llm_slots.release()
 
 
 @router.get("/api/nearby-clinics")
@@ -50,9 +65,9 @@ async def nearby_clinics(
 
 @router.post("/api/analyze-eye")
 async def analyze_eye(file: UploadFile = File(...)):
-    img = await validate_and_read_image(file)
-    # 무거운 추론(MTCNN+ResNet)은 스레드풀에서 실행 → 이벤트루프(다른 요청/스트림)를 막지 않음
     async with _inference_slots:
+        img = await validate_and_read_image(file)
+        # 무거운 추론(MTCNN+ResNet)은 스레드풀에서 실행 → 이벤트루프(다른 요청/스트림)를 막지 않음
         result = await run_in_threadpool(predict_cataract, img)
     return {
         "status": "success",
