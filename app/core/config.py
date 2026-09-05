@@ -76,10 +76,34 @@ class Settings(BaseSettings):
     #   실사용 사진에서 오거부가 보고되면 이 값을 먼저 의심하고 재실측할 것.
     # 재현: python scripts/probe_eye_gate.py --dataset dataset --n 300
     eye_sim_threshold: float = 0.62
-    # The bundled gate was trained with a 0.207 threshold, but that threshold
-    # admitted the bundled library scene (0.390). The review audit found 0.4
-    # rejects that scene while retaining 99.7% of the sampled cataract eyes.
-    eye_gate_threshold: float = 0.40
+    # 눈/비-눈 게이트(eye_gate.npz) 통과 하한. npz에 기록된 학습 임계값(0.207)과
+    # 이 값 중 큰 쪽이 적용된다 — 즉 낮출 수는 없고 조이기만 할 수 있다.
+    #
+    # 0.207 → 0.40 → 0.65 로 두 번 올렸다. 경위를 남긴다:
+    #   0.207: 학습 시 임계값. 도서관 사진(static/assets/vision-scene.jpg, 점수 0.390)이
+    #          통과해 '정상' 판정이 나갔다.
+    #   0.40 : 그 사진 점수(0.390) 바로 위로 올린 값. 그런데 **같은 사진을 3x3으로
+    #          잘랐을 때 상단 중앙 조각이 0.612로 여전히 통과**했다(건물 옥상 + 하늘).
+    #          사진 한 장에 맞춘 값은 '비-눈'이라는 부류를 막지 못한다는 뜻이다.
+    #   0.65 : 음성 표본을 136개로 늘려(실제 사진을 2x2·3x3·중앙확대로 자른 크롭 +
+    #          합성 이미지) 분포를 보고 정했다. 관측된 비-눈 최고점 0.612 위의 빈 구간.
+    #
+    # 재실측 (python scripts/evaluate_eye_gate.py --sample 300, 2026-09-05):
+    #   임계값   정상 눈 거부   백내장 눈 거부   비-눈 통과
+    #   0.207    1.3%          0.3%            11.8%
+    #   0.40     3.3%          0.3%             0.7%   ← 옥상 크롭이 남는다
+    #   0.65     5.3%          1.0%             0.0%
+    #   0.70     6.0%          1.3%             0.0%
+    #
+    # 0.65를 고른 이유: 오거부는 "다시 찍어주세요" 안내로 끝나지만, 비-눈 통과는
+    # 사용자가 믿어버리는 가짜 의료 결과를 만든다 — vision.py의 반사 게이트 주석과
+    # 같은 원칙이다. 그 대가로 정상 눈 300장 중 6장, 백내장 300장 중 2장을 더 돌려보낸다.
+    #
+    # ⚠️ 한계: 음성 표본 136개는 대부분 사진 두 장에서 파생됐고 외부 검증이 아니다.
+    #    임계값을 올리는 것은 여유를 벌 뿐 문제의 부류를 없애지 못한다. 제대로 고치려면
+    #    실제 비-눈 사진을 모아 게이트를 다시 학습해야 한다(scripts/build_eye_gate.py).
+    #    실사용에서 오거부가 보고되면 임계값을 내리기 전에 이 표를 먼저 다시 만들 것.
+    eye_gate_threshold: float = 0.65
     # 좌우반전 TTA. v5에서는 사용자 관점(3단계 안내)으로 동률이었지만, v6(익상편 편입 재학습)에서는
     # test FN 7→9, FP 2→3으로 손해(2026-09-02 재측정)라 기본 OFF. 백본·데이터를 바꾸면 재측정 후 결정.
     use_tta: bool = False

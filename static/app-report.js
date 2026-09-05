@@ -2,6 +2,27 @@
 // app-report.js — 리포트 생성 및 PDF 내보내기 (Report & Export)
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, escapeHTML, safeStreamDisplay 등 사용)
 // ==========================================
+// 소견서로 보낼 chat_symptoms 목록을 만든다.
+//
+// 서버 스키마(app/schemas/ai.py)가 항목당 100자, 최대 30개다. 자유 답변을 그대로
+// 넣었더니 한국어 두 문장(111자)에서 422가 났고, 프론트는 그걸 "로컬 AI 서버와
+// 연결이 끊어졌습니다"로 표시했다 — 원인과 전혀 다른 안내다. 여기서 미리 맞춘다.
+const OPINION_ITEM_MAX = 100;   // SymptomText Field(max_length=100)
+const OPINION_LIST_MAX = 30;    // chat_symptoms Field(max_length=30)
+
+function buildOpinionSymptoms() {
+    const risk = computeRiskScore(state.riskAnswers || {});
+    return []
+        .concat(formatSymptoms(), risk.factors || [], state.freeAnswers || [])
+        .filter(Boolean)
+        .map(v => {
+            const text = String(v).trim();
+            // 자르는 편이 통째로 버리는 것보다 낫다 — 앞부분만으로도 생활 조언의 단서가 된다
+            return text.length > OPINION_ITEM_MAX ? text.slice(0, OPINION_ITEM_MAX - 1) + '…' : text;
+        })
+        .slice(0, OPINION_LIST_MAX);
+}
+
 async function finish() {
     if ("Notification" in window && Notification.permission !== "denied") {
         Notification.requestPermission();
@@ -18,11 +39,9 @@ async function finish() {
 
     // 행동 권고 — 등급이 아니라 '언제 병원에 가야 하는가'를 먼저 보여준다
     const risk = computeRiskScore(state.riskAnswers || {});
-    // 위험요인 문진도 소견서의 생활 조언 근거로 전달한다. 기존에는 증상 문항만
-    // 전달되어 사용자가 당뇨·흡연 등을 답해도 AI가 개인화할 수 없었다.
-    const yes = translations[state.lang].chat_yes, no = translations[state.lang].chat_no;
-    const freeAnswers = (state.chatHistory || []).map(item => item.a).filter(a => a && a !== yes && a !== no);
-    const opinionSymptoms = symptoms.concat(risk.factors || [], freeAnswers);
+    // 위험요인 문진과 자유 답변도 소견서의 생활 조언 근거로 전달한다. 기존에는 증상
+    // 문항만 전달되어 사용자가 당뇨·흡연 등을 답해도 AI가 개인화할 수 없었다.
+    const opinionSymptoms = buildOpinionSymptoms();
     state.triage = computeTriage({
         cataractCode: state.aiResultCode,
         amslerAbnormal: state.hasAmsler,
@@ -92,11 +111,7 @@ function regenerateOpinion() {
     state.opinionRequest.lang = state.lang;
     state.opinionRequest.cataract_res = formatCataractResult();
     state.opinionRequest.amsler_res = formatAmslerResult();
-    const yes = translations[state.lang].chat_yes, no = translations[state.lang].chat_no;
-    const freeAnswers = (state.chatHistory || []).map(item => item.a).filter(a => a && a !== yes && a !== no);
-    state.opinionRequest.chat_symptoms = formatSymptoms().concat(
-        (computeRiskScore(state.riskAnswers || {}).factors || []), freeAnswers
-    );
+    state.opinionRequest.chat_symptoms = buildOpinionSymptoms();
     const stale = document.getElementById('opinion-stale');
     if (stale) stale.classList.add('hidden');
     runAiOpinion();

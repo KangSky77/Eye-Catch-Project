@@ -447,7 +447,7 @@ const extraStrings = {
     tri_monitor_why: "이번 선별검사에서 빠른 확인을 권할 신호는 없었습니다. 정기 검진을 대신하지는 않습니다.",
     ams_which_left: "왼쪽 눈 검사 — 오른쪽 눈을 가리고 중앙 점을 보세요",
     ams_which_right: "오른쪽 눈 검사 — 왼쪽 눈을 가리고 중앙 점을 보세요",
-    ams_result_both: "양쪽 정상", ams_result_left: "왼쪽 눈 이상", ams_result_right: "오른쪽 눈 이상", ams_result_bad: "양쪽 이상",
+    ams_result_partial: "검사 미완료 (한쪽 눈만 응답)", ams_result_both: "양쪽 정상", ams_result_left: "왼쪽 눈 이상", ams_result_right: "오른쪽 눈 이상", ams_result_bad: "양쪽 이상",
     consent_title: "결과 저장 동의", consent_agree: "동의하고 저장", consent_skip: "저장하지 않기",
     consent_text: "검사 결과와 AI 참고 정보를 서버에 저장합니다. 건강정보는 민감정보이므로 동의하신 경우에만 저장하며, 사진은 저장하지 않습니다.",
     rep_info_title: "AI 3줄 요약", info_writing: "AI가 참고 정보를 정리하고 있습니다"
@@ -484,7 +484,7 @@ const extraStrings = {
     tri_monitor_why: "This screening did not show a signal requiring prompt review. It does not replace routine eye exams.",
     ams_which_left: "Left eye — cover your right eye and look at the center dot",
     ams_which_right: "Right eye — cover your left eye and look at the center dot",
-    ams_result_both: "Both normal", ams_result_left: "Left eye abnormal", ams_result_right: "Right eye abnormal", ams_result_bad: "Both abnormal",
+    ams_result_partial: "Incomplete (only one eye answered)", ams_result_both: "Both normal", ams_result_left: "Left eye abnormal", ams_result_right: "Right eye abnormal", ams_result_bad: "Both abnormal",
     consent_title: "Consent to save results", consent_agree: "Agree and save", consent_skip: "Do not save",
     consent_text: "Your results and the AI reference notes will be stored on the server. Health data is sensitive, so we store it only with your consent. Photos are never stored.",
     rep_info_title: "AI 3-line summary", info_writing: "The AI is preparing reference notes"
@@ -521,7 +521,7 @@ const extraStrings = {
     tri_monitor_why: "Este cribado no mostró señales que requieran revisión pronta. No sustituye los controles oculares habituales.",
     ams_which_left: "Ojo izquierdo — cúbrase el derecho y mire el punto central",
     ams_which_right: "Ojo derecho — cúbrase el izquierdo y mire el punto central",
-    ams_result_both: "Ambos normales", ams_result_left: "Ojo izquierdo anormal", ams_result_right: "Ojo derecho anormal", ams_result_bad: "Ambos anormales",
+    ams_result_partial: "Incompleto (solo un ojo respondido)", ams_result_both: "Ambos normales", ams_result_left: "Ojo izquierdo anormal", ams_result_right: "Ojo derecho anormal", ams_result_bad: "Ambos anormales",
     consent_title: "Consentimiento para guardar", consent_agree: "Aceptar y guardar", consent_skip: "No guardar",
     consent_text: "Sus resultados y las notas de referencia de la IA se guardarán en el servidor. Los datos de salud son sensibles, así que solo se guardan con su consentimiento. Las fotos nunca se guardan.",
     rep_info_title: "Resumen de la IA en 3 líneas", info_writing: "La IA está preparando las notas"
@@ -558,7 +558,7 @@ const extraStrings = {
     tri_monitor_why: "Ce dépistage n'a pas montré de signal nécessitant un contrôle rapide. Il ne remplace pas les examens réguliers.",
     ams_which_left: "Œil gauche — couvrez le droit et fixez le point central",
     ams_which_right: "Œil droit — couvrez le gauche et fixez le point central",
-    ams_result_both: "Les deux normaux", ams_result_left: "Œil gauche anormal", ams_result_right: "Œil droit anormal", ams_result_bad: "Les deux anormaux",
+    ams_result_partial: "Incomplet (un seul œil répondu)", ams_result_both: "Les deux normaux", ams_result_left: "Œil gauche anormal", ams_result_right: "Œil droit anormal", ams_result_bad: "Les deux anormaux",
     consent_title: "Consentement à l'enregistrement", consent_agree: "Accepter et enregistrer", consent_skip: "Ne pas enregistrer",
     consent_text: "Vos résultats et les notes de référence de l'IA seront enregistrés sur le serveur. Les données de santé étant sensibles, l'enregistrement n'a lieu qu'avec votre consentement. Les photos ne sont jamais enregistrées.",
     rep_info_title: "Résumé de l'IA en 3 lignes", info_writing: "L'IA prépare les notes de référence"
@@ -595,7 +595,7 @@ const extraStrings = {
     tri_monitor_why: "今回のスクリーニングで早期確認を要する信号は見られませんでした。定期検診の代わりにはなりません。",
     ams_which_left: "左目の検査 — 右目を覆って中央の点を見てください",
     ams_which_right: "右目の検査 — 左目を覆って中央の点を見てください",
-    ams_result_both: "両眼正常", ams_result_left: "左目に異常", ams_result_right: "右目に異常", ams_result_bad: "両眼に異常",
+    ams_result_partial: "未完了（片目のみ回答）", ams_result_both: "両眼正常", ams_result_left: "左目に異常", ams_result_right: "右目に異常", ams_result_bad: "両眼に異常",
     consent_title: "結果保存の同意", consent_agree: "同意して保存", consent_skip: "保存しない",
     consent_text: "検査結果とAI参考情報をサーバーに保存します。健康情報は機微情報のため、同意いただいた場合のみ保存し、写真は保存しません。",
     rep_info_title: "AI 3行要約", info_writing: "AIが参考情報をまとめています"
@@ -632,7 +632,7 @@ const extraStrings = {
     tri_monitor_why: "本次筛查未显示需要尽快确认的信号，但不能替代定期眼科检查。",
     ams_which_left: "左眼检查 — 遮住右眼并注视中心点",
     ams_which_right: "右眼检查 — 遮住左眼并注视中心点",
-    ams_result_both: "双眼正常", ams_result_left: "左眼异常", ams_result_right: "右眼异常", ams_result_bad: "双眼异常",
+    ams_result_partial: "未完成（仅回答了一只眼）", ams_result_both: "双眼正常", ams_result_left: "左眼异常", ams_result_right: "右眼异常", ams_result_bad: "双眼异常",
     consent_title: "保存结果的同意", consent_agree: "同意并保存", consent_skip: "不保存",
     consent_text: "检查结果与AI参考信息将保存到服务器。健康信息属于敏感信息，仅在您同意时保存，照片不会被保存。",
     rep_info_title: "AI 三行摘要", info_writing: "AI正在整理参考信息"

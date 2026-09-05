@@ -321,7 +321,8 @@ async def sanitized_stream(prompt: str):
                 dropped.append(why)
                 logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, sentence.strip()[:120])
             else:
-                emitted = True
+                # 공백만 내보낸 것은 '내용을 냈다'고 볼 수 없다 — 화면에는 빈 칸으로 보인다
+                emitted = emitted or bool(sentence.strip())
                 yield sentence
     # 마지막 문장(종결부호 없이 끝난 경우)
     tail = buf.strip()
@@ -335,8 +336,18 @@ async def sanitized_stream(prompt: str):
             yield tail
     if dropped:
         logger.warning("⚠️  LLM 안전 필터 제거 %d문장 (사유: %s)", len(dropped), ", ".join(sorted(set(dropped))))
-    if dropped and not emitted:
-        yield ERROR_MARKER + "AI_FILTER_EMPTY"
+    # 내용이 하나도 안 나갔으면 성공으로 넘겨선 안 된다.
+    #
+    # 'dropped가 있을 때'로만 막으면 세 경우 중 하나만 잡힌다:
+    #   ① 금지 문장만 생성됨          → dropped 있음  (막힘)
+    #   ② 모델이 아무것도 생성 안 함   → dropped 없음  (그냥 통과 → 빈 소견이 '완료'로)
+    #   ③ 공백만 생성됨               → dropped 없음  (그냥 통과)
+    # 셋 다 사용자에게는 '소견서가 비어 있다'는 같은 결과이고, 할 일도 같다(재생성).
+    # 위 오류 경로는 return으로 먼저 빠져나가므로 여기서 마커가 중복될 일은 없다.
+    if not emitted:
+        reason = "AI_FILTER_EMPTY" if dropped else "AI_EMPTY_RESPONSE"
+        logger.warning("⚠️  LLM 소견이 비어 있음 — 프론트에 재생성을 안내한다 (%s)", reason)
+        yield ERROR_MARKER + reason
 
 
 async def generate_ollama(prompt: str) -> str:

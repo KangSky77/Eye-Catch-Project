@@ -35,7 +35,9 @@ function buildFindings() {
     if (state.hasAmsler) {
         const eye = formatAmslerResult();
         out.push((t.find_ams_abnormal || '').replace('{eye}', eye));
-    } else if (state.amslerResult && Object.keys(state.amslerResult).length) {
+    } else if (typeof amslerComplete === 'function' && amslerComplete()) {
+        // '좌우 모두 이상 없음'은 양쪽 눈을 다 본 뒤에만 할 수 있는 말이다.
+        // 한쪽만 답한 상태에서 이 문장을 쓰면 검사하지 않은 눈까지 정상이라고 말하게 된다.
         out.push(t.find_ams_normal);
     }
 

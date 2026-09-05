@@ -85,3 +85,81 @@ def test_env_backups_are_ignored():
     result = subprocess.run(['git', 'check-ignore', '.env.bak.20260904'],
                             capture_output=True, text=True)
     assert result.returncode == 0
+
+
+# --- 2026-09-05 2차 리뷰: 1차 수정이 덜 닿은 곳 -------------------------------
+
+def _asset(*parts):
+    from pathlib import Path
+    return Path(__file__).resolve().parent.parent / 'static' / 'assets' / Path(*parts)
+
+
+@pytest.mark.skipif(not _asset('vision-scene.jpg').exists(), reason='번들 사진 없음')
+def test_눈게이트가_사진_한장이_아니라_부류를_막는다():
+    """임계값을 '문제된 사진 점수 바로 위'로 올리면 크롭만 바꿔도 다시 통과한다.
+
+    실제로 0.40일 때 도서관 사진 원본(0.390)은 막혔지만 같은 사진의 3x3 상단 중앙
+    조각(건물 옥상 + 하늘, 0.612)은 통과해 '정상' 판정을 받았다.
+    임계값을 바꿀 때는 scripts/evaluate_eye_gate.py로 분포를 다시 재고 이 테스트를 볼 것.
+    """
+    from PIL import ImageOps
+    if not eye_validator.warmup() or not eye_validator.gate_available():
+        pytest.skip('눈 게이트 가중치 없음')
+
+    with Image.open(_asset('vision-scene.jpg')) as src:
+        scene = ImageOps.exif_transpose(src).convert('RGB')
+    w, h = scene.size
+    crops = {'원본': scene}
+    for gy in range(3):
+        for gx in range(3):
+            crops[f'3x3-{gy}{gx}'] = scene.crop(
+                (gx * w // 3, gy * h // 3, (gx + 1) * w // 3, (gy + 1) * h // 3))
+
+    passed = {name: round(eye_validator._gate_prob(img), 4)
+              for name, img in crops.items() if eye_validator.check_eye(img)[0]}
+    assert not passed, f'비-눈 사진(및 그 크롭)이 눈으로 통과했다: {passed}'
+
+
+@pytest.mark.skipif(not _asset('examples', 'face-good.jpg').exists(), reason='예시 사진 없음')
+def test_게이트를_조여도_진짜_눈은_통과한다():
+    """임계값을 올린 대가로 정상 경로가 막히면 안 된다 — 얼굴 사진의 눈 크롭은 통과해야 한다."""
+    from PIL import ImageOps
+    from app.services import eye_detector
+    if not eye_validator.warmup() or not eye_validator.gate_available():
+        pytest.skip('눈 게이트 가중치 없음')
+
+    with Image.open(_asset('examples', 'face-good.jpg')) as src:
+        face = ImageOps.exif_transpose(src).convert('RGB')
+    eye_crops = eye_detector.extract_eye_crops(face)
+    if not eye_crops:
+        pytest.skip('MTCNN 미설치 — 얼굴에서 눈을 잘라낼 수 없음')
+    rejected = [round(s, 4) for ok, s in map(eye_validator.check_eye, eye_crops) if not ok]
+    assert not rejected, f'실제 눈 크롭이 거부됐다: {rejected}'
+
+
+@pytest.mark.anyio
+async def test_소견이_비면_필터_때문이든_아니든_오류로_알린다():
+    """빈 소견을 성공으로 넘기면 프론트가 완료 처리하고 저장 동의까지 진행한다.
+
+    세 경우 모두 사용자에게는 '소견서가 비어 있다'는 같은 결과이고 할 일도 같다(재생성).
+    'dropped가 있을 때'로만 막으면 ②③이 새어 나간다.
+    """
+    async def feed(chunks):
+        async def source(_):
+            for c in chunks:
+                yield c
+        return source
+
+    cases = {
+        '① 금지 문장만 생성': ['정상입니다. 걱정하지 않으셔도 됩니다.'],
+        '② 아무것도 생성 안 함': [''],
+        '③ 공백만 생성': ['   \n  '],
+    }
+    for label, chunks in cases.items():
+        original = llm.stream_with_keepalive
+        llm.stream_with_keepalive = await feed(chunks)
+        try:
+            out = ''.join([part async for part in llm.sanitized_stream('t')])
+        finally:
+            llm.stream_with_keepalive = original
+        assert llm.ERROR_MARKER in out, f'{label}: 빈 소견이 성공으로 나갔다'

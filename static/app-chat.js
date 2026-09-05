@@ -12,6 +12,7 @@ function startChat() {
     state.chatSymptoms = [];
     state.symptomCodes = [];
     state.chatHistory = [];
+    state.freeAnswers = [];
     state.chatBusy = false;
     // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
     state.riskIdx = 0;
@@ -348,6 +349,10 @@ function handleChatFreeAnswer(skip) {
         state.chatHistory[state.chatHistory.length - 1].a =
             text || (translations[state.lang].res_chat_none || '답변 없음');
     }
+    // 소견서 개인화에 쓸 '진짜 자유 문장'만 따로 모은다.
+    // chatHistory에서 네/아니오를 걸러내는 방식은 나이 선택지("40세 미만") 같은
+    // 버튼 답변까지 자유 답변으로 오인했다 — 수집 시점에 구분하는 편이 확실하다.
+    if (text) state.freeAnswers.push(text);
 
     state.dynamicCount++;
     advanceAfterDynamicAnswer();

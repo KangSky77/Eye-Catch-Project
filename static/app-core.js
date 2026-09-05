@@ -25,6 +25,7 @@ const state = {
     // 응답을 다 받을 때까지 기다린다), 중복 질문이 나올 확률도 개수만큼 늘어난다.
     maxDynamic: 2,
     chatHistory: [],         // 젬마에게 넘길 전체 대화 기록
+    freeAnswers: [],         // 맞춤 질문에 자유 입력으로 답한 문장만 (소견서 개인화용)
     chatBusy: false,         // 문진 답변 처리 중 잠금 (중복 클릭 방지)
     step: 'step-intro'       // 검사 흐름의 현재 단계 (진행 표시용)
 };
@@ -61,11 +62,28 @@ function formatCataractResult() {
     return `${text} · ${score} ${r.probability}/100`;
 }
 
-/** 암슬러 결과(좌/우)를 현재 언어 문자열로. 아직 안 했으면 "-". */
+/** 암슬러를 양쪽 눈 모두 응답했는지. 한쪽이라도 비어 있으면 결과를 말할 수 없다. */
+function amslerComplete() {
+    const r = state.amslerResult || {};
+    return typeof r.left === 'boolean' && typeof r.right === 'boolean';
+}
+
+/** 암슬러 결과(좌/우)를 현재 언어 문자열로. 아직 안 했으면 "-".
+ *
+ *  미응답을 '정상'으로 읽으면 안 된다: 예전에는 !!r.right 로 판정해서 오른쪽 눈을
+ *  아예 검사하지 않은 상태가 "양쪽 정상"(Both normal)으로 표시됐다. 안 본 눈을
+ *  괜찮다고 말하는 셈이라, 미완료는 미완료라고 밝힌다.
+ */
 function formatAmslerResult() {
     const r = state.amslerResult;
     if (!r || !Object.keys(r).length) return "-";
     const t = translations[state.lang];
+    if (!amslerComplete()) {
+        // 한쪽만 답한 상태 — 이상 응답이 이미 있으면 그건 말해주되, 나머지는 미확인이다
+        if (r.left === true) return t.ams_result_left || '왼쪽 눈 이상';
+        if (r.right === true) return t.ams_result_right || '오른쪽 눈 이상';
+        return t.ams_result_partial || '검사 미완료 (한쪽 눈만 응답)';
+    }
     const L = !!r.left, R = !!r.right;
     return (L && R) ? (t.ams_result_bad || '양쪽 이상')
          : L ? (t.ams_result_left || '왼쪽 눈 이상')
@@ -350,6 +368,7 @@ function resetScreeningState() {
     state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
     state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
+    state.freeAnswers = [];
     const opinion = document.getElementById('gemma-opinion-text');
     if (opinion) { opinion.textContent = ''; opinion.classList.add('hidden'); }
     const stale = document.getElementById('opinion-stale'); if (stale) stale.classList.add('hidden');

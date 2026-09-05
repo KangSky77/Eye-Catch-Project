@@ -197,6 +197,8 @@ async function runAIAnalysis(droppedFile) {
             probability: d.probability,
             twoEyes: twoEyes,
             eyes: d.eyes || [],
+            // 언어를 바꿀 때 '눈 {n}곳' 문구를 다시 만들려면 개수도 원자료로 남아야 한다
+            eyesDetected: d.eyes_detected,
         };
 
         const disp = document.getElementById('ai-result-display');
@@ -207,14 +209,17 @@ async function runAIAnalysis(droppedFile) {
         // (Brier/ECE/temperature scaling 미적용) 표기와 각주로 명시한다.
         const pProb = document.createElement('p');
         pProb.className = `text-xs font-black mb-1 ${probColor[d.result_code] || probColor.normal}`;
+        pProb.dataset.role = 'score';
         pProb.textContent = `${t.score_label || 'AI 특징 점수'} ${d.probability}/100`;
         const pRes = document.createElement('p');
         pRes.className = 'text-xl font-bold';
+        pRes.dataset.role = 'verdict';
         pRes.textContent = resultText;
         disp.appendChild(pProb);
         disp.appendChild(pRes);
         const pNote = document.createElement('p');
         pNote.className = 'text-[10px] text-slate-400 mt-2 leading-relaxed';
+        pNote.dataset.role = 'score-note';
         pNote.textContent = t.score_note || '';
         disp.appendChild(pNote);
 
@@ -223,10 +228,12 @@ async function runAIAnalysis(droppedFile) {
         if (d.closeup_suggested) {
             const hint = document.createElement('p');
             hint.className = 'closeup-hint';
+            hint.dataset.role = 'closeup-hint';
             hint.textContent = t.closeup_hint || '얼굴 사진보다 눈을 한쪽씩 가까이(20~30cm) 찍으면 훨씬 정확해요.';
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'closeup-btn btn-pop';
+            btn.dataset.role = 'closeup-btn';
             btn.textContent = t.closeup_btn || '눈 클로즈업으로 다시 찍기';
             btn.onclick = () => nextStep('step-photo');
             disp.appendChild(hint);
@@ -239,6 +246,7 @@ async function runAIAnalysis(droppedFile) {
         } else if (d.mode === 'face' && d.eyes_detected > 0) {
             const pFace = document.createElement('p');
             pFace.className = 'text-[11px] text-slate-500 font-bold mt-2';
+            pFace.dataset.role = 'face-mode-note';
             const tmpl = t.face_mode_note || "얼굴 사진에서 눈 {n}곳을 찾아 분석했어요.";
             pFace.textContent = tmpl.replace('{n}', d.eyes_detected);
             disp.appendChild(pFace);
@@ -274,6 +282,7 @@ function renderEyeBreakdown(container, eyes) {
 
     const title = document.createElement('p');
     title.className = 'text-[11px] font-black text-slate-400 mb-2';
+    title.dataset.role = 'eye-title';
     title.textContent = t.eye_breakdown_title || '눈별 분석';
     wrap.appendChild(title);
 
@@ -289,6 +298,8 @@ function renderEyeBreakdown(container, eyes) {
         row.className = 'flex items-center justify-between py-1.5';
         const label = document.createElement('span');
         label.className = 'text-sm font-bold text-slate-600';
+        label.dataset.role = 'eye-label';
+        label.dataset.side = e.side;
         label.textContent = sideLabel[e.side] || e.side;
         const val = document.createElement('span');
         val.className = `text-sm font-black px-2.5 py-0.5 rounded-full ${codeStyle[e.code] || codeStyle.normal}`;
@@ -302,33 +313,51 @@ function renderEyeBreakdown(container, eyes) {
     if (state.asymmetric) {
         const badge = document.createElement('p');
         badge.className = 'mt-2 text-[11px] font-black text-rose-600 bg-rose-50 rounded-lg px-3 py-2';
+        badge.dataset.role = 'eye-unilateral';
         badge.textContent = t.eye_unilateral || '편측 의심';
         wrap.appendChild(badge);
     }
 
     const note = document.createElement('p');
     note.className = 'mt-2 text-[10px] text-slate-400 leading-relaxed';
+    note.dataset.role = 'eye-note';
     note.textContent = t.eye_ref_note || '';
     wrap.appendChild(note);
 
     container.appendChild(wrap);
 }
 
-/** Repaint the already displayed analysis when the language changes. */
+/** 언어를 바꿨을 때 이미 그려진 분석 결과 카드를 현재 언어로 다시 칠한다.
+ *
+ *  왜 data-role로 찾는가:
+ *    처음에는 Tailwind 클래스로 요소를 찾았는데, '눈별 분석' 제목과 맨 아래 각주가
+ *    둘 다 text-slate-400을 갖고 있어서 querySelector가 제목을 먼저 잡았다.
+ *    그 결과 언어를 바꾸면 제목이 각주 문장으로 덮이고 각주는 한국어로 남았다.
+ *    표시용 클래스는 디자인이 바뀌면 언제든 겹치므로 선택자로 쓰지 않는다.
+ *    (요소를 새로 추가할 때는 data-role도 함께 붙일 것)
+ */
 function refreshAiResultDisplay() {
     const r = state.aiResultData, disp = document.getElementById('ai-result-display');
     if (!r || !disp) return;
     const t = translations[state.lang];
-    const paragraphs = disp.querySelectorAll(':scope > p');
-    if (paragraphs[0]) paragraphs[0].textContent = `${t.score_label || 'AI feature score'} ${r.probability}/100`;
-    if (paragraphs[1]) paragraphs[1].textContent = t['ai_' + r.code] || r.code;
-    if (paragraphs[2]) paragraphs[2].textContent = t.score_note || '';
-    const labels = disp.querySelectorAll('.mt-4 .text-sm.font-bold');
-    (r.eyes || []).forEach((e, i) => { if (labels[i]) labels[i].textContent = ({left:t.eye_left,right:t.eye_right}[e.side] || e.side); });
-    const unilateral = disp.querySelector('.mt-4 .text-rose-600.bg-rose-50');
-    if (unilateral) unilateral.textContent = t.eye_unilateral || 'Unilateral finding';
-    const note = disp.querySelector('.mt-4 .text-slate-400');
-    if (note) note.textContent = t.eye_ref_note || '';
+    const pick = role => disp.querySelector(`[data-role="${role}"]`);
+    const set = (role, text) => { const el = pick(role); if (el) el.textContent = text; };
+
+    set('score', `${t.score_label || 'AI feature score'} ${r.probability}/100`);
+    set('verdict', t['ai_' + r.code] || r.code);
+    set('score-note', t.score_note || '');
+    set('closeup-hint', t.closeup_hint || '');
+    set('closeup-btn', t.closeup_btn || '');
+    set('eye-title', t.eye_breakdown_title || '');
+    set('eye-unilateral', t.eye_unilateral || '');
+    set('eye-note', t.eye_ref_note || '');
+    set('face-mode-note', (t.face_mode_note || '').replace('{n}', r.eyesDetected != null ? r.eyesDetected : ''));
+
+    // 눈별 라벨은 side로 짝을 맞춘다 — 순서에 기대면 크롭이 하나만 잡힌 경우 어긋난다
+    disp.querySelectorAll('[data-role="eye-label"]').forEach(el => {
+        const label = { left: t.eye_left, right: t.eye_right }[el.dataset.side];
+        if (label) el.textContent = label;
+    });
 }
 
 // ------------------------------------------------------------------
@@ -455,9 +484,12 @@ function showAnalyzedPhoto() {
 function recordAmsler(bad) {
     state.amslerResult[state.amslerEye] = bad;
 
+    // 어느 눈이든 응답이 끝나면 미리보기 왜곡은 반드시 걷는다 — 다음 눈(또는 다음 회차)이
+    // 왜곡된 격자를 물려받으면 사용자의 시야 이상과 구분할 수 없다.
+    const grid = document.getElementById('amsler-box');
+    if (grid) grid.classList.remove('amsler-distorted');
+
     if (state.amslerEye === 'left') {
-        const grid = document.getElementById('amsler-box');
-        if (grid) grid.classList.remove('amsler-distorted');
         state.amslerEye = 'right';
         updateAmslerPrompt();
         return;                       // 아직 반대쪽 눈이 남았다
@@ -497,14 +529,22 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // 암슬러 "휘어보임" 버튼에 커서를 올리거나 포커스하면 격자가 왜곡되어 보인다 —
-    // 사용자가 무엇을 고르는 건지 미리 볼 수 있게. 인라인 onmouseover였던 것을
-    // 여기로 옮기면서 키보드 포커스(focus/blur)와 터치(pointer)에서도 동작하게 했다.
+    // 사용자가 무엇을 고르는 건지 미리 볼 수 있게.
+    //
+    // [터치는 제외한다] 손가락으로 버튼을 건드리면 pointerenter는 오는데 pointerleave는
+    // 오지 않는 경우가 많다. 그러면 왜곡이 그대로 남아, 사용자가 '자기 눈의 이상'과
+    // '앱이 만든 왜곡'을 구분할 수 없는 상태로 다음 눈을 판정하게 된다(실기기 재현).
+    // 미리보기는 어차피 커서를 올릴 수 있는 환경에서만 의미가 있으므로, 터치·펜에서는
+    // 아예 걸지 않는다. 이러면 폰에서는 왜곡이 남을 경로 자체가 사라진다.
+    // (진단 격자 자체를 왜곡시키는 구조는 그대로이므로, 별도 예시 격자로 분리하는
+    //  개선은 여전히 남아 있다 — 그때 이 핸들러는 통째로 사라진다.)
     const badBtn = document.getElementById('amsler-bad-btn');
     const box = document.getElementById('amsler-box');
     if (badBtn && box) {
         const on = () => box.classList.add('amsler-distorted');
         const off = () => box.classList.remove('amsler-distorted');
-        ['pointerenter', 'focus'].forEach(ev => badBtn.addEventListener(ev, on));
-        ['pointerleave', 'pointercancel', 'blur'].forEach(ev => badBtn.addEventListener(ev, off));
+        badBtn.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') on(); });
+        badBtn.addEventListener('focus', on);          // 키보드 이동 — blur가 반드시 뒤따른다
+        ['pointerleave', 'pointercancel', 'pointerup', 'blur'].forEach(ev => badBtn.addEventListener(ev, off));
     }
 });

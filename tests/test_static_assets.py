@@ -1022,3 +1022,64 @@ def test_diagnoses_테이블_스키마를_기동시점에_검증한다():
     # INSERT가 실제로 쓰는 컬럼이 검증 목록에 다 들어 있는지
     for col in ("id", "cataract_result", "amsler_result", "symptoms", "gemma_opinion"):
         assert f'"{col}"' in db, f"검증 목록에 {col}이 없다"
+
+
+def test_언어전환_재렌더가_클래스가_아니라_data_role로_찾는다():
+    """'눈별 분석' 제목과 맨 아래 각주가 둘 다 text-slate-400을 갖고 있어서,
+    클래스로 찾던 refreshAiResultDisplay가 제목을 각주 문장으로 덮어썼다.
+    (그리고 각주는 한국어로 남았다) 표시용 클래스는 언제든 겹치므로 선택자로 쓰지 않는다."""
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    fn = vision[vision.index("function refreshAiResultDisplay"):]
+    fn = fn[:fn.index("\n}\n") + 3]
+    assert "text-slate-400" not in fn and "text-sm.font-bold" not in fn, (
+        "언어 전환 재렌더가 아직 Tailwind 클래스로 요소를 찾고 있다"
+    )
+    for role in ("score", "verdict", "score-note", "eye-title", "eye-note",
+                 "eye-unilateral", "eye-label"):
+        # 따옴표 종류는 상관없다 — set('score', …) / [data-role="score"] 둘 다 허용
+        assert f"'{role}'" in fn or f'"{role}"' in fn, f"data-role '{role}'을 다시 칠하지 않는다"
+        assert f"dataset.role = '{role}'" in vision, f"data-role '{role}'을 붙이는 곳이 없다"
+
+
+def test_미응답_눈을_정상으로_말하지_않는다():
+    """오른쪽 눈을 검사하지 않았는데 'Both normal'이 표시된 적이 있다.
+    안 본 눈을 괜찮다고 말하면 안 된다 — 미완료는 미완료라고 밝힌다."""
+    core = (STATIC / "app-core.js").read_text(encoding="utf-8")
+    findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+
+    assert "function amslerComplete()" in core
+    assert "ams_result_partial" in core
+    assert data.count("ams_result_partial:") == 6, "6개국어 문구가 갖춰지지 않았다"
+    # '좌우 모두 이상 없음' 소견은 양쪽을 다 본 뒤에만
+    block = findings[findings.index("if (state.hasAmsler)"):findings.index("find_vt")]
+    assert "amslerComplete()" in block, "미완료 상태에서도 '정상' 소견을 만들고 있다"
+
+
+def test_소견서_요청_항목이_서버_상한_안에_들어간다():
+    """자유 답변을 그대로 chat_symptoms에 넣어 111자에서 422가 났고,
+    프론트는 그걸 '로컬 AI 서버와 연결이 끊어졌습니다'로 표시했다."""
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    schema = (ROOT / "app" / "schemas" / "ai.py").read_text(encoding="utf-8")
+
+    assert "function buildOpinionSymptoms()" in report
+    assert "OPINION_ITEM_MAX = 100" in report and "OPINION_LIST_MAX = 30" in report
+    assert report.count("buildOpinionSymptoms()") >= 3, "최초 생성·재생성 양쪽에서 써야 한다"
+    # 스키마 상한이 바뀌면 여기서 알려준다
+    assert "Field(max_length=100)" in schema
+    assert "chat_symptoms: list[SymptomText] = Field(default_factory=list, max_length=30)" in schema
+    # 자유 답변은 수집 시점에 구분한다 — 네/아니오 라벨 비교로는 나이 선택지가 섞였다
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+    assert "state.freeAnswers.push(text)" in chat
+
+
+def test_암슬러_왜곡_미리보기가_터치에서는_걸리지_않는다():
+    """터치에서는 pointerenter만 오고 pointerleave가 안 와 왜곡이 남았다.
+    그 상태로 다음 눈을 판정하면 사용자의 시야 이상과 앱이 만든 왜곡을 구별할 수 없다."""
+    vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
+    assert "e.pointerType === 'mouse'" in vision, "터치에서도 미리보기 왜곡이 걸린다"
+    # 응답을 받으면 어느 눈이든 왜곡을 걷는다
+    rec = vision[vision.index("function recordAmsler"):vision.index("function recordAmsler") + 700]
+    assert rec.index("remove('amsler-distorted')") < rec.index("if (state.amslerEye === 'left')"), (
+        "왼쪽 눈 분기 안에서만 왜곡을 걷고 있다"
+    )
