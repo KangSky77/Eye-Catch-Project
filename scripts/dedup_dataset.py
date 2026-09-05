@@ -18,7 +18,7 @@
       벡터화하면 정확한 O(n^2) 비교도 1분 내로 끝나길래, 근사(LSH) 대신 정확한
       방식으로 교체했다 — false negative 없음.
 
-실행:  python dedup_dataset.py
+실행:  python scripts/dedup_dataset.py
 출력:  data/dataset_group_map.json  ({"0_normal/img (1).jpg": group_id, ...})
        콘솔에 중복 그룹 요약 + (있다면) 클래스가 다른데 중복인 경우 경고
 """

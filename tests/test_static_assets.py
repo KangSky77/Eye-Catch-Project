@@ -1047,9 +1047,13 @@ def test_미응답_눈을_정상으로_말하지_않는다():
     assert "function amslerComplete()" in core
     assert "ams_result_partial" in core
     assert data.count("ams_result_partial:") == 6, "6개국어 문구가 갖춰지지 않았다"
-    # '좌우 모두 이상 없음' 소견은 양쪽을 다 본 뒤에만
-    block = findings[findings.index("if (state.hasAmsler)"):findings.index("find_vt")]
+    # '좌우 모두 이상 없음' 소견은 양쪽을 다 본 뒤에만.
+    # 구간은 암슬러 분기 시작부터 다음 분기(기능검사)까지 — 앞쪽 헬퍼 함수에 같은 이름이
+    # 나올 수 있으므로 '시작 위치 이후'에서 끝을 찾는다(예전에는 구간이 비어 통과했다).
+    start = findings.index("if (state.hasAmsler)")
+    block = findings[start:findings.index("state.visionTest", start)]
     assert "amslerComplete()" in block, "미완료 상태에서도 '정상' 소견을 만들고 있다"
+    assert "find_ams_normal" in block, "구간 추출이 잘못됐다 — 검사 대상이 비어 있다"
 
 
 def test_소견서_요청_항목이_서버_상한_안에_들어간다():
@@ -1098,3 +1102,57 @@ def test_검사격자는_왜곡되지_않고_예시가_따로_있다():
 
     for key in ("ams_example_label", "ams_example_ok", "ams_example_bad"):
         assert data.count(f"{key}:") == 6, f"{key}가 6개국어에 없다"
+
+
+def test_PDF에_권장조치와_검사요약해석이_들어간다():
+    """PDF는 사용자가 병원에 들고 가는 문서다.
+
+    화면 리포트는 '등급이 아니라 언제 병원에 가야 하는가'(computeTriage)를 맨 위에
+    보여주는데, PDF에는 그 항목이 없었다. 게다가 사람이 검수한 결정론적 해석
+    (app-findings.js)이 빠지고 LLM 3줄 요약만 실려, safety.py가 세운
+    '해석은 코드가, 생활 조언은 LLM이' 구조와 정반대로 담기고 있었다."""
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    pdf_fn = report[report.index("printDiv.innerHTML = `"):]
+    pdf_fn = pdf_fn[:pdf_fn.index("`;") + 2]
+
+    assert "triage.label" in pdf_fn and "triage.why" in pdf_fn, "PDF에 권장 조치가 없다"
+    assert "findings.map" in pdf_fn, "PDF에 검사 요약 해석이 없다"
+    # 화면 DOM을 긁지 않고 원자료에서 다시 만들어야 언어·상태가 어긋나지 않는다
+    assert "computeTriage({" in report and "buildFindings()" in report
+    # 삽입 전 escape는 다른 필드와 동일하게 (XSS 방지)
+    for expr in ("escapeHTML(triage.label)", "escapeHTML(triage.why)"):
+        assert expr in pdf_fn, f"{expr} 가 escape 없이 들어간다"
+
+
+def test_기능검사_측정불가를_검사종류별로_판정한다():
+    """네 항목이 전부 null일 때만 '측정불가'로 보던 탓에,
+    '양쪽 눈 시력은 실패했는데 대비는 측정됨'이 '좌우 차이 없음'으로 보고됐다.
+    양쪽 다 최저 단계를 통과 못 했다는 것은 좌우 비대칭보다 더 중요한 신호다."""
+    vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
+    findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+
+    fn = vt[vt.index("function vtClassifyResults"):vt.index("function vtFinish")]
+    assert "unmeasurableKinds" in fn and "bothFailed" in fn
+    # 네 항목 동시 null을 요구하던 옛 조건이 남아 있으면 안 된다
+    assert "left.acuity == null && right.acuity == null &&" not in fn, (
+        "네 항목이 전부 null일 때만 측정불가로 보고 있다"
+    )
+    # 어느 검사가 실패했는지 문구에 채워 넣는다
+    assert "function formatVtUnmeasurable()" in findings
+    assert "{kinds}" in data
+    for key in ("vt_kind_acuity", "vt_kind_contrast", "vt_kind_sep"):
+        assert data.count(f"{key}:") == 6, f"{key}가 6개국어에 없다"
+
+
+def test_스크립트_실행_안내가_폴더_구조와_맞는다():
+    """스크립트를 scripts/로 옮긴 뒤에도 독스트링·에러 메시지는 옛 경로였다.
+    train_ai_v3.py의 것은 실행 중에 보게 되는 메시지라 그대로 따라 치면 실패한다."""
+    import re
+    stale = []
+    for path in sorted((ROOT / "scripts").glob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        for m in re.finditer(r"python (?!scripts/)([a-z_0-9]+\.py)", text):
+            if (ROOT / "scripts" / m.group(1)).exists():
+                stale.append(f"{path.name}: {m.group(0)}")
+    assert not stale, "scripts/ 접두사가 빠진 실행 안내가 있다:\n  " + "\n  ".join(stale)

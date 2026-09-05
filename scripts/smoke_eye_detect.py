@@ -30,7 +30,7 @@ from app.services import eye_detector
 from app.services.vision import load_trained_weights, predict_cataract
 
 if len(sys.argv) < 2:
-    raise SystemExit("사용법: python smoke_eye_detect.py <사진경로>")
+    raise SystemExit("사용법: python scripts/smoke_eye_detect.py <사진경로>")
 
 print(f"MTCNN 사용 가능: {eye_detector.is_available()}")
 loaded = load_trained_weights()

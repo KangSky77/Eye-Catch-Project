@@ -9,7 +9,7 @@
 MTCNN 눈 크롭 → 눈 검증(OOD) 게이트 → EfficientNet+TTA → 3단계 판정(risk/borderline/normal)
 
 사용법:
-    python validate_real_photos.py <사진 폴더>
+    python scripts/validate_real_photos.py <사진 폴더>
 
 폴더 구조 (라벨별 하위 폴더가 있으면 정답률까지 계산):
     real_photos/

@@ -18,7 +18,7 @@ v2(train_ai.py) 대비 바뀐 점 — Codex 버전(compare/codex/train_cataract_
 
 ResNet18 전이학습 + 2단계 학습(헤드→전체 미세조정)은 v2 방식을 유지.
 실행:  python scripts/dedup_dataset.py   (먼저 1회, data/dataset_group_map.json 생성)
-       python train_ai_v3.py
+       python scripts/train_ai_v3.py
 """
 
 import os
@@ -110,7 +110,7 @@ def load_group_map(data_dir: Path) -> dict:
     p = Path(GROUP_MAP_PATH)
     if not p.exists():
         raise SystemExit(
-            f"❌ {GROUP_MAP_PATH}가 없습니다. 먼저 `python dedup_dataset.py`를 실행해 "
+            f"❌ {GROUP_MAP_PATH}가 없습니다. 먼저 `python scripts/dedup_dataset.py`를 실행해 "
             "중복 그룹 매핑을 만드세요 (그룹 단위 분할에 필요)."
         )
     with p.open("r", encoding="utf-8") as f:

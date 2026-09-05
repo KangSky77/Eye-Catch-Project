@@ -40,9 +40,9 @@ app/services/eye_validator.py는 app/models/eye_centroid.npy를 **읽기만** �
     같이 갱신할 것 — centroid가 바뀌면 0.55는 더 이상 같은 의미가 아니다.
 
 실행:
-    python build_eye_centroid.py                          # 계산 + 기존 파일과 비교만
-    python build_eye_centroid.py --non-eye real_photos/non_eye
-    python build_eye_centroid.py --overwrite              # app/models/eye_centroid.npy 교체
+    python scripts/build_eye_centroid.py                          # 계산 + 기존 파일과 비교만
+    python scripts/build_eye_centroid.py --non-eye real_photos/non_eye
+    python scripts/build_eye_centroid.py --overwrite              # app/models/eye_centroid.npy 교체
 """
 import os
 import sys

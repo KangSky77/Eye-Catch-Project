@@ -356,6 +356,22 @@ function buildReportPdf() {
     // LLM 출력도 escape (다른 필드와 동일하게 — innerHTML 삽입 전 XSS 방지)
     const gemmaOpinion = escapeHTML(document.getElementById('gemma-opinion-text').innerText);
 
+    // 권장 조치와 검사 요약 해석 — 화면의 DOM을 긁지 않고 원자료에서 다시 만든다.
+    //
+    // 왜 PDF에 넣는가: 이 앱의 설계는 '등급'이 아니라 '언제 병원에 가야 하는가'를 먼저
+    // 보여주는 것인데(computeTriage 주석), 정작 사용자가 병원에 들고 가는 PDF에는
+    // 그 항목이 없었다. 더구나 사람이 검수한 결정론적 해석(app-findings.js)이 빠지고
+    // LLM 요약만 실려, safety.py가 세운 '해석은 코드가, 생활 조언은 LLM이' 구조와
+    // 정반대로 담기고 있었다.
+    const triage = (typeof computeTriage === 'function') ? computeTriage({
+        cataractCode: state.aiResultCode,
+        amslerAbnormal: state.hasAmsler,
+        symptomCodes: state.symptomCodes,
+        symptomScore: state.symptomScore,
+        redFlags: state.redFlags,
+    }) : null;
+    const findings = (typeof buildFindings === 'function') ? buildFindings() : [];
+
     // PDF 라벨을 선택 언어로 (한국어 폴백)
     const t = translations[state.lang] || {};
     const L = {
@@ -365,6 +381,9 @@ function buildReportPdf() {
         s2:      t.pdf_s2        || "2. 황반변성 자가진단 (Amsler Grid)",
         s3:      t.pdf_s3        || "3. AI 문진 주요 소견",
         s4:      t.pdf_s4        || "4. 종합 AI 소견서 (Powered by Gemma)",
+        triage:  t.tri_title     || "권장 조치",
+        finds:   t.find_title    || "검사 요약 해석",
+        findNote: t.find_disclaimer || "",
         footer:  t.pdf_footer    || "본 리포트는 인공지능 기반의 자가진단 보조 자료입니다.<br>정확한 진단 및 처방을 위해서는 반드시 안과 전문의와 상담하시기 바랍니다."
     };
 
@@ -383,6 +402,14 @@ function buildReportPdf() {
             <h1 style="font-size: 28px; font-weight: 900; margin: 0; color: #0f172a; letter-spacing: -1px;">${L.title}</h1>
             <p style="font-size: 13px; color: #64748b; margin-top: 10px; font-weight: bold;">${L.issued}: ${date}</p>
         </div>
+
+        ${triage ? `
+        <div style="margin-bottom: 28px; border: 2px solid #0f172a; padding: 16px 20px; page-break-inside: avoid;">
+            <p style="font-size: 12px; font-weight: 900; color: #64748b; margin: 0 0 6px;">${escapeHTML(L.triage)}</p>
+            <p style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 0 0 8px;">${escapeHTML(triage.label)}</p>
+            <p style="font-size: 13px; color: #475569; margin: 0; line-height: 1.6;">${escapeHTML(triage.why)}</p>
+            ${triage.note ? `<p style="font-size: 13px; font-weight: bold; color: #334155; margin: 8px 0 0; line-height: 1.6;">${escapeHTML(triage.note)}</p>` : ''}
+        </div>` : ''}
 
         <div style="margin-bottom: 25px;">
             <h3 style="font-size: 16px; color: #2563eb; border-left: 5px solid #2563eb; padding-left: 10px; margin-bottom: 12px; margin-top: 0;">${L.s1}</h3>
@@ -404,6 +431,15 @@ function buildReportPdf() {
                 ${chatResult}
             </div>
         </div>
+
+        ${findings.length ? `
+        <div style="margin-bottom: 25px;">
+            <h3 style="font-size: 16px; color: #334155; border-left: 5px solid #475569; padding-left: 10px; margin-bottom: 12px; margin-top: 0;">${escapeHTML(L.finds)}</h3>
+            <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #334155; line-height: 1.75;">
+                ${findings.map(f => `<li style="margin-bottom: 6px;">${escapeHTML(f)}</li>`).join('')}
+            </ul>
+            ${L.findNote ? `<p style="font-size: 11px; color: #94a3b8; margin: 10px 0 0; line-height: 1.5;">${escapeHTML(L.findNote)}</p>` : ''}
+        </div>` : ''}
 
         <!-- 소견서는 한 페이지보다 길 수 있으므로 page-break-inside: avoid를 넣으면 안 됨
              (avoid를 넣으면 html2pdf가 자를 곳을 못 찾아 내용이 통째로 잘림) -->

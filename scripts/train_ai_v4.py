@@ -11,9 +11,9 @@ v3 대비 추가된 것:
      TTA를 쓰므로, 배포 성능과 같은 방식의 수치를 메타데이터에 남긴다.
   3) 출력 파일명에 백본이 들어가 기존 v3 가중치를 덮어쓰지 않음.
 
-실행:  python dedup_dataset.py                        (dataset 변경 시 1회)
-       python train_ai_v4.py --backbone resnet18
-       python train_ai_v4.py --backbone efficientnet_b0
+실행:  python scripts/dedup_dataset.py                        (dataset 변경 시 1회)
+       python scripts/train_ai_v4.py --backbone resnet18
+       python scripts/train_ai_v4.py --backbone efficientnet_b0
 비교:  두 메타데이터 JSON의 best_val_metrics(선택은 반드시 val 기준!)를 비교해
        승자를 고르고, test 지표는 마지막 확인용으로만 본다.
 """

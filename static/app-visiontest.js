@@ -563,7 +563,15 @@ function vtScrollToTest() {
     if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }
 
-/** DOM과 무관하게 양안 결과를 분류한다. 브라우저 흐름과 회귀 테스트가 같은 규칙을 쓴다. */
+/** DOM과 무관하게 양안 결과를 분류한다. 브라우저 흐름과 회귀 테스트가 같은 규칙을 쓴다.
+ *
+ *  ⚠️ 측정불가 판정은 '검사 종류별'로 한다.
+ *  예전에는 네 항목(좌우 × 시력·대비)이 **전부** null일 때만 '양쪽 측정불가'로 봤다.
+ *  그래서 "양쪽 눈 다 가장 큰 시표를 못 읽었는데 대비는 측정됨" 같은 경우가
+ *  '좌우 차이 없음'으로 나갔다. 양쪽 다 최저 단계를 통과 못 했다는 것은 좌우 비대칭보다
+ *  더 중요한 신호인데, 그게 안심 문구로 보고된 셈이다.
+ *  → 시력과 대비를 각각 보고, 어느 한 종류라도 양쪽이 실패하면 '측정불가'로 알린다.
+ */
 function vtClassifyResults(r) {
     const left = r.left || {};
     const right = r.right || {};
@@ -573,17 +581,22 @@ function vtClassifyResults(r) {
         ? Math.abs(window.ECCalib.decimalToLogMAR(left.acuity) - window.ECCalib.decimalToLogMAR(right.acuity))
         : null;
 
-    const oneSideUnmeasurable =
-        (left.acuity == null) !== (right.acuity == null) ||
-        (left.contrast == null) !== (right.contrast == null);
-    const bothEyesUnmeasurable =
-        left.acuity == null && right.acuity == null &&
-        left.contrast == null && right.contrast == null;
+    // 검사 종류별 상태: 양쪽 실패 / 한쪽만 실패 / 둘 다 측정됨
+    const bothFailed = kind => left[kind] == null && right[kind] == null;
+    const oneFailed = kind => (left[kind] == null) !== (right[kind] == null);
+
+    const unmeasurableKinds = ['acuity', 'contrast'].filter(bothFailed);
+    const oneSideUnmeasurable = oneFailed('acuity') || oneFailed('contrast');
+    // 한 종류라도 양쪽이 실패했으면 '비교 불가'다 — 다른 종류가 측정됐어도 마찬가지.
+    const bothEyesUnmeasurable = unmeasurableKinds.length > 0;
+    // 유효한 비교가 하나라도 있어야 '차이 있음/없음'을 말할 수 있다
     const asymmetric = !bothEyesUnmeasurable && (oneSideUnmeasurable
         || (dCS != null && dCS + VT_COMPARE_EPSILON >= 0.3)
         || (dAc != null && dAc + VT_COMPARE_EPSILON >= 0.2));
 
-    return { dCS, dAc, oneSideUnmeasurable, bothEyesUnmeasurable, asymmetric };
+    return { dCS, dAc, oneSideUnmeasurable, bothEyesUnmeasurable, asymmetric,
+             // 어느 검사가 측정불가였는지 — 안내 문구에서 '시력'/'대비감도'를 짚어준다
+             unmeasurableKinds };
 }
 
 function vtFinish() {
@@ -602,6 +615,9 @@ function vtFinish() {
     state.visionTest.asymmetric = classified.asymmetric;
     state.visionTest.oneSideUnmeasurable = classified.oneSideUnmeasurable;
     state.visionTest.bothEyesUnmeasurable = classified.bothEyesUnmeasurable;
+    // 어느 검사가 측정불가였는지 — 소견 문구가 '시력'/'대비감도'를 짚어준다.
+    // 언어 중립 코드로 저장한다(표시 문자열은 그릴 때 현재 언어로 만든다).
+    state.visionTest.unmeasurableKinds = classified.unmeasurableKinds;
     state.visionTest.deltaLogCS = classified.dCS;
     state.visionTest.deltaLogMAR = classified.dAc;
 
