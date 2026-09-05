@@ -682,6 +682,31 @@ OOD 게이트가 안저사진을 '눈'으로 통과시킵니다(실측 eye_score
 | [human-faces (ashwingupta3012)](https://www.kaggle.com/datasets/ashwingupta3012/human-faces) | CC0 (Public Domain) | 🟢 안전 | 저작자가 권리를 완전히 포기 — MIT보다도 제약이 적음. 팀원이 이 얼굴 사진에서 눈만 크롭해 정상 안구 데이터로 사용 |
 | [eye-detection-dataset (icebearogo)](https://www.kaggle.com/datasets/icebearogo/eye-detection-dataset?select=Dataset) | CC BY-NC 4.0 | 🟡 조건부 | **NC(NonCommercial) = 상업적 이용 금지.** 비상업적 학술 목적(졸업작품)이면 안전하나, 추후 상업화 시 이 출처로 학습된 가중치는 재학습 필요. **phash로 직접 검증함**: 다운로드한 1,979장 중 655장(33.1%)이 `dataset/0_normal`과 해밍거리 ≤6(대부분 완전 일치, dist=0)로 매칭 — 실제 사용 확인됨 |
 
+### 눈이 아닌 사진 (게이트 학습·평가용, 2026-09-05 수집)
+
+앱에 올라올 수 있는 '눈이 아닌 사진'을 게이트가 거부하도록 학습시키는 데 씁니다.
+**모델이 보는 이미지가 아니라, 모델에 닿기 전에 걸러내기 위한 데이터입니다.**
+
+| 항목 | 내용 |
+|---|---|
+| 출처 | [Wikimedia Commons](https://commons.wikimedia.org) API (폭 800px 썸네일) |
+| 수량 | 168장 (42MB) — 학습 108장 / **평가 60장(학습에 쓰지 않음)** |
+| 라이선스 | CC0 11 · Public domain 11 · CC BY 계열 50 · CC BY-SA 계열 96 — 자유 라이선스만 |
+| 범주 | 건물·풍경·나무·음식·손·문서·손글씨·화면·고양이·꽃·자동차·가구·직물 (13종) |
+| 전수 기록 | `dataset_noneye/ATTRIBUTION.csv` — 파일별 제목·저자·라이선스·원본 URL |
+| 재현 | `python scripts/fetch_non_eye_photos.py` |
+
+- **사람 얼굴·인물·의학 범주는 넣지 않았습니다.** 눈이 찍힌 사진을 '눈이 아님'으로
+  학습시키면 앱이 받아들여야 할 사진을 거부하게 됩니다 — 실제로 그 실수가 한 번 있었습니다
+  (백내장 눈 클로즈업이 음성 표본에 섞여 있었음, `scripts/build_eye_gate.py` 상단 참고).
+- 받은 뒤 **MTCNN 얼굴 검출 + 대조 시트로 전수 육안 검수**했습니다. 얼굴이 잡힌 14장은
+  전부 원거리 인물(눈 영역이 프레임의 0.5% 미만)이라 눈 클로즈업이 아니며, 그중
+  역사적 학대 피해자 사진 2장은 부적절하여 제외했습니다.
+- 사진 파일은 `dataset/`과 같이 Git에서 제외하고, 기록(`ATTRIBUTION.csv`)과
+  학습/평가 분할(`split.json`)만 추적합니다.
+- **분할은 사진 단위입니다.** 같은 사진의 크롭이 학습과 평가에 함께 들어가면 평가 점수가
+  일반화가 아니라 암기를 재게 됩니다.
+
 ### 🔴 위험 등급 출처를 그대로 유지하기로 한 이유
 
 `1_cataract`(1,823장) 중 phash로 확인된 위험 등급(Unknown/© Original Authors) 출처 비중만

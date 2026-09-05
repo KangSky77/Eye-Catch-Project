@@ -39,38 +39,57 @@ def _load(path: Path) -> Image.Image:
 
 
 def build_negatives() -> dict[str, Image.Image]:
-    """비-눈 표본. 실제 사진 크롭이 핵심이고, 합성은 보조다."""
-    negatives: dict[str, Image.Image] = {}
-    assets = ROOT / "static" / "assets"
+    """비-눈 표본.
 
-    # 실제 사진을 여러 격자/배율로 잘라 '현실적인 오입력'을 만든다.
-    # 사용자가 엉뚱한 사진을 올릴 때 그것이 늘 원본 프레이밍이라는 보장이 없다.
+    핵심은 dataset_noneye/split.json의 **홀드아웃 사진** — 게이트 학습에 쓰지 않은 것들이다.
+    이것이 있어야 "처음 보는 종류의 사진을 막는가"에 답할 수 있다. 저장소 기본 사진과
+    합성 이미지는 학습에도 쓰이므로 참고용으로만 함께 잰다(계열이 이름으로 구분된다).
+    """
+    negatives: dict[str, Image.Image] = {}
+
+    # (1) 학습에 쓰지 않은 실제 사진 — 진짜 평가 대상
+    split_path = ROOT / "dataset_noneye" / "split.json"
+    if split_path.exists():
+        holdout = json.loads(split_path.read_text(encoding="utf-8"))["holdout"]
+        for name in holdout:
+            path = ROOT / "dataset_noneye" / name
+            if not path.exists():
+                continue
+            img = _load(path)
+            negatives[f"holdout/{name}:full"] = img
+            w, h = img.size
+            for grid in (2, 3):
+                for gy in range(grid):
+                    for gx in range(grid):
+                        negatives[f"holdout/{name}:g{grid}-{gy}{gx}"] = img.crop(
+                            (gx * w // grid, gy * h // grid, (gx + 1) * w // grid, (gy + 1) * h // grid))
+    else:
+        print("  ⚠️ dataset_noneye/split.json 없음 — 학습에 안 쓴 사진으로 평가할 수 없다.")
+        print("     python scripts/fetch_non_eye_photos.py 로 먼저 받으세요.")
+
+    # (2) 저장소 기본 사진 — 학습에도 쓰이므로 참고용(회귀 감시)
+    assets = ROOT / "static" / "assets"
     for name in ("vision-scene.jpg", "diseases/amd-fundus.jpg",
                  "diseases/diabetic-retinopathy-fundus.jpg"):
         path = assets / name
         if not path.exists():
             continue
         img = _load(path)
-        negatives[f"{name}:full"] = img
+        negatives[f"repo/{name}:full"] = img
         w, h = img.size
         for grid in (2, 3):
             for gy in range(grid):
                 for gx in range(grid):
-                    box = (gx * w // grid, gy * h // grid,
-                           (gx + 1) * w // grid, (gy + 1) * h // grid)
-                    negatives[f"{name}:g{grid}-{gy}{gx}"] = img.crop(box)
-        for zoom in (0.5, 0.7):
-            cw, ch = int(w * zoom), int(h * zoom)
-            negatives[f"{name}:center{zoom}"] = img.crop(
-                ((w - cw) // 2, (h - ch) // 2, (w - cw) // 2 + cw, (h - ch) // 2 + ch))
+                    negatives[f"repo/{name}:g{grid}-{gy}{gx}"] = img.crop(
+                        (gx * w // grid, gy * h // grid, (gx + 1) * w // grid, (gy + 1) * h // grid))
 
-    # 합성 표본 — probe_eye_gate.py와 같은 것을 재사용한다(계열별 회귀 표본)
+    # (3) 합성 계열 — 참고용
     import importlib.util
     spec = importlib.util.spec_from_file_location("probe", ROOT / "scripts" / "probe_eye_gate.py")
     probe = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(probe)
     for i, (img, kind) in enumerate(probe.synthetic_non_eye(random.Random(20260905))):
-        negatives[f"synthetic:{kind}-{i}"] = img
+        negatives[f"synthetic/{kind}-{i}"] = img
     return negatives
 
 
@@ -117,6 +136,15 @@ def main():
         print(f"{t:>10.3f} | {nrm:>4}/{len(scores['0_normal'])} ({nrm/len(scores['0_normal']):>5.1%})"
               f" | {cat:>4}/{len(scores['1_cataract'])} ({cat/len(scores['1_cataract']):>5.1%})"
               f" | {leak:>3}/{n_neg} ({leak/n_neg:>5.1%})")
+
+    holdout_scores = {k: v for k, v in neg_scores.items() if k.startswith("holdout/")}
+    if holdout_scores:
+        print()
+        print(f"※ 학습에 쓰지 않은 사진만: {len(holdout_scores)}개  최고점 {max(holdout_scores.values()):.4f}")
+        print("   (이 숫자가 진짜 지표다. 나머지 계열은 학습에도 쓰여 낙관적으로 나온다)")
+        for t in THRESHOLDS:
+            leak = sum(s >= t for s in holdout_scores.values())
+            print(f"     임계 {t:.3f}: 통과 {leak:>3}/{len(holdout_scores)} ({leak/len(holdout_scores):>5.1%})")
 
     print()
     print("비-눈인데 점수가 높은 것 상위 10개 (이 값들이 임계값의 하한을 정한다):")

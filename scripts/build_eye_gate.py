@@ -79,6 +79,16 @@ NON_EYE_ASSETS = [
     "static/assets/diseases/amd-fundus.jpg",                   # 안저 — 외안부 아님
     "static/assets/diseases/diabetic-retinopathy-fundus.jpg",  # 안저 — 외안부 아님
 ]
+
+# Wikimedia Commons에서 모은 비-눈 사진 폴더(git 제외 — dataset/과 같은 취급).
+# scripts/fetch_non_eye_photos.py로 받고, split.json이 사진 단위로 학습/평가를 나눈다.
+#
+# 왜 '사진 단위'인가: 같은 사진의 크롭이 학습과 평가 양쪽에 들어가면, 평가 점수가
+# 일반화가 아니라 암기를 재게 된다. 실제로 저장소 사진 세 장만으로 재학습했을 때
+# 감사 점수가 크게 좋아 보였지만 그 표본이 학습에 쓰인 사진에서 나온 것이라
+# 채택할 수 없었다(위 '2026-09-05 재학습 시도' 참고). 이 폴더는 그 문제를 없앤다.
+NON_EYE_DIR = REPO_ROOT / "dataset_noneye"
+NON_EYE_SPLIT = NON_EYE_DIR / "split.json"
 TARGET_POS_RECALL = 0.997       # 홀드아웃 눈 사진의 이 비율 이상이 통과하도록 임계값 선택
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -168,44 +178,54 @@ def grid_crops(im):
     return outs
 
 
-def photo_negatives(rng):
-    """'눈이 아닌 임의의 사진'을 음성으로 충분히 모은다.
+def non_eye_photo_paths(split: str) -> list[Path]:
+    """비-눈 사진 경로. split은 'train' 또는 'holdout'.
+
+    dataset_noneye/split.json이 사진 단위로 갈라 놓은 목록을 그대로 따른다.
+    폴더가 없으면(사진을 아직 안 받았으면) 저장소 기본 세 장만 쓴다 —
+    scripts/fetch_non_eye_photos.py로 받으면 자동으로 늘어난다.
+    """
+    paths = [REPO_ROOT / p for p in NON_EYE_ASSETS if (REPO_ROOT / p).exists()]
+    if not NON_EYE_SPLIT.exists():
+        if split == "train":
+            print(f"  ⚠️ {NON_EYE_SPLIT} 없음 — 저장소 기본 {len(paths)}장만 사용")
+            print("     python scripts/fetch_non_eye_photos.py 로 실제 사진을 받으세요.")
+        return paths if split == "train" else []
+    names = json.loads(NON_EYE_SPLIT.read_text(encoding="utf-8"))[split]
+    extra = [NON_EYE_DIR / n for n in names if (NON_EYE_DIR / n).exists()]
+    # 저장소 기본 세 장은 학습 쪽에만 넣는다(평가는 새로 받은 사진으로만 한다)
+    return (paths + extra) if split == "train" else extra
+
+
+def photo_negatives(rng, split="train"):
+    """'눈이 아닌 임의의 사진'을 음성으로 모은다.
 
     왜 이 함수가 생겼나 (2026-09-05):
-        기존 음성 구성은 가려진 눈 50% / 눈 모서리 50%였고, 실제 사진 크롭은 0.6%뿐이었다.
+        기존 음성 구성은 가려진 눈 45% / 눈 모서리 45%였고, 실제 사진 크롭은 0.6%뿐이었다.
         그래서 분류기는 '가려진 눈'과 '눈꺼풀'을 거부하도록만 배웠고, 건물·풍경 사진은
-        배운 적이 거의 없었다. 임계값을 올려 막는 것은 증상 처치였다 — 여기를 고친다.
+        배운 적이 거의 없었다 — 도서관 사진이 통과한 진짜 이유다.
 
-    ⚠️ 한계 (반드시 읽을 것): 저장소에 확실히 '눈이 아닌' 사진은 세 장뿐이다(NON_EYE_ASSETS).
-    크롭·기하 증강으로 표본 수는 늘릴 수 있어도 '다양한 사진'을 대신하지는 못한다 —
-    세 장에서 뽑은 900장은 서로 닮아 있어, 홀드아웃 거부율이 높게 나와도 처음 보는
-    종류의 사진(인물·음식·문서·손·화면 캡처 등)에는 그대로 뚫릴 수 있다.
-    실사용 오입력 사진을 모아 NON_EYE_ASSETS에 추가하는 것이 본 해결책이다.
-    파일을 추가할 때는 반드시 한 장씩 열어보고 눈이 찍히지 않았는지 확인할 것.
+    사진마다 격자 크롭(2x2·3x3·4x4·중앙확대)과 임의 크롭을 함께 쓴다. 격자는 임의 크롭이
+    비껴갈 수 있는 영역을 결정적으로 덮는다(옥상 조각이 그렇게 빠져 있었다).
     """
     outs = []
-    for path in NON_EYE_ASSETS:
-        p = REPO_ROOT / path
-        if not p.exists():
-            print(f"  ⚠️ 음성 사진 없음(건너뜀): {path}")
-            continue
+    for p in non_eye_photo_paths(split):
         im = open_rgb(p)
-        base = grid_crops(im) + random_crops(im, rng, 60, frac=(0.15, 0.7))
+        n_random = 60 if len(non_eye_photo_paths(split)) < 10 else 8
+        base = grid_crops(im) + random_crops(im, rng, n_random, frac=(0.15, 0.7))
         for c in base:
             outs.append(c)
-            # 같은 사진 몇 장을 부풀리는 것이므로 기하 증강으로 다양성을 조금 더 준다
-            if rng.random() < 0.5:
+            if rng.random() < 0.4:
                 outs.append(c.transpose(Image.FLIP_LEFT_RIGHT))
-            if rng.random() < 0.25:
-                outs.append(c.rotate(90, expand=True))
 
-    # 합성 계열 — probe_eye_gate.py와 같은 것을 재사용한다.
+    # 합성 계열 — probe_eye_gate.py와 같은 것을 재사용한다(학습 쪽에만).
     # blob 계열은 실제로 게이트를 통과했던 모양이라 학습 음성에 반드시 넣는다.
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("probe", REPO_ROOT / "scripts" / "probe_eye_gate.py")
-    probe = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(probe)
-    outs += [img for img, _ in probe.synthetic_non_eye(random.Random(SEED))]
+    if split == "train":
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("probe", REPO_ROOT / "scripts" / "probe_eye_gate.py")
+        probe = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(probe)
+        outs += [img for img, _ in probe.synthetic_non_eye(random.Random(SEED))]
     return outs
 
 
@@ -250,7 +270,7 @@ def main():
             neg.append(Image.fromarray(rng.integers(0, 255, (224, 224, 3), dtype=np.uint8))); fam.append("단색·노이즈")
         # '눈이 아닌 임의의 사진' — 예전에는 임의 크롭 12개뿐이라 음성의 0.6%였고,
         # 그래서 분류기가 이 부류를 사실상 배우지 못했다. 격자+증강으로 충분히 넣는다.
-        photos = photo_negatives(rng)
+        photos = photo_negatives(rng, "train" if tag == "train" else "holdout")
         neg += photos;                     fam += ["비-눈 사진"] * len(photos)
         return pos, neg, fam
 

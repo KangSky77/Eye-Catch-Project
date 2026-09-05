@@ -54,3 +54,8 @@ compare/
 design/
 # 정리 전 원본 데이터(캐글 등) — dataset/ 밖에 둬야 ImageFolder가 클래스로 읽지 않는다
 dataset_raw/
+# 게이트 학습용 비-눈 사진(Wikimedia Commons). 사진은 dataset/과 같이 제외하고,
+# 출처·라이선스 기록(ATTRIBUTION.csv)과 학습/평가 분할(split.json)만 추적한다.
+dataset_noneye/*
+!dataset_noneye/ATTRIBUTION.csv
+!dataset_noneye/split.json

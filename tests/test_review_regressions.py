@@ -163,3 +163,49 @@ async def test_소견이_비면_필터_때문이든_아니든_오류로_알린�
         finally:
             llm.stream_with_keepalive = original
         assert llm.ERROR_MARKER in out, f'{label}: 빈 소견이 성공으로 나갔다'
+
+
+def test_임상_눈_사진은_반드시_통과한다():
+    """게이트 학습 음성에 이 사진들이 섞였던 적이 있다.
+
+    EXTRA_NEG_DIRS = ["static/assets"]로 폴더를 통째로 음성에 넣는 바람에
+    diseases/cataract-clinical.jpg(교과서적인 백내장 눈 클로즈업)가 '눈이 아님'으로
+    학습됐다. 앱이 반드시 받아들여야 할 사진을 거부하도록 가르친 것이다.
+    게이트를 다시 학습할 때마다 이 테스트로 확인한다."""
+    from PIL import ImageOps
+    if not eye_validator.warmup() or not eye_validator.gate_available():
+        pytest.skip('눈 게이트 가중치 없음')
+
+    rejected = {}
+    for name in ('cataract-clinical.jpg', 'glaucoma-clinical.jpg'):
+        path = _asset('diseases', name)
+        if not path.exists():
+            continue
+        with Image.open(path) as src:
+            img = ImageOps.exif_transpose(src).convert('RGB')
+        ok, score = eye_validator.check_eye(img)
+        if not ok:
+            rejected[name] = round(score, 4)
+    assert not rejected, (
+        f"임상 눈 클로즈업이 '눈이 아님'으로 거부됐다: {rejected} — "
+        "게이트 학습 음성에 눈 사진이 섞였는지 확인할 것"
+    )
+
+
+def test_게이트_학습이_눈_사진을_음성으로_쓰지_않는다():
+    """음성 목록은 폴더 통째로가 아니라 파일별 명시여야 한다."""
+    from pathlib import Path
+    script = (Path(__file__).resolve().parent.parent / "scripts" / "build_eye_gate.py"
+              ).read_text(encoding="utf-8")
+    # 모듈 최상위 대입만 본다 — 경위를 적어둔 독스트링에는 옛 이름이 나온다
+    assignments = [l for l in script.splitlines() if l.startswith("EXTRA_NEG_DIRS")]
+    assert not assignments, (
+        f"폴더를 통째로 음성에 넣고 있다 — 눈 사진이 섞일 수 있다: {assignments}"
+    )
+    assert "NON_EYE_ASSETS" in script
+    # 임상 눈 사진이 음성 목록에 들어가면 안 된다
+    non_eye_block = script[script.index("NON_EYE_ASSETS = ["):script.index("]", script.index("NON_EYE_ASSETS = ["))]
+    for eye_photo in ("cataract-clinical", "glaucoma-clinical"):
+        assert eye_photo not in non_eye_block, f"{eye_photo}가 음성 목록에 있다"
+    # 학습/평가는 사진 단위로 갈라야 한다(크롭이 양쪽에 섞이면 암기를 재게 된다)
+    assert "split.json" in script and 'split == "train"' in script
