@@ -405,6 +405,9 @@ _OPEN_ENDED_MARKERS = (
     "what ", "which ", "tell me", "décrivez", "expliquez", "comment ",
     "combien", "describa", "explique", "cómo", "cuánto", "詳しく", "どのように",
     "どのくらい", "説明", "教えてください", "详细", "如何", "多久", "描述",
+    # 선택형 질문은 예/아니오로 어느 쪽인지 전달할 수 없어 자유 입력으로 받는다.
+    "one eye or both", "one or both eyes", "한쪽인가요", "한쪽 눈인가요",
+    "한쪽 눈 또는 양쪽", "한쪽 눈이나 양쪽", "한쪽 눈과 양쪽",
 )
 
 

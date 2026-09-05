@@ -26,6 +26,8 @@ const state = {
     maxDynamic: 2,
     chatHistory: [],         // 젬마에게 넘길 전체 대화 기록
     freeAnswers: [],         // 맞춤 질문에 자유 입력으로 답한 문장만 (소견서 개인화용)
+    dynamicAnswers: [],      // 맞춤 질문과 답변 쌍 (소견서 개인화용)
+    sessionGeneration: 0,    // 회차가 바뀌면 이전 fetch/타이머 결과를 무시한다
     chatBusy: false,         // 문진 답변 처리 중 잠금 (중복 클릭 방지)
     step: 'step-intro'       // 검사 흐름의 현재 단계 (진행 표시용)
 };
@@ -365,6 +367,13 @@ function goHome() {
 
 /** Start a new screening session without carrying results or generated opinion over. */
 function resetScreeningState() {
+    state.sessionGeneration++;
+    cancelAiOpinion();
+    state.stepIdx = 0; state.dynamicCount = 0; state.chatHistory = [];
+    state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
+    state.dynamicAnswers = []; state.chatBusy = false;
+    state.riskAnswers = {}; state.symptomAnswers = {}; state.symptomScore = 0;
+    state.redFlags = []; state._chatLoaderStop = null;
     state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
     state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;

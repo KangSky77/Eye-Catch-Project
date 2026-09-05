@@ -79,7 +79,7 @@ def _try_load() -> bool:
                 _gate_thr = float(g["threshold"])
                 logger.info("눈 게이트 로드: 임계값 %.3f", _gate_thr)
             else:
-                logger.warning("⚠️  eye_gate.npz 없음 — 중심 벡터 유사도로 폴백(비-눈·가려진 눈 판별력 낮음)")
+                logger.error("⚠️  eye_gate.npz 없음 — 검증기를 준비 완료로 취급하지 않습니다")
             _loaded = True
         except Exception:
             # 일시적 실패(네트워크 등)는 영구 캐시하지 않음 → 다음 요청에 재시도
@@ -120,8 +120,8 @@ def gate_available() -> bool:
 
 
 def is_ready() -> bool:
-    """True only after the embedding network and centroid are loaded."""
-    return bool(_loaded and _net is not None and _centroid is not None)
+    """True only after the embedding network, centroid, and trained gate are loaded."""
+    return bool(_loaded and _net is not None and _centroid is not None and _gate_w is not None)
 
 
 def check_eye(img):
@@ -134,12 +134,12 @@ def check_eye(img):
     if not _try_load():
         return None, None
     try:
-        if _gate_w is not None:
-            p = _gate_prob(img)
-            threshold = max(float(_gate_thr), settings.eye_gate_threshold)
-            return p >= threshold, p
-        score = _similarity(img)
+        if _gate_w is None:
+            return None, None
+        p = _gate_prob(img)
+        threshold = max(float(_gate_thr), settings.eye_gate_threshold)
+        return p >= threshold, p
     except Exception:
         logger.warning("⚠️  눈 검증 계산 실패", exc_info=True)
         return None, None
-    return score >= settings.eye_sim_threshold, score
+    return None, None

@@ -84,6 +84,29 @@ def load_trained_weights() -> bool:
         weights_loaded = False
         return False
 
+def _decode_image_contents(contents: bytes) -> Image.Image:
+    """Validate headers and decode pixels off the event loop."""
+    try:
+        img = Image.open(io.BytesIO(contents))
+        w, h = img.size
+    except Image.DecompressionBombError:
+        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
+    except Exception:
+        raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
+
+    if w * h > MAX_IMAGE_PIXELS:
+        raise HTTPException(
+            status_code=413,
+            detail=f"이미지 해상도가 너무 큽니다. ({w}x{h}) 더 작은 사진을 올려주세요."
+        )
+    try:
+        return ImageOps.exif_transpose(img.convert("RGB"))
+    except Image.DecompressionBombError:
+        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
+    except Exception:
+        raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
+
+
 async def validate_and_read_image(file: UploadFile) -> Image.Image:
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
@@ -99,30 +122,9 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail=f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
 
-    try:
-        # 헤더만 먼저 읽어 크기 확인(이 시점엔 전체 픽셀 디코딩 전)
-        img = Image.open(io.BytesIO(contents))
-        w, h = img.size
-    except Image.DecompressionBombError:
-        # Pillow가 open/size 단계에서도 폭탄을 던질 수 있음 → 413으로 정확히 분류
-        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
-    except Exception:
-        raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
-
-    # 픽셀 수 상한 검사 — 디코딩으로 메모리 폭주하기 전에 거부
-    if w * h > MAX_IMAGE_PIXELS:
-        raise HTTPException(
-            status_code=413,
-            detail=f"이미지 해상도가 너무 큽니다. ({w}x{h}) 더 작은 사진을 올려주세요."
-        )
-
-    try:
-        # EXIF 회전 정보 반영 + RGB 변환 (여기서 실제 픽셀 디코딩)
-        return ImageOps.exif_transpose(img.convert("RGB"))
-    except Image.DecompressionBombError:
-        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
-    except Exception:
-        raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
+    # PIL header parsing and pixel decode are synchronous; keep them off asyncio's loop.
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(_decode_image_contents, contents)
 
 # 흔들림(초점 흐림) 판정 기준 — 라플라시안 분산을 대비로 정규화한 값.
 # 실측(눈 사진 141장, 사진 크기에 비례한 모션 블러, 2026-08-26):

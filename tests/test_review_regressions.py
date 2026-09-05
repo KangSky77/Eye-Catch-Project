@@ -1,5 +1,6 @@
 """Regressions reproduced during the September 5 full review."""
 import asyncio
+from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
@@ -85,6 +86,67 @@ def test_env_backups_are_ignored():
     result = subprocess.run(['git', 'check-ignore', '.env.bak.20260904'],
                             capture_output=True, text=True)
     assert result.returncode == 0
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize('question', [
+    'Does this affect one eye or both eyes?',
+    'Is it one or both eyes?',
+    '불편한 눈은 한쪽 눈인가요, 양쪽 눈인가요?',
+])
+async def test_alternative_questions_get_text_input(monkeypatch, question):
+    async def generate(_):
+        return question
+    monkeypatch.setattr(llm, 'generate_ollama', generate)
+    assert await llm.generate_next_question('en', '', '', []) == (question, 'text')
+
+
+def test_gate_is_required_for_readiness():
+    from app.services import eye_validator
+    source = (Path(__file__).resolve().parent.parent / 'app' / 'services' / 'eye_validator.py').read_text(encoding='utf-8')
+    assert 'and _gate_w is not None' in source
+    assert 'return None, None' in source
+
+
+def test_dynamic_question_answers_are_kept_as_pairs():
+    chat = (Path(__file__).resolve().parent.parent / 'static' / 'app-chat.js').read_text(encoding='utf-8')
+    report = (Path(__file__).resolve().parent.parent / 'static' / 'app-report.js').read_text(encoding='utf-8')
+    assert 'state.dynamicAnswers.push({ q: current.q, a: answerText })' in chat
+    assert 'state.dynamicAnswers || []' in report
+
+
+@pytest.mark.anyio
+async def test_llm_disconnect_after_waiter_acquires_returns_slot(monkeypatch):
+    slots = asyncio.Semaphore(1)
+    await slots.acquire()
+    monkeypatch.setattr(routes, '_llm_slots', slots)
+    monkeypatch.setattr(routes, 'KEEPALIVE_INTERVAL', 0.001)
+    async def source():
+        yield 'content'
+    stream = routes._limited_stream(source())
+    assert await anext(stream) == llm.KEEPALIVE
+    slots.release()
+    await asyncio.sleep(0.01)  # acquisition completes before generator resumes
+    await stream.aclose()
+    await asyncio.wait_for(slots.acquire(), 0.1)
+    assert slots.locked()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize('fails', [False, True])
+async def test_llm_completion_and_failure_return_exactly_one_slot(monkeypatch, fails):
+    slots = asyncio.Semaphore(1)
+    monkeypatch.setattr(routes, '_llm_slots', slots)
+    async def source():
+        yield 'content'
+        if fails:
+            raise ValueError('upstream failure')
+    stream = routes._limited_stream(source())
+    assert await anext(stream) == 'content'
+    with pytest.raises(ValueError if fails else StopAsyncIteration):
+        await anext(stream)
+    await asyncio.wait_for(slots.acquire(), 0.1)
+    assert slots.locked()
 
 
 # --- 2026-09-05 2차 리뷰: 1차 수정이 덜 닿은 곳 -------------------------------

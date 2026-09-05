@@ -148,7 +148,7 @@ async function fetchClinics(lat, lng) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         let items = (data.clinics || []).map(c => ({
-            name: c.name, lat: c.lat, lng: c.lng,
+            name: c.name, type: c.type || 'eye_clinic', lat: c.lat, lng: c.lng,
             dist: c.dist || haversine(lat, lng, c.lat, c.lng),
             address: c.address || '', phone: c.phone || ''
         }));
@@ -196,7 +196,12 @@ function renderClinics(items, lat, lng) {
         name.textContent = c.name;
         const desc = document.createElement('span');
         desc.className = 'ci-desc';
-        desc.textContent = c.address || (ko ? '안과 · 눌러서 지도에서 보기' : 'Eye clinic · tap to view on map');
+        const typeLabel = c.type === 'optician'
+            ? (ko ? '안경원' : 'Optician')
+            : c.type === 'optometrist'
+                ? (ko ? '검안 서비스' : 'Optometrist')
+                : (ko ? '안과' : 'Eye clinic');
+        desc.textContent = c.address || `${typeLabel} · ${ko ? '눌러서 지도에서 보기' : 'tap to view on map'}`;
         info.appendChild(name);
         info.appendChild(desc);
         info.onclick = () => { map.setView([c.lat, c.lng], 17); map.closePopup(); };

@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "test": "node --test tests/*.test.cjs",
     "build:css": "tailwindcss -i ./static/tailwind-src.css -o ./static/tailwind.css --minify",
     "watch:css": "tailwindcss -i ./static/tailwind-src.css -o ./static/tailwind.css --watch"
   },

@@ -13,7 +13,12 @@ const OPINION_LIST_MAX = 30;    // chat_symptoms Field(max_length=30)
 function buildOpinionSymptoms() {
     const risk = computeRiskScore(state.riskAnswers || {});
     return []
-        .concat(formatSymptoms(), risk.factors || [], state.freeAnswers || [])
+        .concat(
+            formatSymptoms(),
+            risk.factors || [],
+            (state.dynamicAnswers || []).map(item => `${item.q}: ${item.a}`),
+            state.freeAnswers || [],
+        )
         .filter(Boolean)
         .map(v => {
             const text = String(v).trim();
@@ -118,12 +123,30 @@ function regenerateOpinion() {
 }
 
 // 소견서 생성 1회 시도. 실패하면 본문 자리에 '다시 시도' 버튼을 남긴다.
-let _opinionBusy = false;
+let _activeOpinion = null;
+
+function cancelAiOpinion() {
+    const active = _activeOpinion;
+    _activeOpinion = null;
+    if (active) {
+        active.controller.abort();
+        if (active.loader) active.loader.stop();
+    }
+    const loading = document.getElementById('gemma-loading-container');
+    if (loading) loading.classList.add('hidden');
+    const retry = document.getElementById('opinion-retry');
+    if (retry) retry.classList.add('hidden');
+}
 
 async function runAiOpinion() {
-    if (_opinionBusy) return;
     if (!state.opinionRequest) return;
-    _opinionBusy = true;
+    cancelAiOpinion();
+    const request = JSON.parse(JSON.stringify(state.opinionRequest));
+    const active = { controller: new AbortController(), loader: null };
+    _activeOpinion = active;
+    const isCurrent = () => _activeOpinion === active;
+    const consent = document.getElementById('consent-box');
+    if (consent) consent.classList.add('hidden');
 
     const loadingContainer = document.getElementById('gemma-loading-container');
     const opinionText = document.getElementById('gemma-opinion-text');
@@ -136,6 +159,7 @@ async function runAiOpinion() {
         loadingContainer.innerHTML = '';
         loadingContainer.classList.remove('hidden');
         opinionLoader = createAiLoader(translations[state.lang].opinion_writing || "AI가 소견서를 작성 중입니다");
+        active.loader = opinionLoader;
         loadingContainer.appendChild(opinionLoader.el);
     }
     if (opinionText) {
@@ -143,7 +167,7 @@ async function runAiOpinion() {
         opinionText.innerText = "";
     }
     const stopOpinionLoader = () => {
-        if (opinionLoader) { opinionLoader.stop(); opinionLoader = null; }
+        if (opinionLoader) { opinionLoader.stop(); opinionLoader = null; active.loader = null; }
         if (loadingContainer) loadingContainer.classList.add('hidden');
         if (opinionText) opinionText.classList.remove('hidden');
     };
@@ -161,16 +185,20 @@ async function runAiOpinion() {
         const response = await fetch('/api/get-ai-opinion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(state.opinionRequest)
+            body: JSON.stringify(request),
+            signal: active.controller.signal
         });
 
+        if (!isCurrent()) return;
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
         const { text, hasError } = await readAiStream(response, disp => {
+            if (!isCurrent()) return;
             stopOpinionLoader();   // 첫 실제 토큰 도착 → 로더 제거, 본문 표시 시작
             opinionText.innerText = disp;
         });
+        if (!isCurrent()) return;
         stopOpinionLoader();       // 빈 응답이어도 로더는 정리
         opinionText.innerText = text;
 
@@ -181,14 +209,14 @@ async function runAiOpinion() {
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리
         opinionText.innerText = opinionText.innerText.replace(/\*\*/g, '');
         // 어떤 언어로 쓰였는지 기록 — 이후 언어를 바꾸면 재생성을 안내한다
-        state.opinionLang = state.opinionRequest.lang || state.lang;
-        const staleBox = document.getElementById('opinion-stale');
-        if (staleBox) staleBox.classList.add('hidden');
+        state.opinionLang = request.lang || state.lang;
+        refreshReportResults();
     } catch (e) {
+        if (!isCurrent()) return;
         showFailure();
         return;
     } finally {
-        _opinionBusy = false;
+        if (isCurrent()) _activeOpinion = null;
     }
 
     // ── 여기부터는 소견을 이미 다 받은 뒤의 '부가 동작'이다. 위 try 안에 두면 안 된다:
@@ -199,9 +227,9 @@ async function runAiOpinion() {
     try {
         // 진단 결과 DB 저장 — 건강정보는 민감정보라 '동의한 경우에만' 저장한다.
         requestSaveConsent({
-            cataract_result: state.opinionRequest.cataract_res,
-            amsler_result: state.opinionRequest.amsler_res,
-            chat_symptoms: state.opinionRequest.chat_symptoms,
+            cataract_result: request.cataract_res,
+            amsler_result: request.amsler_res,
+            chat_symptoms: request.chat_symptoms,
             gemma_opinion: opinionText ? opinionText.innerText : ''
         });
     } catch (e) {

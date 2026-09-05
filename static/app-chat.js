@@ -3,6 +3,7 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function startChat() {
+    state.sessionGeneration++;
     document.getElementById('chat-box').innerHTML = '';
     setChatAnswerMode('yesno');   // 이전 회차에서 자유 입력칸이 열려 있었을 수 있다
 
@@ -13,6 +14,7 @@ function startChat() {
     state.symptomCodes = [];
     state.chatHistory = [];
     state.freeAnswers = [];
+    state.dynamicAnswers = [];
     state.chatBusy = false;
     // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
     state.riskIdx = 0;
@@ -162,7 +164,14 @@ function handleSymptomAnswer(yes) {
         if (q.disease && q.disease !== 'general' && !state.symptomCodes.includes(q.disease)) {
             state.symptomCodes.push(q.disease);
         }
-        if (q.redFlag) state.redFlags = (state.redFlags || []).concat(q.code);
+        if (q.redFlag) {
+            state.redFlags = (state.redFlags || []).concat(q.code);
+            // 응급 신호는 남은 문진/LLM 대기보다 먼저 결과 화면으로 보낸다.
+            // finish()가 현재 redFlags를 기준으로 urgent 안내를 그린다.
+            state.chatBusy = true;
+            finish();
+            return;
+        }
     }
 
     state.symIdx++;
@@ -225,6 +234,7 @@ function removeLoadingMsg() {
 }
 
 async function fetchNextQuestion() {
+    const generation = state.sessionGeneration;
     const cataractRes = formatCataractResult();
     // finish()와 동일하게 선택 언어로 전달 (LLM 프롬프트 컨텍스트 언어 일관성)
     const amslerRes = state.hasAmsler
@@ -255,6 +265,7 @@ async function fetchNextQuestion() {
     } catch (e) {
         // 네트워크 오류 → 위의 폴백 질문(예/아니오형) 그대로 사용
     } finally {
+        if (state.sessionGeneration !== generation) return;
         removeLoadingMsg(); // "생성 중..." 메시지 제거
         addMsg('bot', q);
         state.chatHistory.push({ q: q, a: "" });
@@ -297,7 +308,11 @@ async function handleChatAnswer(yes) {
     }
     // [2단계] Gemma 맞춤형 질문 구간
     else {
-        state.chatHistory[state.chatHistory.length - 1].a = answerText;
+        const current = state.chatHistory[state.chatHistory.length - 1];
+        if (current) {
+            current.a = answerText;
+            state.dynamicAnswers.push({ q: current.q, a: answerText });
+        }
         // 소견서 문맥과 리포트 표시에만 남긴다(chatSymptoms). symptomCodes에는 넣지 않는다 —
         // computeTriage의 anySymptom이 그것을 세기 때문에, LLM이 즉석에서 만든 검수되지 않은
         // 질문에 '네' 하나로 권장 조치가 monitor에서 weeks로 올라갔다(2026-09-04 확인).
@@ -346,8 +361,9 @@ function handleChatFreeAnswer(skip) {
     // symptomCodes/triage는 검증된 고정 문항으로만 계산한다 — 자유 문장을
     // 코드로 자동 변환하면 근거 없는 의료 판정이 섞인다.
     if (state.chatHistory.length) {
-        state.chatHistory[state.chatHistory.length - 1].a =
-            text || (translations[state.lang].res_chat_none || '답변 없음');
+        const current = state.chatHistory[state.chatHistory.length - 1];
+        current.a = text || (translations[state.lang].res_chat_none || '답변 없음');
+        state.dynamicAnswers.push({ q: current.q, a: current.a });
     }
     // 소견서 개인화에 쓸 '진짜 자유 문장'만 따로 모은다.
     // chatHistory에서 네/아니오를 걸러내는 방식은 나이 선택지("40세 미만") 같은
@@ -360,13 +376,16 @@ function handleChatFreeAnswer(skip) {
 
 // 맞춤형 질문 구간에서 답변 후 다음 단계로 (버튼 답변·자유 답변 공통)
 function advanceAfterDynamicAnswer() {
+    const generation = state.sessionGeneration;
     if (state.dynamicCount < state.maxDynamic) {
         setTimeout(() => {
+            if (state.sessionGeneration !== generation) return;
             addLoadingMsg(translations[state.lang].next_q_generating || "다음 맞춤형 질문을 생성 중입니다...");
             fetchNextQuestion();
         }, 600);
     } else {
         setTimeout(() => {
+            if (state.sessionGeneration !== generation) return;
             addMsg('bot', translations[state.lang].msg_gen);
             setTimeout(finish, 1200);
         }, 500);

@@ -59,6 +59,7 @@ async def _search_overpass(lat: float, lng: float, radius: int = 4000, size: int
         seen.add(key)
         out.append({
             "name": name, "lat": float(elat), "lng": float(elng),
+            "type": "optician" if tags.get("shop") == "optician" else ("optometrist" if tags.get("healthcare") == "optometrist" else "eye_clinic"),
             "dist": _haversine(lat, lng, elat, elng),
             "phone": tags.get("phone") or tags.get("contact:phone") or "",
             "address": tags.get("addr:full") or tags.get("addr:street") or "",
@@ -104,6 +105,7 @@ async def search_eye_clinics(lat: float, lng: float, radius: int = 5000, size: i
         try:
             clinics.append({
                 "name": d.get("place_name", "안과"),
+                "type": "eye_clinic",
                 "lat": float(d["y"]),
                 "lng": float(d["x"]),
                 "dist": float(d.get("distance") or 0),

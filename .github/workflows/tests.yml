@@ -9,6 +9,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Frontend request lifecycle regression tests
+        run: npm test
+
   pytest:
     runs-on: ubuntu-latest
     strategy:

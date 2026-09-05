@@ -431,11 +431,7 @@ def test_소견서_실패시_검사전체를_다시_하지_않고_재시도할_�
     assert "async function runAiOpinion()" in report
     # 요청 본문을 보관해야 같은 입력으로 다시 시도할 수 있다
     assert "state.opinionRequest" in report
-    # 중복 클릭 방지
-    assert "_opinionBusy" in report
-    # 성공/실패 어느 쪽이든 잠금이 풀려야 한다
-    tail = report[report.index("async function runAiOpinion()"):]
-    assert "finally {" in tail and "_opinionBusy = false;" in tail
+    # 요청 교체·취소·재시도의 실행 검증은 opinion_lifecycle.test.cjs에서 한다.
 
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
     assert 'id="opinion-retry"' in html
@@ -1071,6 +1067,7 @@ def test_소견서_요청_항목이_서버_상한_안에_들어간다():
     # 자유 답변은 수집 시점에 구분한다 — 네/아니오 라벨 비교로는 나이 선택지가 섞였다
     chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
     assert "state.freeAnswers.push(text)" in chat
+    assert "state.dynamicAnswers.push" in chat
 
 
 def test_검사격자는_왜곡되지_않고_예시가_따로_있다():

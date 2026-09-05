@@ -34,7 +34,6 @@ async def readyz():
 async def _limited_stream(stream):
     """LLM 스트림 수를 제한하고 클라이언트 취소 시 슬롯을 즉시 반납한다."""
     acquire = asyncio.create_task(_llm_slots.acquire())
-    acquired = False
     try:
         while not acquire.done():
             try:
@@ -42,14 +41,15 @@ async def _limited_stream(stream):
             except asyncio.TimeoutError:
                 yield KEEPALIVE
         await acquire
-        acquired = True
         async for chunk in stream:
             yield chunk
     finally:
         if not acquire.done():
             acquire.cancel()
             await asyncio.gather(acquire, return_exceptions=True)
-        if acquired:
+        # acquire may finish while this generator is suspended at KEEPALIVE.
+        # Inspect the task after cancellation has settled, not a local flag.
+        if not acquire.cancelled() and acquire.exception() is None and acquire.result():
             _llm_slots.release()
 
 
