@@ -1,3 +1,16 @@
+// ==========================================
+// data.js — 6개국어 번역 + 문진 질문 + 질환 데이터
+//
+// ⚠️ 서버 스키마 길이 상한과 엮인 문자열 (app/schemas/ai.py)
+//   ai_risk / ai_borderline / ai_uncertain / ai_normal 은 score_label·eye_left·eye_right와
+//   합쳐져 formatCataractResult()의 한 문장이 되고, 그대로 cataract_res(상한 200자)로
+//   서버에 간다. 상한을 넘으면 422가 나고 사용자에게는 '서버 연결 오류'로 보인다.
+//   (실제로 100자 상한 시절 fr/es에서 터져 200으로 올린 이력이 있다.)
+//   이 네 문구를 늘릴 때는 아래 명령으로 반드시 다시 재보세요 — 언어별 여유를 찍어줍니다:
+//       node scripts/check_i18n_limits.js
+//   (2026-09-04 기준 가장 빠듯한 언어는 es로 175/200자. pytest에도 같은 검사가 걸려 있다.)
+//   ams_result_* 는 amsler_res(상한 100자), sym_* 는 chat_symptoms 항목(상한 100자)에 대응.
+// ==========================================
 const translations = {
     ko: {
         nav_test: "AI 검사", nav_disease: "질환 소개", nav_report: "건강 리포트", nav_map: "병원 찾기",
@@ -425,7 +438,7 @@ const extraStrings = {
     q_age: "연령대를 알려주세요.", q_diabetes: "당뇨가 있으신가요?",
     q_hypertension: "고혈압이 있으신가요?", q_family: "가족 중 녹내장·황반변성 진단을 받은 분이 있나요?",
     q_smoking: "현재 흡연 중이신가요?",
-    age_under40: "40세 미만", age_40s: "40–49세", age_50s: "50–59세", age_60s: "60–69세", age_70plus: "70세 이상",
+    age_under40: "40세 미만", age_40s: "40–49세", age_50s: "50–59세", age_60s: "60–69세", age_70s: "70–79세", age_80plus: "80세 이상",
     risk_diabetes: "당뇨", risk_hypertension: "고혈압", risk_family: "가족력", risk_smoking: "흡연",
     tri_title: "권장 조치", tri_now: "빠른 시일 내 안과 진료를 권합니다",
     tri_weeks: "수 주 내 안과 검진을 권합니다", tri_monitor: "정기 검진으로 경과를 관찰하세요",
@@ -462,7 +475,7 @@ const extraStrings = {
     q_age: "What is your age range?", q_diabetes: "Do you have diabetes?",
     q_hypertension: "Do you have high blood pressure?", q_family: "Has a family member been diagnosed with glaucoma or macular degeneration?",
     q_smoking: "Do you currently smoke?",
-    age_under40: "Under 40", age_40s: "40–49", age_50s: "50–59", age_60s: "60–69", age_70plus: "70+",
+    age_under40: "Under 40", age_40s: "40–49", age_50s: "50–59", age_60s: "60–69", age_70s: "70–79", age_80plus: "80+",
     risk_diabetes: "Diabetes", risk_hypertension: "Hypertension", risk_family: "Family history", risk_smoking: "Smoking",
     tri_title: "Recommended action", tri_now: "See an ophthalmologist soon",
     tri_weeks: "Schedule an eye exam within a few weeks", tri_monitor: "Monitor with routine check-ups",
@@ -499,7 +512,7 @@ const extraStrings = {
     q_age: "¿Cuál es su rango de edad?", q_diabetes: "¿Tiene diabetes?",
     q_hypertension: "¿Tiene hipertensión?", q_family: "¿Algún familiar fue diagnosticado con glaucoma o degeneración macular?",
     q_smoking: "¿Fuma actualmente?",
-    age_under40: "Menos de 40", age_40s: "40–49", age_50s: "50–59", age_60s: "60–69", age_70plus: "70+",
+    age_under40: "Menos de 40", age_40s: "40–49", age_50s: "50–59", age_60s: "60–69", age_70s: "70–79", age_80plus: "80+",
     risk_diabetes: "Diabetes", risk_hypertension: "Hipertensión", risk_family: "Antecedentes familiares", risk_smoking: "Tabaquismo",
     tri_title: "Acción recomendada", tri_now: "Consulte a un oftalmólogo pronto",
     tri_weeks: "Programe un examen ocular en unas semanas", tri_monitor: "Controle con revisiones periódicas",
@@ -536,7 +549,7 @@ const extraStrings = {
     q_age: "Quelle est votre tranche d'âge ?", q_diabetes: "Êtes-vous diabétique ?",
     q_hypertension: "Avez-vous de l'hypertension ?", q_family: "Un proche a-t-il été diagnostiqué d'un glaucome ou d'une DMLA ?",
     q_smoking: "Fumez-vous actuellement ?",
-    age_under40: "Moins de 40", age_40s: "40–49", age_50s: "50–59", age_60s: "60–69", age_70plus: "70+",
+    age_under40: "Moins de 40", age_40s: "40–49", age_50s: "50–59", age_60s: "60–69", age_70s: "70–79", age_80plus: "80+",
     risk_diabetes: "Diabète", risk_hypertension: "Hypertension", risk_family: "Antécédents familiaux", risk_smoking: "Tabagisme",
     tri_title: "Action recommandée", tri_now: "Consultez un ophtalmologiste rapidement",
     tri_weeks: "Planifiez un examen dans quelques semaines", tri_monitor: "Surveillez lors des contrôles réguliers",
@@ -573,7 +586,7 @@ const extraStrings = {
     q_age: "年代を教えてください。", q_diabetes: "糖尿病はありますか？",
     q_hypertension: "高血圧はありますか？", q_family: "ご家族に緑内障・黄斑変性と診断された方はいますか？",
     q_smoking: "現在喫煙していますか？",
-    age_under40: "40歳未満", age_40s: "40–49歳", age_50s: "50–59歳", age_60s: "60–69歳", age_70plus: "70歳以上",
+    age_under40: "40歳未満", age_40s: "40–49歳", age_50s: "50–59歳", age_60s: "60–69歳", age_70s: "70–79歳", age_80plus: "80歳以上",
     risk_diabetes: "糖尿病", risk_hypertension: "高血圧", risk_family: "家族歴", risk_smoking: "喫煙",
     tri_title: "推奨される対応", tri_now: "早めに眼科を受診してください",
     tri_weeks: "数週間以内に眼科検診を受けてください", tri_monitor: "定期検診で経過を観察してください",
@@ -610,7 +623,7 @@ const extraStrings = {
     q_age: "请问您的年龄段？", q_diabetes: "您有糖尿病吗？",
     q_hypertension: "您有高血压吗？", q_family: "家人中有被诊断为青光眼或黄斑变性的吗？",
     q_smoking: "您目前吸烟吗？",
-    age_under40: "40岁以下", age_40s: "40–49岁", age_50s: "50–59岁", age_60s: "60–69岁", age_70plus: "70岁以上",
+    age_under40: "40岁以下", age_40s: "40–49岁", age_50s: "50–59岁", age_60s: "60–69岁", age_70s: "70–79岁", age_80plus: "80岁以上",
     risk_diabetes: "糖尿病", risk_hypertension: "高血压", risk_family: "家族史", risk_smoking: "吸烟",
     tri_title: "建议措施", tri_now: "建议尽快就诊眼科",
     tri_weeks: "建议数周内进行眼科检查", tri_monitor: "通过定期检查观察",
@@ -641,7 +654,8 @@ const riskQuestions = [
       { v: '40s',     key: 'age_40s',     score: 1 },
       { v: '50s',     key: 'age_50s',     score: 2 },
       { v: '60s',     key: 'age_60s',     score: 3 },
-      { v: '70plus',  key: 'age_70plus',  score: 4 },
+      { v: '70s',     key: 'age_70s',     score: 4 },
+      { v: '80plus',  key: 'age_80plus',  score: 5 },
     ] },
   { code: 'diabetes',     key: 'q_diabetes',     type: 'yesno', score: 3, labelKey: 'risk_diabetes' },
   { code: 'hypertension', key: 'q_hypertension', type: 'yesno', score: 1, labelKey: 'risk_hypertension' },
@@ -1120,6 +1134,7 @@ Object.assign(translations.ko, {
   find_vt_unmeasurable_both: "기능검사는 마쳤지만 양쪽 눈 모두 유효한 측정값을 계산할 수 없어 좌우를 비교할 수 없습니다. 조명·거리·눈 가림을 확인하고 다시 검사해 주세요.",
   vt_cross_match: "사진 분석에서도 좌우 차이 소견이 있었습니다(두 결과 모두 참고용입니다).",
   tri_factors: "정기 검진을 권하는 이유: {items}",
+  tri_note_uncertain: "다만 이번 사진은 판독이 어려웠습니다. 눈을 한쪽씩 가까이(20~30cm) 다시 찍어 확인해 주세요.",
   save_saving: "저장 중...", save_done: "저장했습니다.",
   save_failed: "저장하지 못했습니다. 결과는 화면에서 계속 보실 수 있습니다.", save_retry: "다시 시도",
   calib_stale: "화면 설정이 바뀐 것 같습니다(회전·확대·창 크기). 정확한 측정을 위해 다시 보정해 주세요."
@@ -1133,6 +1148,7 @@ Object.assign(translations.en, {
   find_vt_unmeasurable_both: "The functional test was completed, but no valid measurement could be calculated for either eye, so the two eyes cannot be compared. Check the lighting, distance and eye covering, then try again.",
   vt_cross_match: "The photo analysis also showed a side difference (both are reference findings).",
   tri_factors: "Why regular check-ups are recommended: {items}",
+  tri_note_uncertain: "That said, this photo was hard to read. Please retake it one eye at a time, up close (20-30 cm), and check again.",
   save_saving: "Saving...", save_done: "Saved.",
   save_failed: "Could not save. Your results remain visible on screen.", save_retry: "Try again",
   calib_stale: "Your display settings seem to have changed (rotation, zoom, window size). Please calibrate again for an accurate measurement."
@@ -1146,6 +1162,7 @@ Object.assign(translations.es, {
   find_vt_unmeasurable_both: "La prueba funcional se completó, pero no se pudo calcular una medición válida de ninguno de los ojos, por lo que no pueden compararse. Revise la luz, la distancia y la oclusión y repita.",
   vt_cross_match: "El análisis de foto también mostró diferencia lateral (ambos son hallazgos de referencia).",
   tri_factors: "Por qué se recomiendan revisiones periódicas: {items}",
+  tri_note_uncertain: "Aun así, esta foto fue difícil de interpretar. Vuelva a tomarla de cerca (20-30 cm), un ojo cada vez, y compruébelo de nuevo.",
   save_saving: "Guardando...", save_done: "Guardado.",
   save_failed: "No se pudo guardar. Sus resultados siguen visibles en pantalla.", save_retry: "Reintentar",
   calib_stale: "Parece que cambió la configuración de pantalla (rotación, zoom, tamaño). Calibre de nuevo."
@@ -1159,6 +1176,7 @@ Object.assign(translations.fr, {
   find_vt_unmeasurable_both: "Le test fonctionnel est terminé, mais aucune mesure valide n'a pu être calculée pour les deux yeux ; ils ne peuvent donc pas être comparés. Vérifiez les conditions et recommencez.",
   vt_cross_match: "L'analyse photo montrait aussi une différence latérale (les deux sont indicatifs).",
   tri_factors: "Pourquoi des contrôles réguliers sont recommandés : {items}",
+  tri_note_uncertain: "Cette photo restait toutefois difficile à interpréter. Reprenez-la de près (20-30 cm), un œil à la fois, puis vérifiez de nouveau.",
   save_saving: "Enregistrement...", save_done: "Enregistré.",
   save_failed: "Enregistrement impossible. Vos résultats restent affichés.", save_retry: "Réessayer",
   calib_stale: "Vos réglages d'affichage semblent avoir changé (rotation, zoom, taille). Veuillez recalibrer."
@@ -1172,6 +1190,7 @@ Object.assign(translations.ja, {
   find_vt_unmeasurable_both: "機能検査は終わりましたが、両眼とも有効な測定値を計算できず左右を比較できません。照明・距離・遮蔽を確認して再検査してください。",
   vt_cross_match: "写真解析でも左右差の所見がありました（いずれも参考情報です）。",
   tri_factors: "定期検診をお勧めする理由: {items}",
+  tri_note_uncertain: "ただし今回の写真は判読が難しい状態でした。片目ずつ近く（20〜30cm）で撮り直して、もう一度ご確認ください。",
   save_saving: "保存中...", save_done: "保存しました。",
   save_failed: "保存できませんでした。結果は画面で引き続きご確認いただけます。", save_retry: "再試行",
   calib_stale: "画面設定が変わったようです（回転・ズーム・サイズ）。正確な測定のため再調整してください。"
@@ -1185,6 +1204,7 @@ Object.assign(translations.zh, {
   find_vt_unmeasurable_both: "功能检查已完成，但双眼均无法计算出有效测量值，因此无法比较。请检查光线、距离和遮眼方式后重新检查。",
   vt_cross_match: "照片分析也显示了单侧差异（两者均为参考信息）。",
   tri_factors: "建议定期检查的原因：{items}",
+  tri_note_uncertain: "不过这张照片难以判读。请一次拍一只眼睛，靠近（20~30厘米）重新拍摄后再确认。",
   save_saving: "保存中...", save_done: "已保存。",
   save_failed: "未能保存。结果仍会显示在屏幕上。", save_retry: "重试",
   calib_stale: "屏幕设置似乎已更改（旋转、缩放、窗口大小）。请重新校准以确保测量准确。"

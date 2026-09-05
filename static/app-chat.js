@@ -297,7 +297,13 @@ async function handleChatAnswer(yes) {
     // [2단계] Gemma 맞춤형 질문 구간
     else {
         state.chatHistory[state.chatHistory.length - 1].a = answerText;
-        if (yes) { state.chatSymptoms.push('symptom_extra'); state.symptomCodes.push('other'); }
+        // 소견서 문맥과 리포트 표시에만 남긴다(chatSymptoms). symptomCodes에는 넣지 않는다 —
+        // computeTriage의 anySymptom이 그것을 세기 때문에, LLM이 즉석에서 만든 검수되지 않은
+        // 질문에 '네' 하나로 권장 조치가 monitor에서 weeks로 올라갔다(2026-09-04 확인).
+        // computeTriage 주석이 명시하듯 진료 시점은 '사람이 검수한 문항'만으로 정해야 한다.
+        // 자유 입력 경로(handleChatFreeAnswer)는 원래부터 symptomCodes를 건드리지 않았으므로,
+        // 답변 수단(버튼/입력칸)에 따라 판정이 달라지던 불일치도 함께 사라진다.
+        if (yes) state.chatSymptoms.push('symptom_extra');
 
         state.dynamicCount++;
         advanceAfterDynamicAnswer();

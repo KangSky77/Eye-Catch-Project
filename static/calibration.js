@@ -69,7 +69,10 @@ function saveCalibration(matchedPx, distanceMm, edge = 'long') {
         screen: `${window.screen.width}x${window.screen.height}`,
         savedAt: new Date().toISOString(),
     };
-    localStorage.setItem(STORE_KEY, JSON.stringify(c));
+    // 저장 실패(사이트 데이터 차단·용량 초과)해도 이번 세션의 보정값은 그대로 쓴다 —
+    // 여기서 예외가 나가면 시력검사 카드 맞추기가 통째로 중단된다(app-visiontest.js).
+    // 읽기(loadCalibration)는 이미 try/catch로 감싸져 있었는데 쓰기만 빠져 있었다.
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(c)); } catch (e) { /* 이번 세션에만 적용 */ }
     return c;
 }
 

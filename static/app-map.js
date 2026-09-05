@@ -142,6 +142,10 @@ async function fetchClinics(lat, lng) {
     try {
         // 우리 백엔드가 카카오 로컬 API로 검색 (키 없으면 빈 목록 → 폴백)
         const res = await fetch(`/api/nearby-clinics?lat=${lat}&lng=${lng}`);
+        // 응답 코드를 반드시 확인한다 — 422(좌표 범위 밖)·500이면 본문이 {"detail": ...}라
+        // data.clinics가 undefined가 되고, '검색 실패'가 아니라 '주변에 안과가 없다'는
+        // 엉뚱한 안내가 나간다. 앱의 다른 fetch(app-report/app-vision)는 이미 ok를 본다.
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         let items = (data.clinics || []).map(c => ({
             name: c.name, lat: c.lat, lng: c.lng,

@@ -256,7 +256,11 @@
                 <div id="chat-free" class="chat-free hidden p-4 bg-white/80 border-t backdrop-blur-md">
                     <label id="chat-free-label" for="chat-free-input" class="chat-free-label" data-i18n="chat_free_label">자유롭게 답해 주세요</label>
                     <div class="chat-free-row">
+                        <!-- maxlength=500: 이 답변은 chatHistory[].a로 들어가고 서버 스키마
+                             ChatHistoryItem.a가 500자 상한이다(app/schemas/ai.py). 넘기면 422가
+                             나고 프론트는 조용히 기본 질문으로 폴백해버려 답변이 사라진다. -->
                         <input type="text" id="chat-free-input" class="chat-free-input" autocomplete="off"
+                               maxlength="500"
                                enterkeyhint="send" placeholder="답변을 입력해 주세요" data-i18n-ph="chat_free_ph">
                         <button type="button" id="chat-free-send" onclick="handleChatFreeAnswer()"
                                 class="chat-free-send btn-pop" data-i18n="chat_free_send">보내기</button>
@@ -532,17 +536,17 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260904a"></script>
+    <script src="/static/data.js?v=20260904c"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260902g"></script>
+    <script src="/static/app-core.js?v=20260904c"></script>
     <script src="/static/app-vision.js?v=20260904a"></script>
-    <script src="/static/app-chat.js?v=20260902g"></script>
+    <script src="/static/app-chat.js?v=20260904c"></script>
     <script src="/static/app-report.js?v=20260902g"></script>
     <script src="/static/app-disease.js?v=20260902g"></script>
-    <script src="/static/calibration.js?v=20260902g"></script>
-    <script src="/static/app-assess.js?v=20260902g"></script>
+    <script src="/static/calibration.js?v=20260904b"></script>
+    <script src="/static/app-assess.js?v=20260904c"></script>
     <script src="/static/app-findings.js?v=20260902g"></script>
     <script src="/static/app-visiontest.js?v=20260902g"></script>
-    <script src="/static/app-map.js?v=20260902g"></script>
+    <script src="/static/app-map.js?v=20260904b"></script>
 </body>
 </html>
