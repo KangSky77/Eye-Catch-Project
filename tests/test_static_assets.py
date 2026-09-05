@@ -1073,13 +1073,31 @@ def test_소견서_요청_항목이_서버_상한_안에_들어간다():
     assert "state.freeAnswers.push(text)" in chat
 
 
-def test_암슬러_왜곡_미리보기가_터치에서는_걸리지_않는다():
-    """터치에서는 pointerenter만 오고 pointerleave가 안 와 왜곡이 남았다.
-    그 상태로 다음 눈을 판정하면 사용자의 시야 이상과 앱이 만든 왜곡을 구별할 수 없다."""
+def test_검사격자는_왜곡되지_않고_예시가_따로_있다():
+    """왜곡 예시는 검사 격자와 분리해야 한다.
+
+    예전에는 '휘어보임' 버튼 hover 시 진짜 검사 격자(#amsler-box)에 filter를 걸었다.
+    터치에서는 pointerenter만 오고 pointerleave가 안 와 왜곡이 남았고, 그 상태로
+    반대쪽 눈을 판정하면 사용자의 시야 이상과 앱이 만든 왜곡을 구별할 수 없다.
+    → 예시는 검사 밖의 작은 그림 두 개로 옮겼고, 검사 격자에는 어떤 경로로도
+      .amsler-distorted가 붙지 않는다."""
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
-    assert "e.pointerType === 'mouse'" in vision, "터치에서도 미리보기 왜곡이 걸린다"
-    # 응답을 받으면 어느 눈이든 왜곡을 걷는다
-    rec = vision[vision.index("function recordAmsler"):vision.index("function recordAmsler") + 700]
-    assert rec.index("remove('amsler-distorted')") < rec.index("if (state.amslerEye === 'left')"), (
-        "왼쪽 눈 분기 안에서만 왜곡을 걷고 있다"
+    html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    data = (STATIC / "data.js").read_text(encoding="utf-8")
+
+    # 검사 격자에 왜곡을 '붙이는' 코드가 없어야 한다 (걷어내는 방어 코드는 허용)
+    assert "classList.add('amsler-distorted')" not in vision, (
+        "아직 검사 격자에 왜곡을 걸고 있다"
     )
+    assert "amsler-bad-btn" not in vision, "버튼 hover 미리보기 핸들러가 남아 있다"
+
+    # 예시 격자는 검사 격자(#amsler-box)와 다른 요소여야 한다
+    example = html[html.index('class="amsler-example"'):]
+    example = example[:example.index("</div>\n            </div>")]
+    assert "amsler-mini amsler-distorted" in example, "왜곡된 예시 그림이 없다"
+    assert 'id="amsler-box"' not in example, "예시 영역이 검사 격자를 참조한다"
+    assert ".amsler-mini" in css and ".amsler-example" in css
+
+    for key in ("ams_example_label", "ams_example_ok", "ams_example_bad"):
+        assert data.count(f"{key}:") == 6, f"{key}가 6개국어에 없다"

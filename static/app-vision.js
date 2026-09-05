@@ -368,6 +368,8 @@ function refreshAiResultDisplay() {
 function startAmslerStep() {
     state.amslerEye = 'left';
     state.amslerResult = {};
+    // 방어적 정리 — 지금 코드는 검사 격자에 왜곡을 걸지 않지만, 브라우저가 예전 JS를
+    // 캐시하고 있다가 새 HTML과 섞이는 경우가 있어 회차 시작 시 한 번 걷어둔다.
     const box = document.getElementById('amsler-box');
     if (box) box.classList.remove('amsler-distorted');
     // 격자 크기는 부모의 실제 폭을 재서 정한다 — 화면에 붙이기 전에 계산하면
@@ -484,11 +486,6 @@ function showAnalyzedPhoto() {
 function recordAmsler(bad) {
     state.amslerResult[state.amslerEye] = bad;
 
-    // 어느 눈이든 응답이 끝나면 미리보기 왜곡은 반드시 걷는다 — 다음 눈(또는 다음 회차)이
-    // 왜곡된 격자를 물려받으면 사용자의 시야 이상과 구분할 수 없다.
-    const grid = document.getElementById('amsler-box');
-    if (grid) grid.classList.remove('amsler-distorted');
-
     if (state.amslerEye === 'left') {
         state.amslerEye = 'right';
         updateAmslerPrompt();
@@ -528,23 +525,12 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 암슬러 "휘어보임" 버튼에 커서를 올리거나 포커스하면 격자가 왜곡되어 보인다 —
-    // 사용자가 무엇을 고르는 건지 미리 볼 수 있게.
+    // 암슬러 왜곡 미리보기 핸들러는 없다 — 의도적으로 지웠다.
     //
-    // [터치는 제외한다] 손가락으로 버튼을 건드리면 pointerenter는 오는데 pointerleave는
-    // 오지 않는 경우가 많다. 그러면 왜곡이 그대로 남아, 사용자가 '자기 눈의 이상'과
-    // '앱이 만든 왜곡'을 구분할 수 없는 상태로 다음 눈을 판정하게 된다(실기기 재현).
-    // 미리보기는 어차피 커서를 올릴 수 있는 환경에서만 의미가 있으므로, 터치·펜에서는
-    // 아예 걸지 않는다. 이러면 폰에서는 왜곡이 남을 경로 자체가 사라진다.
-    // (진단 격자 자체를 왜곡시키는 구조는 그대로이므로, 별도 예시 격자로 분리하는
-    //  개선은 여전히 남아 있다 — 그때 이 핸들러는 통째로 사라진다.)
-    const badBtn = document.getElementById('amsler-bad-btn');
-    const box = document.getElementById('amsler-box');
-    if (badBtn && box) {
-        const on = () => box.classList.add('amsler-distorted');
-        const off = () => box.classList.remove('amsler-distorted');
-        badBtn.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') on(); });
-        badBtn.addEventListener('focus', on);          // 키보드 이동 — blur가 반드시 뒤따른다
-        ['pointerleave', 'pointercancel', 'pointerup', 'blur'].forEach(ev => badBtn.addEventListener(ev, off));
-    }
+    // 예전에는 '휘어보임' 버튼에 커서를 올리면 위의 진짜 검사 격자에 filter를 걸어
+    // 보여줬다. 터치 기기에서는 pointerenter만 오고 pointerleave가 오지 않아 왜곡이
+    // 그대로 남았고, 사용자는 자기 시야 이상과 앱이 만든 왜곡을 구별할 수 없는 상태로
+    // 반대쪽 눈을 판정했다(실기기 재현). 이벤트를 더 정교하게 다루는 대신,
+    // 예시를 검사 격자 밖의 작은 그림 두 개(index.html의 .amsler-example)로 옮겼다.
+    // 이제 #amsler-box에는 어떤 경로로도 .amsler-distorted가 붙지 않는다.
 });

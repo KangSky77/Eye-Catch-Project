@@ -419,7 +419,29 @@ body {
     transition: filter 0.3s ease;
 }
 .amsler-dot { width: 8px; height: 8px; background-color: #0f172a; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+/* 왜곡 표현. 검사 격자(#amsler-box)에는 절대 붙이지 않는다 — 아래 예시 격자 전용이다.
+   (예전에는 버튼 hover 시 검사 격자에 직접 걸었는데, 터치에서 걷히지 않아
+    사용자의 시야 이상과 앱이 만든 왜곡이 구분되지 않았다) */
 .amsler-distorted { filter: url(#wavy) blur(1px); }
+
+/* ── 암슬러 왜곡 '예시' — 검사와 분리된 참고 그림 ───────────────── */
+.amsler-example { margin-top: 22px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+.amsler-example-label { font-size: 11px; font-weight: 800; color: #94a3b8; margin-bottom: 10px; }
+.amsler-example-row { display: flex; justify-content: center; gap: 28px; }
+.amsler-example-item { margin: 0; }
+.amsler-example-item figcaption { margin-top: 8px; font-size: 11px; font-weight: 700; color: #64748b; line-height: 1.4; max-width: 110px; }
+/* 검사 격자와 확실히 다르게 보이도록 작고 옅게 — '이건 검사가 아니다'가 한눈에 읽혀야 한다 */
+.amsler-mini {
+    width: 76px; height: 76px; margin: 0 auto; position: relative;
+    background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+    background-size: 9px 9px;
+    background-position: center;
+    background-color: #fff;
+    border: 1px solid #cbd5e1; border-radius: 6px;
+}
+.amsler-mini-dot { width: 5px; height: 5px; background-color: #0f172a; border-radius: 50%;
+                   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
 /* ── 시력 · 대비감도 자가검사 ─────────────────────────────────────
    canvas는 물리 픽셀로 그리므로 CSS에서 크기를 강제하지 않는다

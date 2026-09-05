@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260902g">
+    <link rel="stylesheet" href="/static/style.css?v=20260905b">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -238,6 +238,25 @@
                 <div class="space-y-3">
                     <button type="button" onclick="recordAmsler(false)" class="w-full py-3.5 bg-slate-100 text-slate-700 rounded-2xl font-bold btn-pop" data-i18n="ams_ok">정상 (곧게 보임)</button>
                     <button type="button" id="amsler-bad-btn" onclick="recordAmsler(true)" class="w-full py-3.5 bg-rose-50 text-rose-600 rounded-2xl font-bold border border-rose-100 btn-pop" data-i18n="ams_bad">휘어보임/암점</button>
+                </div>
+
+                <!-- 왜곡 '예시'는 반드시 검사 격자(#amsler-box)와 분리한다.
+                     예전에는 '휘어보임' 버튼에 커서를 올리면 위의 진짜 검사 격자에
+                     filter를 걸어 보여줬는데, 터치 기기에서는 그 왜곡이 걷히지 않아
+                     사용자가 자기 시야 이상과 앱이 만든 왜곡을 구별할 수 없었다.
+                     여기 두 개는 검사와 무관한 작은 그림이고, 검사 격자는 절대 변형되지 않는다. -->
+                <div class="amsler-example">
+                    <p class="amsler-example-label" data-i18n="ams_example_label">예시 — 어떤 경우에 '휘어보임/암점'인가요?</p>
+                    <div class="amsler-example-row">
+                        <figure class="amsler-example-item">
+                            <div class="amsler-mini" aria-hidden="true"><span class="amsler-mini-dot"></span></div>
+                            <figcaption data-i18n="ams_example_ok">곧게 보임 → 정상</figcaption>
+                        </figure>
+                        <figure class="amsler-example-item">
+                            <div class="amsler-mini amsler-distorted" aria-hidden="true"><span class="amsler-mini-dot"></span></div>
+                            <figcaption data-i18n="ams_example_bad">휘거나 빈 곳이 보임 → 이상</figcaption>
+                        </figure>
+                    </div>
                 </div>
             </div>
         </div>
@@ -540,10 +559,10 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260905a"></script>
+    <script src="/static/data.js?v=20260905b"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-core.js?v=20260905a"></script>
-    <script src="/static/app-vision.js?v=20260905a"></script>
+    <script src="/static/app-vision.js?v=20260905b"></script>
     <script src="/static/app-chat.js?v=20260905a"></script>
     <script src="/static/app-report.js?v=20260905a"></script>
     <script src="/static/app-disease.js?v=20260902g"></script>
