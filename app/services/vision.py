@@ -90,37 +90,37 @@ def _decode_image_contents(contents: bytes) -> Image.Image:
         img = Image.open(io.BytesIO(contents))
         w, h = img.size
     except Image.DecompressionBombError:
-        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
+        raise _upload_error(413, "IMAGE_RESOLUTION", "이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
     except Exception:
-        raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
+        raise _upload_error(400, "IMAGE_INVALID", "유효한 이미지 파일이 아닙니다.")
 
     if w * h > MAX_IMAGE_PIXELS:
-        raise HTTPException(
-            status_code=413,
-            detail=f"이미지 해상도가 너무 큽니다. ({w}x{h}) 더 작은 사진을 올려주세요."
+        raise _upload_error(
+            413, "IMAGE_RESOLUTION",
+            f"이미지 해상도가 너무 큽니다. ({w}x{h}) 더 작은 사진을 올려주세요."
         )
     try:
         return ImageOps.exif_transpose(img.convert("RGB"))
     except Image.DecompressionBombError:
-        raise HTTPException(status_code=413, detail="이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
+        raise _upload_error(413, "IMAGE_RESOLUTION", "이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
     except Exception:
-        raise HTTPException(status_code=400, detail="유효한 이미지 파일이 아닙니다.")
+        raise _upload_error(400, "IMAGE_INVALID", "유효한 이미지 파일이 아닙니다.")
 
 
 async def validate_and_read_image(file: UploadFile) -> Image.Image:
     if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
+        raise _upload_error(400, "IMAGE_TYPE", "이미지 파일만 업로드할 수 있습니다.")
 
     # 파일 크기 제한 — '읽기 전에' 막는다.
     # Starlette가 채워주는 file.size를 먼저 보고, 없으면 상한+1바이트만 읽어서 초과를 판정한다.
     # (무인자 read()로 전부 읽은 뒤 검사하면, 거부할 업로드도 일단 통째로 메모리에 올라와
     #  MAX_FILE_SIZE가 사실상 방어 역할을 못 한다.)
     if file.size is not None and file.size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail=f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
+        raise _upload_error(413, "IMAGE_FILE_SIZE", f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
 
     contents = await file.read(MAX_FILE_SIZE + 1)
     if len(contents) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail=f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
+        raise _upload_error(413, "IMAGE_FILE_SIZE", f"파일 크기는 {MAX_FILE_SIZE // (1024 * 1024)}MB 이하여야 합니다.")
 
     # PIL header parsing and pixel decode are synchronous; keep them off asyncio's loop.
     from starlette.concurrency import run_in_threadpool
@@ -140,6 +140,13 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
 #   입력 위생 장치'다. 가벼운 흔들림은 잡지 못한다.
 BLUR_MIN_SHARPNESS = 0.030
 
+
+# 업로드 거부 사유는 화면에 그대로 표시된다. 한국어 문자열만 보내면 앱을 영어·일본어로
+# 쓰는 사용자에게도 한국어 오류가 뜬다(6개 언어 중 5개에서 실측 확인). 그래서 언어 중립
+# 코드를 함께 보내고, 문구는 프론트가 translations에서 고른다(static/app-vision.js).
+# message는 코드를 모르는 클라이언트와 로그를 위한 기본값으로 남겨 둔다.
+def _upload_error(status: int, code: str, message: str) -> HTTPException:
+    return HTTPException(status_code=status, detail={"code": code, "message": message})
 
 def _sharpness(img: Image.Image) -> float:
     """라플라시안 분산을 대비(표준편차)로 나눈 선명도. 클수록 선명하다.
@@ -256,9 +263,9 @@ def _empty_result(code: str, message: str, mode: str, eyes_detected: int, **deta
 def predict_cataract(img: Image.Image):
     # 학습된 가중치 없이 예측하면 무작위 결과가 나가므로 명시적으로 거부
     if not weights_loaded:
-        raise HTTPException(
-            status_code=503,
-            detail="AI 모델이 준비되지 않았습니다. 관리자에게 문의하세요. (가중치 미로드)"
+        raise _upload_error(
+            503, "MODEL_NOT_READY",
+            "AI 모델이 준비되지 않았습니다. 관리자에게 문의하세요. (가중치 미로드)"
         )
 
     # 얼굴 사진이면 눈 부위만 크롭해서 분석 (모델이 눈 클로즈업으로 학습됐기 때문)
@@ -289,9 +296,9 @@ def predict_cataract(img: Image.Image):
         is_eye, score = eye_validator.check_eye(img)
         if is_eye is None:
             # 검증기 사용 불가 → fail-CLOSED: 검증 없이 의료 결과를 내지 않고 명시적으로 차단
-            raise HTTPException(
-                status_code=503,
-                detail="눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            raise _upload_error(
+                503, "VALIDATOR_UNAVAILABLE",
+                "눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not is_eye:
             return _empty_result(
@@ -305,9 +312,9 @@ def predict_cataract(img: Image.Image):
     if mode == "face":
         checks = [eye_validator.check_eye(c) for c in eye_crops]
         if any(ok is None for ok, _ in checks):
-            raise HTTPException(
-                status_code=503,
-                detail="눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            raise _upload_error(
+                503, "VALIDATOR_UNAVAILABLE",
+                "눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not all(ok for ok, _ in checks):
             return _empty_result(

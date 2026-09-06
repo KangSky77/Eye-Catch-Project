@@ -79,7 +79,7 @@ function renderFindings(container) {
     container.innerHTML = '';
 
     const head = document.createElement('p');
-    head.className = 'text-[10px] font-black text-slate-400 mb-2';
+    head.className = 'text-[10px] font-black text-slate-500 mb-2';
     head.textContent = t.find_title || '검사 요약 해석';
     container.appendChild(head);
 
@@ -100,7 +100,7 @@ function renderFindings(container) {
     container.appendChild(ul);
 
     const note = document.createElement('p');
-    note.className = 'text-[10px] text-slate-400 mt-3 leading-relaxed';
+    note.className = 'text-[10px] text-slate-500 mt-3 leading-relaxed';
     note.textContent = t.find_disclaimer || '';
     container.appendChild(note);
 }

@@ -27,6 +27,10 @@ class GemmaRequest(BaseModel):
     amsler_abnormal: bool = Field(default=False)
     symptom_codes: list[SymptomCode] = Field(default_factory=list, max_length=30)
     eye_asymmetric: bool = Field(default=False)   # 편측(한쪽 눈만) 백내장 위험
+    # 응급 신호(급성 폐쇄각 의심, 갑작스러운 시력 상실 등)의 문진 코드.
+    # 이게 비어 있지 않으면 앱은 화면에 '지금 바로 안과 진료를 받으세요'를 띄운다.
+    # LLM에게도 알려주지 않으면 바로 그 밑에 '정기 검진을 받아보세요' 같은 한가한 조언이 붙는다.
+    red_flags: list[SymptomCode] = Field(default_factory=list, max_length=10)
 
 class ChatRequest(BaseModel):
     lang: str = Field(default="ko", max_length=10)

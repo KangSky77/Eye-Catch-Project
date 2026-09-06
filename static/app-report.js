@@ -76,7 +76,10 @@ async function finish() {
         cataract_code: state.aiResultCode,
         amsler_abnormal: state.hasAmsler,
         symptom_codes: state.symptomCodes,
-        eye_asymmetric: state.asymmetric   // 편측(한쪽 눈만) 위험 여부
+        eye_asymmetric: state.asymmetric,  // 편측(한쪽 눈만) 위험 여부
+        // 응급 신호를 같이 넘긴다. 안 넘기면 서버 프롬프트가 이 회차가 응급인지 알 수 없어,
+        // 화면이 '지금 바로 진료를 받으세요'라고 띄운 바로 밑에 '정기 검진을 받아보세요'가 붙는다.
+        red_flags: state.redFlags || []
     };
     await runAiOpinion();
 }
@@ -107,6 +110,16 @@ function refreshReportResults() {
         if (msg) msg.textContent = t.opinion_stale || '';
         const btn = stale.querySelector('[data-role="regen"]');
         if (btn) btn.textContent = t.opinion_regen || '';
+    }
+
+    // 응급 회차에서는 AI 조언 위에 고정 문장을 띄운다.
+    // 서버 프롬프트(_URGENT_BLOCK_*)로 한가한 말투를 막지만 LLM은 지시를 어길 수 있다.
+    // 이 문장은 코드가 만들어 넣으므로 모델이 무슨 말을 하든 긴급도가 흐려지지 않는다.
+    const urgentNote = document.getElementById('opinion-urgent-note');
+    if (urgentNote) {
+        const isUrgent = !!(state.triage && state.triage.level === 'urgent');
+        urgentNote.textContent = t.opinion_urgent_note || '';
+        urgentNote.classList.toggle('hidden', !isUrgent);
     }
 }
 
@@ -265,6 +278,11 @@ async function askGemmaMore() {
     // 서버 스키마 상한(ChatRequest.context 5000자)에 맞춰 자름 — 넘기면 422가 나서 '서버 연결 불가'로 오인
     const context = document.getElementById('gemma-opinion-text').innerText.slice(0, 5000);
 
+    // 스트리밍 도중 새 검사가 시작되면(로고 클릭 등) 이 답변은 새 리포트의 것이 아니다.
+    // 세대 번호를 찍어 두고 도착한 조각마다 같은 세션인지 확인한다.
+    const generation = state.sessionGeneration;
+    const isCurrent = () => state.sessionGeneration === generation;
+
     _followupBusy = true;
     if (sendBtn) { sendBtn.disabled = true; sendBtn.setAttribute('aria-busy', 'true'); }
     inputEl.value = '';
@@ -285,6 +303,7 @@ async function askGemmaMore() {
 
         // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
         const { text, hasError } = await readAiStream(response, disp => {
+            if (!isCurrent()) return;
             if (firstChunk) {       // 첫 실제 토큰 도착 → 로더 제거 후 답변 표시 시작
                 loader.stop();
                 firstChunk = false;
@@ -292,6 +311,7 @@ async function askGemmaMore() {
             responseEl.innerText = `Q: ${userMsg}\nA: ` + disp;
         });
         loader.stop();              // 빈 응답이어도 로더는 정리
+        if (!isCurrent()) return;   // 새 검사가 시작됐으면 이 답변은 버린다
         responseEl.innerText = `Q: ${userMsg}\nA: ` + text;
         const streamError = hasError;
         if (streamError) {          // AI 오류 → 에러 메시지로 대체
@@ -304,6 +324,7 @@ async function askGemmaMore() {
         responseEl.innerText = responseEl.innerText.replace(/\*\*/g, '');
     } catch (e) {
         loader.stop();
+        if (!isCurrent()) return;
         responseEl.innerText = translations[state.lang].srv_err || "서버와 연결할 수 없습니다.";
     } finally {
         _followupBusy = false;
@@ -384,6 +405,7 @@ function buildReportPdf() {
         triage:  t.tri_title     || "권장 조치",
         finds:   t.find_title    || "검사 요약 해석",
         findNote: t.find_disclaimer || "",
+        urgentNote: t.opinion_urgent_note || "",
         footer:  t.pdf_footer    || "본 리포트는 인공지능 기반의 자가진단 보조 자료입니다.<br>정확한 진단 및 처방을 위해서는 반드시 안과 전문의와 상담하시기 바랍니다."
     };
 
@@ -446,6 +468,7 @@ function buildReportPdf() {
         <div style="margin-bottom: 40px;">
             <h3 style="font-size: 18px; color: #0f172a; border-left: 5px solid #0f172a; padding-left: 10px; margin-bottom: 15px; margin-top: 0;">${L.s4}</h3>
             <div style="padding: 25px; border: 2px solid #cbd5e1; background: #ffffff; line-height: 1.8; font-size: 15px; color: #334155; font-weight: 500;">
+                ${triage && triage.level === 'urgent' && L.urgentNote ? `<p style="margin: 0 0 14px; padding: 10px 12px; border: 2px solid #fecdd3; background: #fff1f2; color: #9f1239; font-weight: 800; font-size: 13px; line-height: 1.6;">${escapeHTML(L.urgentNote)}</p>` : ''}
                 ${toAvoidBreakParagraphs(gemmaOpinion)}
             </div>
         </div>

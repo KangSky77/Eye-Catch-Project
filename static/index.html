@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260905b">
+    <link rel="stylesheet" href="/static/style.css?v=20260906c">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -193,6 +193,12 @@
         </div>
 
         <div id="step-ai-loading" class="step-content text-center py-20" role="status" aria-live="polite">
+            <!-- 이 래퍼가 없으면 안 된다. 데스크톱(>=1024px)에서 style.css의
+                 `#tab-test .step-content.active > * { width: 100% }`가 '직계 자식 전부'를 늘리는데,
+                 다른 단계는 자식이 카드 하나뿐이라 문제가 없지만 이 단계만 자식이 여러 개였다.
+                 그래서 원형 미리보기(w-32)가 992x128 알약으로, 스피너(w-16)가 화면을 가로지르는
+                 타원으로 늘어났다(1143px 뷰포트 실측). 자식을 하나로 묶어 다른 단계와 같은 모양으로 만든다. -->
+            <div class="max-w-md mx-auto w-full">
             <img id="preview-image" class="w-32 h-32 object-cover rounded-full mx-auto mb-6 shadow-md border-4 border-white hidden" alt="">
             <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-6" aria-hidden="true"></div>
             <h2 id="loading-title" class="text-xl font-black mb-2" data-i18n="loading_title">AI 딥러닝 분석 중...</h2>
@@ -205,6 +211,7 @@
             </div>
             <p id="loading-elapsed" class="loading-elapsed"></p>
             <p id="loading-slow-hint" class="loading-slow-hint hidden" data-i18n="loading_slow_hint">네트워크가 느리면 조금 더 걸릴 수 있어요.</p>
+            </div>
         </div>
 
         <div id="step-ai-result" class="step-content text-center max-w-md mx-auto">
@@ -214,7 +221,7 @@
                      결과 화면에서 알아챌 방법이 없었다 -->
                 <div id="result-photo-wrap" class="hidden mb-5">
                     <img id="result-photo" class="w-24 h-24 object-cover rounded-2xl mx-auto shadow-sm border-4 border-white" alt="">
-                    <p id="result-photo-caption" class="text-[11px] font-bold text-slate-400 mt-2"></p>
+                    <p id="result-photo-caption" class="text-[11px] font-bold text-slate-500 mt-2"></p>
                 </div>
                 <div id="ai-result-display" class="p-5 bg-slate-50 rounded-2xl mb-8" aria-live="polite"></div>
                 <button type="button" onclick="startAmslerStep()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="next_amsler">황반변성 정밀 테스트</button>
@@ -227,6 +234,8 @@
                 <h2 class="text-xl font-black mb-2" data-i18n="ams_title">황반변성 자가진단</h2>
                 <p class="amsler-howto" data-i18n="ams_howto">한쪽 눈을 가리고 약 30cm 거리에서 가운데 점을 바라보세요. 반대쪽 눈도 같은 방법으로 확인합니다.</p>
                 <p id="amsler-eye-instruction" class="text-[12px] font-bold text-blue-700 bg-blue-50 rounded-xl px-3 py-2 mb-5 leading-relaxed"></p>
+                <!-- 노안 사용자는 16~21cm에서 맨눈으로 초점이 맞지 않는다. 흐린 것을 왜곡으로 답하면 없는 황반 이상이 만들어지고 권장 조치가 응급 쪽으로 올라간다. 임상 암슬러도 근용 교정 착용이 기본이다. -->
+                <p id="amsler-glasses-note" class="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4 leading-relaxed text-left" data-i18n="ams_glasses_note"></p>
                 <div id="amsler-box" class="amsler-grid mb-3" aria-hidden="true"><div class="amsler-dot"></div></div>
                 <!-- 격자를 실물 크기로 그린 뒤, 그 크기가 20°를 덮는 거리를 계산해 알려준다 -->
                 <p id="amsler-dist-note" class="text-[12px] font-bold text-slate-500 mb-3"></p>
@@ -302,7 +311,7 @@
 
         <!-- 1단계: 화면 캘리브레이션 -->
         <div id="vt-calib" class="glass-card p-6 rounded-[2rem] mb-5">
-            <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="vt_calib_title">1단계 · 화면 크기 맞추기</p>
+            <p class="text-[10px] font-black text-blue-700 mb-1" data-i18n="vt_calib_title">1단계 · 화면 크기 맞추기</p>
             <p class="text-[12px] text-slate-500 leading-relaxed mb-4" data-i18n="vt_calib_desc">카드를 화면에 대고 사각형을 실물과 같은 크기로 맞추세요.</p>
 
             <div class="vt-cols">
@@ -357,6 +366,7 @@
 
         <!-- 2단계: 시작 -->
         <div id="vt-intro" class="glass-card p-6 rounded-[2rem] text-center mb-5">
+            <p class="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4 leading-relaxed text-left" data-i18n="vt_glasses_note"></p>
             <button onclick="vtStart()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="vt_start">검사 시작</button>
         </div>
 
@@ -370,7 +380,7 @@
 
         <!-- 검사 화면 -->
         <div id="vt-test-area" class="glass-card p-5 rounded-[2rem] text-center hidden">
-            <p id="vt-progress" class="text-[11px] font-black text-slate-400 mb-2"></p>
+            <p id="vt-progress" class="text-[11px] font-black text-slate-500 mb-2"></p>
             <canvas id="vt-canvas" class="vt-canvas"></canvas>
             <p class="text-[12px] font-bold text-slate-600 mt-3 mb-3" data-i18n="vt_which_dir">E가 향하는 방향은?</p>
             <div class="vt-pad">
@@ -388,7 +398,7 @@
 
         <!-- 결과 -->
         <div id="vt-result" class="glass-card p-6 rounded-[2rem] hidden">
-            <p class="text-[10px] font-black text-blue-400 mb-3" data-i18n="vt_result_title">기능검사 결과</p>
+            <p class="text-[10px] font-black text-blue-700 mb-3" data-i18n="vt_result_title">기능검사 결과</p>
             <div id="vt-result-body"></div>
             <button onclick="vtStart()" class="w-full mt-4 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm btn-pop" data-i18n="vt_redo">다시 검사</button>
             <button onclick="vtRecalibrate()" class="w-full mt-2 py-3 bg-white text-blue-700 border border-blue-100 rounded-2xl font-bold text-sm btn-pop" data-i18n="vt_recalibrate">화면 다시 맞추기</button>
@@ -425,21 +435,21 @@
         <div id="report-content" class="glass-card p-8 rounded-[2rem] mb-6">
             <div class="text-center mb-6 pb-6 border-b border-slate-100">
                 <h1 class="text-2xl font-black text-slate-800" data-i18n="rep_title">Eye-Catch 진단 리포트</h1>
-                <p class="text-[10px] text-slate-400 font-bold mt-2" id="report-date"></p>
+                <p class="text-[10px] text-slate-500 font-bold mt-2" id="report-date"></p>
             </div>
             <div class="space-y-4" id="report-body">
                 <div id="triage-box"></div>
                 <div id="findings-box" class="bg-white border border-slate-200 rounded-2xl p-4"></div>
                 <div class="bg-blue-50 p-4 rounded-2xl">
-                    <p class="text-[10px] font-black text-blue-400 mb-1" data-i18n="rep_l1">1. 백내장 AI 결과</p>
+                    <p class="text-[10px] font-black text-blue-700 mb-1" data-i18n="rep_l1">1. 백내장 AI 결과</p>
                     <p id="pdf-ai-result" class="font-black text-blue-800">-</p>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl">
-                    <p class="text-[10px] font-black text-slate-400 mb-1" data-i18n="rep_l2">2. 황반변성 결과</p>
+                    <p class="text-[10px] font-black text-slate-500 mb-1" data-i18n="rep_l2">2. 황반변성 결과</p>
                     <p id="pdf-amsler-result" class="font-black text-slate-700">-</p>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl">
-                    <p class="text-[10px] font-black text-slate-400 mb-1" data-i18n="rep_l3">3. 문진 소견</p>
+                    <p class="text-[10px] font-black text-slate-500 mb-1" data-i18n="rep_l3">3. 문진 소견</p>
                     <p id="pdf-chat-result" class="font-black text-slate-700">-</p>
                 </div>
 
@@ -450,15 +460,19 @@
                         <p id="gemma-loading-text" class="text-xs font-medium text-slate-400 leading-relaxed" data-i18n="gemma_idle">먼저 'AI 검사'를 진행하면 맞춤 소견이 여기에 표시됩니다.</p>
                     </div>
 
-                    <p id="gemma-opinion-text" class="text-xs font-bold text-slate-700 leading-relaxed italic hidden"></p>
+                    <!-- 응급 판정 회차에서는 이 고정 문장이 AI 조언보다 먼저 나온다.
+                         프롬프트로도 막지만(app/services/llm.py의 _URGENT_BLOCK_*), LLM이 지시를
+                         어겨 한가한 조언을 써 보내도 화면의 긴급도가 흐려지지 않게 하는 안전망이다. -->
+                    <p id="opinion-urgent-note" class="hidden mb-2 text-[11px] font-black text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 text-left leading-relaxed" data-i18n="opinion_urgent_note"></p>
                     <!-- 소견서만 실패했을 때 검사 전체를 다시 하지 않고 이 부분만 재시도한다 -->
                     <!-- LLM 소견서는 생성 시점 언어로 고정된다. 언어를 바꿨을 때
                          자동 번역하는 대신, 다시 생성할 수 있음을 알린다. -->
-                    <div id="opinion-stale" class="hidden mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-left">
+                    <div id="opinion-stale" class="hidden mb-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-left">
                         <p data-role="msg" class="text-[11px] text-amber-800 leading-relaxed mb-1"></p>
                         <button type="button" data-role="regen" onclick="regenerateOpinion()"
                                 class="text-[11px] font-black text-amber-900 underline"></button>
                     </div>
+                    <p id="gemma-opinion-text" class="text-xs font-bold text-slate-700 leading-relaxed italic hidden"></p>
                     <div id="opinion-retry" class="opinion-retry hidden">
                         <p class="opinion-retry-hint" data-i18n="opinion_retry_hint">AI 서버가 잠시 응답하지 않았어요. 검사 결과는 그대로 있으니 다시 시도해 보세요.</p>
                         <button type="button" onclick="runAiOpinion()" class="opinion-retry-btn btn-pop" data-i18n="opinion_retry">소견서 다시 생성</button>
@@ -559,17 +573,17 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260905c"></script>
+    <script src="/static/data.js?v=20260906d"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260905c"></script>
-    <script src="/static/app-vision.js?v=20260905b"></script>
-    <script src="/static/app-chat.js?v=20260905d"></script>
-    <script src="/static/app-report.js?v=20260905c"></script>
-    <script src="/static/app-disease.js?v=20260902g"></script>
-    <script src="/static/calibration.js?v=20260904b"></script>
-    <script src="/static/app-assess.js?v=20260904c"></script>
-    <script src="/static/app-findings.js?v=20260905c"></script>
-    <script src="/static/app-visiontest.js?v=20260905c"></script>
-    <script src="/static/app-map.js?v=20260905c"></script>
+    <script src="/static/app-core.js?v=20260906c"></script>
+    <script src="/static/app-vision.js?v=20260906e"></script>
+    <script src="/static/app-chat.js?v=20260906c"></script>
+    <script src="/static/app-report.js?v=20260906b"></script>
+    <script src="/static/app-disease.js?v=20260906b"></script>
+    <script src="/static/calibration.js?v=20260906a"></script>
+    <script src="/static/app-assess.js?v=20260906b"></script>
+    <script src="/static/app-findings.js?v=20260906b"></script>
+    <script src="/static/app-visiontest.js?v=20260906b"></script>
+    <script src="/static/app-map.js?v=20260906a"></script>
 </body>
 </html>

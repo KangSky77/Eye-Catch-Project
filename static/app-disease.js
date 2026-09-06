@@ -450,3 +450,16 @@ document.addEventListener('keydown', e => {
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 });
+
+// 질환 카드는 <div role="button" tabindex="0" onclick="openDisease(n)">이다.
+// role과 tabindex 덕분에 Tab으로 포커스는 가지만, <button>과 달리 브라우저가
+// Enter/Space를 click으로 바꿔주지 않는다 — 포커스는 되는데 열리지 않는 상태였다
+// (실측: 카드에 포커스 후 Enter → 모달 overlay가 열리지 않음).
+// 모달 쪽은 Escape·포커스 트랩까지 갖춰져 있는데 들어가는 문만 막혀 있던 셈이다.
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const card = e.target.closest && e.target.closest('.disease-card[role="button"]');
+    if (!card) return;
+    e.preventDefault();   // Space가 페이지를 스크롤하지 않게
+    card.click();
+});

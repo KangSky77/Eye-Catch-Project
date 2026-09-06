@@ -29,8 +29,34 @@ LANG_NAMES = {
 def _lang_name(lang: str) -> str:
     return LANG_NAMES.get(lang, "English")
 
+# 응급 신호가 잡힌 회차에 프롬프트 맨 앞에 붙이는 블록.
+# 없으면 화면은 "지금 바로 안과 진료를 받으세요 / 야간·주말이면 응급실로"라고 하는데
+# 바로 밑 AI 요약은 "안압 측정을 받으실 수 있습니다"처럼 예약을 잡는 말투로 나온다(2026-09-06 실측 재현).
+# 한 화면에서 서로 다른 긴급도를 말하면 사용자는 낮은 쪽을 믿는다.
+_URGENT_BLOCK_KO = """[이 회차는 응급 신호가 확인되었습니다 — 아래 모든 지시보다 우선합니다]
+- 앱 화면에는 이미 당장 진료를 받으라는 안내가 떠 있습니다(야간·주말이면 응급실).
+- 진료를 미뤄도 된다는 뉘앙스를 절대 쓰지 마세요.
+- 금지 표현: '정기 검진', '정기적으로', '주기적으로', '기회가 되면', '시간이 되실 때',
+  '가까운 시일 내에', '예약을 잡', '경과를 지켜보', '꾸준히 관리'.
+- 세 줄 모두 오늘 안에 진료를 받는다는 전제 위에서 쓰세요.
+  생활 관리 조언은 진료를 받고 난 뒤에 할 일로만 쓰세요.
+- 이 지시문에 적힌 문장이나 표현을 답변에 그대로 옮겨 적지 마세요. 환자에게 하는 말만 쓰세요.
+"""
+
+_URGENT_BLOCK_EN = """[This session flagged an EMERGENCY sign — this overrides every instruction below]
+- The app already shows an on-screen instruction to seek care right now (emergency department at night or on weekends).
+- Never imply the visit can wait.
+- Forbidden phrasing: "regular check-up", "routine", "periodically", "when you have time",
+  "in the near future", "schedule an appointment", "monitor over time", "keep managing".
+- Write all 3 lines on the assumption that the person is going in today.
+  Any lifestyle advice must be framed as something for after that visit.
+- Do not copy any sentence or phrase from these instructions into your answer. Write only what you say to the patient.
+"""
+
+
 def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang: str,
-                          reference: str = "", eye_asymmetric: bool = False) -> str:
+                          reference: str = "", eye_asymmetric: bool = False,
+                          urgent: bool = False) -> str:
     """생활 관리 조언용 프롬프트.
 
     이 프롬프트는 의도적으로 '검사 결과 해석'을 시키지 않는다. 편측(eye_asymmetric)을
@@ -40,8 +66,10 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
     symptom_text = ", ".join(symptoms) if symptoms else "없음" if lang == "ko" else "None"
     lang_name = _lang_name(lang)
     reference_block = f"\n{reference}\n" if reference else ""
+    # 블록 문자열이 이미 줄바꿈으로 끝나므로 여기서 덧붙이지 않는다
+    urgent_block = (_URGENT_BLOCK_KO if lang == "ko" else _URGENT_BLOCK_EN) if urgent else ""
     if lang == "ko":
-        return f"""당신은 안과 검진을 앞둔 분에게 생활 관리 조언을 드리는 도우미입니다.
+        return f"""{urgent_block}당신은 안과 검진을 앞둔 분에게 생활 관리 조언을 드리는 도우미입니다.
 [가장 중요] 답변 전체를 반드시 {lang_name}로만 작성하세요.
 
 [이미 확정된 검사 요약 — 참고만 하고 절대 재해석하지 마세요]
@@ -66,7 +94,7 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 3줄째: 또 다른 생활 관리 조언 한 가지, 또는 정기 검진 권유.
 - "눈은 소중합니다" 같은 뻔한 일반론은 쓰지 마세요. 각 줄은 이 환자의 문진 항목과 연결돼야 합니다.""".strip()
     else:
-        return f"""You help someone prepare for an eye clinic visit with practical lifestyle advice.
+        return f"""{urgent_block}You help someone prepare for an eye clinic visit with practical lifestyle advice.
 [CRITICAL] Write your entire response ONLY in {lang_name}.
 
 [Already-finalized screening summary — for context only. Do NOT reinterpret it.]
@@ -370,12 +398,14 @@ async def warmup_ollama():
 
 async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[str], lang: str = "ko",
                                    cataract_code: str = "", amsler_abnormal: bool = False,
-                                   symptom_codes: list[str] | None = None, eye_asymmetric: bool = False):
+                                   symptom_codes: list[str] | None = None, eye_asymmetric: bool = False,
+                                   red_flags: list[str] | None = None):
     # RAG: 환자 결과에 맞는 안과 참고지식을 검색해 프롬프트에 주입
     reference = knowledge.format_reference(
         knowledge.retrieve_for_opinion(cataract_code, amsler_abnormal, symptom_codes)
     )
-    prompt = _build_opinion_prompt(cataract, amsler, symptoms, lang, reference, eye_asymmetric)
+    prompt = _build_opinion_prompt(cataract, amsler, symptoms, lang, reference, eye_asymmetric,
+                                   urgent=bool(red_flags))
     try:
         # 안전 필터 경유 — 해석·확률·배제·질환 교차 문장은 화면에 닿기 전에 제거된다
         async for chunk in sanitized_stream(prompt): yield chunk

@@ -680,7 +680,16 @@ function vtRenderResult() {
         box.appendChild(mk(`${t['vt_eye_' + side] || side} · ${t.vt_contrast || '대비감도'}`, fmtC(r[side].logCS)));
     }
     if (r.bothEyesUnmeasurable) {
-        box.appendChild(vtMakeNote('vt-warn', VT_WARN_ICON, t.vt_unmeasurable_both || '양쪽 눈 모두 측정이 완료되지 않았습니다. 조명·거리·눈 가림을 확인하고 다시 검사해 주세요.'));
+        // 어느 검사가 실패했는지 말해준다. 예전 문구는 '양쪽 눈 모두 유효한 측정값을 계산할 수
+        // 없었습니다'로 뭉뚱그렸는데, 시력만 실패하고 대비는 측정된 경우 바로 두 줄 위에 적힌
+        // logCS 값을 스스로 부정하는 문장이 됐다(실측 확인). 리포트의 해석 문장은 이미
+        // 항목별로 말하고 있으므로(app-findings.js) 이 화면도 같은 기준으로 맞춘다.
+        const kinds = (state.visionTest && state.visionTest.unmeasurableKinds) || [];
+        const names = kinds.map(k => t['vt_kind_' + k] || k).join(t.vt_kind_sep || ', ');
+        const msg = names
+            ? (t.vt_unmeasurable_kinds || '').replace('{kinds}', names)
+            : (t.vt_unmeasurable_both || '');
+        box.appendChild(vtMakeNote('vt-warn', VT_WARN_ICON, msg));
     } else if (r.oneSideUnmeasurable) {
         box.appendChild(vtMakeNote('vt-warn', VT_WARN_ICON, t.vt_unmeasurable || '한쪽 눈의 측정이 완료되지 않았습니다. 조건을 확인해 재검사하고, 차이가 지속되면 안과에서 확인하세요.'));
     } else if (r.asymmetric) {

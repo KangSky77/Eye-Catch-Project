@@ -124,7 +124,9 @@ body {
     padding: 2px 9px;
     font-size: 0.62rem;
     font-weight: 800;
-    color: var(--accent);
+    /* 질환별 accent를 그대로 쓰면 옅은 배경(--soft) 위에서 3.4:1로 WCAG AA(4.5:1) 미달이었다.
+       색상(hue)은 유지한 채 어두운 쪽으로만 섞어 대비를 올린다. */
+    color: color-mix(in srgb, var(--accent) 72%, #0f172a);
     background: var(--soft);
     border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
     border-radius: 999px;
@@ -135,7 +137,8 @@ body {
     margin-top: 14px;
     font-size: 0.72rem;
     font-weight: 800;
-    color: var(--accent);
+    /* '자세히 보기'는 카드를 여는 유일한 안내 문구다 — 흰 배경에서 3.7:1이라 어둡게 보정한다 */
+    color: color-mix(in srgb, var(--accent) 72%, #0f172a);
     transition: transform .18s ease;
 }
 .disease-card:hover .dc-more { transform: translateX(4px); }
@@ -1488,4 +1491,20 @@ body.modal-open { overflow: hidden; }
         margin-right: auto;
         width: 100%;
     }
+}
+
+/* ==========================================
+   scrollIntoView 목적지의 헤더 회피 여백
+   JS가 block:'start'로 데려가는 지점들은 요소의 위쪽 모서리를 뷰포트 맨 위에 맞춘다.
+   그런데 .site-header가 sticky로 화면 맨 위 59px(모바일)~74px(데스크톱)를 덮고 있어서,
+   여유를 주지 않으면 목적지가 통째로 헤더 뒤에 숨는다 — 스크롤은 됐는데 정작 봐야 할
+   문구는 안 보이는 상태가 된다(암슬러 눈 전환 안내문에서 실측: top 0~35px, 헤더 0~59px).
+   scroll-margin-top은 scrollIntoView가 존중하는 표준 속성이라 JS를 건드릴 필요가 없다.
+   ========================================== */
+#amsler-eye-instruction,
+#vt-calib,
+#vt-test-area,
+#vt-result,
+#vision-sim-panel {
+    scroll-margin-top: 88px;
 }

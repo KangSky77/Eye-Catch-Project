@@ -87,6 +87,7 @@ async def get_ai_opinion(req: GemmaRequest):
             amsler_abnormal=req.amsler_abnormal,
             symptom_codes=req.symptom_codes,
             eye_asymmetric=req.eye_asymmetric,
+            red_flags=req.red_flags,
         )),
         media_type="text/plain"
     )

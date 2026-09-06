@@ -117,11 +117,22 @@ function activeSymptomQuestions() {
 function surveyProgress() {
     const branchKnown = state.riskAnswers.diabetes !== undefined;
     const symCount = branchKnown ? activeSymptomQuestions().length : symptomQuestions.length;
-    const total = riskQuestions.length + symCount;
+    // 맞춤 질문도 총수에 넣는다. 넣지 않으면 마지막 고정 질문에서 '15 / 15'가 떠
+    // 다 끝난 줄 알았는데 번호 없는 질문이 두 개 더 나온다.
+    const total = riskQuestions.length + symCount + (state.maxDynamic || 0);
     const pos = state.riskIdx < riskQuestions.length
         ? state.riskIdx + 1
         : riskQuestions.length + state.symIdx + 1;
     return `${Math.min(pos, total)} / ${total}`;
+}
+
+/** 맞춤 질문 구간의 진행 표시 — 고정 질문 다음 번호부터 이어진다. */
+function dynamicProgress() {
+    const branchKnown = state.riskAnswers.diabetes !== undefined;
+    const symCount = branchKnown ? activeSymptomQuestions().length : symptomQuestions.length;
+    const fixed = riskQuestions.length + symCount;
+    const total = fixed + (state.maxDynamic || 0);
+    return `${Math.min(fixed + (state.dynamicCount || 0) + 1, total)} / ${total}`;
 }
 
 function askSymptomQuestion() {
@@ -208,6 +219,13 @@ function addMsg(sender, text, progress) {
 
 // 언어 무관하게 제거할 수 있는 "생성 중..." 로딩 메시지 (점 애니메이션 + 경과 시간)
 function addLoadingMsg(text) {
+    // 맞춤 질문 생성은 평균 19초(측정 6회: 14.6~25.0초) 걸린다. 그동안 방금 답한 질문의
+    // 네/아니오 버튼을 그대로 두면 눌러도 아무 일이 없어(chatBusy가 막는다) 고장으로 보인다.
+    // 실기기에서 '17.6초 경과' 스피너 아래에 살아 있는 버튼이 그대로 남아 있었다.
+    const controls = document.getElementById('chat-controls');
+    if (controls) controls.innerHTML = '';
+    const freeBox = document.getElementById('chat-free');
+    if (freeBox) freeBox.classList.add('hidden');
     const box = document.getElementById('chat-box');
     const div = document.createElement('div');
     div.className = 'flex justify-start w-full';
@@ -233,6 +251,45 @@ function removeLoadingMsg() {
     }
 }
 
+// ------------------------------------------------------------------
+// 맞춤 질문 중복 걸러내기
+//
+// 프롬프트에 '이미 물어본 주제'와 문진 내역을 모두 넣고 되묻기를 금지해도 젬마가 가끔 어긴다.
+// 실제로 이런 쌍이 나왔다(맞춤 질문을 1개에서 2개로 늘린 뒤):
+//   1) 최근 몇 달 동안 시력이 예전보다 빠르게 나빠졌나요?
+//   2) 최근 몇 달 사이 시력이 예전보다 빠르게 나빠진 적이 있나요?
+// 같은 질문을 두 번 하면 얻는 정보가 없고, 사용자는 앱이 자기 답을 못 들었다고 느낀다.
+//
+// 글자 2-gram 자카드 유사도로 본다 — 한국어·일본어·중국어처럼 띄어쓰기가 다른 언어에서도
+// 같은 방식으로 동작하고, 조사나 어미만 바꾼 문장을 안정적으로 잡는다.
+// ------------------------------------------------------------------
+// 임계값 0.45의 근거(실측):
+//   재현된 중복 쌍('...나빠졌나요?' vs '...나빠진 적이 있나요?')  0.54
+//   실제로 나온 서로 다른 질문들(스테로이드/편측성/밤 운전)      0.03~0.05
+// 둘 사이가 10배 가까이 벌어져 있어 어느 쪽으로도 여유가 크다.
+const DUP_QUESTION_THRESHOLD = 0.45;
+
+function _bigrams(text) {
+    const s = (text || '').toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '');
+    const out = new Set();
+    for (let i = 0; i + 1 < s.length; i++) out.add(s.slice(i, i + 2));
+    return out;
+}
+
+function _similarity(a, b) {
+    const A = _bigrams(a), B = _bigrams(b);
+    if (!A.size || !B.size) return 0;
+    let inter = 0;
+    A.forEach(g => { if (B.has(g)) inter++; });
+    return inter / (A.size + B.size - inter);
+}
+
+/** 이미 물어본 질문과 사실상 같은가. */
+function isDuplicateQuestion(q) {
+    const asked = (state.chatHistory || []).map(h => h.q);
+    return asked.some(prev => _similarity(prev, q) >= DUP_QUESTION_THRESHOLD);
+}
+
 async function fetchNextQuestion() {
     const generation = state.sessionGeneration;
     const cataractRes = formatCataractResult();
@@ -256,18 +313,21 @@ async function fetchNextQuestion() {
             })
         });
         const result = await response.json();
-        if (result.question) {
+        if (result.question && !isDuplicateQuestion(result.question)) {
             q = result.question;
             // 서버가 이 질문을 네/아니오로 답할 수 있는지 알려준다.
             // 서술형이면 버튼 대신 자유 입력칸을 띄운다 — 버튼만 있으면 답할 방법이 없다.
             answerType = result.answer_type === 'text' ? 'text' : 'yesno';
+        } else if (result.question) {
+            // 되묻기 — 선택 언어의 기본 질문(nextq_fallback)으로 대체한다
+            console.warn('중복에 가까운 맞춤 질문을 버렸습니다:', result.question);
         }
     } catch (e) {
         // 네트워크 오류 → 위의 폴백 질문(예/아니오형) 그대로 사용
     } finally {
         if (state.sessionGeneration !== generation) return;
         removeLoadingMsg(); // "생성 중..." 메시지 제거
-        addMsg('bot', q);
+        addMsg('bot', q, dynamicProgress());
         state.chatHistory.push({ q: q, a: "" });
         setChatAnswerMode(answerType);
         if (answerType !== 'text') {
@@ -319,7 +379,9 @@ async function handleChatAnswer(yes) {
         // computeTriage 주석이 명시하듯 진료 시점은 '사람이 검수한 문항'만으로 정해야 한다.
         // 자유 입력 경로(handleChatFreeAnswer)는 원래부터 symptomCodes를 건드리지 않았으므로,
         // 답변 수단(버튼/입력칸)에 따라 판정이 달라지던 불일치도 함께 사라진다.
-        if (yes) state.chatSymptoms.push('symptom_extra');
+        // 맞춤 질문마다 같은 문구를 넣으면 리포트에 '기타 의심 증상 추가 발견'이 두 번 찍힌다
+        // (maxDynamic을 1->2로 올린 뒤 발생). 어차피 같은 뜻이므로 한 번만 남긴다.
+        if (yes && !state.chatSymptoms.includes('symptom_extra')) state.chatSymptoms.push('symptom_extra');
 
         state.dynamicCount++;
         advanceAfterDynamicAnswer();

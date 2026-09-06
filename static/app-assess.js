@@ -137,7 +137,7 @@ function renderTriage(container, triage, factors) {
     box.className = `${style.bg} border ${style.br} rounded-2xl p-4`;
 
     const head = document.createElement('p');
-    head.className = 'text-[10px] font-black text-slate-400 mb-1';
+    head.className = 'text-[10px] font-black text-slate-500 mb-1';
     head.textContent = t.tri_title || '권장 조치';
     box.appendChild(head);
 
@@ -194,7 +194,7 @@ function requestSaveConsent(payload) {
     wrap.className = 'bg-slate-50 border border-slate-200 rounded-2xl p-4';
 
     const title = document.createElement('p');
-    title.className = 'text-[10px] font-black text-slate-400 mb-1';
+    title.className = 'text-[10px] font-black text-slate-500 mb-1';
     title.textContent = t.consent_title || '결과 저장 동의';
 
     const body = document.createElement('p');

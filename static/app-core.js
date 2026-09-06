@@ -328,7 +328,7 @@ const STEP_FLOW = ['step-guide', 'step-photo', 'step-ai-result', 'step-amsler', 
 // 분석 중에는 '사진 업로드' 단계에 머무는 것으로 표시
 const STEP_ALIAS = { 'step-ai-loading': 'step-photo' };
 
-function nextStep(sid) {
+function nextStep(sid, viaHistory = false) {
     document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(sid);
     if (!target) return;
@@ -337,6 +337,12 @@ function nextStep(sid) {
     renderStepProgress();
     // 카드가 통째로 바뀌므로 스크롤을 위로 올려 새 내용의 시작점을 보여준다
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 안드로이드 뒤로가기(가장자리 스와이프)가 검사를 통째로 날리지 않게 단계마다 기록을 남긴다.
+    // 기록이 없으면 뒤로가기 한 번에 탭이 닫히고 홈 화면으로 나간다 — 사진·암슬러·문진·
+    // 기능검사까지 마친 세션이 경고도 복구도 없이 사라진다(S25 Ultra 실기기 확인).
+    if (!viaHistory && STEP_FLOW.indexOf(sid) > 0) {
+        try { history.pushState({ ecStep: sid }, ''); } catch (e) { /* 히스토리 제한 환경은 무시 */ }
+    }
 }
 
 // 상단 단계 표시(점 5개) 갱신. 인트로에서는 숨긴다.
@@ -384,6 +390,13 @@ function resetScreeningState() {
     const consent = document.getElementById('consent-box'); if (consent) consent.classList.add('hidden');
     const findings = document.getElementById('findings-box'); if (findings) findings.innerHTML = '';
     const triage = document.getElementById('triage-box'); if (triage) triage.innerHTML = '';
+    // 추가 질문(askGemmaMore)의 답변과 입력칸도 지운다.
+    // 지우지 않으면 새 검사의 리포트 밑에 '이전 사람이 받은 AI 답변'이 그대로 남는다 —
+    // 새 결과에 딸린 설명처럼 보이는 데다, 시연용으로 돌려 쓰는 기기에서는 남의 질문이 노출된다.
+    const fuResp = document.getElementById('followup-response');
+    if (fuResp) { fuResp.innerText = ''; fuResp.classList.add('hidden'); fuResp.classList.remove('text-rose-600'); }
+    const fuInput = document.getElementById('user-followup-input');
+    if (fuInput) fuInput.value = '';
 }
 
 function openMap() {
@@ -522,3 +535,42 @@ function setButtonBusy(btn, busyLabel) {
         btn.removeAttribute('aria-busy');
     };
 }
+
+
+// ------------------------------------------------------------------
+// 뒤로가기 보호
+//
+// 고치기 전: 리포트까지 끝낸 상태에서 안드로이드 뒤로가기 한 번에 탭이 닫히고 홈 화면으로
+// 나갔다(S25 Ultra 실측). 사진·암슬러·문진 15문항·맞춤질문 대기 두 번·기능검사 138탭이
+// 경고도 복구도 없이 사라진다. 갤럭시는 뒤로가기가 화면 가장자리 스와이프라 오조작이 쉽다.
+//
+// 지금: 단계마다 history 항목을 남겨, 뒤로가기가 '이전 단계'로 이동한다.
+//   실측(S25 Ultra) — 뒤로 1회: step-ai-result -> step-photo (결과 유지)
+//                     뒤로 2회: step-photo -> step-intro   (결과 유지)
+//
+// ⚠️ beforeunload는 보조 수단일 뿐이다. 안드로이드 크롬은 '탭을 닫는 뒤로가기'에서는
+//    사용자 활성화가 있어도 확인 창을 띄우지 않는다(hasBeenActive=true 상태로 실측).
+//    데스크톱 브라우저에서만 동작한다고 보는 편이 맞다. 실제 보호는 위의 history 쪽이다.
+// ------------------------------------------------------------------
+
+/** 잃을 것이 있는 상태인가 — 사진·암슬러·문진 중 하나라도 입력이 있으면 참. */
+function screeningInProgress() {
+    if (!state) return false;
+    if (state.aiResultCode) return true;
+    if (state.stepIdx > 0 || (state.chatHistory || []).length) return true;
+    if (Object.keys(state.amslerResult || {}).length) return true;
+    return false;
+}
+
+window.addEventListener('popstate', e => {
+    const sid = (e.state && e.state.ecStep) || 'step-intro';
+    // 검사 탭 밖에 있었다면(리포트·지도 등) 먼저 검사 탭으로 되돌린다.
+    if (typeof showTab === 'function') showTab('tab-test', false);
+    nextStep(sid, true);   // viaHistory=true — 다시 push하지 않는다(무한 루프 방지)
+});
+
+window.addEventListener('beforeunload', e => {
+    if (!screeningInProgress()) return;   // 입력이 없으면 굳이 붙잡지 않는다
+    e.preventDefault();
+    e.returnValue = '';                   // 구형 브라우저 호환 — 문구는 브라우저가 정한다
+});

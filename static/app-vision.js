@@ -107,9 +107,84 @@ function clearUploadError() {
     if (el) { el.textContent = ''; el.classList.add('hidden'); }
 }
 
+// ------------------------------------------------------------------
+// 업로드 전 축소
+//
+// 왜 필요한가:
+//   서버 상한은 24MP / 10MB인데(app/services/vision.py) 갤럭시 카메라의 고해상도 모드는
+//   50MP(8160x6120)와 200MP(16320x12240)다. S25 Ultra에서 실제로 재보면
+//     12MP 기본  2.5MB  -> 정상 분석
+//     50MP       6.7MB  -> 413 '해상도가 너무 큽니다'
+//     200MP     18.7MB  -> 413 '파일 크기는 10MB 이하여야 합니다'
+//   '더 작은 사진을 올려주세요'라고 안내해도 사용자가 할 수 있는 일이 없다 —
+//   해상도는 카메라 설정이지 사진을 고른 뒤에 바꿀 수 있는 값이 아니다.
+//
+//   축소해도 판독에 손해가 없다. 서버는 얼굴에서 눈을 잘라 224x224로 리사이즈해 쓰고,
+//   긴 변 2000px이면 얼굴 사진의 눈 크롭도 원래보다 크다. 대신 터널(ngrok/cloudflare)로
+//   올릴 때 전송량이 5~10배 줄어 대기 시간이 눈에 띄게 짧아진다.
+//
+//   실패하면 원본을 그대로 보낸다 — 축소는 편의 기능이지 검사의 전제가 아니다.
+// 서버가 보내는 업로드 거부 사유를 현재 언어 문구로 바꾼다.
+// 서버는 {code, message} 형태로 보낸다(app/services/vision.py의 _upload_error).
+// message는 한국어 기본값이라 그대로 쓰면 영어·일본어 사용자에게 한국어가 노출된다.
+// 모르는 코드나 예전 형식(문자열 detail)은 서버 문구로 되돌아간다 — 아무 말도 못 하는 것보다 낫다.
+const UPLOAD_ERROR_KEYS = {
+    IMAGE_RESOLUTION:      'err_img_resolution',
+    IMAGE_INVALID:         'err_img_invalid',
+    IMAGE_TYPE:            'err_file_type',
+    IMAGE_FILE_SIZE:       'err_file_size',
+    MODEL_NOT_READY:       'err_ai_not_ready',
+    VALIDATOR_UNAVAILABLE: 'err_validator_busy',
+};
+
+function uploadErrorMessage(detail) {
+    const t = translations[state.lang] || {};
+    if (detail && typeof detail === 'object' && detail.code) {
+        const key = UPLOAD_ERROR_KEYS[detail.code];
+        if (key && t[key]) return t[key].replace('{n}', MAX_UPLOAD_MB);
+        if (typeof detail.message === 'string') return detail.message;
+    }
+    if (typeof detail === 'string') return detail;
+    return t.srv_err || 'Error';
+}
+
+// ------------------------------------------------------------------
+const UPLOAD_MAX_EDGE = 2000;      // 긴 변 상한(px)
+const UPLOAD_JPEG_QUALITY = 0.92;  // 혼탁 판독은 미세한 질감을 보므로 높게 유지
+
+async function shrinkForUpload(file) {
+    if (!file.type || !file.type.startsWith('image/')) return file;
+    let bmp;
+    try {
+        // createImageBitmap은 EXIF 회전을 반영한다 — 세로 사진이 눕지 않게 한다
+        bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch (e) {
+        return file;                       // 지원하지 않는 브라우저·형식이면 원본 그대로
+    }
+    const long = Math.max(bmp.width, bmp.height);
+    if (long <= UPLOAD_MAX_EDGE) { bmp.close && bmp.close(); return file; }
+    try {
+        const scale = UPLOAD_MAX_EDGE / long;
+        const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(bmp, 0, 0, w, h);
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', UPLOAD_JPEG_QUALITY));
+        if (!blob) return file;
+        const name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+        return new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() });
+    } catch (e) {
+        return file;
+    } finally {
+        bmp.close && bmp.close();
+    }
+}
+
 async function runAIAnalysis(droppedFile) {
     const fileInput = document.getElementById('cataract-file');
-    const file = droppedFile || fileInput.files[0];
+    let file = droppedFile || fileInput.files[0];
     // 같은 파일을 다시 고를 때도 change 이벤트가 뜨도록 값을 비운다
     // (에러 후 같은 사진을 재시도하면 아무 반응이 없던 문제)
     fileInput.value = '';
@@ -128,6 +203,9 @@ async function runAIAnalysis(droppedFile) {
         showUploadError(t.err_file_type || "Please upload an image file.");
         return;
     }
+    // 서버 상한 검사보다 먼저 줄인다 — 200MP 원본은 축소 전에 이미 10MB를 넘는다
+    file = await shrinkForUpload(file);
+
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
         const m = (t.err_file_size || "File too large ({n} MB max).").replace('{n}', MAX_UPLOAD_MB);
         showToast(m, 'error'); showUploadError(m);
@@ -161,8 +239,8 @@ async function runAIAnalysis(droppedFile) {
         if (requestId !== _analysisRequestId) return;
         const d = res.data;
         if (!res.ok) {
-            // detail이 문자열이 아닐 수 있음(422 검증 오류는 객체 배열) → 그대로 alert하면 [object Object]
-            const msg = typeof d.detail === 'string' ? d.detail : (translations[state.lang].srv_err || "Error");
+            // 언어 중립 코드를 현재 언어 문구로 (서버 detail은 한국어 기본값)
+            const msg = uploadErrorMessage(d && d.detail);
             showToast(msg, 'error'); showUploadError(msg);
             nextStep('step-photo');
             return;
@@ -218,7 +296,7 @@ async function runAIAnalysis(droppedFile) {
         disp.appendChild(pProb);
         disp.appendChild(pRes);
         const pNote = document.createElement('p');
-        pNote.className = 'text-[10px] text-slate-400 mt-2 leading-relaxed';
+        pNote.className = 'text-[10px] text-slate-500 mt-2 leading-relaxed';
         pNote.dataset.role = 'score-note';
         pNote.textContent = t.score_note || '';
         disp.appendChild(pNote);
@@ -281,7 +359,7 @@ function renderEyeBreakdown(container, eyes) {
     wrap.className = 'mt-4 pt-4 border-t border-slate-200 text-left';
 
     const title = document.createElement('p');
-    title.className = 'text-[11px] font-black text-slate-400 mb-2';
+    title.className = 'text-[11px] font-black text-slate-500 mb-2';
     title.dataset.role = 'eye-title';
     title.textContent = t.eye_breakdown_title || '눈별 분석';
     wrap.appendChild(title);
@@ -319,7 +397,7 @@ function renderEyeBreakdown(container, eyes) {
     }
 
     const note = document.createElement('p');
-    note.className = 'mt-2 text-[10px] text-slate-400 leading-relaxed';
+    note.className = 'mt-2 text-[10px] text-slate-500 leading-relaxed';
     note.dataset.role = 'eye-note';
     note.textContent = t.eye_ref_note || '';
     wrap.appendChild(note);
@@ -381,7 +459,14 @@ function startAmslerStep() {
 function updateAmslerPrompt() {
     const t = translations[state.lang];
     const el = document.getElementById('amsler-eye-instruction');
-    if (el) el.textContent = t['ams_which_' + state.amslerEye] || '';
+    if (el) {
+        // data-i18n을 같이 걸어둔다. 이 문구는 JS가 직접 써넣는 유일한 안내문이라,
+        // 속성이 없으면 검사 도중 언어를 바꿨을 때 주변이 전부 새 언어로 바뀌는데
+        // '어느 쪽 눈을 가리라'는 이 한 줄만 이전 언어로 남는다(6개 언어 전수 확인).
+        // 키가 눈에 따라 달라지므로 매번 다시 지정한다.
+        el.setAttribute('data-i18n', 'ams_which_' + state.amslerEye);
+        el.textContent = t['ams_which_' + state.amslerEye] || '';
+    }
     renderAmslerGrid();
 }
 
@@ -451,8 +536,14 @@ function renderAmslerGrid() {
 
     const note = document.getElementById('amsler-dist-note');
     if (note) {
-        note.textContent = (t.ams_dist_note || '')
-            .replace('{d}', distCm).replace('{deg}', AMSLER_FIELD_DEG);
+        // 보정 전에는 화면의 px/mm를 CSS 기준(96dpi = 3.78 px/mm)으로 가정한다.
+        // 요즘 폰은 4.5~5.5라 이 가정이 거의 항상 틀린다 — S25 Ultra는 5.23이었다.
+        // 그래서 격자를 75.7mm로 착각하고 21cm를 안내하지만 실제 크기는 54.7mm여서
+        // 그 거리에서는 14.8°만 덮는다. 20°라고 단정하면 안 되는 이유다.
+        // 보정한 뒤에는 실제 px/mm를 쓰므로 거리와 시야각이 모두 맞는다(실측 16cm / 20.0°).
+        note.textContent = calibrated
+            ? (t.ams_dist_note || '').replace('{d}', distCm).replace('{deg}', AMSLER_FIELD_DEG)
+            : (t.ams_dist_note_uncal || '').replace('{d}', distCm);
     }
     const uncal = document.getElementById('amsler-uncal');
     if (uncal) {
@@ -483,12 +574,27 @@ function showAnalyzedPhoto() {
     if (cap) cap.textContent = translations[state.lang].result_photo_label || '';
 }
 
+/** 어느 쪽 눈을 검사하는지 알려주는 안내문이 화면에 보이도록 스크롤한다. */
+function scrollAmslerPromptIntoView() {
+    const el = document.getElementById('amsler-eye-instruction');
+    if (!el) return;
+    // 안내문 + 격자 + 버튼이 한 화면에 다 들어가지 않는 기기가 많다.
+    // 그럴 때는 최소한 '무엇을 가려야 하는지'가 먼저 보여야 하므로 안내문을 위쪽에 붙인다.
+    el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+
 function recordAmsler(bad) {
     state.amslerResult[state.amslerEye] = bad;
 
     if (state.amslerEye === 'left') {
         state.amslerEye = 'right';
         updateAmslerPrompt();
+        // 검사하는 눈이 바뀐 것을 반드시 보여준다.
+        // 모바일(375x812)에서 답변 버튼은 항상 접힌 부분 아래(top 897px)에 있어 사용자는
+        // 스크롤을 내린 상태로 답한다. 그 위치에서 '왼쪽 눈 검사' 안내문은 화면 위 -225px,
+        // 즉 완전히 보이지 않는다. 여기서 스크롤을 되돌리지 않으면 눈이 바뀐 사실을
+        // 볼 방법이 없어, 같은 눈으로 두 번 답하고도 좌우를 비교했다고 기록된다.
+        scrollAmslerPromptIntoView();
         return;                       // 아직 반대쪽 눈이 남았다
     }
 
