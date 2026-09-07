@@ -196,12 +196,6 @@ async function runAIAnalysis(droppedFile) {
     fileInput.value = '';
     if (!file) return;
 
-    // 빠르게 사진을 다시 고르면 이전 응답이 나중에 도착해 최신 결과를 덮을 수 있다.
-    // 이전 전송을 취소하고, 취소가 늦게 반영되더라도 requestId로 오래된 응답을 무시한다.
-    const requestId = ++_analysisRequestId;
-    if (_analysisAbortController) _analysisAbortController.abort();
-    _analysisAbortController = null;
-
     const t = translations[state.lang];
     clearUploadError();
     if (!file.type.startsWith('image/')) {
@@ -218,7 +212,11 @@ async function runAIAnalysis(droppedFile) {
         return;
     }
 
+    // 새 회차 초기화가 이전 분석을 취소하고 request id를 무효화한다.
+    // 현재 요청 id는 반드시 초기화가 끝난 뒤 발급해야 정상 응답이 stale 처리되지 않는다.
     if (typeof resetScreeningState === 'function') resetScreeningState();
+    else cancelEyeAnalysis();
+    const requestId = ++_analysisRequestId;
 
     const r = new FileReader();
     r.onload = e => {
