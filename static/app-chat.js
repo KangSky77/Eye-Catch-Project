@@ -3,6 +3,11 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function startChat() {
+    // 문진을 다시 시작하면 이전 회차의 맞춤 질문 요청(15~25초)이 아직 날아가고 있을 수 있다.
+    // 세대를 올려두지 않으면 그 응답이 fetchNextQuestion의 가드를 통과해, 방금 1번 질문부터
+    // 시작한 새 문진에 '19 / 20 이전 회차 질문'으로 끼어든다(뒤로가기 → 암슬러 재답변 경로에서 재현).
+    // 히스토리 유효성은 navEpoch가 따로 관리하므로 여기서 올려도 뒤로가기가 깨지지 않는다.
+    state.sessionGeneration++;
     document.getElementById('chat-box').innerHTML = '';
     setChatAnswerMode('yesno');   // 이전 회차에서 자유 입력칸이 열려 있었을 수 있다
 
@@ -221,6 +226,12 @@ function refreshChatLanguage() {
     const box = document.getElementById('chat-box');
     const chatStep = document.getElementById('step-chat');
     if (!box || !chatStep || !chatStep.classList.contains('active')) return;
+    // 답변 직후 500ms 동안은 riskIdx/symIdx가 이미 '다음 질문'을 가리키는데
+    // 화면에는 아직 이전 질문이 떠 있다. 그 틈에 언어를 바꾸면 이전 질문 버블을
+    // 다음 질문 문구로 덮어써(사용자 답변 기록이 사라지고) 500ms 뒤 타이머가 같은 질문을
+    // 또 추가해 1/20과 2/20에 동일한 문장이 두 번 나온다(2026-09-07 재현).
+    // 전환이 끝나면 askRiskQuestion/askSymptomQuestion이 chatBusy를 풀어준다.
+    if (state.chatBusy) return;
     let question = null;
     if (state.riskIdx < riskQuestions.length) {
         const q = riskQuestions[state.riskIdx];

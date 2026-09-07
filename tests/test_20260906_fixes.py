@@ -226,11 +226,13 @@ def test_뒤로가기가_검사를_날리지_않는다():
                                 2회: step-photo -> step-intro(결과 유지)."""
     core = read("static/app-core.js")
     assert "history.pushState({" in core
-    assert "ecSession: state.sessionGeneration" in core
+    # 히스토리 유효성 기준은 navEpoch다. sessionGeneration을 쓰면 사진을 올릴 때마다
+    # 번호가 올라가 같은 검사 안에서도 앞뒤 항목이 어긋난다(아래 테스트 참고).
+    assert "ecNav: state.navEpoch" in core
     assert "addEventListener('popstate'" in core
     assert "function nextStep(sid, viaHistory = false)" in core
-    assert "nextStep(sid, true)" in core
     # popstate에서 다시 push하면 무한 루프가 된다
+    assert "nextStep(sid, true)" in core
 
 
 def test_새_회차가_분석과_기능검사_결과를_무효화한다():
@@ -242,9 +244,19 @@ def test_새_회차가_분석과_기능검사_결과를_무효화한다():
     assert "_analysisRequestId++" in vision
 
 
-def test_문진_시작이_이전_단계의_세대를_끊지_않는다():
-    """암슬러 다음 문진에서 세대를 다시 올리면 앞 단계 히스토리가 뒤로가기에서 사라진다."""
+def test_문진_재시작이_이전_회차의_맞춤질문을_끊는다():
+    """startChat()은 반드시 세대를 올려야 한다.
+
+    올리지 않으면 이전 회차의 맞춤 질문 요청(15~25초)이 fetchNextQuestion의 가드를
+    통과해, 1번 질문부터 다시 시작한 새 문진에 '19 / 20 이전 회차 질문'으로 끼어든다
+    (뒤로가기 → 암슬러 재답변 경로에서 2026-09-07 재현).
+
+    한때 이걸 뺀 적이 있는데, 이유는 히스토리 항목이 sessionGeneration을 회차 식별자로
+    쓰고 있어서였다. 지금은 히스토리가 navEpoch를 따로 쓰므로 둘이 충돌하지 않는다."""
     chat = read("static/app-chat.js")
     start = chat[chat.index("function startChat()"):chat.index("function askRiskQuestion")]
-    assert "sessionGeneration++" not in start
+    assert "state.sessionGeneration++" in start
     assert "if (state.sessionGeneration !== generation) return;" in chat
+    # 히스토리는 sessionGeneration을 쓰면 안 된다 — 그래야 위 증가가 안전하다
+    core = read("static/app-core.js")
+    assert "ecSession" not in core, "히스토리가 다시 sessionGeneration에 묶였다"

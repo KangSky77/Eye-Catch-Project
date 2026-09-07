@@ -28,6 +28,12 @@ const state = {
     freeAnswers: [],         // 맞춤 질문에 자유 입력으로 답한 문장만 (소견서 개인화용)
     dynamicAnswers: [],      // 맞춤 질문과 답변 쌍 (소견서 개인화용)
     sessionGeneration: 0,    // 회차가 바뀌면 이전 fetch/타이머 결과를 무시한다
+    // 히스토리 항목의 유효성 기준. sessionGeneration과 일부러 분리했다 —
+    // sessionGeneration은 사진을 새로 올릴 때마다(resetScreeningState) 올라가는데,
+    // 그걸 히스토리에 쓰면 같은 검사 안에서도 앞뒤 항목의 번호가 달라져
+    // 'step-ai-result에서 뒤로가기' 한 번에 step-photo를 건너뛰고 첫 화면으로 튄다.
+    // 히스토리를 무효화해야 하는 시점은 오직 goHome()뿐이다.
+    navEpoch: 0,
     chatBusy: false,         // 문진 답변 처리 중 잠금 (중복 클릭 방지)
     step: 'step-intro'       // 검사 흐름의 현재 단계 (진행 표시용)
 };
@@ -346,7 +352,7 @@ function nextStep(sid, viaHistory = false) {
             history.pushState({
                 ecStep: sid,
                 ecTab: 'tab-test',
-                ecSession: state.sessionGeneration,
+                ecNav: state.navEpoch,
             }, '');
         } catch (e) { /* 히스토리 제한 환경은 무시 */ }
     }
@@ -375,13 +381,14 @@ function renderStepProgress() {
 function goHome() {
     resetScreeningState();
     // 이전 회차의 단계 히스토리가 남아 있으면 홈에서 뒤로가기를 눌렀을 때
-    // 초기화된 오래된 문진/암슬러 화면이 다시 나타난다. 현재 항목을 새 회차의
-    // 기준점으로 바꾸고, popstate에서도 세션 번호가 다른 항목은 화면에 복원하지 않는다.
+    // 초기화된 오래된 문진/암슬러 화면이 다시 나타난다. 여기서만 navEpoch를 올려
+    // 그 전에 쌓인 항목을 전부 무효로 표시하고, 현재 항목을 새 기준점으로 바꾼다.
+    state.navEpoch++;
     try {
         history.replaceState({
             ecStep: 'step-intro',
             ecTab: 'tab-test',
-            ecSession: state.sessionGeneration,
+            ecNav: state.navEpoch,
         }, '');
     } catch (e) { /* 히스토리 제한 환경은 무시 */ }
     nextStep('step-intro');
@@ -583,15 +590,15 @@ function screeningInProgress() {
 
 window.addEventListener('popstate', e => {
     const entry = e.state;
-    // 홈으로 돌아온 뒤 이전 회차의 히스토리를 밟을 수 있다. 그 상태를
-    // 현재 세션의 화면으로 복원하면 데이터가 비어 있는 문진이 나타나므로
-    // 안전한 홈 기준점으로 치환한다.
-    if (entry && entry.ecSession !== undefined && entry.ecSession !== state.sessionGeneration) {
+    // 홈으로 돌아온 뒤 그 이전에 쌓인 히스토리를 밟을 수 있다. 그 항목을
+    // 그대로 복원하면 데이터가 비어 있는 문진·암슬러 화면이 나타나므로
+    // 안전한 홈 기준점으로 치환한다. (goHome()에서만 navEpoch가 올라간다)
+    if (entry && entry.ecNav !== undefined && entry.ecNav !== state.navEpoch) {
         try {
             history.replaceState({
                 ecStep: 'step-intro',
                 ecTab: 'tab-test',
-                ecSession: state.sessionGeneration,
+                ecNav: state.navEpoch,
             }, '');
         } catch (err) { /* 히스토리 제한 환경은 무시 */ }
         if (typeof showTab === 'function') showTab('tab-test', false);
