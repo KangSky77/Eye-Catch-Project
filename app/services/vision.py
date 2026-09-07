@@ -271,6 +271,11 @@ def predict_cataract(img: Image.Image):
     # 얼굴 사진이면 눈 부위만 크롭해서 분석 (모델이 눈 클로즈업으로 학습됐기 때문)
     # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주
     eye_crops = eye_detector.extract_eye_crops(img)
+    if eye_crops is None:
+        return _empty_result(
+            "multiple_faces", "여러 얼굴이 감지되었습니다 (한 사람만 정면에서 다시 촬영해 주세요)",
+            "face", 0,
+        )
     mode = "face" if eye_crops else "eye"
 
     targets = eye_crops if eye_crops else [img]
@@ -329,13 +334,16 @@ def predict_cataract(img: Image.Image):
     # (예전엔 반사가 있으면 무조건 보류했는데, 데이터셋 백내장 사진의 3.0%(54/1,823)·정상 0.1%가 걸렸다.
     #  이 규칙으로 정상 눈의 불필요한 재촬영은 사라지고, 반사 낀 진짜 백내장은 여전히 재촬영을 요청한다 —
     #  놓치는 것이 아니라 플래시를 끄고 다시 찍으면 판정된다. 2026-09-02)
-    glare = max((_glare_fraction(t) for t in targets), default=0.0)
-
     eye_probs = [_predict_single(t) for t in targets]
     # 의료 스크리닝: 두 눈 중 위험도가 높은 쪽 기준으로 판정
     cat_p = max(eye_probs)
 
-    if glare >= GLARE_MAX_FRACTION and _classify(cat_p)[0] != "normal":
+    eye_codes = [_classify(p)[0] for p in eye_probs]
+    glare_values = [_glare_fraction(t) for t in targets]
+    glare = max(glare_values, default=0.0)
+    # 반사 게이트는 눈별로 적용한다. 한쪽 눈의 플래시 반사 때문에 반대쪽 눈의
+    # 유효한 위험 신호까지 버리면 안 된다.
+    if any(g >= GLARE_MAX_FRACTION and code != "normal" for g, code in zip(glare_values, eye_codes)):
         logger.info("판독 보류 — 조명 반사 감지 (순백비율 %.3f, 모델 %.1f%%)", glare, cat_p)
         return _empty_result(
             "hold", "판독 보류 (강한 조명 반사 감지됨)", mode, len(eye_crops),
@@ -358,7 +366,7 @@ def predict_cataract(img: Image.Image):
         sides = ["single"] * len(eye_probs)
     eyes = []
     for side, p in zip(sides, eye_probs):
-        eye_code, _ = _classify(p)
+        eye_code = _classify(p)[0]
         eyes.append({"side": side, "probability": round(p, 1), "code": eye_code})
 
     # 편측(비대칭) 의심: 얼굴 모드에서 한 눈만 위험 단계인 경우

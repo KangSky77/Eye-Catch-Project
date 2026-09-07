@@ -16,6 +16,12 @@ const ANALYSIS_TIMEOUT_MS = 180000; // 끊긴 모바일망에서 로딩 화면�
 let _analysisAbortController = null;
 let _analysisRequestId = 0;
 
+function cancelEyeAnalysis() {
+    _analysisRequestId++;
+    if (_analysisAbortController) _analysisAbortController.abort();
+    _analysisAbortController = null;
+}
+
 function startLoadingProgress() {
     const t = translations[state.lang];
     const titleEl = document.getElementById('loading-title');
@@ -251,7 +257,15 @@ async function runAIAnalysis(droppedFile) {
             blurry: translations[state.lang].ai_blurry || "사진이 흔들려 판독할 수 없어요. 또렷하게 다시 찍어주세요.",
             hold: translations[state.lang].ai_hold || "플래시 반사가 강해 판독할 수 없어요. 플래시를 끄고 다시 찍어주세요.",
             eyes_hidden: translations[state.lang].ai_eyes_hidden || "눈이 감겨 있거나 가려진 것 같아요. 눈을 크게 뜨고 안경·선글라스를 벗은 뒤 다시 찍어주세요.",
-            invalid: translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요."
+            invalid: translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.",
+            multiple_faces: translations[state.lang].ai_multiple_faces || ({
+                ko: "여러 얼굴이 감지됐어요. 한 사람만 정면에서 다시 촬영해 주세요.",
+                en: "Multiple faces were detected. Please retake the photo with one person facing the camera.",
+                es: "Se detectaron varios rostros. Vuelva a tomar la foto con una sola persona de frente.",
+                fr: "Plusieurs visages ont été détectés. Reprenez la photo avec une seule personne de face.",
+                ja: "複数の顔が検出されました。1人だけ正面を向いて撮り直してください。",
+                zh: "检测到多张脸。请只让一个人正面对镜头重新拍摄。"
+            }[state.lang] || "Multiple faces were detected. Please retake the photo with one person.")
         };
         if (retake[d.result_code]) {
             showToast(retake[d.result_code], 'error', 7000);

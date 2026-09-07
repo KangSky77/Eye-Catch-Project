@@ -96,11 +96,22 @@ def build_negatives() -> dict[str, Image.Image]:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample", type=int, default=300, help="클래스당 표본 수")
+    parser.add_argument("--gate", type=Path, default=eye_validator._GATE_PATH,
+                        help="비교할 게이트 npz 경로 (배포 파일은 변경하지 않음)")
     args = parser.parse_args()
     if args.sample < 1:
         parser.error("--sample must be positive")
     if not eye_validator.warmup() or not eye_validator.gate_available():
         raise SystemExit("Eye gate unavailable")
+    gate_path = args.gate if args.gate.is_absolute() else ROOT / args.gate
+    if gate_path.resolve() != eye_validator._GATE_PATH.resolve():
+        try:
+            gate = __import__("numpy").load(gate_path)
+            eye_validator._gate_w = eye_validator.torch.from_numpy(gate["w"].astype("float32")).to(eye_validator.device)
+            eye_validator._gate_b = float(gate["b"].item())
+            eye_validator._gate_thr = float(gate["threshold"].item())
+        except Exception as exc:
+            raise SystemExit(f"Cannot load gate {gate_path}: {exc}")
 
     rng = random.Random(20260905)
     scores: dict[str, list[float]] = {}
@@ -119,8 +130,8 @@ def main():
     face_eyes = []
     face_path = ROOT / "static" / "assets" / "examples" / "face-good.jpg"
     if face_path.exists():
-        face_eyes = [eye_validator._gate_prob(c)
-                     for c in eye_detector.extract_eye_crops(_load(face_path))]
+        face_crops = eye_detector.extract_eye_crops(_load(face_path)) or []
+        face_eyes = [eye_validator._gate_prob(c) for c in face_crops]
 
     n_neg = len(neg_scores)
     print(f"눈 표본: 정상 {len(scores['0_normal'])}장 / 백내장 {len(scores['1_cataract'])}장")

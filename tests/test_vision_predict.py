@@ -111,6 +111,12 @@ def test_얼굴모드_검증기_불능이면_503(monkeypatch, loaded, img):
     assert e.value.status_code == 503
 
 
+def test_여러얼굴은_판독하지_않는다(monkeypatch, loaded, img):
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: None)
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "multiple_faces"
+
+
 def test_반사가_있어도_모델이_정상이면_통과(monkeypatch, loaded, img):
     # 반사는 판정을 '위험' 쪽으로만 밀므로, 반사 속에서도 '정상'이면 믿을 수 있다 (불필요한 재촬영 제거)
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [])
@@ -125,6 +131,28 @@ def test_반사가_있고_모델이_위험이면_hold(monkeypatch, loaded, img):
     monkeypatch.setattr(vision, "_predict_single", lambda t: 88.0)
     out = vision.predict_cataract(img)
     assert out["result_code"] == "hold" and out["glare"] == 0.05
+
+
+def test_얼굴모드_반사는_해당_눈에만_적용(monkeypatch, loaded, img):
+    crops = [img.copy(), img.copy()]
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: crops)
+    probs = iter([90.0, 1.0])
+    monkeypatch.setattr(vision, "_predict_single", lambda t: next(probs))
+    glare = iter([0.05, 0.0])
+    monkeypatch.setattr(vision, "_glare_fraction", lambda t: next(glare))
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "hold"
+
+
+def test_정상인_한쪽_반사가_반대쪽_위험판정을_막지_않는다(monkeypatch, loaded, img):
+    crops = [img.copy(), img.copy()]
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: crops)
+    probs = iter([1.0, 90.0])
+    monkeypatch.setattr(vision, "_predict_single", lambda t: next(probs))
+    glare = iter([0.05, 0.0])
+    monkeypatch.setattr(vision, "_glare_fraction", lambda t: next(glare))
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "risk"
 
 
 def test_TTA는_기본_OFF이고_배치가_1장(monkeypatch, loaded, img):

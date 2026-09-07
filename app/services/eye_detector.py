@@ -62,8 +62,10 @@ def warmup() -> bool:
 
 
 
-def extract_eye_crops(img: Image.Image) -> list[Image.Image]:
-    """얼굴 사진이면 [왼눈, 오른눈] 크롭 반환, 아니면 빈 리스트.
+def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
+    """얼굴 사진이면 [왼눈, 오른눈] 크롭 반환, 얼굴이 없으면 빈 리스트.
+
+    여러 얼굴이 감지되면 ``None``을 반환해 호출자가 판독을 보류한다.
 
     빈 리스트 = '얼굴 없음' → 호출자는 원본을 눈 클로즈업으로 처리하면 됨.
     """
@@ -80,10 +82,15 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image]:
     if boxes is None or landmarks is None:
         return []
 
-    # 가장 확신도 높은 얼굴 1개 선택
-    best = int(np.argmax(probs))
-    if probs[best] < settings.face_prob_threshold:
+    # 여러 얼굴이 보이면 누구의 눈인지 결정할 수 없으므로 의료 결과를 만들지 않는다.
+    # 예전에는 가장 확신도 높은 얼굴 하나를 조용히 골라 다른 사람의 결과가 나갈 수 있었다.
+    valid = [i for i, p in enumerate(probs) if p >= settings.face_prob_threshold]
+    if len(valid) > 1:
+        logger.info("얼굴 사진에 여러 얼굴이 감지되어 판독을 보류합니다")
+        return None
+    if not valid:
         return []
+    best = valid[0]
 
     # 랜드마크 순서: [왼눈, 오른눈, 코, 입왼쪽, 입오른쪽]
     # 단, 순서를 믿지 않고 사진 기준 x좌표로 좌/우를 확정한다 — 얼굴이 기울어진 사진에서

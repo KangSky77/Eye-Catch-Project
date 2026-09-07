@@ -270,6 +270,7 @@ function updateUI(lang) {
         vtRefreshCalibrationUI();
     }
     if (typeof vtRefreshDynamicUI === 'function') vtRefreshDynamicUI();
+    if (typeof refreshChatLanguage === 'function') refreshChatLanguage();
     const findBox = document.getElementById('findings-box');
     if (findBox && findBox.children.length && typeof renderFindings === 'function') {
         renderFindings(findBox);
@@ -341,7 +342,13 @@ function nextStep(sid, viaHistory = false) {
     // 기록이 없으면 뒤로가기 한 번에 탭이 닫히고 홈 화면으로 나간다 — 사진·암슬러·문진·
     // 기능검사까지 마친 세션이 경고도 복구도 없이 사라진다(S25 Ultra 실기기 확인).
     if (!viaHistory && STEP_FLOW.indexOf(sid) > 0) {
-        try { history.pushState({ ecStep: sid }, ''); } catch (e) { /* 히스토리 제한 환경은 무시 */ }
+        try {
+            history.pushState({
+                ecStep: sid,
+                ecTab: 'tab-test',
+                ecSession: state.sessionGeneration,
+            }, '');
+        } catch (e) { /* 히스토리 제한 환경은 무시 */ }
     }
 }
 
@@ -367,6 +374,16 @@ function renderStepProgress() {
 // 로고 클릭 — 새로고침(입력한 내용이 전부 날아감) 대신 첫 화면으로 돌아간다
 function goHome() {
     resetScreeningState();
+    // 이전 회차의 단계 히스토리가 남아 있으면 홈에서 뒤로가기를 눌렀을 때
+    // 초기화된 오래된 문진/암슬러 화면이 다시 나타난다. 현재 항목을 새 회차의
+    // 기준점으로 바꾸고, popstate에서도 세션 번호가 다른 항목은 화면에 복원하지 않는다.
+    try {
+        history.replaceState({
+            ecStep: 'step-intro',
+            ecTab: 'tab-test',
+            ecSession: state.sessionGeneration,
+        }, '');
+    } catch (e) { /* 히스토리 제한 환경은 무시 */ }
     nextStep('step-intro');
     showTab('tab-test');
 }
@@ -375,6 +392,7 @@ function goHome() {
 function resetScreeningState() {
     state.sessionGeneration++;
     cancelAiOpinion();
+    if (typeof cancelEyeAnalysis === 'function') cancelEyeAnalysis();
     state.stepIdx = 0; state.dynamicCount = 0; state.chatHistory = [];
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
     state.dynamicAnswers = []; state.chatBusy = false;
@@ -382,6 +400,7 @@ function resetScreeningState() {
     state.redFlags = []; state._chatLoaderStop = null;
     state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
     state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
+    state.visionTest = null;
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
     state.freeAnswers = [];
     const opinion = document.getElementById('gemma-opinion-text');
@@ -563,7 +582,23 @@ function screeningInProgress() {
 }
 
 window.addEventListener('popstate', e => {
-    const sid = (e.state && e.state.ecStep) || 'step-intro';
+    const entry = e.state;
+    // 홈으로 돌아온 뒤 이전 회차의 히스토리를 밟을 수 있다. 그 상태를
+    // 현재 세션의 화면으로 복원하면 데이터가 비어 있는 문진이 나타나므로
+    // 안전한 홈 기준점으로 치환한다.
+    if (entry && entry.ecSession !== undefined && entry.ecSession !== state.sessionGeneration) {
+        try {
+            history.replaceState({
+                ecStep: 'step-intro',
+                ecTab: 'tab-test',
+                ecSession: state.sessionGeneration,
+            }, '');
+        } catch (err) { /* 히스토리 제한 환경은 무시 */ }
+        if (typeof showTab === 'function') showTab('tab-test', false);
+        nextStep('step-intro', true);
+        return;
+    }
+    const sid = (entry && entry.ecStep) || 'step-intro';
     // 검사 탭 밖에 있었다면(리포트·지도 등) 먼저 검사 탭으로 되돌린다.
     if (typeof showTab === 'function') showTab('tab-test', false);
     nextStep(sid, true);   // viaHistory=true — 다시 push하지 않는다(무한 루프 방지)

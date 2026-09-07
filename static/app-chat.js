@@ -3,7 +3,6 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function startChat() {
-    state.sessionGeneration++;
     document.getElementById('chat-box').innerHTML = '';
     setChatAnswerMode('yesno');   // 이전 회차에서 자유 입력칸이 열려 있었을 수 있다
 
@@ -213,8 +212,35 @@ function addMsg(sender, text, progress) {
         bubble.textContent = text;
     }
     div.appendChild(bubble);
+    if (sender === 'bot') div.dataset.chatBot = '1';
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
+}
+
+function refreshChatLanguage() {
+    const box = document.getElementById('chat-box');
+    const chatStep = document.getElementById('step-chat');
+    if (!box || !chatStep || !chatStep.classList.contains('active')) return;
+    let question = null;
+    if (state.riskIdx < riskQuestions.length) {
+        const q = riskQuestions[state.riskIdx];
+        question = translations[state.lang][q.key] || q.key;
+        renderChatOptions(q.type === 'choice' ? q.options.map(o => ({ label: translations[state.lang][o.key] || o.v, value: o.v })) : [{ label: translations[state.lang].chat_yes, value: true }, { label: translations[state.lang].chat_no, value: false }]);
+    } else {
+        const q = activeSymptomQuestions()[state.symIdx];
+        if (q) {
+            question = translations[state.lang][q.key] || q.key;
+            renderChatOptions([{ label: translations[state.lang].chat_yes, value: true }, { label: translations[state.lang].chat_no, value: false }]);
+        }
+    }
+    if (!question) return;
+    const bots = box.querySelectorAll('[data-chat-bot="1"]');
+    const bubble = bots.length && bots[bots.length - 1].firstElementChild;
+    if (bubble) {
+        const textNode = bubble.lastChild;
+        if (textNode && textNode.nodeType === Node.TEXT_NODE) textNode.nodeValue = question;
+        else bubble.textContent = question;
+    }
 }
 
 // 언어 무관하게 제거할 수 있는 "생성 중..." 로딩 메시지 (점 애니메이션 + 경과 시간)
@@ -449,7 +475,10 @@ function advanceAfterDynamicAnswer() {
         setTimeout(() => {
             if (state.sessionGeneration !== generation) return;
             addMsg('bot', translations[state.lang].msg_gen);
-            setTimeout(finish, 1200);
+            setTimeout(() => {
+                if (state.sessionGeneration !== generation) return;
+                finish();
+            }, 1200);
         }, 500);
     }
 }

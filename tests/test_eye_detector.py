@@ -46,6 +46,17 @@ def test_얼굴_확신도가_낮으면_클로즈업_경로(monkeypatch, face_img
     assert eye_detector.extract_eye_crops(face_img) == []
 
 
+def test_여러_얼굴은_임의의_한_사람을_고르지_않는다(monkeypatch, face_img):
+    boxes = np.array([[0, 0, 180, 300], [220, 0, 400, 300]], dtype=np.float32)
+    probs = np.array([0.99, 0.98])
+    landmarks = np.array([
+        [[70, 120], [120, 120], [95, 160], [70, 200], [120, 200]],
+        [[270, 120], [320, 120], [295, 160], [270, 200], [320, 200]],
+    ], dtype=np.float32)
+    monkeypatch.setattr(eye_detector, "_get_mtcnn", lambda: _FakeMTCNN(boxes, probs, landmarks))
+    assert eye_detector.extract_eye_crops(face_img) is None
+
+
 def test_얼굴_없으면_빈_리스트(monkeypatch, face_img):
     monkeypatch.setattr(eye_detector, "_get_mtcnn",
                         lambda: _FakeMTCNN(None, None, None))

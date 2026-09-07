@@ -243,8 +243,26 @@ def main():
         fs = sorted(os.listdir(f"dataset/{cls}")); random.shuffle(fs)
         files += [f"dataset/{cls}/{f}" for f in fs[:N_POS_PER_CLASS]]
     random.shuffle(files)
-    n_hold = int(len(files) * HOLDOUT_RATIO)
-    hold_files, train_files = files[:n_hold], files[n_hold:]
+    # 같은 원본에서 나온 근접 중복이 학습·홀드아웃에 섞이지 않도록 그룹 단위로 분리한다.
+    # 파일을 무작위로 자르면 눈 사진의 홀드아웃 점수가 실제 일반화보다 낙관적으로 나온다.
+    group_map = {}
+    group_path = REPO_ROOT / "data" / "dataset_group_map.json"
+    if group_path.exists():
+        group_map = json.loads(group_path.read_text(encoding="utf-8"))
+    groups = {}
+    for f in files:
+        groups.setdefault(group_map.get(f, f), []).append(f)
+    group_list = list(groups.values())
+    random.shuffle(group_list)
+    target = int(len(files) * HOLDOUT_RATIO)
+    hold_files, train_files = [], []
+    for group in group_list:
+        if len(hold_files) < target:
+            hold_files.extend(group)
+        else:
+            train_files.extend(group)
+    if not hold_files or not train_files:
+        raise RuntimeError("눈 사진 그룹 분할 결과가 비어 있습니다")
     print(f"눈 사진: 학습 {len(train_files)} / 홀드아웃 {len(hold_files)}  (device {device})")
 
     def build(fs, tag):

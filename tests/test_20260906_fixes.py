@@ -225,8 +225,26 @@ def test_뒤로가기가_검사를_날리지_않는다():
     실측(S25 Ultra) — 수정 후 뒤로 1회: step-ai-result -> step-photo(결과 유지),
                                 2회: step-photo -> step-intro(결과 유지)."""
     core = read("static/app-core.js")
-    assert "history.pushState({ ecStep: sid }" in core
+    assert "history.pushState({" in core
+    assert "ecSession: state.sessionGeneration" in core
     assert "addEventListener('popstate'" in core
     assert "function nextStep(sid, viaHistory = false)" in core
-    # popstate에서 다시 push하면 무한 루프가 된다
     assert "nextStep(sid, true)" in core
+    # popstate에서 다시 push하면 무한 루프가 된다
+
+
+def test_새_회차가_분석과_기능검사_결과를_무효화한다():
+    """홈 이동/새 회차 뒤 늦은 사진 응답이나 이전 시력 결과가 남으면 안 된다."""
+    core = read("static/app-core.js")
+    vision = read("static/app-vision.js")
+    assert "cancelEyeAnalysis()" in core
+    assert "state.visionTest = null" in core
+    assert "_analysisRequestId++" in vision
+
+
+def test_문진_시작이_이전_단계의_세대를_끊지_않는다():
+    """암슬러 다음 문진에서 세대를 다시 올리면 앞 단계 히스토리가 뒤로가기에서 사라진다."""
+    chat = read("static/app-chat.js")
+    start = chat[chat.index("function startChat()"):chat.index("function askRiskQuestion")]
+    assert "sessionGeneration++" not in start
+    assert "if (state.sessionGeneration !== generation) return;" in chat
