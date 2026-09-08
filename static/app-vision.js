@@ -219,14 +219,11 @@ async function runAIAnalysis(droppedFile) {
         return;
     }
 
+    // 새 회차 초기화가 이전 분석을 취소하고 request id를 무효화한다.
+    // 현재 요청 id는 반드시 초기화가 끝난 뒤 발급해야 정상 응답이 stale 처리되지 않는다.
     if (typeof resetScreeningState === 'function') resetScreeningState();
-
-    // ⚠️ 이번 요청 번호는 반드시 resetScreeningState() '뒤에' 확정한다.
-    // resetScreeningState()는 내부에서 cancelEyeAnalysis()를 불러 _analysisRequestId를 올린다.
-    // 앞에서 번호를 따두면 방금 시작한 이 분석이 스스로 취소돼, 서버가 200으로 응답해도
-    // 245줄의 requestId 비교에서 걸려 화면이 로딩에서 3분(ANALYSIS_TIMEOUT_MS) 멈춘다.
-    // (2026-09-07 실측: 서버 200 OK인데 step-ai-loading에서 진행 안 됨)
-    const requestId = _analysisRequestId;
+    else cancelEyeAnalysis();
+    const requestId = ++_analysisRequestId;
 
     const r = new FileReader();
     r.onload = e => {
