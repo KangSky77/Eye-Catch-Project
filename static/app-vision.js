@@ -199,6 +199,7 @@ async function runAIAnalysis(droppedFile) {
     // 빠르게 사진을 다시 고르면 이전 응답이 나중에 도착해 최신 결과를 덮을 수 있다.
     // 이전 전송을 먼저 무효화한다(취소가 늦게 반영돼도 requestId로 걸러진다).
     cancelEyeAnalysis();
+    const preparationId = _analysisRequestId;
 
     const t = translations[state.lang];
     clearUploadError();
@@ -209,6 +210,8 @@ async function runAIAnalysis(droppedFile) {
     }
     // 서버 상한 검사보다 먼저 줄인다 — 200MP 원본은 축소 전에 이미 10MB를 넘는다
     file = await shrinkForUpload(file);
+    // Home or a newer selection can invalidate this work while image decoding runs.
+    if (preparationId !== _analysisRequestId) return;
 
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
         const m = (t.err_file_size || "File too large ({n} MB max).").replace('{n}', MAX_UPLOAD_MB);
@@ -227,6 +230,7 @@ async function runAIAnalysis(droppedFile) {
 
     const r = new FileReader();
     r.onload = e => {
+        if (requestId !== _analysisRequestId) return;
         const p = document.getElementById('preview-image');
         p.src = e.target.result;
         p.classList.remove('hidden');
@@ -456,8 +460,12 @@ function refreshAiResultDisplay() {
 // 실제 임상 프로토콜도 한눈 가리기 + 중심 응시가 기본이다.
 // ------------------------------------------------------------------
 function startAmslerStep() {
+    state.sessionGeneration++;
+    if (typeof removeLoadingMsg === 'function') removeLoadingMsg();
+    invalidateScreeningReport();
     state.amslerEye = 'left';
     state.amslerResult = {};
+    state.hasAmsler = false;
     // 방어적 정리 — 지금 코드는 검사 격자에 왜곡을 걸지 않지만, 브라우저가 예전 JS를
     // 캐시하고 있다가 새 HTML과 섞이는 경우가 있어 회차 시작 시 한 번 걷어둔다.
     const box = document.getElementById('amsler-box');

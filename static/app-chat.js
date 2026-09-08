@@ -8,6 +8,8 @@ function startChat() {
     // 시작한 새 문진에 '19 / 20 이전 회차 질문'으로 끼어든다(뒤로가기 → 암슬러 재답변 경로에서 재현).
     // 히스토리 유효성은 navEpoch가 따로 관리하므로 여기서 올려도 뒤로가기가 깨지지 않는다.
     state.sessionGeneration++;
+    invalidateScreeningReport();
+    removeLoadingMsg();
     document.getElementById('chat-box').innerHTML = '';
     setChatAnswerMode('yesno');   // 이전 회차에서 자유 입력칸이 열려 있었을 수 있다
 
@@ -84,7 +86,9 @@ function handleAnswer(value, label) {
         state.riskAnswers[q.code] = value;
         state.chatHistory.push({ q: translations[state.lang][q.key] || q.key, a: label });
         state.riskIdx++;
+        const generation = state.sessionGeneration;
         setTimeout(() => {
+            if (state.sessionGeneration !== generation) return;
             if (state.riskIdx < riskQuestions.length) askRiskQuestion();
             else askSymptomQuestion();          // 위험요인이 끝나면 질환별 문진으로
         }, 500);
@@ -190,7 +194,11 @@ function handleSymptomAnswer(yes) {
     }
 
     state.symIdx++;
-    setTimeout(askSymptomQuestion, 450);
+    const generation = state.sessionGeneration;
+    setTimeout(() => {
+        if (state.sessionGeneration !== generation) return;
+        askSymptomQuestion();
+    }, 450);
 }
 
 /** 문진 종료 → 기존 동적 질문(LLM) 단계로 넘긴다. */
@@ -382,6 +390,7 @@ async function fetchNextQuestion() {
 async function handleChatAnswer(yes) {
     if (state.chatBusy) return;          // 처리 중 중복 클릭 무시 (질문/답변 어긋남·중복 호출 방지)
     state.chatBusy = true;               // 다음 질문이 표시될 때까지 잠금
+    const generation = state.sessionGeneration;
 
     const answerText = yes ? translations[state.lang].chat_yes : translations[state.lang].chat_no;
     addMsg('user', answerText);
@@ -395,9 +404,14 @@ async function handleChatAnswer(yes) {
         state.stepIdx++;
 
         if (state.stepIdx < questions[state.lang].length) {
-            setTimeout(() => { addMsg('bot', questions[state.lang][state.stepIdx].t); state.chatBusy = false; }, 600);
+            setTimeout(() => {
+                if (state.sessionGeneration !== generation) return;
+                addMsg('bot', questions[state.lang][state.stepIdx].t);
+                state.chatBusy = false;
+            }, 600);
         } else {
             setTimeout(() => {
+                if (state.sessionGeneration !== generation) return;
                 addLoadingMsg(translations[state.lang].survey_done || "기본 문진이 완료되었습니다. 맞춤형 추가 질문을 생성 중입니다...");
                 fetchNextQuestion();
             }, 600);

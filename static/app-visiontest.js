@@ -516,6 +516,26 @@ window.addEventListener('DOMContentLoaded', vtInitCalibrationUI);
 // 시작 / 종료
 // ------------------------------------------------------------------
 
+function vtReset() {
+    state.visionTest = null;
+    Object.assign(vtState, {
+        phase: 'idle', eye: 'left', firstEye: null, levelIdx: 0,
+        trial: 0, correct: 0, current: null,
+        results: { left: {}, right: {} }, acuityLevels: null, maxDisplayableAcuity: null,
+    });
+    for (const id of ['vt-result', 'vt-eye-prompt', 'vt-test-area', 'vt-cant-see-hint']) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    }
+    for (const id of ['vt-intro', 'vt-calib']) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('hidden');
+    }
+    const body = document.getElementById('vt-result-body');
+    if (body) body.innerHTML = '';
+    vtLockViewport(false);
+}
+
 function vtStart() {
     const cal = vtCalibration();
     const t = translations[state.lang];

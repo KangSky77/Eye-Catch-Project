@@ -25,6 +25,9 @@ def test_새_검사는_이전_추가질문_답변을_지운다():
     core = read("static/app-core.js")
     body = core[core.index("function resetScreeningState()"):]
     body = body[:body.index("\n}\n")]
+    assert "invalidateScreeningReport()" in body
+    body = core[core.index("function invalidateScreeningReport()"):]
+    body = body[:body.index("\n}\n")]
     assert "followup-response" in body
     assert "user-followup-input" in body
 

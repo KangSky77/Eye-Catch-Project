@@ -398,7 +398,7 @@ function goHome() {
 /** Start a new screening session without carrying results or generated opinion over. */
 function resetScreeningState() {
     state.sessionGeneration++;
-    cancelAiOpinion();
+    if (state._chatLoaderStop) state._chatLoaderStop();
     if (typeof cancelEyeAnalysis === 'function') cancelEyeAnalysis();
     state.stepIdx = 0; state.dynamicCount = 0; state.chatHistory = [];
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
@@ -408,8 +408,14 @@ function resetScreeningState() {
     state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
     state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
     state.visionTest = null;
+    if (typeof vtReset === 'function') vtReset();
+    invalidateScreeningReport();
+}
+
+/** Invalidate derived report data when its screening inputs are restarted. */
+function invalidateScreeningReport() {
+    cancelAiOpinion();
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
-    state.freeAnswers = [];
     const opinion = document.getElementById('gemma-opinion-text');
     if (opinion) { opinion.textContent = ''; opinion.classList.add('hidden'); }
     const stale = document.getElementById('opinion-stale'); if (stale) stale.classList.add('hidden');
@@ -423,6 +429,7 @@ function resetScreeningState() {
     if (fuResp) { fuResp.innerText = ''; fuResp.classList.add('hidden'); fuResp.classList.remove('text-rose-600'); }
     const fuInput = document.getElementById('user-followup-input');
     if (fuInput) fuInput.value = '';
+    if (typeof updateReportGate === 'function') updateReportGate();
 }
 
 function openMap() {

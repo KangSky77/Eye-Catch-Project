@@ -141,3 +141,98 @@ test('서버 오류는 언어 중립 코드로 번역된다', async () => {
     assert.equal(h.banners[0], '해상도가 너무 높아요');
     assert.equal(h.steps[h.steps.length - 1], 'step-photo');
 });
+
+test('사진 준비 중 초기화하면 완료된 축소 작업도 업로드하지 않는다', async () => {
+    const h = setup(), c = h.context;
+    let release;
+    c.shrinkForUpload = file => new Promise(resolve => { release = () => resolve(file); });
+    const done = c.runAIAnalysis(h.file);
+    c.resetScreeningState();
+    release();
+    await new Promise(r => setImmediate(r));
+    const count = h.uploadCount();
+    if (count) h.resolve(h.ok());
+    await done;
+    assert.equal(count, 0);
+    assert.equal(c.state.aiResultCode, '');
+});
+
+test('두 사진의 준비 순서가 역전돼도 마지막 선택만 분석한다', async () => {
+    const h = setup(), c = h.context, releases = [];
+    c.shrinkForUpload = file => new Promise(resolve => releases.push(() => resolve(file)));
+    const old = c.runAIAnalysis(h.file);
+    const current = c.runAIAnalysis(h.file);
+    releases[1]();
+    await new Promise(r => setImmediate(r));
+    h.resolve(h.ok({ result_code: 'risk', probability: 90 }));
+    await current;
+    releases[0]();
+    await new Promise(r => setImmediate(r));
+    const count = h.uploadCount();
+    if (count > 1) h.resolve(h.ok());
+    await old;
+    assert.equal(count, 1);
+    assert.equal(c.state.aiResultCode, 'risk');
+});
+
+function chatSetup() {
+    const h = setup(), c = h.context;
+    const timers = [];
+    c.setTimeout = fn => timers.push(fn);
+    c.riskQuestions = [{ code: 'age', key: 'age', type: 'choice', options: [] }];
+    c.symptomQuestions = [{ code: 'blur', key: 'blur' }];
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../static/app-chat.js'), 'utf8'), c);
+    c.addMsg = () => {};
+    c.askRiskQuestion = () => { c.state.chatBusy = false; };
+    return { ...h, timers };
+}
+
+test('문진 재시작은 이전 완료 판정과 소견서를 무효화하고 사진은 유지한다', () => {
+    const h = chatSetup(), c = h.context;
+    vm.runInContext(slice('app-findings.js', 'function hasCompletedScreening()', '/** 리포트 탭'), c);
+    c.state.aiResultCode = 'risk';
+    c.state.triage = { level: 'now' };
+    c.state.opinionRequest = { cataract_code: 'risk' };
+    const opinion = c.document.getElementById('gemma-opinion-text');
+    opinion.textContent = 'Previous report';
+    c.document.getElementById('followup-response').innerText = 'Previous answer';
+    assert.equal(c.hasCompletedScreening(), true);
+    c.startChat();
+    assert.equal(c.hasCompletedScreening(), false);
+    assert.equal(c.state.opinionRequest, null);
+    assert.equal(opinion.textContent, '');
+    assert.equal(c.document.getElementById('followup-response').innerText, '');
+    assert.equal(c.state.aiResultCode, 'risk');
+});
+
+for (const stage of ['risk', 'symptom']) {
+    test(`${stage} 문항 타이머는 새 문진에서 실행되지 않는다`, () => {
+        const h = chatSetup(), c = h.context;
+        c.startChat();
+        if (stage === 'risk') c.handleAnswer('adult', 'Adult');
+        else c.handleSymptomAnswer(false);
+        assert.equal(h.timers.length, 1);
+        c.startChat();
+        let staleCalls = 0;
+        c.addMsg = () => staleCalls++;
+        c.askRiskQuestion = c.askSymptomQuestion = () => staleCalls++;
+        h.timers.forEach(fn => fn());
+        assert.equal(staleCalls, 0);
+    });
+}
+
+test('검사 초기화는 기능검사 상태와 화면을 함께 초기화한다', () => {
+    const h = setup(), c = h.context;
+    c.document.addEventListener = () => {};
+    c.document.querySelector = () => null;
+    c.document.body = c.document.createElement();
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../static/app-visiontest.js'), 'utf8'), c);
+    vm.runInContext("vtState.phase = 'done'; vtState.results.left.acuity = 0.5;", c);
+    c.document.getElementById('vt-result-body').innerHTML = 'Previous values';
+    c.state.visionTest = { asymmetric: false };
+    c.resetScreeningState();
+    assert.equal(vm.runInContext('vtState.phase', c), 'idle');
+    assert.equal(c.state.visionTest, null);
+    assert.equal(c.document.getElementById('vt-result').classList.contains('hidden'), true);
+    assert.equal(c.document.getElementById('vt-result-body').innerHTML, '');
+});
