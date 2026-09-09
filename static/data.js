@@ -28,7 +28,7 @@ const translations = {
         rep_warn: "본 리포트는 AI 자가진단 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.",
         dis_card_hint: "카드를 누르면 자세한 설명을 확인할 수 있어요.", dis_more: "자세히 보기 →", dis_modal_note: "이런 증상이 의심되면 안과 검진을 받아보세요.", dm_close: "닫기", dis_ai_badge: "AI 분석 지원",
         dis_modal_image: "임상 참고 이미지", dis_modal_symptoms: "주요 증상", dis_modal_risk: "위험 요인", dis_modal_care: "검사와 치료", dis_modal_urgent: "빠른 진료가 필요한 경우", dis_modal_source: "공식 질환 정보", dis_modal_image_note: "교육용 참고 이미지이며 사진만으로 질환을 진단할 수 없습니다.", dis_modal_image_source: "이미지 원본", dis_modal_license: "라이선스", dis_modal_image_change_reencoded: "원본 이미지를 웹 표시용으로 축소·재인코딩했습니다(내용 편집·크롭 없음).",
-        sim_title: "시야 체험", sim_desc: "이 질환이 진행되면 이렇게 보일 수 있어요", sim_normal: "정상 시야", sim_strength: "체험 강도", sim_disclaimer: "교육용 재현이며 실제 증상은 사람마다 다릅니다. 진단 도구가 아닙니다.", sim_open_btn: "질환별 시야 체험하기", sim_close_btn: "시야 체험 닫기", sim_pick: "체험할 질환을 고르고 아래 슬라이더를 움직여 보세요.", sim_photo_credit: "사진",
+        sim_title: "시야 체험", sim_desc: "이 질환이 진행되면 이렇게 보일 수 있어요", sim_normal: "정상 시야", sim_strength: "체험 강도", sim_disclaimer: "교육용 재현이며 실제 증상은 사람마다 다릅니다. 진단 도구가 아닙니다.", sim_pick: "체험할 질환을 고르고 아래 슬라이더를 움직여 보세요.", sim_photo_credit: "사진",
         dis_modal_image_external: "외안부 사진", dis_modal_image_fundus: "안저 사진 · 병원 장비 필요", dis_modal_image_fundus_note: "눈 안쪽 망막에 생기는 질환이라 겉모습으로는 확인할 수 없고, 앱의 사진 분석 대상도 아닙니다.",
         map_page_title: "내 주변 안과 찾기", map_locate: "내 위치로 찾기", map_open_full: "카카오맵에서 전체 보기",
         map_status_idle: "아래 버튼을 눌러 가까운 안과를 찾아보세요.", map_example_badge: "예시 위치(서울 강남) — 아직 내 위치를 확인하지 않았어요", map_status_loading: "위치를 확인하는 중...", map_status_denied: "위치 권한이 거부되었어요. 전체 지도에서 검색해 주세요.", map_status_unsupported: "이 브라우저는 위치 기능을 지원하지 않아요.",
@@ -79,7 +79,7 @@ const translations = {
         rep_warn: "This is an AI-assisted tool. Please consult an ophthalmologist for an accurate diagnosis.",
         dis_card_hint: "Tap a card to see the full description.", dis_more: "Learn more →", dis_modal_note: "If you notice these symptoms, please see an ophthalmologist.", dm_close: "Close", dis_ai_badge: "AI-Powered",
         dis_modal_image: "Clinical reference image", dis_modal_symptoms: "Common symptoms", dis_modal_risk: "Risk factors", dis_modal_care: "Exams and treatment", dis_modal_urgent: "When to seek prompt care", dis_modal_source: "Official condition guide", dis_modal_image_note: "For education only. A condition cannot be diagnosed from a photo alone.", dis_modal_image_source: "Image source", dis_modal_license: "License", dis_modal_image_change_reencoded: "The original image was downsized and re-encoded for web display (no content edits or cropping).",
-        sim_title: "Vision simulator", sim_desc: "How things may look as this condition progresses", sim_normal: "Normal vision", sim_strength: "Severity", sim_disclaimer: "An educational re-creation. Real symptoms vary by person. Not a diagnostic tool.", sim_open_btn: "Try the vision simulator", sim_close_btn: "Close the simulator", sim_pick: "Pick a condition, then move the slider.", sim_photo_credit: "Photo",
+        sim_title: "Vision simulator", sim_desc: "How things may look as this condition progresses", sim_normal: "Normal vision", sim_strength: "Severity", sim_disclaimer: "An educational re-creation. Real symptoms vary by person. Not a diagnostic tool.", sim_pick: "Pick a condition, then move the slider.", sim_photo_credit: "Photo",
         dis_modal_image_external: "External eye photo", dis_modal_image_fundus: "Fundus photo · clinic equipment needed", dis_modal_image_fundus_note: "This develops on the retina inside the eye, so it is invisible from the outside and is not covered by the app photo analysis.",
         map_page_title: "Find a Clinic Near You", map_locate: "Use My Location", map_open_full: "Open Full Map",
         map_status_idle: "Tap the button below to find nearby eye clinics.", map_example_badge: "Example location (Seoul) — your location hasn't been checked yet", map_status_loading: "Locating you...", map_status_denied: "Location denied. Please search on the full map.", map_status_unsupported: "This browser does not support geolocation.",
@@ -130,7 +130,7 @@ const translations = {
         rep_warn: "Herramienta asistida por IA. Consulte a un oftalmólogo para un diagnóstico preciso.",
         dis_card_hint: "Toca una tarjeta para ver la descripción completa.", dis_more: "Ver más →", dis_modal_note: "Si nota estos síntomas, consulte a un oftalmólogo.", dm_close: "Cerrar", dis_ai_badge: "Análisis con IA",
         dis_modal_image: "Imagen clínica de referencia", dis_modal_symptoms: "Síntomas frecuentes", dis_modal_risk: "Factores de riesgo", dis_modal_care: "Pruebas y tratamiento", dis_modal_urgent: "Cuándo buscar atención rápida", dis_modal_source: "Guía oficial", dis_modal_image_note: "Solo con fines educativos. Una foto por sí sola no permite diagnosticar.", dis_modal_image_source: "Fuente de la imagen", dis_modal_license: "Licencia", dis_modal_image_change_reencoded: "La imagen original se redujo y recodificó para la web (sin editar ni recortar el contenido).",
-        sim_title: "Simulador de visión", sim_desc: "Cómo puede verse a medida que avanza la enfermedad", sim_normal: "Visión normal", sim_strength: "Intensidad", sim_disclaimer: "Recreación educativa. Los síntomas reales varían según la persona. No es una herramienta diagnóstica.", sim_open_btn: "Probar el simulador de visión", sim_close_btn: "Cerrar el simulador", sim_pick: "Elija una enfermedad y mueva el control deslizante.", sim_photo_credit: "Foto",
+        sim_title: "Simulador de visión", sim_desc: "Cómo puede verse a medida que avanza la enfermedad", sim_normal: "Visión normal", sim_strength: "Intensidad", sim_disclaimer: "Recreación educativa. Los síntomas reales varían según la persona. No es una herramienta diagnóstica.", sim_pick: "Elija una enfermedad y mueva el control deslizante.", sim_photo_credit: "Foto",
         dis_modal_image_external: "Foto ocular externa", dis_modal_image_fundus: "Retinografía · requiere equipo clínico", dis_modal_image_fundus_note: "Se desarrolla en la retina, dentro del ojo, por lo que no se ve desde fuera ni lo cubre el análisis de fotos de la app.",
         map_page_title: "Encontrar una clínica cercana", map_locate: "Usar mi ubicación", map_open_full: "Abrir mapa completo",
         map_status_idle: "Pulse el botón para encontrar clínicas cercanas.", map_example_badge: "Ubicación de ejemplo (Seúl): su posición aún no se ha comprobado", map_status_loading: "Localizando...", map_status_denied: "Ubicación denegada. Busque en el mapa completo.", map_status_unsupported: "Este navegador no admite geolocalización.",
@@ -181,7 +181,7 @@ const translations = {
         rep_warn: "Outil assisté par IA. Veuillez consulter un ophtalmologiste.",
         dis_card_hint: "Appuyez sur une carte pour voir la description complète.", dis_more: "En savoir plus →", dis_modal_note: "Si vous remarquez ces symptômes, consultez un ophtalmologiste.", dm_close: "Fermer", dis_ai_badge: "Analyse par IA",
         dis_modal_image: "Image clinique de référence", dis_modal_symptoms: "Symptômes fréquents", dis_modal_risk: "Facteurs de risque", dis_modal_care: "Examens et traitement", dis_modal_urgent: "Quand consulter rapidement", dis_modal_source: "Guide officiel", dis_modal_image_note: "Image éducative uniquement. Une photo seule ne permet pas de poser un diagnostic.", dis_modal_image_source: "Source de l’image", dis_modal_license: "Licence", dis_modal_image_change_reencoded: "L'image d'origine a été réduite et réencodée pour l'affichage web (sans retouche ni recadrage).",
-        sim_title: "Simulateur de vision", sim_desc: "À quoi cela peut ressembler quand la maladie progresse", sim_normal: "Vision normale", sim_strength: "Intensité", sim_disclaimer: "Reconstitution pédagogique. Les symptômes réels varient. Ce n'est pas un outil de diagnostic.", sim_open_btn: "Essayer le simulateur de vision", sim_close_btn: "Fermer le simulateur", sim_pick: "Choisissez une maladie, puis déplacez le curseur.", sim_photo_credit: "Photo",
+        sim_title: "Simulateur de vision", sim_desc: "À quoi cela peut ressembler quand la maladie progresse", sim_normal: "Vision normale", sim_strength: "Intensité", sim_disclaimer: "Reconstitution pédagogique. Les symptômes réels varient. Ce n'est pas un outil de diagnostic.", sim_pick: "Choisissez une maladie, puis déplacez le curseur.", sim_photo_credit: "Photo",
         dis_modal_image_external: "Photo oculaire externe", dis_modal_image_fundus: "Rétinographie · équipement clinique requis", dis_modal_image_fundus_note: "Cette atteinte se développe sur la rétine, à l'intérieur de l'œil : invisible de l'extérieur, elle n'est pas couverte par l'analyse photo de l'app.",
         map_page_title: "Trouver une clinique près de chez vous", map_locate: "Utiliser ma position", map_open_full: "Ouvrir la carte complète",
         map_status_idle: "Appuyez sur le bouton pour trouver des cliniques proches.", map_example_badge: "Emplacement d'exemple (Séoul) — votre position n'a pas encore été vérifiée", map_status_loading: "Localisation...", map_status_denied: "Position refusée. Recherchez sur la carte complète.", map_status_unsupported: "Ce navigateur ne prend pas en charge la géolocalisation.",
@@ -232,7 +232,7 @@ const translations = {
         rep_warn: "本レポートはAIによる補助資料です。正確な診断のため眼科を受診してください。",
         dis_card_hint: "カードをタップすると詳しい説明が見られます。", dis_more: "詳しく見る →", dis_modal_note: "このような症状があれば眼科を受診してください。", dm_close: "閉じる", dis_ai_badge: "AI分析対応",
         dis_modal_image: "臨床参考画像", dis_modal_symptoms: "主な症状", dis_modal_risk: "リスク因子", dis_modal_care: "検査と治療", dis_modal_urgent: "早めの受診が必要な場合", dis_modal_source: "公的な疾患情報", dis_modal_image_note: "教育用の参考画像です。写真だけで診断することはできません。", dis_modal_image_source: "画像の出典", dis_modal_license: "ライセンス", dis_modal_image_change_reencoded: "元画像をウェブ表示用に縮小・再エンコードしました（内容の編集・トリミングなし）。",
-        sim_title: "見え方の体験", sim_desc: "この疾患が進行するとこう見えることがあります", sim_normal: "正常な見え方", sim_strength: "強さ", sim_disclaimer: "教育用の再現です。実際の症状は人により異なります。診断ツールではありません。", sim_open_btn: "疾患別の見え方を体験する", sim_close_btn: "体験を閉じる", sim_pick: "疾患を選んでスライダーを動かしてください。", sim_photo_credit: "写真",
+        sim_title: "見え方の体験", sim_desc: "この疾患が進行するとこう見えることがあります", sim_normal: "正常な見え方", sim_strength: "強さ", sim_disclaimer: "教育用の再現です。実際の症状は人により異なります。診断ツールではありません。", sim_pick: "疾患を選んでスライダーを動かしてください。", sim_photo_credit: "写真",
         dis_modal_image_external: "外眼部写真", dis_modal_image_fundus: "眼底写真 · 医療機器が必要", dis_modal_image_fundus_note: "眼の内側の網膜に生じるため外見では確認できず、アプリの写真分析の対象外です。",
         map_page_title: "近くの眼科を探す", map_locate: "現在地で探す", map_open_full: "地図全体を開く",
         map_status_idle: "下のボタンを押して近くの眼科を探しましょう。", map_example_badge: "例の位置（ソウル）— 現在地はまだ確認していません", map_status_loading: "現在地を確認中...", map_status_denied: "位置情報が拒否されました。地図全体で検索してください。", map_status_unsupported: "このブラウザは位置情報に対応していません。",
@@ -283,7 +283,7 @@ const translations = {
         rep_warn: "本报告为AI辅助参考资料，为了获得准确诊断，请咨询眼科医生。",
         dis_card_hint: "点击卡片可查看详细说明。", dis_more: "查看详情 →", dis_modal_note: "如有这些症状，请及时就诊眼科。", dm_close: "关闭", dis_ai_badge: "支持AI分析",
         dis_modal_image: "临床参考图片", dis_modal_symptoms: "常见症状", dis_modal_risk: "风险因素", dis_modal_care: "检查与治疗", dis_modal_urgent: "需要尽快就医的情况", dis_modal_source: "官方疾病信息", dis_modal_image_note: "图片仅供健康教育参考，不能仅凭照片诊断疾病。", dis_modal_image_source: "图片来源", dis_modal_license: "许可证", dis_modal_image_change_reencoded: "原图已为网页显示缩小并重新编码（未编辑或裁剪内容）。",
-        sim_title: "视觉体验", sim_desc: "随着病情发展，可能会看到这样的画面", sim_normal: "正常视觉", sim_strength: "强度", sim_disclaimer: "这是教育用的模拟，实际症状因人而异，并非诊断工具。", sim_open_btn: "体验各疾病的视野", sim_close_btn: "关闭体验", sim_pick: "选择一种疾病，然后拖动滑块。", sim_photo_credit: "照片",
+        sim_title: "视觉体验", sim_desc: "随着病情发展，可能会看到这样的画面", sim_normal: "正常视觉", sim_strength: "强度", sim_disclaimer: "这是教育用的模拟，实际症状因人而异，并非诊断工具。", sim_pick: "选择一种疾病，然后拖动滑块。", sim_photo_credit: "照片",
         dis_modal_image_external: "眼表照片", dis_modal_image_fundus: "眼底照片 · 需医院设备", dis_modal_image_fundus_note: "病变位于眼球内部的视网膜，从外观无法看出，也不在本应用的照片分析范围内。",
         map_page_title: "查找附近的眼科", map_locate: "使用我的位置", map_open_full: "打开完整地图",
         map_status_idle: "点击下方按钮查找附近的眼科。", map_example_badge: "示例位置（首尔）— 尚未获取您的位置", map_status_loading: "正在确认位置...", map_status_denied: "位置权限被拒绝，请在完整地图中搜索。", map_status_unsupported: "此浏览器不支持定位功能。",
@@ -452,7 +452,6 @@ const diseaseData = {
 // ==========================================================================
 const extraStrings = {
   ko: {
-    nav_vision: "시력 검사",
     vt_title: "시력 · 대비감도 자가검사", vt_start: "검사 시작",
     vt_calib_title: "1단계 · 화면 크기 맞추기",
     vt_calib_desc: "카드(신용/체크/신분증)를 화면에 대고 사각형을 실물과 같은 크기로 맞추세요. 국제 규격이라 어느 카드든 됩니다.",
@@ -487,10 +486,9 @@ const extraStrings = {
     ams_result_partial: "검사 미완료 (한쪽 눈만 응답)", ams_result_both: "양쪽 정상", ams_result_left: "왼쪽 눈 이상", ams_result_right: "오른쪽 눈 이상", ams_result_bad: "양쪽 이상",
     consent_title: "결과 저장 동의", consent_agree: "동의하고 저장", consent_skip: "저장하지 않기",
     consent_text: "검사 결과와 AI 참고 정보를 서버에 저장합니다. 건강정보는 민감정보이므로 동의하신 경우에만 저장하며, 사진은 저장하지 않습니다.",
-    rep_info_title: "AI 3줄 요약", info_writing: "AI가 참고 정보를 정리하고 있습니다"
+    rep_info_title: "AI 소견", info_writing: "AI가 참고 정보를 정리하고 있습니다"
   },
   en: {
-    nav_vision: "Vision Test",
     vt_title: "Visual Acuity & Contrast Test", vt_start: "Start test",
     vt_calib_title: "Step 1 · Match your screen size",
     vt_calib_desc: "Hold any card (credit/debit/ID) against the screen and resize the rectangle to match. Cards are a fixed international size.",
@@ -525,10 +523,9 @@ const extraStrings = {
     ams_result_partial: "Incomplete (only one eye answered)", ams_result_both: "Both normal", ams_result_left: "Left eye abnormal", ams_result_right: "Right eye abnormal", ams_result_bad: "Both abnormal",
     consent_title: "Consent to save results", consent_agree: "Agree and save", consent_skip: "Do not save",
     consent_text: "Your results and the AI reference notes will be stored on the server. Health data is sensitive, so we store it only with your consent. Photos are never stored.",
-    rep_info_title: "AI 3-line summary", info_writing: "The AI is preparing reference notes"
+    rep_info_title: "AI opinion", info_writing: "The AI is preparing reference notes"
   },
   es: {
-    nav_vision: "Test visual",
     vt_title: "Test de agudeza y sensibilidad al contraste", vt_start: "Comenzar",
     vt_calib_title: "Paso 1 · Ajuste el tamaño de pantalla",
     vt_calib_desc: "Ponga una tarjeta (crédito/débito/identificación) sobre la pantalla y ajuste el rectángulo. Las tarjetas tienen tamaño internacional fijo.",
@@ -563,10 +560,9 @@ const extraStrings = {
     ams_result_partial: "Incompleto (solo un ojo respondido)", ams_result_both: "Ambos normales", ams_result_left: "Ojo izquierdo anormal", ams_result_right: "Ojo derecho anormal", ams_result_bad: "Ambos anormales",
     consent_title: "Consentimiento para guardar", consent_agree: "Aceptar y guardar", consent_skip: "No guardar",
     consent_text: "Sus resultados y las notas de referencia de la IA se guardarán en el servidor. Los datos de salud son sensibles, así que solo se guardan con su consentimiento. Las fotos nunca se guardan.",
-    rep_info_title: "Resumen de la IA en 3 líneas", info_writing: "La IA está preparando las notas"
+    rep_info_title: "Informe de la IA", info_writing: "La IA está preparando las notas"
   },
   fr: {
-    nav_vision: "Test visuel",
     vt_title: "Test d'acuité et de sensibilité au contraste", vt_start: "Commencer",
     vt_calib_title: "Étape 1 · Calibrer la taille de l'écran",
     vt_calib_desc: "Placez une carte (crédit/débit/identité) sur l'écran et ajustez le rectangle. Les cartes ont une taille internationale fixe.",
@@ -601,10 +597,9 @@ const extraStrings = {
     ams_result_partial: "Incomplet (un seul œil répondu)", ams_result_both: "Les deux normaux", ams_result_left: "Œil gauche anormal", ams_result_right: "Œil droit anormal", ams_result_bad: "Les deux anormaux",
     consent_title: "Consentement à l'enregistrement", consent_agree: "Accepter et enregistrer", consent_skip: "Ne pas enregistrer",
     consent_text: "Vos résultats et les notes de référence de l'IA seront enregistrés sur le serveur. Les données de santé étant sensibles, l'enregistrement n'a lieu qu'avec votre consentement. Les photos ne sont jamais enregistrées.",
-    rep_info_title: "Résumé de l'IA en 3 lignes", info_writing: "L'IA prépare les notes de référence"
+    rep_info_title: "Avis de l'IA", info_writing: "L'IA prépare les notes de référence"
   },
   ja: {
-    nav_vision: "視力検査",
     vt_title: "視力・コントラスト感度セルフチェック", vt_start: "検査を開始",
     vt_calib_title: "ステップ1・画面サイズの調整",
     vt_calib_desc: "カード(クレジット/キャッシュ/身分証)を画面に当て、四角形を実物と同じ大きさに合わせてください。カードは国際規格で固定サイズです。",
@@ -639,10 +634,9 @@ const extraStrings = {
     ams_result_partial: "未完了（片目のみ回答）", ams_result_both: "両眼正常", ams_result_left: "左目に異常", ams_result_right: "右目に異常", ams_result_bad: "両眼に異常",
     consent_title: "結果保存の同意", consent_agree: "同意して保存", consent_skip: "保存しない",
     consent_text: "検査結果とAI参考情報をサーバーに保存します。健康情報は機微情報のため、同意いただいた場合のみ保存し、写真は保存しません。",
-    rep_info_title: "AI 3行要約", info_writing: "AIが参考情報をまとめています"
+    rep_info_title: "AIの所見", info_writing: "AIが参考情報をまとめています"
   },
   zh: {
-    nav_vision: "视力检查",
     vt_title: "视力与对比敏感度自测", vt_start: "开始检查",
     vt_calib_title: "第1步 · 校准屏幕尺寸",
     vt_calib_desc: "把任意卡片(信用卡/借记卡/身份证)贴在屏幕上，调整矩形至与实物一致。卡片为国际统一尺寸。",
@@ -677,7 +671,7 @@ const extraStrings = {
     ams_result_partial: "未完成（仅回答了一只眼）", ams_result_both: "双眼正常", ams_result_left: "左眼异常", ams_result_right: "右眼异常", ams_result_bad: "双眼异常",
     consent_title: "保存结果的同意", consent_agree: "同意并保存", consent_skip: "不保存",
     consent_text: "检查结果与AI参考信息将保存到服务器。健康信息属于敏感信息，仅在您同意时保存，照片不会被保存。",
-    rep_info_title: "AI 三行摘要", info_writing: "AI正在整理参考信息"
+    rep_info_title: "AI 意见", info_writing: "AI正在整理参考信息"
   }
 };
 
@@ -720,37 +714,43 @@ Object.assign(translations.ko, {
   q_surgery_pain: "수술한 눈에 심한 통증이 있거나 점점 더 아파지고 있나요?",
   q_surgery_vision: "수술 후 시력이 갑자기 떨어졌거나 점점 더 흐려지고 있나요?",
   q_surgery_redness: "수술한 눈의 충혈이나 끈적한 분비물이 점점 심해지고 있나요?",
-  q_surgery_glare: "수술 후 눈부심은 있지만 통증·시력 저하·심해지는 충혈은 없나요?",
+  sym_surgery_pain: "수술 후 통증 악화", sym_surgery_vision: "수술 후 시력 악화",
+  sym_surgery_redness: "수술 후 충혈·분비물",
 });
 Object.assign(translations.en, {
   q_surgery_pain: "Do you have severe or worsening pain in the operated eye?",
   q_surgery_vision: "Has vision suddenly worsened or become progressively blurrier after surgery?",
   q_surgery_redness: "Is increasing redness or sticky discharge developing in the operated eye?",
-  q_surgery_glare: "Do you have glare after surgery without pain, vision loss, or worsening redness?",
+  sym_surgery_pain: "Worsening pain after surgery", sym_surgery_vision: "Worsening vision after surgery",
+  sym_surgery_redness: "Redness / discharge after surgery",
 });
 Object.assign(translations.es, {
   q_surgery_pain: "¿Tiene dolor intenso o cada vez mayor en el ojo operado?",
   q_surgery_vision: "¿La visión empeoró de repente o se volvió más borrosa después de la cirugía?",
   q_surgery_redness: "¿Aumentan el enrojecimiento o la secreción pegajosa del ojo operado?",
-  q_surgery_glare: "¿Tiene deslumbramiento tras la cirugía sin dolor, pérdida visual ni más enrojecimiento?",
+  sym_surgery_pain: "Dolor creciente tras la cirugía", sym_surgery_vision: "Visión peor tras la cirugía",
+  sym_surgery_redness: "Enrojecimiento / secreción tras la cirugía",
 });
 Object.assign(translations.fr, {
   q_surgery_pain: "Avez-vous une douleur intense ou croissante dans l’œil opéré ?",
   q_surgery_vision: "Votre vision a-t-elle soudainement baissé ou devient-elle plus floue après l’opération ?",
   q_surgery_redness: "La rougeur ou un écoulement collant de l’œil opéré s’aggrave-t-il ?",
-  q_surgery_glare: "Avez-vous une gêne à la lumière après l’opération sans douleur, baisse de vision ni rougeur croissante ?",
+  sym_surgery_pain: "Douleur croissante après l’opération", sym_surgery_vision: "Vision dégradée après l’opération",
+  sym_surgery_redness: "Rougeur / sécrétions après l’opération",
 });
 Object.assign(translations.ja, {
   q_surgery_pain: "手術した目に強い痛みや、だんだん強くなる痛みがありますか？",
   q_surgery_vision: "手術後、視力が急に低下したり、だんだんぼやけたりしていますか？",
   q_surgery_redness: "手術した目の充血や粘つく目やにが強くなっていますか？",
-  q_surgery_glare: "手術後にまぶしさはありますが、痛み・視力低下・充血の悪化はありませんか？",
+  sym_surgery_pain: "術後の痛みの悪化", sym_surgery_vision: "術後の視力悪化",
+  sym_surgery_redness: "術後の充血・目やに",
 });
 Object.assign(translations.zh, {
   q_surgery_pain: "手术眼是否有剧烈或逐渐加重的疼痛？",
   q_surgery_vision: "术后视力是否突然下降或越来越模糊？",
   q_surgery_redness: "手术眼的红肿或黏性分泌物是否越来越严重？",
-  q_surgery_glare: "术后有畏光，但没有疼痛、视力下降或加重的红肿吗？",
+  sym_surgery_pain: "术后疼痛加重", sym_surgery_vision: "术后视力下降",
+  sym_surgery_redness: "术后充血 / 分泌物",
 });
 
 // 카드 방향 안내 — 폰은 카드를 세워야 폭 54mm·높이 85.6mm가 모두 화면에 들어간다.
@@ -867,15 +867,18 @@ const symptomQuestions = [
   { code: 'rf_acute',  key: 'q_rf_acute',  disease: 'glaucoma',    weight: 0, redFlag: true },
   { code: 'rf_sudden', key: 'q_rf_sudden', disease: 'general',     weight: 0, redFlag: true },
 
-  // ── 최근 수술 후 상태: 수술한 사람에게만 추가 ───────────
+  // ── 오래된 수술 이력(4주 초과)의 적신호 ─────────────────
+  // 4주 이내(today·recent)는 이 목록을 쓰지 않는다 — hasSurgery()가 참이면
+  // 문진 전체가 app-surgery.js의 술후 전용 문항으로 교체된다.
+  // 반대로 '4주보다 이전'은 일반 검진(나이·당뇨·백내장·녹내장…)을 그대로 받아야 한다.
+  // 오래 전 라식 한 번으로 백내장 스크리닝이 통째로 사라지면 안 되기 때문이다.
+  // 그래서 여기서는 적신호 3개만 얹는다. 눈부심은 cat_glare가 이미 묻는다.
   { code: 'surgery_pain', key: 'q_surgery_pain', disease: 'general', weight: 0,
-    redFlag: true, showIf: { code: 'surgery', values: ['today', 'recent'] } },
+    redFlag: true, showIf: { code: 'surgery', values: ['past'] } },
   { code: 'surgery_vision', key: 'q_surgery_vision', disease: 'general', weight: 0,
-    redFlag: true, showIf: { code: 'surgery', values: ['today', 'recent'] } },
+    redFlag: true, showIf: { code: 'surgery', values: ['past'] } },
   { code: 'surgery_redness', key: 'q_surgery_redness', disease: 'general', weight: 0,
-    redFlag: true, showIf: { code: 'surgery', values: ['today', 'recent'] } },
-  { code: 'surgery_glare', key: 'q_surgery_glare', disease: 'general', weight: 0,
-    showIf: { code: 'surgery', values: ['today', 'recent'] } },
+    redFlag: true, showIf: { code: 'surgery', values: ['past'] } },
 
   // ── 백내장: 증상이 실제로 유용한 질환 ──────────────────
   { code: 'cat_glare',   key: 'q_cat_glare',   disease: 'cataract', weight: 2 },
@@ -906,10 +909,6 @@ const symptomQuestions = [
 ];
 
 Object.assign(translations.ko, {
-  q_surgery_pain: "수술한 눈에 심한 통증이 있거나 점점 더 아파지고 있나요?",
-  q_surgery_vision: "수술 후 시력이 갑자기 떨어졌거나 점점 더 흐려지고 있나요?",
-  q_surgery_redness: "수술한 눈의 충혈이나 끈적한 분비물이 점점 심해지고 있나요?",
-  q_surgery_glare: "수술 후 눈부심은 있지만 통증·시력 저하·심해지는 충혈은 없나요?",
   q_rf_sudden: "갑자기(몇 시간~며칠 사이) 한쪽 눈이 잘 안 보이게 된 적이 있나요?",
   q_cat_glare: "밤에 운전하거나 불빛을 볼 때 빛이 심하게 번지거나 눈이 부신가요?",
   q_cat_foggy: "안개가 낀 것처럼 전체적으로 뿌옇게 보이나요?",
@@ -1232,11 +1231,6 @@ Object.assign(translations.zh, { map_offline: "无法加载地图。请检查网
 Object.assign(translations.ko, {
   vt_intro_desc: "화면에 표시한 시표로 좌우 눈의 기능 차이를 참고용으로 살펴봅니다. 임상 시력값이나 질환 진단을 제공하지 않습니다.",
   vt_beta_note: "참고용 측정입니다. 기기·조명·거리에 따라 값이 달라질 수 있어, 절대값보다 좌우 차이를 보는 용도로 쓰세요.",
-  find_vt_asym: "기능검사에서 좌우 눈의 결과 차이가 관찰됐습니다. 참고용 측정이지만, 차이가 지속되면 안과에서 확인해 보세요.",
-  find_vt_ok: "측정이 완료된 기능검사 항목에서는 좌우 눈의 뚜렷한 차이가 관찰되지 않았습니다(참고용 측정).",
-  find_vt_unmeasurable: "한쪽 눈은 가장 큰 시표도 판별하지 못했습니다. 측정 조건 문제일 수도 있으나, 좌우 차이가 클 가능성이 있어 안과 확인을 권합니다.",
-  find_vt_unmeasurable_both: "기능검사에서 {kinds} 항목은 양쪽 눈 모두 유효한 값을 얻지 못해 좌우를 비교할 수 없습니다. 양쪽 다 가장 낮은 단계도 통과하지 못한 상태이므로, 조명·거리·눈 가림을 확인해 다시 검사하고 그래도 같으면 안과에서 확인해 보세요.",
-  vt_kind_acuity: "시력", vt_kind_contrast: "대비감도", vt_kind_sep: "·",
   vt_cross_match: "사진 분석에서도 좌우 차이 소견이 있었습니다(두 결과 모두 참고용입니다).",
   tri_factors: "정기 검진을 권하는 이유: {items}",
   tri_note_uncertain: "다만 이번 사진은 판독이 어려웠습니다. 눈을 한쪽씩 가까이(20~30cm) 다시 찍어 확인해 주세요.",
@@ -1247,11 +1241,6 @@ Object.assign(translations.ko, {
 Object.assign(translations.en, {
   vt_intro_desc: "Uses on-screen optotypes to look at the difference between your two eyes, for reference only. It does not provide a clinical acuity value or a diagnosis.",
   vt_beta_note: "Reference measurement. Values vary with device, lighting and distance, so use it to compare your two eyes rather than as an absolute number.",
-  find_vt_asym: "A difference between your eyes was observed in the functional test. This is a reference measurement, but if the difference persists, have it checked at a clinic.",
-  find_vt_ok: "No marked difference between your eyes was observed in the functional-test items that were completed (reference measurement).",
-  find_vt_unmeasurable: "One eye could not identify even the largest optotype. This may be a testing-condition issue, but the difference between your eyes may be large, so an eye exam is recommended.",
-  find_vt_unmeasurable_both: "In the functional test, {kinds} could not be measured validly in either eye, so the two eyes cannot be compared. Neither eye passed even the lowest level — check the lighting, distance and eye covering and try again; if it repeats, have it checked at an eye clinic.",
-  vt_kind_acuity: "visual acuity", vt_kind_contrast: "contrast sensitivity", vt_kind_sep: " and ",
   vt_cross_match: "The photo analysis also showed a side difference (both are reference findings).",
   tri_factors: "Why regular check-ups are recommended: {items}",
   tri_note_uncertain: "That said, this photo was hard to read. Please retake it one eye at a time, up close (20-30 cm), and check again.",
@@ -1262,11 +1251,6 @@ Object.assign(translations.en, {
 Object.assign(translations.es, {
   vt_intro_desc: "Usa optotipos en pantalla para observar la diferencia entre sus dos ojos, solo como referencia. No ofrece agudeza clínica ni diagnóstico.",
   vt_beta_note: "Medición de referencia. Los valores varían según dispositivo, luz y distancia; úselo para comparar ambos ojos, no como valor absoluto.",
-  find_vt_asym: "Se observó una diferencia entre ojos en la prueba funcional. Es una medición de referencia, pero si persiste conviene revisarla.",
-  find_vt_ok: "No se observó una diferencia marcada en los apartados completados de la prueba funcional (medición de referencia).",
-  find_vt_unmeasurable: "Un ojo no identificó ni el optotipo más grande. Puede deberse a las condiciones, pero la diferencia podría ser grande; se recomienda examen.",
-  find_vt_unmeasurable_both: "En la prueba funcional, {kinds} no pudo medirse en ninguno de los ojos, por lo que no pueden compararse. Ningún ojo superó el nivel más bajo: revise la luz, la distancia y la oclusión y repita; si persiste, consulte a un oftalmólogo.",
-  vt_kind_acuity: "la agudeza visual", vt_kind_contrast: "la sensibilidad al contraste", vt_kind_sep: " y ",
   vt_cross_match: "El análisis de foto también mostró diferencia lateral (ambos son hallazgos de referencia).",
   tri_factors: "Por qué se recomiendan revisiones periódicas: {items}",
   tri_note_uncertain: "Aun así, esta foto fue difícil de interpretar. Vuelva a tomarla de cerca (20-30 cm), un ojo cada vez, y compruébelo de nuevo.",
@@ -1277,11 +1261,6 @@ Object.assign(translations.es, {
 Object.assign(translations.fr, {
   vt_intro_desc: "Utilise des optotypes à l'écran pour observer l'écart entre vos deux yeux, à titre indicatif. Ne fournit ni acuité clinique ni diagnostic.",
   vt_beta_note: "Mesure indicative. Les valeurs varient selon l'appareil, l'éclairage et la distance ; utilisez-la pour comparer les deux yeux.",
-  find_vt_asym: "Un écart entre les yeux a été observé au test fonctionnel. Mesure indicative, mais s'il persiste, faites-le vérifier.",
-  find_vt_ok: "Aucun écart marqué n'a été observé dans les éléments terminés du test fonctionnel (mesure indicative).",
-  find_vt_unmeasurable: "Un œil n'a pas identifié même le plus grand optotype. Cela peut venir des conditions, mais l'écart pourrait être important ; un examen est recommandé.",
-  find_vt_unmeasurable_both: "Au test fonctionnel, {kinds} n'a pu être mesuré valablement pour aucun œil ; ils ne peuvent donc pas être comparés. Aucun œil n'a passé le niveau le plus bas : vérifiez les conditions et recommencez ; si cela persiste, consultez un ophtalmologiste.",
-  vt_kind_acuity: "l'acuité visuelle", vt_kind_contrast: "la sensibilité au contraste", vt_kind_sep: " et ",
   vt_cross_match: "L'analyse photo montrait aussi une différence latérale (les deux sont indicatifs).",
   tri_factors: "Pourquoi des contrôles réguliers sont recommandés : {items}",
   tri_note_uncertain: "Cette photo restait toutefois difficile à interpréter. Reprenez-la de près (20-30 cm), un œil à la fois, puis vérifiez de nouveau.",
@@ -1292,11 +1271,6 @@ Object.assign(translations.fr, {
 Object.assign(translations.ja, {
   vt_intro_desc: "画面に表示した視標で左右の差を参考として確認します。臨床的な視力値や診断は提供しません。",
   vt_beta_note: "参考測定です。機器・照明・距離で値が変わるため、絶対値ではなく左右差を見る用途にお使いください。",
-  find_vt_asym: "機能検査で左右差が観察されました。参考測定ですが、差が続く場合は眼科で確認してください。",
-  find_vt_ok: "測定を完了した機能検査項目では、左右の明らかな差は観察されませんでした（参考測定）。",
-  find_vt_unmeasurable: "片方の目は最大の視標も判別できませんでした。測定条件の問題の可能性もありますが、左右差が大きい可能性があり受診をお勧めします。",
-  find_vt_unmeasurable_both: "機能検査で{kinds}は両眼とも有効な値が得られず、左右を比較できません。両眼とも最も低い段階も通過していない状態です。照明・距離・遮蔽を確認して再検査し、同じであれば眼科で確認してください。",
-  vt_kind_acuity: "視力", vt_kind_contrast: "コントラスト感度", vt_kind_sep: "・",
   vt_cross_match: "写真解析でも左右差の所見がありました（いずれも参考情報です）。",
   tri_factors: "定期検診をお勧めする理由: {items}",
   tri_note_uncertain: "ただし今回の写真は判読が難しい状態でした。片目ずつ近く（20〜30cm）で撮り直して、もう一度ご確認ください。",
@@ -1307,11 +1281,6 @@ Object.assign(translations.ja, {
 Object.assign(translations.zh, {
   vt_intro_desc: "用屏幕上的视标以参考方式观察双眼差异。不提供临床视力值或诊断。",
   vt_beta_note: "参考性测量。数值会随设备、光线与距离变化，请用于比较双眼而非作为绝对值。",
-  find_vt_asym: "功能检查中观察到双眼差异。这是参考性测量，若差异持续请到眼科确认。",
-  find_vt_ok: "在已完成的功能检查项目中，未观察到双眼明显差异（参考性测量）。",
-  find_vt_unmeasurable: "一只眼连最大的视标也无法辨认。可能与测量条件有关，但双眼差异可能较大，建议就诊。",
-  find_vt_unmeasurable_both: "功能检查中，{kinds}双眼均未能获得有效数值，因此无法比较。双眼均未通过最低级别，请检查光线、距离和遮眼方式后重新检查；若仍相同，请到眼科确认。",
-  vt_kind_acuity: "视力", vt_kind_contrast: "对比敏感度", vt_kind_sep: "、",
   vt_cross_match: "照片分析也显示了单侧差异（两者均为参考信息）。",
   tri_factors: "建议定期检查的原因：{items}",
   tri_note_uncertain: "不过这张照片难以判读。请一次拍一只眼睛，靠近（20~30厘米）重新拍摄后再确认。",
@@ -1332,11 +1301,9 @@ Object.assign(translations.zh, {
 // ==========================================================================
 Object.assign(translations.ko, {
   ams_dist_note: "이 화면에서는 약 {d}cm 거리에서 보세요 — 중심 {deg}° 범위를 확인합니다.",
-  ams_dist_note_uncal: "이 화면에서는 약 {d}cm 거리에서 보세요. 화면 크기를 보정하지 않아 실제로 확인되는 범위는 이보다 좁을 수 있습니다.",
+  ams_dist_note_uncal: "이 화면에서는 약 {d}cm 거리에서 보세요. 기기마다 실제 크기가 달라 확인되는 범위는 이보다 좁을 수 있습니다.",
   ams_glasses_note: "평소 책을 읽을 때 쓰시는 안경(돋보기)을 그대로 쓰고 보세요. 안경 없이 보면 초점이 안 맞아 흐린 것을 '휘어 보임'으로 답하기 쉽습니다.",
   vt_glasses_note: "평소 멀리 볼 때 쓰시는 안경이나 렌즈를 그대로 착용하고 검사하세요. 좌우 차이를 보는 검사라 한쪽만 교정된 상태면 결과가 왜곡됩니다.",
-  ams_uncal: "화면 크기를 보정하면 격자를 실제 크기(10cm)로 그릴 수 있어요. 지금은 대략적인 크기입니다.",
-  ams_cal_go: "화면 크기 보정하기",
   result_photo_label: "분석한 사진",
   vt_cant_see_hint: "안 보이면 남은 문항도 이 버튼을 눌러주세요. 정확한 측정을 위해 단계는 끝까지 진행합니다.",
   opinion_stale: "아래 AI 참고 정보는 이전 언어로 작성되었습니다.",
@@ -1346,11 +1313,9 @@ Object.assign(translations.ko, {
 });
 Object.assign(translations.en, {
   ams_dist_note: "On this screen, view from about {d}cm — this covers the central {deg}°.",
-  ams_dist_note_uncal: "On this screen, view from about {d}cm. Screen size is not calibrated, so the area actually checked may be smaller than intended.",
+  ams_dist_note_uncal: "On this screen, view from about {d}cm. Physical size varies by device, so the area actually checked may be smaller than intended.",
   ams_glasses_note: "Wear the glasses you normally use for reading. Without them the grid can look blurred, and blur is easy to report as distortion.",
   vt_glasses_note: "Wear the glasses or contacts you normally use for distance. This test compares your two eyes, so results are skewed if only one eye is corrected.",
-  ams_uncal: "Calibrate your screen size to draw the grid at its true size (10cm). For now the size is approximate.",
-  ams_cal_go: "Calibrate screen size",
   result_photo_label: "Analysed photo",
   vt_cant_see_hint: "If you can't see it, press this for the remaining items too. Each level runs to the end so the measurement stays accurate.",
   opinion_stale: "The AI notes below were written in a different language.",
@@ -1360,11 +1325,9 @@ Object.assign(translations.en, {
 });
 Object.assign(translations.es, {
   ams_dist_note: "En esta pantalla, mire desde unos {d} cm: cubre los {deg}° centrales.",
-  ams_dist_note_uncal: "En esta pantalla, mire desde unos {d} cm. El tamaño de pantalla no está calibrado, por lo que el área revisada puede ser menor de lo previsto.",
+  ams_dist_note_uncal: "En esta pantalla, mire desde unos {d} cm. El tamaño real varía según el dispositivo, por lo que el área revisada puede ser menor de lo previsto.",
   ams_glasses_note: "Use las gafas que utiliza normalmente para leer. Sin ellas la cuadrícula puede verse borrosa, y es fácil confundir el desenfoque con distorsión.",
   vt_glasses_note: "Use las gafas o lentillas que utiliza normalmente para ver de lejos. Esta prueba compara ambos ojos, así que el resultado se distorsiona si solo uno está corregido.",
-  ams_uncal: "Calibre el tamaño de pantalla para dibujar la cuadrícula a tamaño real (10 cm). Por ahora el tamaño es aproximado.",
-  ams_cal_go: "Calibrar tamaño de pantalla",
   result_photo_label: "Foto analizada",
   vt_cant_see_hint: "Si no lo ve, pulse también en los ítems restantes. Cada nivel se completa para que la medición sea precisa.",
   opinion_stale: "Las notas de IA siguientes se redactaron en otro idioma.",
@@ -1374,11 +1337,9 @@ Object.assign(translations.es, {
 });
 Object.assign(translations.fr, {
   ams_dist_note: "Sur cet écran, regardez à environ {d} cm : cela couvre les {deg}° centraux.",
-  ams_dist_note_uncal: "Sur cet écran, regardez à environ {d} cm. La taille de l'écran n'est pas calibrée : la zone réellement vérifiée peut être plus petite que prévu.",
+  ams_dist_note_uncal: "Sur cet écran, regardez à environ {d} cm. La taille réelle varie selon l'appareil : la zone réellement vérifiée peut être plus petite que prévu.",
   ams_glasses_note: "Portez les lunettes que vous utilisez habituellement pour lire. Sans elles, la grille peut paraître floue, et le flou se confond aisément avec une déformation.",
   vt_glasses_note: "Portez les lunettes ou lentilles que vous utilisez habituellement pour voir de loin. Ce test compare vos deux yeux : le résultat est faussé si un seul œil est corrigé.",
-  ams_uncal: "Calibrez la taille de l'écran pour afficher la grille à sa taille réelle (10 cm). Pour l'instant, la taille est approximative.",
-  ams_cal_go: "Calibrer la taille de l'écran",
   result_photo_label: "Photo analysée",
   vt_cant_see_hint: "Si vous ne le voyez pas, appuyez aussi pour les items restants. Chaque niveau va jusqu'au bout pour une mesure fiable.",
   opinion_stale: "Les notes IA ci-dessous ont été rédigées dans une autre langue.",
@@ -1388,11 +1349,9 @@ Object.assign(translations.fr, {
 });
 Object.assign(translations.ja, {
   ams_dist_note: "この画面では約{d}cmの距離で見てください — 中心{deg}°の範囲を確認します。",
-  ams_dist_note_uncal: "この画面では約{d}cmの距離で見てください。画面サイズが未補正のため、実際に確認できる範囲は想定より狭い場合があります。",
+  ams_dist_note_uncal: "この画面では約{d}cmの距離で見てください。端末ごとに実寸が異なるため、実際に確認できる範囲は想定より狭い場合があります。",
   ams_glasses_note: "普段の読書用メガネ（老眼鏡）をかけたまま見てください。かけないとピントが合わず、ぼやけを「ゆがみ」と答えやすくなります。",
   vt_glasses_note: "普段の遠く用のメガネ・コンタクトをつけたまま検査してください。左右差をみる検査なので、片眼だけ矯正されていると結果がゆがみます。",
-  ams_uncal: "画面サイズを調整すると、格子を実物大（10cm）で描けます。現在はおおよその大きさです。",
-  ams_cal_go: "画面サイズを調整する",
   result_photo_label: "解析した写真",
   vt_cant_see_hint: "見えない場合は残りの問題もこのボタンを押してください。正確な測定のため、段階は最後まで進みます。",
   opinion_stale: "以下のAI参考情報は別の言語で作成されました。",
@@ -1402,11 +1361,9 @@ Object.assign(translations.ja, {
 });
 Object.assign(translations.zh, {
   ams_dist_note: "在此屏幕上请从约{d}厘米处观看 — 覆盖中心{deg}°范围。",
-  ams_dist_note_uncal: "在此屏幕上请从约 {d}cm 处观看。屏幕尺寸未校准，实际检查到的范围可能比预期更小。",
+  ams_dist_note_uncal: "在此屏幕上请从约 {d}cm 处观看。各设备实际尺寸不同，实际检查到的范围可能比预期更小。",
   ams_glasses_note: "请戴上平时看书用的眼镜（老花镜）观看。不戴时对不上焦，容易把模糊当成“变形”来作答。",
   vt_glasses_note: "请戴上平时看远处用的眼镜或隐形眼镜进行检查。本检查比较双眼差异，若只有一只眼被矫正，结果会失真。",
-  ams_uncal: "校准屏幕尺寸后可按实际大小（10厘米）绘制网格。目前为近似大小。",
-  ams_cal_go: "校准屏幕尺寸",
   result_photo_label: "已分析的照片",
   vt_cant_see_hint: "看不清时，剩余题目也请按此按钮。为保证测量准确，每个级别都会做完。",
   opinion_stale: "以下AI参考信息是用其他语言撰写的。",

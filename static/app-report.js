@@ -14,6 +14,18 @@ function buildOpinionSymptoms() {
     const risk = computeRiskScore(state.riskAnswers || {});
     return []
         .concat(
+            // 'Eye surgery:' 는 서버가 술후 전용 프롬프트를 고르는 신호다.
+            //
+            // 4주 이내(hasSurgery)일 때만 붙인다. 'past'에도 붙였더니 12년 전 라식을
+            // 받은 30대에게 화면은 일반 검진인데 AI 소견만 "퇴원 지침을 철저히 준수하세요"가
+            // 나왔다 — 같은 리포트 안에서 두 안내가 어긋난다.
+            // 맨 앞에 두는 이유: 뒤에 두면 목록이 길 때 OPINION_LIST_MAX(30)에 잘려 나가
+            // 조용히 일반 프롬프트로 돌아간다.
+            (typeof hasSurgery === 'function' && hasSurgery())
+                ? ['Eye surgery: ' + state.riskAnswers.surgery + ' / ' + translations[state.lang]['surgery_' + state.riskAnswers.surgery]] : [],
+            // 오래된 수술 이력은 '술후 관리' 대상이 아니라 그냥 병력이다. 사실만 전달한다.
+            (state.riskAnswers?.surgery === 'past')
+                ? [translations[state.lang].q_surgery + ': ' + translations[state.lang].surgery_past] : [],
             formatSymptoms(),
             ...(typeof hasSurgery === 'function' && hasSurgery()
                 ? postoperativeQuestions.filter(q => typeof state.symptomAnswers?.[q.code] === 'boolean')
@@ -25,8 +37,6 @@ function buildOpinionSymptoms() {
                     const opt = q.options.find(o => o.v === state.riskAnswers[key]);
                     return opt ? translations[state.lang][q.key] + ': ' + translations[state.lang][opt.key] : '';
                 }) : []),
-            state.riskAnswers?.surgery && state.riskAnswers.surgery !== 'none'
-                ? ['Eye surgery: ' + state.riskAnswers.surgery + ' / ' + translations[state.lang]['surgery_' + state.riskAnswers.surgery]] : [],
             risk.factors || [],
             (state.dynamicAnswers || []).map(item => `${item.q}: ${item.a}`),
             state.freeAnswers || [],
@@ -90,7 +100,11 @@ async function finish() {
         eye_asymmetric: state.asymmetric,  // 편측(한쪽 눈만) 위험 여부
         // 응급 신호를 같이 넘긴다. 안 넘기면 서버 프롬프트가 이 회차가 응급인지 알 수 없어,
         // 화면이 '지금 바로 진료를 받으세요'라고 띄운 바로 밑에 '정기 검진을 받아보세요'가 붙는다.
-        red_flags: state.redFlags || []
+        red_flags: state.redFlags || [],
+        // 권장 조치는 앱이 결정론적으로 정한다(computeTriage). LLM에게 알려주지 않으면
+        // 제 나름의 판단을 해서 같은 화면 안에서 두 안내가 어긋난다 — 실제로 카드는
+        // '예정된 진료를 따르세요'인데 AI 소견 3줄이 전부 '지금 수술팀에 연락하세요'였다.
+        triage_level: (state.triage && state.triage.level) || ''
     };
     await runAiOpinion();
 }
@@ -128,6 +142,13 @@ function refreshReportResults() {
     // 이 문장은 코드가 만들어 넣으므로 모델이 무슨 말을 하든 긴급도가 흐려지지 않는다.
     const surgeryNote = document.getElementById('report-surgery-note');
     if (surgeryNote) surgeryNote.classList.toggle('hidden', !state.riskAnswers?.surgery || state.riskAnswers.surgery === 'none');
+    // 술후 경로는 사진 판독을 쓰지 않는다(formatCataractResult가 post_limit을 돌려준다).
+    // 제목만 '백내장 AI 결과'로 남으면 판독을 한 것처럼 읽힌다.
+    const l1 = document.getElementById('rep-l1');
+    if (l1) {
+        const postop = typeof hasSurgery === 'function' && hasSurgery();
+        l1.textContent = (postop && t.rep_l1_postop) || t.rep_l1 || l1.textContent;
+    }
     const urgentNote = document.getElementById('opinion-urgent-note');
     if (urgentNote) {
         const isUrgent = !!(state.triage && state.triage.level === 'urgent');
@@ -225,7 +246,11 @@ async function runAiOpinion() {
         const { text, hasError } = await readAiStream(response, disp => {
             if (!isCurrent()) return;
             stopOpinionLoader();   // 첫 실제 토큰 도착 → 로더 제거, 본문 표시 시작
-            opinionText.innerText = translations[state.lang].opinion_writing || 'Writing…';
+            // 마커 앞(상세 설명)까지만 흘려보낸다. 요약은 완료 시점에 3줄로 정리해
+            // 이 자리로 옮기고, 상세는 접힘 영역으로 내려간다.
+            // 고정 문구를 넣으면 로더까지 걷힌 뒤라 생성이 끝날 때까지 화면이 멈춘 것처럼 보인다
+            // (상세 6~8문장 + 요약 3줄이라 그 시간이 짧지 않다).
+            opinionText.innerText = disp.split('<<<SUMMARY>>>')[0].replace(/\*\*/g, '');
         });
         if (!isCurrent()) return;
         stopOpinionLoader();       // 빈 응답이어도 로더는 정리
@@ -238,15 +263,19 @@ async function runAiOpinion() {
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리
         const clean = text.replace(/\*\*/g, '').trim();
         const parts = clean.split('<<<SUMMARY>>>');
-        const detail = parts[0].trim();
-        const summary = parts.length > 1 ? parts.slice(1).join('').trim() : clean;
-        opinionText.innerText = summary.split(/\n/).filter(Boolean).slice(0, 3).join('\n');
+        const lines = v => v.split(/\n/).map(x => x.trim()).filter(Boolean);
+        // 마커가 오면 앞이 상세, 뒤가 요약이다. 모델이 마커를 빠뜨리는 일이 실제로 있는데,
+        // 그때 전문을 양쪽에 다 넣으면 같은 글이 요약칸과 상세칸에 두 번 보인다.
+        // 마커가 없으면 앞 3줄을 요약으로 쓰고 나머지를 상세로 돌린다.
+        const summary = parts.length > 1 ? lines(parts.slice(1).join('')) : lines(clean).slice(0, 3);
+        const detail = parts.length > 1 ? parts[0].trim() : lines(clean).slice(3).join('\n');
+        opinionText.innerText = summary.slice(0, 3).join('\n');
         state.opinionFullText = clean.replace('<<<SUMMARY>>>', '\n\n');
         const details = document.getElementById('opinion-details');
         const detailText = document.getElementById('opinion-detail-text');
         if (details && detailText) {
             detailText.textContent = detail;
-            details.classList.remove('hidden');
+            details.classList.toggle('hidden', !detail);
         }
         // 어떤 언어로 쓰였는지 기록 — 이후 언어를 바꾸면 재생성을 안내한다
         state.opinionLang = request.lang || state.lang;

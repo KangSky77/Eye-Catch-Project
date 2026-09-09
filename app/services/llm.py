@@ -65,6 +65,14 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
     문장을 만들어냈기 때문이다. 인자는 호출부 호환을 위해 남기되 프롬프트에 넣지 않는다."""
     symptom_text = ", ".join(symptoms) if symptoms else "없음" if lang == "ko" else "None"
     lang_name = _lang_name(lang)
+    # 수술 이력이 없는 사람에게 수술 얘기를 시키면 안 된다. 무조건 넣었더니 실제로
+    # "수술한 적 없음"이라고 답한 사람의 소견에 "수술 병원의 지침을 최우선으로 참고하세요"가
+    # 나왔다. 문진 항목에 수술이 잡힐 때만 이 줄을 붙인다.
+    has_surgery = any("Eye surgery:" in i or "수술" in i or "surgery" in i.lower() for i in symptoms)
+    surgery_ko = ("수술 이력이 있으면 시점을 고려하고 수술 병원의 지시를 우선하세요. "
+                  "수술 후 눈부심을 백내장이나 정상 회복으로 단정하지 마세요.\n") if has_surgery else ""
+    surgery_en = ("Consider reported surgery timing and prioritize the surgical team's instructions. "
+                  "Do not infer cataract or normal recovery from postoperative glare.\n") if has_surgery else ""
     reference_block = f"\n{reference}\n" if reference else ""
     # 블록 문자열이 이미 줄바꿈으로 끝나므로 여기서 덧붙이지 않는다
     urgent_block = (_URGENT_BLOCK_KO if lang == "ko" else _URGENT_BLOCK_EN) if urgent else ""
@@ -86,9 +94,9 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 
 [해야 할 일 — 정확히 3줄 요약]
 먼저 문진에 맞는 생활 관리와 검사 준비를 6~8문장으로 상세히 설명하세요.
-수술 이력이 있으면 시점을 고려하고 수술 병원의 지시를 우선하세요. 수술 후 눈부심을 백내장이나 정상 회복으로 단정하지 마세요.
-심한 통증이나 갑작스러운 시력 저하는 즉시 진료를 안내하세요.
+{surgery_ko}심한 통증이나 갑작스러운 시력 저하는 즉시 진료를 안내하세요.
 다음으로 <<<SUMMARY>>> 를 별도 줄에 쓰고 앞선 상세 설명을 아래 순서로 정확히 3줄 요약하세요. 요약에 새로운 사실을 추가하지 마세요.
+요약은 한 줄에 한 문장씩, 줄바꿈 하나로만 구분합니다. 번호·글머리 기호·마크다운·제목·인사말은 쓰지 마세요.
 1줄째: 위 [참고 의학 정보]에 근거해, 안과에 가면 받게 될 검사 1~2개를 소개해 마음의 준비를 돕는 문장.
        (예: 세극등 현미경 검사, 안저 검사, 안압 측정, OCT)
 2줄째: 문진에서 확인된 항목과 직접 관련된 생활 관리 조언 한 가지.
@@ -113,9 +121,9 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 
 [What to do — exactly a 3-line summary]
 First write 6-8 sentences of personalized care and examination preparation advice.
-Consider reported surgery timing and prioritize the surgical team's instructions. Do not infer cataract or normal recovery from postoperative glare.
-Severe pain or sudden vision loss needs urgent care.
+{surgery_en}Severe pain or sudden vision loss needs urgent care.
 Then write <<<SUMMARY>>> on its own line and summarize the detailed advice in exactly 3 lines in the order below, without adding new facts.
+Put each summary sentence on its own line, separated by a single line break. No numbering, bullets, markdown, headings, or greetings.
 Line 1: Based on the [Reference Medical Information], name 1-2 exams they may receive at the clinic
         (e.g. slit-lamp exam, fundus exam, intraocular pressure measurement, OCT) so they know what to expect.
 Line 2: One concrete lifestyle tip directly related to the flagged questionnaire items
@@ -403,7 +411,7 @@ async def warmup_ollama():
 async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[str], lang: str = "ko",
                                    cataract_code: str = "", amsler_abnormal: bool = False,
                                    symptom_codes: list[str] | None = None, eye_asymmetric: bool = False,
-                                   red_flags: list[str] | None = None):
+                                   red_flags: list[str] | None = None, triage_level: str = ""):
     # RAG: 환자 결과에 맞는 안과 참고지식을 검색해 프롬프트에 주입
     reference = knowledge.format_reference(
         knowledge.retrieve_for_opinion(cataract_code, amsler_abnormal, symptom_codes)
@@ -411,6 +419,25 @@ async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[st
     prompt = _build_opinion_prompt(cataract, amsler, symptoms, lang, reference, eye_asymmetric,
                                    urgent=bool(red_flags))
     if cataract_code == 'postop' or any('Eye surgery:' in item for item in symptoms):
+        # 권장 조치는 앱이 이미 정했다(computeTriage). LLM이 스스로 판단하게 두면
+        # 카드는 '예정된 진료를 따르세요'인데 소견 3줄은 전부 '지금 수술팀에 연락하세요'가
+        # 되어 같은 화면에서 두 안내가 충돌한다 — 실사용 점검에서 그대로 재현됐다.
+        level = triage_level or ("urgent" if red_flags else "monitor")
+        action = {
+            "urgent": (
+                "Begin by telling them to contact the surgical team or emergency eye service NOW. "
+                "If unreachable, advise emergency care. Never suggest waiting, and do NOT mention "
+                "any planned or scheduled follow-up at all."
+            ),
+            "now": (
+                "Tell them to contact the surgical team about the reported symptoms and to ask "
+                "whether they can wait until the scheduled review."
+            ),
+        }.get(level, (
+            "Tell them to follow their discharge instructions and the review already scheduled. "
+            "Do NOT tell them to contact the team right now; instead say to contact the team if "
+            "symptoms are new, get worse, or do not improve."
+        ))
         prompt = f"""Write ONLY in {_lang_name(lang)}.
 This person has ALREADY COMPLETED eye surgery, not scheduled future surgery.
 This is a postoperative symptom questionnaire, NOT a photo diagnosis.
@@ -419,12 +446,9 @@ Emergency warning signs reported: {bool(red_flags)}.
 Do not invent diagnoses, reassurance, medications, exams, smoking, diabetes or hypertension.
 Never say the patient has a complication: only a clinician can determine the cause.
 Do not describe absence of pain as evidence of successful or normal healing.
-If emergency signs are true, begin with contacting the surgical team or emergency eye service NOW.
-If unreachable, advise emergency care. Never suggest waiting for a scheduled review.
-Otherwise prioritize following the existing discharge instructions and planned review.
-When emergency signs are true, do NOT mention planned or scheduled follow-up at all;
-instead explicitly say to seek emergency care if the surgical team cannot be reached.
-For new or persistent discomfort advise contacting the surgical team; do not declare glare normal.
+REQUIRED ACTION (already decided by the app — follow it exactly, do not soften or escalate it):
+{action}
+Do not declare glare or any symptom normal.
 Do not recommend changing prescribed treatment or invent a recovery duration.
 Explain in 6 short sentences: the appropriate next action, what reported symptoms to tell
 the team, limitations of this questionnaire, and the importance of the team's aftercare.
