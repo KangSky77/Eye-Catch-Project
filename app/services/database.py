@@ -50,6 +50,12 @@ async def _rename_incompatible_schema(conn, actual: set[str]) -> str | None:
     아무 작업도 하지 않는다. 새 코드가 사용할 테이블을 만들 수 있도록 기존
     테이블의 이름만 바꾸며, 데이터는 삭제하지 않는다.
     """
+    # 컬럼이 하나도 없다 = 테이블 자체가 없다. 새 DB의 정상 상태이므로 아래
+    # CREATE TABLE에 맡긴다. 이 가드가 없으면 없는 테이블에 RENAME을 걸어
+    # UndefinedTableError로 기동이 실패하고, 첫 배포에서 저장 기능이 통째로 죽는다.
+    if not actual:
+        return None
+
     missing = REQUIRED_COLUMNS - actual
     if not missing:
         return None

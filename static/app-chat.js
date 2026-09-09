@@ -116,8 +116,10 @@ function handleAnswer(value, label) {
  *  showIf: 조건이 참일 때만 묻는다(당뇨망막병증 문항 → 당뇨 있는 사람만).
  *  skipIf: 앞선 답으로 이미 정해진 문항은 묻지 않는다(안저검사 1년 내 → 2년 내 검진). */
 function activeSymptomQuestions() {
-    if (typeof hasSurgery === 'function' && hasSurgery()) return postoperativeQuestions;
-    return symptomQuestions.filter(q => {
+    // 술후 전용 목록도 같은 필터를 태운다 — 경과를 묻는 문항은 수술 당일에 빠져야 한다.
+    const list = (typeof hasSurgery === 'function' && hasSurgery())
+        ? postoperativeQuestions : symptomQuestions;
+    return list.filter(q => {
         if (q.showIf) {
             if (typeof q.showIf === 'string' && state.riskAnswers[q.showIf] !== true) return false;
             if (typeof q.showIf === 'object' && !q.showIf.values.includes(state.riskAnswers[q.showIf.code])) return false;
@@ -137,7 +139,9 @@ function activeSymptomQuestions() {
  *  늘어나면 끝이 멀어지는 느낌을 준다. */
 function surveyProgress() {
     if (typeof hasSurgery === 'function' && hasSurgery()) {
-        const total = activeRiskQuestions().length + postoperativeQuestions.length;
+        // activeSymptomQuestions()를 써야 한다 — 수술 당일에는 경과 문항이 빠지므로
+        // postoperativeQuestions.length를 그대로 쓰면 10문항에서 끝나는데 분모가 11이 된다.
+        const total = activeRiskQuestions().length + activeSymptomQuestions().length;
         const pos = state.riskIdx < activeRiskQuestions().length ? state.riskIdx + 1 : activeRiskQuestions().length + state.symIdx + 1;
         return `${Math.min(pos, total)} / ${total}`;
     }
@@ -206,6 +210,7 @@ function handleSymptomAnswer(yes) {
             // 응급 신호는 남은 문진/LLM 대기보다 먼저 결과 화면으로 보낸다.
             // finish()가 현재 redFlags를 기준으로 urgent 안내를 그린다.
             state.chatBusy = true;
+            clearChatControls();
             finish();
             return;
         }
@@ -221,7 +226,7 @@ function handleSymptomAnswer(yes) {
 
 /** 문진 종료 → 기존 동적 질문(LLM) 단계로 넘긴다. */
 function finishSurvey() {
-    if (typeof hasSurgery === 'function' && hasSurgery()) { finish(); return; }
+    if (typeof hasSurgery === 'function' && hasSurgery()) { clearChatControls(); finish(); return; }
     state.stepIdx = questions[state.lang].length;   // 고정 질문 구간을 건너뛴 상태로 맞춤
     addLoadingMsg(translations[state.lang].survey_done || '');
     fetchNextQuestion();
@@ -279,6 +284,18 @@ function refreshChatLanguage() {
         if (textNode && textNode.nodeType === Node.TEXT_NODE) textNode.nodeValue = question;
         else bubble.textContent = question;
     }
+}
+
+/** 답변 버튼을 걷어낸다.
+ *
+ *  문진이 끝나 리포트로 넘어가는 동안 네/아니오 버튼을 그대로 두면 눌러도 아무 일이
+ *  없어(chatBusy가 막는다) 고장으로 보인다. addLoadingMsg는 이 정리를 하는데,
+ *  '리포트를 생성 중입니다'·응급 조기종료·술후 종료 경로는 그걸 거치지 않는다. */
+function clearChatControls() {
+    const controls = document.getElementById('chat-controls');
+    if (controls) controls.innerHTML = '';
+    const freeBox = document.getElementById('chat-free');
+    if (freeBox) freeBox.classList.add('hidden');
 }
 
 // 언어 무관하게 제거할 수 있는 "생성 중..." 로딩 메시지 (점 애니메이션 + 경과 시간)
@@ -518,6 +535,7 @@ function advanceAfterDynamicAnswer() {
     } else {
         setTimeout(() => {
             if (state.sessionGeneration !== generation) return;
+            clearChatControls();
             addMsg('bot', translations[state.lang].msg_gen);
             setTimeout(() => {
                 if (state.sessionGeneration !== generation) return;

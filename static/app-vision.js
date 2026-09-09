@@ -562,14 +562,6 @@ function renderAmslerGrid() {
             ? (t.ams_dist_note || '').replace('{d}', distCm).replace('{deg}', AMSLER_FIELD_DEG)
             : (t.ams_dist_note_uncal || '').replace('{d}', distCm);
     }
-    const uncal = document.getElementById('amsler-uncal');
-    if (uncal) {
-        uncal.classList.toggle('hidden', calibrated);
-        const msg = uncal.querySelector('[data-role="msg"]');
-        if (msg) msg.textContent = t.ams_uncal || '';
-        const btn = uncal.querySelector('[data-role="go"]');
-        if (btn) btn.textContent = t.ams_cal_go || '';
-    }
 }
 
 // 회전·창 크기 변경으로 사용할 수 있는 폭이 바뀌면 격자도 다시 그린다.

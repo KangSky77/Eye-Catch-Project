@@ -566,11 +566,17 @@ def test_글자_크기_조절이_있고_저장값을_먼저_적용한다():
     assert data.count("font_size:") == 6
 
 
-def test_리포트_AI_요약_라벨이_3줄_요약을_말한다():
+def test_리포트_AI_소견_라벨이_상세설명까지_포괄한다():
+    """이제 이 상자에는 3줄 요약과 '더 보기'로 펼치는 상세 설명이 함께 들어간다.
+    '3줄 요약'이라고 부르면 상세 설명이 있다는 사실이 라벨에서 사라진다."""
     data = (STATIC / "data.js").read_text(encoding="utf-8")
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
     assert data.count("rep_info_title:") == 6
-    for phrase in ["AI 3줄 요약", "AI 3-line summary", "3 líneas", "3 lignes", "AI 3行要約", "AI 三行摘要"]:
-        assert phrase in data, f"3줄 요약 라벨이 없습니다: {phrase!r}"
+    for phrase in ["3줄 요약", "3-line summary", "3 líneas", "3 lignes", "3行要約", "三行摘要"]:
+        assert f'rep_info_title: "{phrase}' not in data, f"옛 라벨이 남아 있습니다: {phrase!r}"
+    # 상세 설명을 펼치는 장치가 실제로 있어야 라벨이 정직하다
+    assert 'id="opinion-details"' in html and 'id="opinion-detail-text"' in html
+    assert data.count("opinion_more:") == 0, "opinion_more는 app-report-text.js가 갖는다"
 
 
 def test_소견_완료후_부가동작_실패가_연결끊김으로_보이지_않는다():
@@ -608,19 +614,30 @@ def test_큰_글자_단계에서도_브랜드명을_숨기지_않는다():
     assert "#gemma-opinion-text { font-size: .9rem" in css, "3줄 요약 본문도 root 크기를 따라 커져야 한다"
 
 
-def test_시야_체험은_모달_밖_패널에_있고_버튼으로_연다():
-    """팀 요청(2026-09-02): 질환 상세 모달 안에 있던 시야 체험을 질환 탭 맨 아래 버튼 → 패널로."""
+def test_시야_체험이_접이식이_아니라_독립_탭이다():
+    """질환 상세 모달 → 질환 탭의 접이식 패널 → 독립 탭으로 옮겨왔다.
+
+    독립 탭이 된 뒤에도 열기/닫기 버튼이 남아 있어서, 탭에 들어와 '닫기'를 누르면
+    버튼 하나만 있는 빈 화면이 됐다. 탭 자체가 보이기/숨기기를 하므로 접는 장치는 없앤다."""
     disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
     open_body = disease[disease.index("function openDisease("):disease.index("function openDiseaseModal")]
     assert "buildVisionSim(" not in open_body, "시야 체험이 다시 모달 안으로 들어갔습니다"
-    assert "function toggleVisionSim(" in disease and "function renderVisionSimPanel(" in disease
+    assert "function showVisionSim(" in disease and "function renderVisionSimPanel(" in disease
+    assert "toggleVisionSim" not in disease, "접기/펼치기 장치가 남아 있습니다"
+
     html = (STATIC / "index.html").read_text(encoding="utf-8")
-    disease_tab = html[html.index('id="tab-disease"'):html.index('id="tab-report"')]
-    assert 'id="sim-open-btn"' in disease_tab and 'id="vision-sim-panel"' in disease_tab
-    assert disease_tab.index('id="disease-list"') < disease_tab.index('id="sim-open-btn"'), "버튼은 카드 목록 아래(맨 밑)에"
+    sim_tab = html[html.index('id="tab-simulator"'):html.index('id="tab-report"')]
+    assert 'id="vision-sim-panel"' in sim_tab
+    assert 'id="sim-open-btn"' not in sim_tab, "열기/닫기 버튼이 남아 있습니다"
+    assert 'class="sim-panel hidden"' not in sim_tab, "패널이 숨겨진 채 시작하면 안 됩니다"
+    # 질환 소개 탭에서는 완전히 빠져야 한다
+    disease_tab = html[html.index('id="tab-disease"'):html.index('id="tab-simulator"')]
+    assert "vision-sim-panel" not in disease_tab and "sim-open-btn" not in disease_tab
+
     data = (STATIC / "data.js").read_text(encoding="utf-8")
-    for key in ["sim_open_btn:", "sim_close_btn:", "sim_pick:"]:
-        assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
+    assert data.count("sim_pick:") == 6
+    for key in ["sim_open_btn:", "sim_close_btn:"]:
+        assert key not in data, f"버튼이 사라졌는데 {key} 가 남아 있습니다"
 
 
 def test_외부리뷰_반영_모달_zindex_배너_개인정보_예시위치():
@@ -1009,7 +1026,9 @@ def test_diagnoses_테이블_스키마를_기동시점에_검증한다():
     db = (ROOT / "app" / "services" / "database.py").read_text(encoding="utf-8")
     assert "REQUIRED_COLUMNS" in db and "_verify_schema" in db
     assert "information_schema.columns" in db
-    assert "RENAME TO" in db, "고치는 방법을 에러 메시지에 알려줘야 한다"
+    # 자동 rename 도입 뒤로 "RENAME TO"는 SQL에도 생겨서 문자열 검사로는 아무것도
+    # 보장하지 못한다(그 상태로 새 DB 기동이 죽는 회귀를 놓쳤다).
+    # 분기 동작은 tests/test_db_schema_init.py에서 가짜 커넥션으로 직접 검증한다.
     # INSERT가 실제로 쓰는 컬럼이 검증 목록에 다 들어 있는지
     for col in ("id", "cataract_result", "amsler_result", "symptoms", "gemma_opinion"):
         assert f'"{col}"' in db, f"검증 목록에 {col}이 없다"

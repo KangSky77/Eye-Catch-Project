@@ -48,7 +48,7 @@ function renderDiseases(lang) {
         </div>`;
     }).join('');
     // 언어가 바뀌면 열려 있는 시야 체험 패널의 칩·문구도 다시 그린다 (스크롤은 움직이지 않음)
-    if (typeof _simOpen !== 'undefined' && _simOpen) toggleVisionSim(true, false);
+    if (typeof showVisionSim === 'function') showVisionSim();
 }
 
 // ------------------------------------------
@@ -169,23 +169,19 @@ function buildVisionSim(idx, labels) {
 // (각 질환에서 정상→진행을 비교해 보는 것이 목적).
 // ------------------------------------------
 let _simIdx = 0;
-let _simOpen = false;
 let _simLevel = 0;   // 슬라이더 값(0~100) — 언어 전환으로 패널을 다시 그려도 유지 (외부 리뷰)
 
-function toggleVisionSim(force, scroll = true) {
-    _simOpen = typeof force === 'boolean' ? force : !_simOpen;
+/** 시야 체험 탭을 그린다.
+ *
+ *  예전에는 '질환 소개' 안의 접이식 패널이라 열기/닫기 버튼이 필요했다. 독립 탭으로
+ *  나온 뒤에도 그 껍데기가 남아 있어서, 탭에 들어와 '닫기'를 누르면 버튼 하나만 있는
+ *  빈 화면이 됐다. 탭 자체가 이미 보이기/숨기기를 하므로 접는 기능은 없앤다.
+ */
+function showVisionSim() {
     const panel = document.getElementById('vision-sim-panel');
-    const btn = document.getElementById('sim-open-btn');
-    if (!panel || !btn) return;
-    panel.classList.toggle('hidden', !_simOpen);
-    btn.setAttribute('aria-expanded', String(_simOpen));
-    const t = translations[state.lang];
-    const label = btn.querySelector('[data-i18n]');
-    if (label) label.textContent = _simOpen ? (t.sim_close_btn || '시야 체험 닫기') : (t.sim_open_btn || '질환별 시야 체험하기');
-    if (_simOpen) {
-        renderVisionSimPanel();
-        if (scroll) setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-    }
+    if (!panel) return;
+    panel.classList.remove('hidden');
+    renderVisionSimPanel();
 }
 
 function selectVisionSim(idx) {
@@ -196,7 +192,7 @@ function selectVisionSim(idx) {
 
 function renderVisionSimPanel() {
     const panel = document.getElementById('vision-sim-panel');
-    if (!panel || !_simOpen) return;
+    if (!panel) return;
     const lang = state.lang, labels = translations[lang], items = diseaseData[lang] || [];
 
     const chips = document.getElementById('sim-chips');

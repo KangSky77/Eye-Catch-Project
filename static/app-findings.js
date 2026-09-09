@@ -25,19 +25,34 @@ function buildFindings() {
     const out = [];
     if (typeof hasSurgery === 'function' && hasSurgery()) {
         out.push(t.post_limit);
-        out.push(t.q_surgery + ': ' + t['surgery_' + state.riskAnswers.surgery]);
-        for (const q of surgeryRiskQuestions) {
-            const opt = q.options.find(o => o.v === state.riskAnswers[q.code]);
-            if (opt) out.push(t[q.key] + ': ' + t[opt.key]);
-        }
+        // 문항 문장을 그대로 나열하면("가장 최근에 어떤 눈 수술을 받으셨나요?: 백내장")
+        // 소견서가 아니라 답안지처럼 읽히고, 아래 '문진에서 확인된 항목'과 톤도 어긋난다.
+        // 짧은 라벨로 한 줄에 모은다.
+        const label = code => {
+            const q = surgeryRiskQuestions.find(x => x.code === code);
+            const opt = q && q.options.find(o => o.v === state.riskAnswers[code]);
+            return opt ? t[opt.key] : '';
+        };
+        const parts = [
+            t['surgery_' + state.riskAnswers.surgery],
+            label('surgery_type'),
+            label('surgery_eye') && t.post_eye_operated + ' ' + label('surgery_eye'),
+            label('surgery_sym_eye') && t.post_eye_affected + ' ' + label('surgery_sym_eye'),
+        ].filter(Boolean);
+        if (parts.length) out.push((t.find_post_context || '{items}').replace('{items}', parts.join(' · ')));
     }
 
     // --- 백내장 사진 판독 ---
-    if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
-    else if (state.aiResultCode === 'borderline') out.push(t.find_cat_borderline);
-    else if (state.aiResultCode === 'uncertain') out.push(t.find_cat_uncertain);
-    else if (state.aiResultCode === 'normal') out.push(t.find_cat_normal);
-    if (state.asymmetric) out.push(t.find_cat_asym);
+    // 수술 4주 이내면 건너뛴다. 위에서 post_limit로 '사진만으로는 판정할 수 없다'고
+    // 이미 말했는데, 바로 아래에 '백내장 위험' 소견을 붙이면 그 말을 스스로 뒤집는다.
+    const postop = typeof hasSurgery === 'function' && hasSurgery();
+    if (!postop) {
+        if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
+        else if (state.aiResultCode === 'borderline') out.push(t.find_cat_borderline);
+        else if (state.aiResultCode === 'uncertain') out.push(t.find_cat_uncertain);
+        else if (state.aiResultCode === 'normal') out.push(t.find_cat_normal);
+        if (state.asymmetric) out.push(t.find_cat_asym);
+    }
 
     // --- 암슬러(황반 자가검사) — 반드시 '황반만 본다'는 범위를 함께 말한다 ---
     if (state.hasAmsler) {

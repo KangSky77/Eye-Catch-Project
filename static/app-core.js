@@ -55,7 +55,16 @@ const state = {
 
 /** 백내장 결과를 현재 언어 문자열로. 원자료가 없으면 "-". */
 function formatCataractResult() {
-    if (state.aiResultCode === 'postop') return translations[state.lang].post_limit;
+    // 수술 4주 이내면 사진 판독을 쓰지 않는다.
+    //
+    // 전용 입구(aiResultCode==='postop')만 막으면 구멍이 남는다: 사진을 먼저 올린 뒤
+    // 문진에서 '오늘 수술했습니다'를 고른 사람은 이 조건에 안 걸려서, 백내장 수술 당일
+    // 눈을 찍은 사진에 '백내장 위험'이 그대로 표시된다(LLM 요청에도 같이 실려 간다).
+    // 수술한 눈은 모델이 학습한 분포 밖이라 그 판독은 해석할 수 없다.
+    if (state.aiResultCode === 'postop'
+        || (typeof hasSurgery === 'function' && hasSurgery())) {
+        return translations[state.lang].post_limit;
+    }
     const r = state.aiResultData;
     if (!r) return "-";
     const t = translations[state.lang];
@@ -289,7 +298,7 @@ function updateUI(lang) {
 // 첫 로드에서 포커스를 본문으로 옮겨버리면 첫 Tab이 '본문으로 건너뛰기'와 상단 네비를
 // 통째로 건너뛴다 — 키보드 사용자가 네비에 닿을 수 없게 된다.
 function showTab(tid, moveFocus = true) {
-    if (tid === 'tab-simulator') toggleVisionSim(true, false);
+    if (tid === 'tab-simulator') showVisionSim();
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const target = document.getElementById(tid);
     if (target) target.classList.add('active');

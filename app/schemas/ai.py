@@ -31,6 +31,10 @@ class GemmaRequest(BaseModel):
     # 이게 비어 있지 않으면 앱은 화면에 '지금 바로 안과 진료를 받으세요'를 띄운다.
     # LLM에게도 알려주지 않으면 바로 그 밑에 '정기 검진을 받아보세요' 같은 한가한 조언이 붙는다.
     red_flags: list[SymptomCode] = Field(default_factory=list, max_length=10)
+    # 앱이 결정론적으로 정한 권장 조치('urgent'/'now'/'monitor').
+    # 이걸 안 주면 LLM이 스스로 판단해 화면의 권장 조치와 어긋나는 조언을 쓴다.
+    # (프론트가 안 보내도 동작 — 하위 호환)
+    triage_level: str = Field(default="", max_length=20)
 
 class ChatRequest(BaseModel):
     lang: str = Field(default="ko", max_length=10)
