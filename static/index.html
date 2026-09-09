@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260906c">
+    <link rel="stylesheet" href="/static/style.css?v=20260909b">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -51,6 +51,7 @@
             <div class="flex items-center gap-5">
                 <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
                     <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</button>
+                    <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" data-i18n="sim_title" class="nav-pill">시야 체험</button>
                     <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</button>
                     <button type="button" onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</button>
                     <button type="button" onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</button>
@@ -307,7 +308,8 @@
         <p class="text-center text-slate-500 text-sm font-medium mb-10" data-i18n="dis_card_hint">카드를 누르면 자세한 설명을 확인할 수 있어요.</p>
         <div id="disease-list" class="disease-grid"></div>
 
-        <!-- 시야 체험 — 질환 상세 모달 안에 있던 것을 맨 아래 버튼으로 (팀 요청 2026-09-02) -->
+    </main>
+    <main id="tab-simulator" class="tab-content max-w-3xl mx-auto px-4 py-12" tabindex="-1">
         <div class="sim-cta">
             <button type="button" id="sim-open-btn" class="sim-open-btn btn-pop" onclick="toggleVisionSim()" aria-expanded="false" aria-controls="vision-sim-panel">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.75 12s3.45-5.25 9.25-5.25S21.25 12 21.25 12 17.8 17.25 12 17.25 2.75 12 2.75 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
@@ -370,7 +372,9 @@
                         <button type="button" data-role="regen" onclick="regenerateOpinion()"
                                 class="text-[11px] font-black text-amber-900 underline"></button>
                     </div>
-                    <p id="gemma-opinion-text" class="text-xs font-bold text-slate-700 leading-relaxed italic hidden"></p>
+                    <p data-i18n="surgery_note" id="report-surgery-note" class="hidden text-xs text-amber-800 mb-3"></p>
+                    <p id="gemma-opinion-text" style="white-space: pre-line" class="text-xs font-bold text-slate-700 leading-relaxed italic hidden"></p>
+                    <details id="opinion-details" class="hidden mt-3"><summary data-i18n="opinion_more" class="cursor-pointer text-sm font-bold text-blue-700">더 보기 · 상세 설명</summary><p id="opinion-detail-text" style="white-space: pre-line" class="text-sm leading-relaxed mt-3"></p></details>
                     <div id="opinion-retry" class="opinion-retry hidden">
                         <p class="opinion-retry-hint" data-i18n="opinion_retry_hint">AI 서버가 잠시 응답하지 않았어요. 검사 결과는 그대로 있으니 다시 시도해 보세요.</p>
                         <button type="button" onclick="runAiOpinion()" class="opinion-retry-btn btn-pop" data-i18n="opinion_retry">소견서 다시 생성</button>
@@ -457,6 +461,7 @@
         <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" class="bnav-item">
             <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_test">AI 검사</span>
         </button>
+        <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" class="bnav-item"><span class="bnav-ico" aria-hidden="true">◉</span><span class="text-[10px] font-bold" data-i18n="sim_title">시야 체험</span></button>
         <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
             <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5ZM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 소개</span>
         </button>
@@ -468,15 +473,16 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260907a"></script>
+    <script src="/static/data.js?v=20260909b"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-core.js?v=20260908a"></script>
-    <script src="/static/app-vision.js?v=20260908a"></script>
-    <script src="/static/app-chat.js?v=20260908a"></script>
-    <script src="/static/app-report.js?v=20260906b"></script>
-    <script src="/static/app-disease.js?v=20260906b"></script>
-    <script src="/static/app-assess.js?v=20260906b"></script>
-    <script src="/static/app-findings.js?v=20260906b"></script>
-    <script src="/static/app-map.js?v=20260906a"></script>
+    <script src="/static/app-report-text.js?v=20260909b"></script>
+    <script src="/static/app-core.js?v=20260909b"></script>
+    <script src="/static/app-vision.js?v=20260909b"></script>
+    <script src="/static/app-chat.js?v=20260909b"></script>
+    <script src="/static/app-report.js?v=20260909b"></script>
+    <script src="/static/app-disease.js?v=20260909b"></script>
+    <script src="/static/app-assess.js?v=20260909b"></script>
+    <script src="/static/app-findings.js?v=20260909b"></script>
+    <script src="/static/app-map.js?v=20260909b"></script>
 </body>
 </html>

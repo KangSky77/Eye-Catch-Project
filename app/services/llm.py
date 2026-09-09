@@ -85,8 +85,10 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 - 진단하지 마세요.
 
 [해야 할 일 — 정확히 3줄 요약]
-아래 순서로 딱 3줄만 쓰세요. 한 줄은 한 문장이고, 줄과 줄 사이는 줄바꿈 하나로만 구분합니다.
-번호·글머리 기호·마크다운·제목·인사말은 쓰지 마세요. 3줄을 넘기면 답변이 폐기됩니다.
+먼저 문진에 맞는 생활 관리와 검사 준비를 6~8문장으로 상세히 설명하세요.
+수술 이력이 있으면 시점을 고려하고 수술 병원의 지시를 우선하세요. 수술 후 눈부심을 백내장이나 정상 회복으로 단정하지 마세요.
+심한 통증이나 갑작스러운 시력 저하는 즉시 진료를 안내하세요.
+다음으로 <<<SUMMARY>>> 를 별도 줄에 쓰고 앞선 상세 설명을 아래 순서로 정확히 3줄 요약하세요. 요약에 새로운 사실을 추가하지 마세요.
 1줄째: 위 [참고 의학 정보]에 근거해, 안과에 가면 받게 될 검사 1~2개를 소개해 마음의 준비를 돕는 문장.
        (예: 세극등 현미경 검사, 안저 검사, 안압 측정, OCT)
 2줄째: 문진에서 확인된 항목과 직접 관련된 생활 관리 조언 한 가지.
@@ -110,8 +112,10 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 - Do NOT diagnose.
 
 [What to do — exactly a 3-line summary]
-Write exactly 3 lines in this order. Each line is one sentence; separate lines with a single line break only.
-No numbering, bullets, markdown, headings, or greetings. More than 3 lines and the answer is discarded.
+First write 6-8 sentences of personalized care and examination preparation advice.
+Consider reported surgery timing and prioritize the surgical team's instructions. Do not infer cataract or normal recovery from postoperative glare.
+Severe pain or sudden vision loss needs urgent care.
+Then write <<<SUMMARY>>> on its own line and summarize the detailed advice in exactly 3 lines in the order below, without adding new facts.
 Line 1: Based on the [Reference Medical Information], name 1-2 exams they may receive at the clinic
         (e.g. slit-lamp exam, fundus exam, intraocular pressure measurement, OCT) so they know what to expect.
 Line 2: One concrete lifestyle tip directly related to the flagged questionnaire items

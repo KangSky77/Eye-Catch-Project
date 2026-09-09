@@ -42,6 +42,21 @@ function setup() {
     return { context, calls, saves, loaders, element, request };
 }
 
+test('detail is collapsed, summary is displayed, and full advice is saved', async () => {
+    const h = setup(), c = h.context;
+    c.state.opinionRequest = h.request('surgery');
+    const pending = c.runAiOpinion();
+    h.calls[0].resolve({ ok: true, text: 'Detailed advice.\n<<<SUMMARY>>>\nFirst.\nSecond.\nThird.' });
+    await pending;
+    assert.equal(h.element('gemma-opinion-text').innerText, 'First.\nSecond.\nThird.');
+    assert.equal(h.element('opinion-detail-text').textContent, 'Detailed advice.');
+    assert.equal(h.element('opinion-details').open, false);
+    assert.match(h.saves[0].gemma_opinion, /Detailed advice/);
+    c.cancelAiOpinion();
+    assert.equal(h.element('opinion-details').classList.contains('hidden'), true);
+    assert.equal(c.state.opinionFullText, '');
+});
+
 test('restart aborts pending fetch; late old response cannot overwrite new report or consent', async () => {
     const h = setup(), c = h.context;
     c.state.opinionRequest = h.request('old');

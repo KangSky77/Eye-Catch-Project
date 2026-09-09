@@ -690,6 +690,8 @@ for (const lang of Object.keys(translations)) {
 // 위험도 층화 문진 — 기존 증상 질문(녹내장·당뇨망막병증) 앞에 붙는다.
 // 나이·기저질환은 증상 질문보다 예측력이 크면서 비용이 거의 없다.
 const riskQuestions = [
+  { code: 'surgery', key: 'q_surgery', type: 'choice', options:
+    ['today', 'recent', 'past', 'none'].map(v => ({ v, key: 'surgery_' + v, score: 0 })) },
   { code: 'age', key: 'q_age', type: 'choice',
     options: [
       { v: 'under40', key: 'age_under40', score: 0 },

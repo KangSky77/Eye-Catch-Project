@@ -15,6 +15,8 @@ function buildOpinionSymptoms() {
     return []
         .concat(
             formatSymptoms(),
+            state.riskAnswers?.surgery && state.riskAnswers.surgery !== 'none'
+                ? ['Eye surgery: ' + state.riskAnswers.surgery + ' / ' + translations[state.lang]['surgery_' + state.riskAnswers.surgery]] : [],
             risk.factors || [],
             (state.dynamicAnswers || []).map(item => `${item.q}: ${item.a}`),
             state.freeAnswers || [],
@@ -114,6 +116,8 @@ function refreshReportResults() {
     // 응급 회차에서는 AI 조언 위에 고정 문장을 띄운다.
     // 서버 프롬프트(_URGENT_BLOCK_*)로 한가한 말투를 막지만 LLM은 지시를 어길 수 있다.
     // 이 문장은 코드가 만들어 넣으므로 모델이 무슨 말을 하든 긴급도가 흐려지지 않는다.
+    const surgeryNote = document.getElementById('report-surgery-note');
+    if (surgeryNote) surgeryNote.classList.toggle('hidden', !state.riskAnswers?.surgery || state.riskAnswers.surgery === 'none');
     const urgentNote = document.getElementById('opinion-urgent-note');
     if (urgentNote) {
         const isUrgent = !!(state.triage && state.triage.level === 'urgent');
@@ -138,6 +142,9 @@ function regenerateOpinion() {
 let _activeOpinion = null;
 
 function cancelAiOpinion() {
+    state.opinionFullText = '';
+    const details = document.getElementById('opinion-details');
+    if (details) { details.open = false; details.classList.add('hidden'); }
     const active = _activeOpinion;
     _activeOpinion = null;
     if (active) {
@@ -208,7 +215,7 @@ async function runAiOpinion() {
         const { text, hasError } = await readAiStream(response, disp => {
             if (!isCurrent()) return;
             stopOpinionLoader();   // 첫 실제 토큰 도착 → 로더 제거, 본문 표시 시작
-            opinionText.innerText = disp;
+            opinionText.innerText = translations[state.lang].opinion_writing || 'Writing…';
         });
         if (!isCurrent()) return;
         stopOpinionLoader();       // 빈 응답이어도 로더는 정리
@@ -219,7 +226,18 @@ async function runAiOpinion() {
 
         opinionText.classList.remove('text-rose-600');
         // 모델이 마크다운(**)을 섞어 보내는 경우 평문으로 정리
-        opinionText.innerText = opinionText.innerText.replace(/\*\*/g, '');
+        const clean = text.replace(/\*\*/g, '').trim();
+        const parts = clean.split('<<<SUMMARY>>>');
+        const detail = parts[0].trim();
+        const summary = parts.length > 1 ? parts.slice(1).join('').trim() : clean;
+        opinionText.innerText = summary.split(/\n/).filter(Boolean).slice(0, 3).join('\n');
+        state.opinionFullText = clean.replace('<<<SUMMARY>>>', '\n\n');
+        const details = document.getElementById('opinion-details');
+        const detailText = document.getElementById('opinion-detail-text');
+        if (details && detailText) {
+            detailText.textContent = detail;
+            details.classList.remove('hidden');
+        }
         // 어떤 언어로 쓰였는지 기록 — 이후 언어를 바꾸면 재생성을 안내한다
         state.opinionLang = request.lang || state.lang;
         refreshReportResults();
@@ -242,7 +260,7 @@ async function runAiOpinion() {
             cataract_result: request.cataract_res,
             amsler_result: request.amsler_res,
             chat_symptoms: request.chat_symptoms,
-            gemma_opinion: opinionText ? opinionText.innerText : ''
+            gemma_opinion: (state.opinionFullText || (opinionText ? opinionText.innerText : '')).slice(0, 5000)
         });
     } catch (e) {
         console.warn('save-consent UI failed (opinion is intact)', e);
@@ -275,7 +293,7 @@ async function askGemmaMore() {
     if (!userMsg) { inputEl.focus(); return; }
 
     // 서버 스키마 상한(ChatRequest.context 5000자)에 맞춰 자름 — 넘기면 422가 나서 '서버 연결 불가'로 오인
-    const context = document.getElementById('gemma-opinion-text').innerText.slice(0, 5000);
+    const context = (state.opinionFullText || document.getElementById('gemma-opinion-text').innerText).slice(0, 5000);
 
     // 스트리밍 도중 새 검사가 시작되면(로고 클릭 등) 이 답변은 새 리포트의 것이 아니다.
     // 세대 번호를 찍어 두고 도착한 조각마다 같은 세션인지 확인한다.
@@ -374,7 +392,7 @@ function buildReportPdf() {
     const amslerResult = escapeHTML(document.getElementById('pdf-amsler-result').innerText);
     const chatResult = escapeHTML(document.getElementById('pdf-chat-result').innerText);
     // LLM 출력도 escape (다른 필드와 동일하게 — innerHTML 삽입 전 XSS 방지)
-    const gemmaOpinion = escapeHTML(document.getElementById('gemma-opinion-text').innerText);
+    const gemmaOpinion = escapeHTML(state.opinionFullText || document.getElementById('gemma-opinion-text').innerText);
 
     // 권장 조치와 검사 요약 해석 — 화면의 DOM을 긁지 않고 원자료에서 다시 만든다.
     //

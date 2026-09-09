@@ -288,6 +288,7 @@ function updateUI(lang) {
 // 첫 로드에서 포커스를 본문으로 옮겨버리면 첫 Tab이 '본문으로 건너뛰기'와 상단 네비를
 // 통째로 건너뛴다 — 키보드 사용자가 네비에 닿을 수 없게 된다.
 function showTab(tid, moveFocus = true) {
+    if (tid === 'tab-simulator') toggleVisionSim(true, false);
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const target = document.getElementById(tid);
     if (target) target.classList.add('active');

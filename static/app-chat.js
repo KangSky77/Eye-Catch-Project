@@ -84,6 +84,7 @@ function handleAnswer(value, label) {
         const q = riskQuestions[state.riskIdx];
         addMsg('user', label);
         state.riskAnswers[q.code] = value;
+        if (q.code === 'surgery' && value !== 'none') addMsg('bot', translations[state.lang].surgery_note);
         state.chatHistory.push({ q: translations[state.lang][q.key] || q.key, a: label });
         state.riskIdx++;
         const generation = state.sessionGeneration;
