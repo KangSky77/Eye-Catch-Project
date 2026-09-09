@@ -807,7 +807,7 @@ def test_문진_진행률이_처음부터_끝까지_이어진다():
     chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
     assert "function surveyProgress()" in chat
     assert chat.count("surveyProgress()") >= 3, "위험요인·증상 양쪽에서 써야 한다"
-    assert "riskQuestions.length + symCount" in chat
+    assert "activeRiskQuestions().length + symCount" in chat
 
 
 def test_촬영안내가_두_화면에서_같은_말을_한다():

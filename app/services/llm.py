@@ -410,6 +410,29 @@ async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[st
     )
     prompt = _build_opinion_prompt(cataract, amsler, symptoms, lang, reference, eye_asymmetric,
                                    urgent=bool(red_flags))
+    if cataract_code == 'postop' or any('Eye surgery:' in item for item in symptoms):
+        prompt = f"""Write ONLY in {_lang_name(lang)}.
+This person has ALREADY COMPLETED eye surgery, not scheduled future surgery.
+This is a postoperative symptom questionnaire, NOT a photo diagnosis.
+Patient-reported facts: {json.dumps(symptoms, ensure_ascii=False)}
+Emergency warning signs reported: {bool(red_flags)}.
+Do not invent diagnoses, reassurance, medications, exams, smoking, diabetes or hypertension.
+Never say the patient has a complication: only a clinician can determine the cause.
+Do not describe absence of pain as evidence of successful or normal healing.
+If emergency signs are true, begin with contacting the surgical team or emergency eye service NOW.
+If unreachable, advise emergency care. Never suggest waiting for a scheduled review.
+Otherwise prioritize following the existing discharge instructions and planned review.
+When emergency signs are true, do NOT mention planned or scheduled follow-up at all;
+instead explicitly say to seek emergency care if the surgical team cannot be reached.
+For new or persistent discomfort advise contacting the surgical team; do not declare glare normal.
+Do not recommend changing prescribed treatment or invent a recovery duration.
+Explain in 6 short sentences: the appropriate next action, what reported symptoms to tell
+the team, limitations of this questionnaire, and the importance of the team's aftercare.
+Do not repeat the same advice. No headings or numbered lists.
+Then put <<<SUMMARY>>> on a separate line.
+Copy exactly THREE important sentences VERBATIM from your detailed explanation,
+each on its own line. The first must preserve urgency when emergency signs are true.
+Do not add any fact in the summary. Output nothing else."""
     try:
         # 안전 필터 경유 — 해석·확률·배제·질환 교차 문장은 화면에 닿기 전에 제거된다
         async for chunk in sanitized_stream(prompt): yield chunk

@@ -2,6 +2,11 @@
 // app-chat.js — 하이브리드 챗봇 (Rule-based + Gemma 4)
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
+function activeRiskQuestions() {
+    if (typeof hasSurgery !== 'function' || !hasSurgery()) return riskQuestions;
+    return [riskQuestions[0], ...surgeryRiskQuestions];
+}
+
 function startChat() {
     // 문진을 다시 시작하면 이전 회차의 맞춤 질문 요청(15~25초)이 아직 날아가고 있을 수 있다.
     // 세대를 올려두지 않으면 그 응답이 fetchNextQuestion의 가드를 통과해, 방금 1번 질문부터
@@ -38,7 +43,7 @@ function startChat() {
 // 선택지형(나이)과 예/아니오형이 섞여 있어 버튼을 질문마다 새로 그린다.
 // ------------------------------------------------------------------
 function askRiskQuestion() {
-    const q = riskQuestions[state.riskIdx];
+    const q = activeRiskQuestions()[state.riskIdx];
     const t = translations[state.lang];
     addMsg('bot', t[q.key] || q.key, surveyProgress());
     if (q.type === 'choice') {
@@ -79,18 +84,21 @@ function renderChatOptions(opts, onPick) {
 /** 위험요인 구간과 증상 구간을 하나의 입구로 처리. */
 function handleAnswer(value, label) {
     if (state.chatBusy) return;
-    if (state.riskIdx < riskQuestions.length) {
+    if (state.riskIdx < activeRiskQuestions().length) {
         state.chatBusy = true;
-        const q = riskQuestions[state.riskIdx];
+        const q = activeRiskQuestions()[state.riskIdx];
         addMsg('user', label);
         state.riskAnswers[q.code] = value;
+        if (q.code === 'surgery' && value === 'none' && state.aiResultCode === 'postop') {
+            resetScreeningState(); nextStep('step-guide'); return;
+        }
         if (q.code === 'surgery' && value !== 'none') addMsg('bot', translations[state.lang].surgery_note);
         state.chatHistory.push({ q: translations[state.lang][q.key] || q.key, a: label });
         state.riskIdx++;
         const generation = state.sessionGeneration;
         setTimeout(() => {
             if (state.sessionGeneration !== generation) return;
-            if (state.riskIdx < riskQuestions.length) askRiskQuestion();
+            if (state.riskIdx < activeRiskQuestions().length) askRiskQuestion();
             else askSymptomQuestion();          // 위험요인이 끝나면 질환별 문진으로
         }, 500);
         return;
@@ -108,8 +116,12 @@ function handleAnswer(value, label) {
  *  showIf: 조건이 참일 때만 묻는다(당뇨망막병증 문항 → 당뇨 있는 사람만).
  *  skipIf: 앞선 답으로 이미 정해진 문항은 묻지 않는다(안저검사 1년 내 → 2년 내 검진). */
 function activeSymptomQuestions() {
+    if (typeof hasSurgery === 'function' && hasSurgery()) return postoperativeQuestions;
     return symptomQuestions.filter(q => {
-        if (q.showIf && state.riskAnswers[q.showIf] !== true) return false;
+        if (q.showIf) {
+            if (typeof q.showIf === 'string' && state.riskAnswers[q.showIf] !== true) return false;
+            if (typeof q.showIf === 'object' && !q.showIf.values.includes(state.riskAnswers[q.showIf.code])) return false;
+        }
         if (q.skipIf && state.symptomAnswers[q.skipIf.code] === q.skipIf.answer) return false;
         return true;
     });
@@ -124,14 +136,19 @@ function activeSymptomQuestions() {
  *  달려 있다. 아직 모르는 동안에는 '최대치'로 잡아 총수가 줄기만 하게 한다 —
  *  늘어나면 끝이 멀어지는 느낌을 준다. */
 function surveyProgress() {
+    if (typeof hasSurgery === 'function' && hasSurgery()) {
+        const total = activeRiskQuestions().length + postoperativeQuestions.length;
+        const pos = state.riskIdx < activeRiskQuestions().length ? state.riskIdx + 1 : activeRiskQuestions().length + state.symIdx + 1;
+        return `${Math.min(pos, total)} / ${total}`;
+    }
     const branchKnown = state.riskAnswers.diabetes !== undefined;
     const symCount = branchKnown ? activeSymptomQuestions().length : symptomQuestions.length;
     // 맞춤 질문도 총수에 넣는다. 넣지 않으면 마지막 고정 질문에서 '15 / 15'가 떠
     // 다 끝난 줄 알았는데 번호 없는 질문이 두 개 더 나온다.
-    const total = riskQuestions.length + symCount + (state.maxDynamic || 0);
-    const pos = state.riskIdx < riskQuestions.length
+    const total = activeRiskQuestions().length + symCount + (state.maxDynamic || 0);
+    const pos = state.riskIdx < activeRiskQuestions().length
         ? state.riskIdx + 1
-        : riskQuestions.length + state.symIdx + 1;
+        : activeRiskQuestions().length + state.symIdx + 1;
     return `${Math.min(pos, total)} / ${total}`;
 }
 
@@ -139,7 +156,7 @@ function surveyProgress() {
 function dynamicProgress() {
     const branchKnown = state.riskAnswers.diabetes !== undefined;
     const symCount = branchKnown ? activeSymptomQuestions().length : symptomQuestions.length;
-    const fixed = riskQuestions.length + symCount;
+    const fixed = activeRiskQuestions().length + symCount;
     const total = fixed + (state.maxDynamic || 0);
     return `${Math.min(fixed + (state.dynamicCount || 0) + 1, total)} / ${total}`;
 }
@@ -204,6 +221,7 @@ function handleSymptomAnswer(yes) {
 
 /** 문진 종료 → 기존 동적 질문(LLM) 단계로 넘긴다. */
 function finishSurvey() {
+    if (typeof hasSurgery === 'function' && hasSurgery()) { finish(); return; }
     state.stepIdx = questions[state.lang].length;   // 고정 질문 구간을 건너뛴 상태로 맞춤
     addLoadingMsg(translations[state.lang].survey_done || '');
     fetchNextQuestion();
@@ -242,8 +260,8 @@ function refreshChatLanguage() {
     // 전환이 끝나면 askRiskQuestion/askSymptomQuestion이 chatBusy를 풀어준다.
     if (state.chatBusy) return;
     let question = null;
-    if (state.riskIdx < riskQuestions.length) {
-        const q = riskQuestions[state.riskIdx];
+    if (state.riskIdx < activeRiskQuestions().length) {
+        const q = activeRiskQuestions()[state.riskIdx];
         question = translations[state.lang][q.key] || q.key;
         renderChatOptions(q.type === 'choice' ? q.options.map(o => ({ label: translations[state.lang][o.key] || o.v, value: o.v })) : [{ label: translations[state.lang].chat_yes, value: true }, { label: translations[state.lang].chat_no, value: false }]);
     } else {

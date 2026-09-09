@@ -15,6 +15,16 @@ function buildOpinionSymptoms() {
     return []
         .concat(
             formatSymptoms(),
+            ...(typeof hasSurgery === 'function' && hasSurgery()
+                ? postoperativeQuestions.filter(q => typeof state.symptomAnswers?.[q.code] === 'boolean')
+                    .map(q => translations[state.lang][q.key] + ': ' + (state.symptomAnswers[q.code] ? translations[state.lang].chat_yes : translations[state.lang].chat_no))
+                : []),
+            ...(typeof hasSurgery === 'function' && hasSurgery()
+                ? ['surgery_type','surgery_eye','surgery_sym_eye'].map(key => {
+                    const q = surgeryRiskQuestions.find(q => q.code === key);
+                    const opt = q.options.find(o => o.v === state.riskAnswers[key]);
+                    return opt ? translations[state.lang][q.key] + ': ' + translations[state.lang][opt.key] : '';
+                }) : []),
             state.riskAnswers?.surgery && state.riskAnswers.surgery !== 'none'
                 ? ['Eye surgery: ' + state.riskAnswers.surgery + ' / ' + translations[state.lang]['surgery_' + state.riskAnswers.surgery]] : [],
             risk.factors || [],

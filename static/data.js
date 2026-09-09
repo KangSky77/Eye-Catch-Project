@@ -689,12 +689,21 @@ for (const lang of Object.keys(translations)) {
 
 // 위험도 층화 문진 — 기존 증상 질문(녹내장·당뇨망막병증) 앞에 붙는다.
 // 나이·기저질환은 증상 질문보다 예측력이 크면서 비용이 거의 없다.
+Object.assign(translations.ko, {"age_under10":"10세 미만","age_10s":"10대 (10–19세)","age_20s":"20대 (20–29세)","age_30s":"30대 (30–39세)"});
+Object.assign(translations.en, {"age_under10":"Under 10","age_10s":"10–19 years","age_20s":"20–29 years","age_30s":"30–39 years"});
+Object.assign(translations.es, {"age_under10":"Menos de 10 años","age_10s":"10–19 años","age_20s":"20–29 años","age_30s":"30–39 años"});
+Object.assign(translations.fr, {"age_under10":"Moins de 10 ans","age_10s":"10–19 ans","age_20s":"20–29 ans","age_30s":"30–39 ans"});
+Object.assign(translations.ja, {"age_under10":"10歳未満","age_10s":"10〜19歳","age_20s":"20〜29歳","age_30s":"30〜39歳"});
+Object.assign(translations.zh, {"age_under10":"10岁以下","age_10s":"10–19岁","age_20s":"20–29岁","age_30s":"30–39岁"});
 const riskQuestions = [
   { code: 'surgery', key: 'q_surgery', type: 'choice', options:
     ['today', 'recent', 'past', 'none'].map(v => ({ v, key: 'surgery_' + v, score: 0 })) },
   { code: 'age', key: 'q_age', type: 'choice',
     options: [
-      { v: 'under40', key: 'age_under40', score: 0 },
+      { v: 'under10', key: 'age_under10', score: 0 },
+      { v: '10s', key: 'age_10s', score: 0 },
+      { v: '20s', key: 'age_20s', score: 0 },
+      { v: '30s', key: 'age_30s', score: 0 },
       { v: '40s',     key: 'age_40s',     score: 1 },
       { v: '50s',     key: 'age_50s',     score: 2 },
       { v: '60s',     key: 'age_60s',     score: 3 },
@@ -706,6 +715,43 @@ const riskQuestions = [
   { code: 'family',       key: 'q_family',       type: 'yesno', score: 2, labelKey: 'risk_family' },
   { code: 'smoking',      key: 'q_smoking',      type: 'yesno', score: 2, labelKey: 'risk_smoking' },
 ];
+
+Object.assign(translations.ko, {
+  q_surgery_pain: "수술한 눈에 심한 통증이 있거나 점점 더 아파지고 있나요?",
+  q_surgery_vision: "수술 후 시력이 갑자기 떨어졌거나 점점 더 흐려지고 있나요?",
+  q_surgery_redness: "수술한 눈의 충혈이나 끈적한 분비물이 점점 심해지고 있나요?",
+  q_surgery_glare: "수술 후 눈부심은 있지만 통증·시력 저하·심해지는 충혈은 없나요?",
+});
+Object.assign(translations.en, {
+  q_surgery_pain: "Do you have severe or worsening pain in the operated eye?",
+  q_surgery_vision: "Has vision suddenly worsened or become progressively blurrier after surgery?",
+  q_surgery_redness: "Is increasing redness or sticky discharge developing in the operated eye?",
+  q_surgery_glare: "Do you have glare after surgery without pain, vision loss, or worsening redness?",
+});
+Object.assign(translations.es, {
+  q_surgery_pain: "¿Tiene dolor intenso o cada vez mayor en el ojo operado?",
+  q_surgery_vision: "¿La visión empeoró de repente o se volvió más borrosa después de la cirugía?",
+  q_surgery_redness: "¿Aumentan el enrojecimiento o la secreción pegajosa del ojo operado?",
+  q_surgery_glare: "¿Tiene deslumbramiento tras la cirugía sin dolor, pérdida visual ni más enrojecimiento?",
+});
+Object.assign(translations.fr, {
+  q_surgery_pain: "Avez-vous une douleur intense ou croissante dans l’œil opéré ?",
+  q_surgery_vision: "Votre vision a-t-elle soudainement baissé ou devient-elle plus floue après l’opération ?",
+  q_surgery_redness: "La rougeur ou un écoulement collant de l’œil opéré s’aggrave-t-il ?",
+  q_surgery_glare: "Avez-vous une gêne à la lumière après l’opération sans douleur, baisse de vision ni rougeur croissante ?",
+});
+Object.assign(translations.ja, {
+  q_surgery_pain: "手術した目に強い痛みや、だんだん強くなる痛みがありますか？",
+  q_surgery_vision: "手術後、視力が急に低下したり、だんだんぼやけたりしていますか？",
+  q_surgery_redness: "手術した目の充血や粘つく目やにが強くなっていますか？",
+  q_surgery_glare: "手術後にまぶしさはありますが、痛み・視力低下・充血の悪化はありませんか？",
+});
+Object.assign(translations.zh, {
+  q_surgery_pain: "手术眼是否有剧烈或逐渐加重的疼痛？",
+  q_surgery_vision: "术后视力是否突然下降或越来越模糊？",
+  q_surgery_redness: "手术眼的红肿或黏性分泌物是否越来越严重？",
+  q_surgery_glare: "术后有畏光，但没有疼痛、视力下降或加重的红肿吗？",
+});
 
 // 카드 방향 안내 — 폰은 카드를 세워야 폭 54mm·높이 85.6mm가 모두 화면에 들어간다.
 Object.assign(translations.ko, {
@@ -821,6 +867,16 @@ const symptomQuestions = [
   { code: 'rf_acute',  key: 'q_rf_acute',  disease: 'glaucoma',    weight: 0, redFlag: true },
   { code: 'rf_sudden', key: 'q_rf_sudden', disease: 'general',     weight: 0, redFlag: true },
 
+  // ── 최근 수술 후 상태: 수술한 사람에게만 추가 ───────────
+  { code: 'surgery_pain', key: 'q_surgery_pain', disease: 'general', weight: 0,
+    redFlag: true, showIf: { code: 'surgery', values: ['today', 'recent'] } },
+  { code: 'surgery_vision', key: 'q_surgery_vision', disease: 'general', weight: 0,
+    redFlag: true, showIf: { code: 'surgery', values: ['today', 'recent'] } },
+  { code: 'surgery_redness', key: 'q_surgery_redness', disease: 'general', weight: 0,
+    redFlag: true, showIf: { code: 'surgery', values: ['today', 'recent'] } },
+  { code: 'surgery_glare', key: 'q_surgery_glare', disease: 'general', weight: 0,
+    showIf: { code: 'surgery', values: ['today', 'recent'] } },
+
   // ── 백내장: 증상이 실제로 유용한 질환 ──────────────────
   { code: 'cat_glare',   key: 'q_cat_glare',   disease: 'cataract', weight: 2 },
   { code: 'cat_foggy',   key: 'q_cat_foggy',   disease: 'cataract', weight: 2 },
@@ -850,6 +906,10 @@ const symptomQuestions = [
 ];
 
 Object.assign(translations.ko, {
+  q_surgery_pain: "수술한 눈에 심한 통증이 있거나 점점 더 아파지고 있나요?",
+  q_surgery_vision: "수술 후 시력이 갑자기 떨어졌거나 점점 더 흐려지고 있나요?",
+  q_surgery_redness: "수술한 눈의 충혈이나 끈적한 분비물이 점점 심해지고 있나요?",
+  q_surgery_glare: "수술 후 눈부심은 있지만 통증·시력 저하·심해지는 충혈은 없나요?",
   q_rf_sudden: "갑자기(몇 시간~며칠 사이) 한쪽 눈이 잘 안 보이게 된 적이 있나요?",
   q_cat_glare: "밤에 운전하거나 불빛을 볼 때 빛이 심하게 번지거나 눈이 부신가요?",
   q_cat_foggy: "안개가 낀 것처럼 전체적으로 뿌옇게 보이나요?",

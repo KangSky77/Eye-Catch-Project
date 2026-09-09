@@ -55,6 +55,7 @@ const state = {
 
 /** 백내장 결과를 현재 언어 문자열로. 원자료가 없으면 "-". */
 function formatCataractResult() {
+    if (state.aiResultCode === 'postop') return translations[state.lang].post_limit;
     const r = state.aiResultData;
     if (!r) return "-";
     const t = translations[state.lang];

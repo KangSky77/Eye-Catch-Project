@@ -55,6 +55,7 @@ function computeRiskScore(answers) {
  * 등급이 아니라 '다음 행동'을 돌려주는 것이 이 함수의 요점.
  */
 function computeTriage(ctx) {
+    if (typeof hasSurgery === 'function' && hasSurgery()) return postoperativeTriage(ctx, translations[state.lang]);
     const risk = ctx.riskScore || 0;
     const anySymptom = (ctx.symptomCodes || []).length > 0;
 

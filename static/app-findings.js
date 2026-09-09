@@ -23,6 +23,14 @@
 function buildFindings() {
     const t = translations[state.lang];
     const out = [];
+    if (typeof hasSurgery === 'function' && hasSurgery()) {
+        out.push(t.post_limit);
+        out.push(t.q_surgery + ': ' + t['surgery_' + state.riskAnswers.surgery]);
+        for (const q of surgeryRiskQuestions) {
+            const opt = q.options.find(o => o.v === state.riskAnswers[q.code]);
+            if (opt) out.push(t[q.key] + ': ' + t[opt.key]);
+        }
+    }
 
     // --- 백내장 사진 판독 ---
     if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
