@@ -54,7 +54,6 @@ async function finish() {
         riskScore: risk.score,
         symptomScore: state.symptomScore,
         redFlags: state.redFlags,
-        visionAsymmetric: state.visionTest && state.visionTest.asymmetric,
     });
     const triBox = document.getElementById('triage-box');
     if (triBox) renderTriage(triBox, state.triage, risk.factors);

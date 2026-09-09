@@ -221,18 +221,10 @@ for (const stage of ['risk', 'symptom']) {
     });
 }
 
-test('검사 초기화는 기능검사 상태와 화면을 함께 초기화한다', () => {
-    const h = setup(), c = h.context;
-    c.document.addEventListener = () => {};
-    c.document.querySelector = () => null;
-    c.document.body = c.document.createElement();
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../static/app-visiontest.js'), 'utf8'), c);
-    vm.runInContext("vtState.phase = 'done'; vtState.results.left.acuity = 0.5;", c);
-    c.document.getElementById('vt-result-body').innerHTML = 'Previous values';
-    c.state.visionTest = { asymmetric: false };
-    c.resetScreeningState();
-    assert.equal(vm.runInContext('vtState.phase', c), 'idle');
-    assert.equal(c.state.visionTest, null);
-    assert.equal(c.document.getElementById('vt-result').classList.contains('hidden'), true);
-    assert.equal(c.document.getElementById('vt-result-body').innerHTML, '');
+test('시력검사 기능은 제품 화면에서 로드되지 않는다', () => {
+    const html = fs.readFileSync(path.join(__dirname, '../static/index.html'), 'utf8');
+    const core = fs.readFileSync(path.join(__dirname, '../static/app-core.js'), 'utf8');
+    assert.equal(html.includes('app-visiontest.js'), false);
+    assert.equal(html.includes('id="tab-vision"'), false);
+    assert.equal(core.includes('state.visionTest'), false);
 });

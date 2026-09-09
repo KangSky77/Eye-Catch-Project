@@ -38,13 +38,48 @@ async def _verify_schema(conn) -> None:
     missing = REQUIRED_COLUMNS - actual
     if missing:
         raise RuntimeError(
-            "diagnoses 테이블이 이 코드와 맞지 않습니다 — 저장 기능을 끕니다.\n"
-            f"    없는 컬럼: {sorted(missing)}\n"
-            f"    실제 컬럼: {sorted(actual)}\n"
-            "    예전 설계의 테이블이 남아 있는 것입니다. 기존 데이터를 보존한 채 비키려면:\n"
-            "        ALTER TABLE diagnoses RENAME TO diagnoses_legacy;\n"
-            "    그다음 서버를 다시 시작하면 올바른 테이블이 자동으로 만들어집니다."
+            "diagnoses 테이블이 이 코드와 맞지 않습니다. "
+            f"없는 컬럼: {sorted(missing)}, 실제 컬럼: {sorted(actual)}"
         )
+
+
+async def _rename_incompatible_schema(conn, actual: set[str]) -> str | None:
+    """기존 구 스키마를 보존하기 위해 새 이름으로 옮긴다.
+
+    예전 버전의 diagnoses 테이블이 남아 있으면 CREATE TABLE IF NOT EXISTS가
+    아무 작업도 하지 않는다. 새 코드가 사용할 테이블을 만들 수 있도록 기존
+    테이블의 이름만 바꾸며, 데이터는 삭제하지 않는다.
+    """
+    missing = REQUIRED_COLUMNS - actual
+    if not missing:
+        return None
+
+    # 같은 DB에서 서버를 여러 번 시작해도 기존 백업을 덮어쓰지 않도록 이름을
+    # 순차적으로 고른다. 후보명은 숫자로만 구성되어 SQL 식별자로 안전하다.
+    for suffix in range(0, 1000):
+        candidate = "diagnoses_legacy" if suffix == 0 else f"diagnoses_legacy_{suffix}"
+        exists = await conn.fetchval(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = current_schema() AND c.relname = $1
+            )
+            """,
+            candidate,
+        )
+        if not exists:
+            # candidate는 위에서 고정 접두사와 숫자로만 만든 값이다.
+            await conn.execute(f'ALTER TABLE diagnoses RENAME TO "{candidate}"')
+            logger.warning(
+                "기존 diagnoses 테이블(%s)을 %s로 보존하고 새 스키마를 만듭니다",
+                ", ".join(sorted(actual)),
+                candidate,
+            )
+            return candidate
+
+    raise RuntimeError("diagnoses 구 스키마를 보존할 새 테이블 이름을 찾지 못했습니다")
 
 
 async def init_db_pool() -> None:
@@ -65,6 +100,12 @@ async def init_db_pool() -> None:
     #  acquire() 블록 안에서 풀을 닫으면 그 자리에서 멈춘다.)
     try:
         async with _pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = current_schema() AND table_name = 'diagnoses'"
+            )
+            actual = {r["column_name"] for r in rows}
+            await _rename_incompatible_schema(conn, actual)
             await conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS diagnoses (

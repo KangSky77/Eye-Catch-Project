@@ -249,15 +249,13 @@ def test_기능검사_측정불가_상태를_좌우차이없음으로_처리하�
     assert threshold["asymmetric"] is True, "0.30 logCS 경계값이 부동소수점 오차로 빠지면 안 됩니다"
 
 
-def test_기능검사_동적문구와_결과가_재렌더된다():
-    """언어 전환 시 보정 패널만 갱신해 진행 문구가 남는 회귀를 막는다."""
+def test_기능검사_코드가_제품화면에서_로드되지_않는다():
+    """시력·대비감도 자가검사는 제품 화면에서 제외되어야 한다."""
     core = (STATIC / "app-core.js").read_text(encoding="utf-8")
-    vision = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
-    findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
-    assert "vtRefreshDynamicUI()" in core
-    assert "result.scrollIntoView" in vision
-    assert "function vtRecalibrate" in vision
-    assert "bothEyesUnmeasurable" in findings
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert "vtRefreshDynamicUI()" not in core
+    assert "app-visiontest.js" not in html
+    assert "calibration.js" not in html
 
 
 def test_가중치_미로드를_로드완료로_기록하지_않는다():
@@ -503,31 +501,29 @@ def test_흔들림_보류를_프론트가_처리한다():
     assert data.count("ai_blurry:") == 6
 
 
-def test_시력검사에_안보여요가_있고_오답으로_처리된다():
-    """4지선다 강제선택이라 안 보여도 찍으면 25%로 맞는다.
-    '건너뛰기'로 만들면 그 단계가 끝나지 않아 검사가 멈추고,
-    '통과'로 치면 시력이 부풀려진다. 그래서 오답으로 집계해야 한다."""
+def test_시력검사_화면이_제품에_노출되지_않는다():
+    """시력검사 기능을 제품 화면에서 제거하면 관련 버튼도 노출되지 않는다."""
     vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
     assert "function vtCantSee()" in vt
-    # 실제 방향과 다른 값을 넘겨 오답 처리
+    # 보관된 구현 자체는 향후 재사용할 수 있도록 검증한다.
     assert "DIRECTIONS.find(d => d !== vtState.current)" in vt
     assert "vtAnswer(wrong)" in vt
 
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
-    assert "vtCantSee()" in html
-    assert 'data-i18n="vt_guess_hint"' in html, "찍어도 된다는 안내가 있어야 한다"
+    assert "vtCantSee()" not in html
+    assert 'data-i18n="vt_guess_hint"' not in html
 
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert data.count("vt_cant_see:") == 6
     assert data.count("vt_guess_hint:") == 6
 
 
-def test_시력검사_UI가_복구되어_있다():
-    """조원 논의 후 재투입(2abec18 revert). 스크립트 2개와 탭이 함께 살아나야 한다."""
+def test_시력검사_UI는_제품범위에서_제외되어_있다():
+    """시력·대비감도 자가검사는 현재 배포 화면에서 제공하지 않는다."""
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
-    assert 'id="tab-vision"' in html
-    assert "app-visiontest.js" in html and "calibration.js" in html
-    assert html.count('data-i18n="nav_vision"') == 2, "상단·하단 네비 모두 필요"
+    assert 'id="tab-vision"' not in html
+    assert "app-visiontest.js" not in html and "calibration.js" not in html
+    assert 'data-i18n="nav_vision"' not in html
 
 
 def test_촬영_예시_갤러리가_있고_사진과_출처가_존재한다():
@@ -826,13 +822,12 @@ def test_촬영안내가_두_화면에서_같은_말을_한다():
     assert data.count("guide_list:") == 6
 
 
-def test_안보여요를_왜_또_눌러야_하는지_설명한다():
-    """오답 집계는 의도된 설계다(psychometrics). 다만 라벨만 보면 검사가 끝난다고
-    읽히므로, 처음 한 번은 이유를 설명해야 한다."""
+def test_안보여요_안내가_제품화면에서_제거되었다():
+    """제거한 시력검사의 안내 문구가 제품 화면에 남지 않아야 한다."""
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
     vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
     data = (STATIC / "data.js").read_text(encoding="utf-8")
-    assert 'id="vt-cant-see-hint"' in html
+    assert 'id="vt-cant-see-hint"' not in html
     assert "vt_cant_see_hint" in vt
     assert data.count("vt_cant_see_hint:") == 6
 
@@ -1051,7 +1046,7 @@ def test_미응답_눈을_정상으로_말하지_않는다():
     # 구간은 암슬러 분기 시작부터 다음 분기(기능검사)까지 — 앞쪽 헬퍼 함수에 같은 이름이
     # 나올 수 있으므로 '시작 위치 이후'에서 끝을 찾는다(예전에는 구간이 비어 통과했다).
     start = findings.index("if (state.hasAmsler)")
-    block = findings[start:findings.index("state.visionTest", start)]
+    block = findings[start:findings.index("// --- 문진", start)]
     assert "amslerComplete()" in block, "미완료 상태에서도 '정상' 소견을 만들고 있다"
     assert "find_ams_normal" in block, "구간 추출이 잘못됐다 — 검사 대상이 비어 있다"
 
@@ -1124,25 +1119,12 @@ def test_PDF에_권장조치와_검사요약해석이_들어간다():
         assert expr in pdf_fn, f"{expr} 가 escape 없이 들어간다"
 
 
-def test_기능검사_측정불가를_검사종류별로_판정한다():
-    """네 항목이 전부 null일 때만 '측정불가'로 보던 탓에,
-    '양쪽 눈 시력은 실패했는데 대비는 측정됨'이 '좌우 차이 없음'으로 보고됐다.
-    양쪽 다 최저 단계를 통과 못 했다는 것은 좌우 비대칭보다 더 중요한 신호다."""
-    vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
+def test_기능검사_결과가_리포트에서_제거되었다():
+    """사용하지 않는 시력·대비감도 결과가 리포트에 섞이지 않아야 한다."""
     findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
-    data = (STATIC / "data.js").read_text(encoding="utf-8")
-
-    fn = vt[vt.index("function vtClassifyResults"):vt.index("function vtFinish")]
-    assert "unmeasurableKinds" in fn and "bothFailed" in fn
-    # 네 항목 동시 null을 요구하던 옛 조건이 남아 있으면 안 된다
-    assert "left.acuity == null && right.acuity == null &&" not in fn, (
-        "네 항목이 전부 null일 때만 측정불가로 보고 있다"
-    )
-    # 어느 검사가 실패했는지 문구에 채워 넣는다
-    assert "function formatVtUnmeasurable()" in findings
-    assert "{kinds}" in data
-    for key in ("vt_kind_acuity", "vt_kind_contrast", "vt_kind_sep"):
-        assert data.count(f"{key}:") == 6, f"{key}가 6개국어에 없다"
+    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    assert "state.visionTest" not in findings
+    assert "state.visionTest" not in report
 
 
 def test_스크립트_실행_안내가_폴더_구조와_맞는다():

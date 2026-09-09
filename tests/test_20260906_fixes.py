@@ -114,7 +114,7 @@ def test_보정_전에는_시야각을_단정하지_않는다():
     assert read("static/data.js").count("ams_dist_note_uncal:") == 6
 
 
-@pytest.mark.parametrize("key", ["ams_glasses_note", "vt_glasses_note"])
+@pytest.mark.parametrize("key", ["ams_glasses_note"])
 def test_안경_착용_안내가_6개_언어에_있다(key):
     """암슬러는 16~21cm에서 보라고 한다. 노안이면 맨눈으로 초점이 안 맞아
     흐린 것을 '휘어 보임'으로 답하기 쉽고, 없는 황반 이상이 만들어진다."""
@@ -238,12 +238,12 @@ def test_뒤로가기가_검사를_날리지_않는다():
     assert "nextStep(sid, true)" in core
 
 
-def test_새_회차가_분석과_기능검사_결과를_무효화한다():
-    """홈 이동/새 회차 뒤 늦은 사진 응답이나 이전 시력 결과가 남으면 안 된다."""
+def test_새_회차가_분석결과를_무효화한다():
+    """홈 이동/새 회차 뒤 늦은 사진 응답이 남으면 안 된다."""
     core = read("static/app-core.js")
     vision = read("static/app-vision.js")
     assert "cancelEyeAnalysis()" in core
-    assert "state.visionTest = null" in core
+    assert "visionTest" not in core
     assert "_analysisRequestId++" in vision
 
 

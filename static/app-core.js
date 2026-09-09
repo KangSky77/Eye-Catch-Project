@@ -202,11 +202,8 @@ function applyFontSize(level) {
     const dec = document.getElementById('fs-dec'), inc = document.getElementById('fs-inc');
     if (dec) dec.disabled = level <= 0;
     if (inc) inc.disabled = level >= FONT_LEVEL_MAX;
-    // 지도·시력검사 카드는 컨테이너 크기에 맞춰 그리므로 다시 계산시킨다
+    // 지도 카드는 컨테이너 크기에 맞춰 그리므로 다시 계산시킨다
     if (typeof _map !== 'undefined' && _map) setTimeout(() => _map.invalidateSize(), 250);
-    if (typeof vtRefreshCalibrationUI === 'function' && document.getElementById('vt-cardbox')) {
-        setTimeout(vtRefreshCalibrationUI, 250);
-    }
 }
 
 function changeFontSize(delta) {
@@ -272,10 +269,6 @@ function updateUI(lang) {
     if (rpc && translations[lang].result_photo_label) rpc.textContent = translations[lang].result_photo_label;
     const rpi = document.getElementById('result-photo');
     if (rpi && translations[lang].result_photo_label) rpi.alt = translations[lang].result_photo_label;
-    if (typeof vtRefreshCalibrationUI === 'function' && document.getElementById('vt-cardbox')) {
-        vtRefreshCalibrationUI();
-    }
-    if (typeof vtRefreshDynamicUI === 'function') vtRefreshDynamicUI();
     if (typeof refreshChatLanguage === 'function') refreshChatLanguage();
     const findBox = document.getElementById('findings-box');
     if (findBox && findBox.children.length && typeof renderFindings === 'function') {
@@ -323,11 +316,6 @@ function showTab(tid, moveFocus = true) {
     // (app-polish의 토스트 안내 대신 이 인페이지 게이트를 쓴다 — 같은 말을 두 번 하지 않는다)
     if (tid === 'tab-report' && typeof updateReportGate === 'function') updateReportGate();
 
-    // 시력검사 탭도 지도와 같은 이유 — 숨겨진 동안에는 부모 폭이 0이라 카드 크기를 계산할 수 없다.
-    // 이 호출이 없으면 카드가 폭 0으로 그려져 '파란 박스가 안 보이는' 상태가 된다.
-    if (tid === 'tab-vision' && typeof vtRefreshCalibrationUI === 'function') vtRefreshCalibrationUI();
-    // 다른 탭으로 나가면 확대 잠금을 반드시 되돌린다 — 저시력 사용자에게 확대는 필수 기능이다
-    else if (typeof vtLockViewport === 'function') vtLockViewport(false);
 }
 
 // 검사 흐름의 사용자 관점 단계 (인트로/로딩은 자체 단계가 아님)
@@ -407,8 +395,6 @@ function resetScreeningState() {
     state.redFlags = []; state._chatLoaderStop = null;
     state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
     state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
-    state.visionTest = null;
-    if (typeof vtReset === 'function') vtReset();
     invalidateScreeningReport();
 }
 

@@ -19,20 +19,6 @@
 //   - 점수를 확률처럼 말하지 않는다
 // ==========================================
 
-/** '양쪽 측정불가' 문구에 어느 검사가 실패했는지 채워 넣는다.
- *
- *  예전에는 시력·대비 네 항목이 전부 실패해야만 이 문구가 나왔고, "양쪽 시력은 실패했는데
- *  대비는 측정됨"은 '좌우 차이 없음'으로 보고됐다. 이제 검사 종류별로 판정하므로,
- *  어느 쪽이 측정불가였는지도 함께 말해준다(state에는 언어 중립 코드만 저장돼 있다).
- */
-function formatVtUnmeasurable() {
-    const t = translations[state.lang];
-    const kinds = (state.visionTest && state.visionTest.unmeasurableKinds) || [];
-    const names = kinds.map(k => t['vt_kind_' + k] || k);
-    return (t.find_vt_unmeasurable_both || '')
-        .replace('{kinds}', names.join(t.vt_kind_sep || ', '));
-}
-
 /** 현재 state로부터 안전한 해석 문장 목록을 만든다. */
 function buildFindings() {
     const t = translations[state.lang];
@@ -53,14 +39,6 @@ function buildFindings() {
         // '좌우 모두 이상 없음'은 양쪽 눈을 다 본 뒤에만 할 수 있는 말이다.
         // 한쪽만 답한 상태에서 이 문장을 쓰면 검사하지 않은 눈까지 정상이라고 말하게 된다.
         out.push(t.find_ams_normal);
-    }
-
-    // --- 기능검사(시력·대비감도) ---
-    if (state.visionTest) {
-        // 양안 모두 측정 불가능은 '차이 없음'이 아니라 검사 실패이므로 가장 먼저 분리한다.
-        if (state.visionTest.bothEyesUnmeasurable) out.push(formatVtUnmeasurable());
-        else if (state.visionTest.oneSideUnmeasurable) out.push(t.find_vt_unmeasurable);
-        else out.push(state.visionTest.asymmetric ? t.find_vt_asym : t.find_vt_ok);
     }
 
     // --- 문진 ---
