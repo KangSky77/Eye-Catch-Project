@@ -85,7 +85,8 @@ function formatCataractResult() {
         (r.eyes || []).forEach(e => { by[e.side] = e; });
         const lp = by.left ? by.left.probability : '-';
         const rp = by.right ? by.right.probability : '-';
-        return `${text} · ${score} ${t.eye_left} ${lp}/100 / ${t.eye_right} ${rp}/100`;
+        // 사진 전용 라벨을 쓴다 — 이 좌우는 사진에 보이는 위치이고, 셀카는 거울상일 수 있다.
+        return `${text} · ${score} ${t.eye_photo_left} ${lp}/100 / ${t.eye_photo_right} ${rp}/100`;
     }
     return `${text} · ${score} ${r.probability}/100`;
 }

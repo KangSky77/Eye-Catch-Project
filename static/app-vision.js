@@ -373,7 +373,8 @@ async function runAIAnalysis(droppedFile) {
 // 눈별(좌/우) 분석 결과 카드를 그린다 (얼굴 모드 + 눈 2개일 때).
 function renderEyeBreakdown(container, eyes) {
     const t = translations[state.lang];
-    const sideLabel = { left: t.eye_left, right: t.eye_right };
+    // 사진 기준 위치 라벨 — 암슬러의 eye_left/eye_right(해부학적 좌우)와 섞지 않는다.
+    const sideLabel = { left: t.eye_photo_left, right: t.eye_photo_right };
 
     const wrap = document.createElement('div');
     wrap.className = 'mt-4 pt-4 border-t border-slate-200 text-left';
@@ -453,7 +454,7 @@ function refreshAiResultDisplay() {
 
     // 눈별 라벨은 side로 짝을 맞춘다 — 순서에 기대면 크롭이 하나만 잡힌 경우 어긋난다
     disp.querySelectorAll('[data-role="eye-label"]').forEach(el => {
-        const label = { left: t.eye_left, right: t.eye_right }[el.dataset.side];
+        const label = { left: t.eye_photo_left, right: t.eye_photo_right }[el.dataset.side];
         if (label) el.textContent = label;
     });
 }

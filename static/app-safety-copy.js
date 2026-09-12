@@ -100,6 +100,31 @@ const fellowEyeCopy = {
 for(const [lang,v] of Object.entries(fellowEyeCopy)) Object.assign(translations[lang],
  {surgery_both_q:v[0],surgery_both_one:v[1],surgery_both_both:v[2],surgery_both_unknown:v[3],
   photo_fellow_only:v[4],find_cat_fellow:v[5]});
+// 사진에서 나온 좌/우는 해부학적 좌우가 아니다.
+//
+// vision.py는 eyes[].side를 ["left","right"]로 붙이는데, eye_detector.py가 사진의
+// x좌표로 정렬한 결과다("사진 기준"). 셀카는 기기·앱 설정에 따라 거울상으로 저장되므로
+// 사진 왼쪽에 보이는 눈이 실제 왼눈인지 알 수 없다. 그런데 화면 라벨은 암슬러와 같은
+// eye_left("왼쪽 눈")를 함께 쓰고 있었다 — 암슬러는 사용자가 직접 한쪽을 가렸으니
+// 해부학적으로 맞지만, 사진은 아니다. 두 뜻이 같은 단어를 쓰면 사용자가 사진 결과의
+// 좌우를 자기 눈으로 그대로 읽는다. 그래서 사진 전용 라벨을 따로 둔다.
+// (암슬러·수술 문항의 eye_left/eye_right는 그대로 둔다.)
+const photoSideCopy = {
+ ko:['사진 왼쪽 눈','사진 오른쪽 눈',
+  '※ 좌·우는 사진에 보이는 위치 기준입니다. 셀카는 좌우가 뒤집혀 저장될 수 있어 실제 눈과 다를 수 있습니다. 얼굴 사진의 눈별 수치는 참고용이며, 정확도는 눈 클로즈업 촬영이 더 높습니다.'],
+ en:['Left in photo','Right in photo',
+  '※ Left and right refer to positions in the photo. Selfies can be saved mirrored, so these may not match your actual eyes. Per-eye values from a face photo are for reference; a close-up of the eye is more accurate.'],
+ es:['Izquierdo en la foto','Derecho en la foto',
+  '※ Izquierda y derecha se refieren a la posición en la foto. Los selfies pueden guardarse en espejo, así que puede no coincidir con sus ojos reales. Los valores por ojo de una foto del rostro son orientativos; un primer plano es más preciso.'],
+ fr:['Gauche sur la photo','Droite sur la photo',
+  '※ Gauche et droite désignent la position sur la photo. Les selfies peuvent être enregistrés en miroir : cela peut ne pas correspondre à vos yeux réels. Les valeurs par œil issues d’une photo du visage sont indicatives ; un gros plan est plus précis.'],
+ ja:['写真の左の目','写真の右の目',
+  '※ 左右は写真に写っている位置の基準です。セルフィーは左右反転で保存されることがあり、実際の目と異なる場合があります。顔写真の目ごとの数値は参考用で、目のクローズアップ撮影の方が精度が高いです。'],
+ zh:['照片中左侧眼','照片中右侧眼',
+  '※ 左右指照片中的位置。自拍可能以镜像保存，因此可能与您实际的眼睛不一致。面部照片的逐眼数值仅供参考，眼部特写拍摄的准确度更高。']
+};
+for(const [lang,[l,r,note]] of Object.entries(photoSideCopy)) Object.assign(translations[lang],
+ {eye_photo_left:l,eye_photo_right:r,eye_ref_note:note});
 const painCopy = {
  ko:['지금 어느 쪽 눈이든 심한 통증이 있나요? 두통·구역질·무지개 테가 없어도 답해주세요.','심한 눈 통증'],
  en:['Do you have severe pain in either eye now, even without headache, nausea or halos?','Severe eye pain'],
