@@ -1508,3 +1508,13 @@ body.modal-open { overflow: hidden; }
 #vision-sim-panel {
     scroll-margin-top: 88px;
 }
+
+dialog.photo-review { width: calc(100% - 32px); max-width: 520px; max-height: calc(100dvh - 32px); margin: auto; padding: 24px; border: 0; border-radius: 20px; overflow: auto; color: #1e293b; }
+dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
+.photo-review h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; }
+.photo-review img { display: block; max-width: 100%; max-height: 40dvh; margin: 0 auto 16px; object-fit: contain; }
+.photo-review p { line-height: 1.6; margin-bottom: 16px; }
+.photo-review button { display: block; width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; background: #e2e8f0; font: inherit; font-weight: 700; }
+.photo-review button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+#photo-review-confirm { background: #2563eb; color: white; }
+.photo-review button:disabled { opacity: .45; }

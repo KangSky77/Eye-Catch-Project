@@ -45,7 +45,8 @@ function buildFindings() {
     // --- 백내장 사진 판독 ---
     // 수술 4주 이내면 건너뛴다. 위에서 post_limit로 '사진만으로는 판정할 수 없다'고
     // 이미 말했는데, 바로 아래에 '백내장 위험' 소견을 붙이면 그 말을 스스로 뒤집는다.
-    const postop = typeof hasSurgery === 'function' && hasSurgery();
+    const postop = typeof photoAssessmentExcluded === 'function' ? photoAssessmentExcluded() : (typeof hasSurgery === 'function' && hasSurgery());
+    if (postop && !hasSurgery()) out.push(t.photo_history_limit);
     if (!postop) {
         if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
         else if (state.aiResultCode === 'borderline') out.push(t.find_cat_borderline);
@@ -55,6 +56,7 @@ function buildFindings() {
     }
 
     // --- 암슬러(황반 자가검사) — 반드시 '황반만 본다'는 범위를 함께 말한다 ---
+    if (Object.values(state.amslerResult || {}).includes('unable')) out.push(t.ams_unable_note);
     if (state.hasAmsler) {
         const eye = formatAmslerResult();
         out.push((t.find_ams_abnormal || '').replace('{eye}', eye));

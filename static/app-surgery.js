@@ -215,6 +215,19 @@ Object.keys(translations).forEach(lang => Object.assign(translations[lang], surg
 // 오래된 수술 이력은 일반 검진을 그대로 받고, 적신호 3개만 얹는다
 // (data.js의 surgery_pain·surgery_vision·surgery_redness).
 function hasSurgery() { return ['today','recent'].includes(state.riskAnswers?.surgery); }
+// The upload has no reliable anatomical side. Do not apply its cataract score
+// to a person with an artificial lens, or an unknown remote operation.
+function photoAssessmentExcluded() {
+ return hasSurgery() || state.aiResultCode === 'postop' ||
+  (state.riskAnswers?.surgery === 'past' && ['cataract','unknown'].includes(state.riskAnswers.surgery_type));
+}
+function effectiveCataractCode() {
+ return hasSurgery() || state.aiResultCode === 'postop' ? 'postop' : photoAssessmentExcluded() ? 'excluded' : state.aiResultCode;
+}
+function startSymptomCheck() {
+ resetScreeningState(); state.aiResultCode='skipped';
+ showTab('tab-test'); nextStep('step-chat'); startChat();
+}
 const surgeryRiskQuestions = [
  ['surgery_type','surgery_type_q',['cataract','laser','other','unknown'],'surgery_type_'],
  ['surgery_eye','surgery_eye_q',['left','right','both'],'surgery_eye_'],
@@ -237,7 +250,9 @@ function startPostoperativeCheck() {
 function postoperativeTriage(ctx, t) {
  const urgent=(ctx.redFlags || []).length>0;
  const a=state.symptomAnswers || {};
- const contact=a.post_worse===true || a.post_followup===false || ctx.amslerAbnormal || ctx.cataractCode==='risk';
+ // 사진 판독은 적용하지 않는다. 일반 검사에서 암슬러를 끝낸 뒤 수술 이력을
+ // 답할 수도 있으므로, 이미 보고된 암슬러 이상은 유지한다.
+ const contact=a.post_worse===true || a.post_followup===false || ctx.amslerAbnormal===true;
  const kind=urgent?'urgent':contact?'contact':'follow';
  return {level:urgent?'urgent':contact?'now':'monitor',label:t['post_'+kind],
   why:t['post_'+kind+'_why'],note:t.post_limit,riskScore:0,riskMax:13};

@@ -94,10 +94,10 @@ async function finish() {
         amsler_res: amslerRes,
         chat_symptoms: opinionSymptoms,
         // RAG용 언어 중립 신호
-        cataract_code: state.aiResultCode,
+        cataract_code: typeof effectiveCataractCode === 'function' ? effectiveCataractCode() : state.aiResultCode,
         amsler_abnormal: state.hasAmsler,
         symptom_codes: state.symptomCodes,
-        eye_asymmetric: state.asymmetric,  // 편측(한쪽 눈만) 위험 여부
+        eye_asymmetric: (typeof photoAssessmentExcluded !== 'function' || !photoAssessmentExcluded()) && state.asymmetric,
         // 응급 신호를 같이 넘긴다. 안 넘기면 서버 프롬프트가 이 회차가 응급인지 알 수 없어,
         // 화면이 '지금 바로 진료를 받으세요'라고 띄운 바로 밑에 '정기 검진을 받아보세요'가 붙는다.
         red_flags: state.redFlags || [],
@@ -191,6 +191,7 @@ function cancelAiOpinion() {
 async function runAiOpinion() {
     if (!state.opinionRequest) return;
     cancelAiOpinion();
+    if (typeof cancelSaveConsent === 'function') cancelSaveConsent();
     const request = JSON.parse(JSON.stringify(state.opinionRequest));
     const active = { controller: new AbortController(), loader: null };
     _activeOpinion = active;

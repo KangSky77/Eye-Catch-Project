@@ -3,6 +3,7 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function activeRiskQuestions() {
+    if (state.riskAnswers?.surgery === 'past') return [riskQuestions[0], ...surgeryRiskQuestions.slice(0,2), ...riskQuestions.slice(1)];
     if (typeof hasSurgery !== 'function' || !hasSurgery()) return riskQuestions;
     return [riskQuestions[0], ...surgeryRiskQuestions];
 }
@@ -375,9 +376,7 @@ async function fetchNextQuestion() {
     const generation = state.sessionGeneration;
     const cataractRes = formatCataractResult();
     // finish()와 동일하게 선택 언어로 전달 (LLM 프롬프트 컨텍스트 언어 일관성)
-    const amslerRes = state.hasAmsler
-        ? (translations[state.lang].res_ams_bad || "이상 있음")
-        : (translations[state.lang].res_ams_ok || "정상");
+    const amslerRes = formatAmslerResult();
 
     // 서버 실패·빈 응답이면 선택 언어의 기본 질문으로 폴백 (백엔드도 실패 시 ""를 반환)
     let q = translations[state.lang].nextq_fallback || "추가적으로 눈이 불편하신 곳이 있나요?";

@@ -865,7 +865,9 @@ Object.assign(translations.zh, {
 const symptomQuestions = [
   // ── 응급 신호 (가장 먼저) ─────────────────────────────
   { code: 'rf_acute',  key: 'q_rf_acute',  disease: 'glaucoma',    weight: 0, redFlag: true },
+  { code: 'rf_pain', key: 'q_rf_pain', disease: 'general', weight: 0, redFlag: true },
   { code: 'rf_sudden', key: 'q_rf_sudden', disease: 'general',     weight: 0, redFlag: true },
+  { code: 'rf_flashes', key: 'q_rf_flashes', disease: 'general', weight: 0, redFlag: true },
 
   // ── 오래된 수술 이력(4주 초과)의 적신호 ─────────────────
   // 4주 이내(today·recent)는 이 목록을 쓰지 않는다 — hasSurgery()가 참이면

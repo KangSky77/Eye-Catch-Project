@@ -44,7 +44,7 @@ test('old surgery history keeps the full screening and only adds red flags',()=>
  const past=setup('past'), none=setup('none');
  const risk=c=>vm.runInContext("activeRiskQuestions().map(q=>q.code).join(',')",c);
  const sym=c=>vm.runInContext('activeSymptomQuestions().map(q=>q.code)',c);
- assert.equal(risk(past),risk(none),'위험요인 문진이 유지돼야 한다');
+ assert.ok(risk(none).split(',').every(code=>risk(past).split(',').includes(code)),'일반 위험요인 문진은 유지돼야 한다');
  for(const code of ['rf_acute','rf_sudden','cat_glare','gla_field','chk_recent'])
   assert.ok(sym(past).includes(code),code+' 문항이 사라졌다');
  // 술후 적신호는 얹되, 눈부심은 cat_glare가 이미 물으므로 중복시키지 않는다
@@ -86,6 +86,25 @@ test('same-day surgery is not asked about progress, so normal glare stays monito
  assert.equal(tri.level,'monitor');
  // 적신호가 있으면 당일이라도 그대로 응급이다
  assert.equal(vm.runInContext("computeTriage({cataractCode:'postop',redFlags:['post_pain']})",today).level,'urgent');
+});
+
+test('postoperative triage ignores a stale photo risk result',()=>{
+ const c=setup('today');
+ c.state.symptomAnswers={post_glare:true,post_followup:true};
+ const tri=vm.runInContext("computeTriage({cataractCode:'risk',redFlags:[]})",c);
+ assert.equal(tri.level,'monitor');
+});
+
+test('postoperative advice preserves abnormal Amsler across languages and surgery timings',()=>{
+ for(const timing of ['today','recent']) for(const lang of ['ko','en','es','fr','ja','zh']) {
+  const c=setup(timing); c.state.lang=lang;
+  c.state.symptomAnswers={post_glare:true,post_followup:true};
+  for(const photo of ['normal','risk','uncertain','postop']) {
+   c.photo=photo;
+   assert.equal(vm.runInContext('computeTriage({cataractCode:photo,amslerAbnormal:true,redFlags:[]}).level',c),'now');
+   assert.equal(vm.runInContext("computeTriage({cataractCode:photo,amslerAbnormal:true,redFlags:['post_pain']}).level",c),'urgent');
+  }
+ }
 });
 
 test('a photo verdict is not shown to someone who had surgery within 4 weeks',()=>{

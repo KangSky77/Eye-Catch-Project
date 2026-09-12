@@ -18,6 +18,7 @@ let _analysisRequestId = 0;
 
 function cancelEyeAnalysis() {
     _analysisRequestId++;
+    if (typeof cancelPhotoReview === 'function') cancelPhotoReview();
     if (_analysisAbortController) _analysisAbortController.abort();
     _analysisAbortController = null;
 }
@@ -219,6 +220,11 @@ async function runAIAnalysis(droppedFile) {
         return;
     }
 
+    // 자동 검증기는 감은 눈을 확실히 구별하지 못한다. 전송 전에 실제 사진을
+    // 보여주고 사용자가 눈동자 노출을 확인해야 한다.
+    if (!await reviewPhoto(file)) return;
+    if (preparationId !== _analysisRequestId) return;
+
     // 새 회차 초기화가 이전 분석을 취소하고 request id를 무효화한다.
     // 현재 요청 id는 반드시 초기화가 끝난 뒤 발급해야 정상 응답이 stale 처리되지 않는다.
     if (typeof resetScreeningState === 'function') resetScreeningState();
@@ -260,6 +266,7 @@ async function runAIAnalysis(droppedFile) {
 
         // 판정 대신 재촬영을 요청하는 코드들 — 토스트 + 업로드 카드 상단 배너(다음 사진까지 유지)
         const retake = {
+            dark: translations[state.lang].ai_dark,
             blurry: translations[state.lang].ai_blurry || "사진이 흔들려 판독할 수 없어요. 또렷하게 다시 찍어주세요.",
             hold: translations[state.lang].ai_hold || "플래시 반사가 강해 판독할 수 없어요. 플래시를 끄고 다시 찍어주세요.",
             eyes_hidden: translations[state.lang].ai_eyes_hidden || "눈이 감겨 있거나 가려진 것 같아요. 눈을 크게 뜨고 안경·선글라스를 벗은 뒤 다시 찍어주세요.",
@@ -593,7 +600,9 @@ function scrollAmslerPromptIntoView() {
 }
 
 function recordAmsler(bad) {
+    if (![true, false, 'unable'].includes(bad)) return;
     state.amslerResult[state.amslerEye] = bad;
+    state.hasAmsler = state.amslerResult.left === true || state.amslerResult.right === true;
 
     if (state.amslerEye === 'left') {
         state.amslerEye = 'right';
@@ -607,7 +616,7 @@ function recordAmsler(bad) {
         return;                       // 아직 반대쪽 눈이 남았다
     }
 
-    const L = !!state.amslerResult.left, R = !!state.amslerResult.right;
+    const L = state.amslerResult.left === true, R = state.amslerResult.right === true;
     state.hasAmsler = L || R;         // 한쪽이라도 이상이면 이상 소견
     // 표시 문구는 formatAmslerResult()가 현재 언어로 만든다 — 여기서 문자열로 굳히지 않는다
     nextStep('step-chat');

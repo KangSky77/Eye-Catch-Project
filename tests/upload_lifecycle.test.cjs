@@ -65,6 +65,7 @@ function setup() {
         showToast: (m) => toasts.push(m),
         showUploadError: (m) => banners.push(m),
         clearUploadError: () => {},
+        reviewPhoto: async () => true,
         nextStep: (sid) => steps.push(sid),
         showTab: () => {},
         cancelAiOpinion: () => {},
@@ -112,6 +113,26 @@ test('재촬영 코드는 결과가 아니라 안내로 처리된다', async () 
     assert.equal(c.state.aiResultCode, '', '재촬영 코드가 판정으로 저장됐다');
     assert.equal(h.steps[h.steps.length - 1], 'step-photo');
     assert.equal(h.banners.length, 1, '업로드 카드에 안내 배너가 없다');
+});
+
+test('photo review cancellation sends no upload; approval sends exactly one', async () => {
+    const h=setup(),c=h.context;
+    let approve;
+    c.reviewPhoto=()=>new Promise(resolve=>approve=resolve);
+    let done=c.runAIAnalysis(h.file);
+    await new Promise(r=>setImmediate(r));
+    assert.equal(h.uploadCount(),0);
+    approve(false);await done;assert.equal(h.uploadCount(),0);
+    done=c.runAIAnalysis(h.file);await new Promise(r=>setImmediate(r));
+    approve(true);await new Promise(r=>setImmediate(r));
+    assert.equal(h.uploadCount(),1);h.resolve(h.ok());await done;
+});
+
+test('underexposure shows a localized retake message without a medical result', async () => {
+    const h=setup(),c=h.context;c.translations.ko.ai_dark='Too dark';
+    const done=c.runAIAnalysis(h.file);await new Promise(r=>setImmediate(r));
+    h.resolve(h.ok({result_code:'dark'}));await done;
+    assert.equal(c.state.aiResultCode,'');assert.equal(h.banners[0],'Too dark');
 });
 
 test('새 업로드가 시작되면 이전 업로드의 늦은 응답은 버려진다', async () => {

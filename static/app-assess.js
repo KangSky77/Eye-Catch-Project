@@ -55,6 +55,7 @@ function computeRiskScore(answers) {
  * 등급이 아니라 '다음 행동'을 돌려주는 것이 이 함수의 요점.
  */
 function computeTriage(ctx) {
+    if (typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded()) ctx = {...ctx,cataractCode:'postop'};
     if (typeof hasSurgery === 'function' && hasSurgery()) return postoperativeTriage(ctx, translations[state.lang]);
     const risk = ctx.riskScore || 0;
     const anySymptom = (ctx.symptomCodes || []).length > 0;
@@ -100,12 +101,14 @@ function computeTriage(ctx) {
     // "판단이 어려우니 다시 찍어보라"고 하는데 권장 조치는 "빠른 확인을 권할 신호는
     // 없었습니다"라고 정반대로 말했다. 판정 4단계가 추가될 때 이 함수가 함께 갱신되지 않은
     // 누락이었다(vision.py의 _classify()와 짝을 맞춰야 한다).
-    const retakeNote = ctx.cataractCode === 'uncertain' ? (t.tri_note_uncertain || '') : '';
+    const incomplete = Object.values(state.amslerResult || {}).includes('unable');
+    const retakeNote = [ctx.cataractCode === 'uncertain' ? t.tri_note_uncertain : '', incomplete ? t.ams_unable_note : '',
+        typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded() ? t.photo_history_limit : ''].filter(Boolean).join(' ');
 
     return {
         level,
         label: t['tri_' + level] || level,
-        why: t['tri_' + level + '_why'] || '',
+        why: incomplete && level === 'monitor' ? t.ams_unable_note : (t['tri_' + level + '_why'] || ''),
         note: retakeNote,        // 진료 시점은 그대로 두고 덧붙이는 안내 (없으면 빈 문자열)
         riskScore: risk,
         riskMax: RISK_MAX,
@@ -184,7 +187,22 @@ function renderTriage(container, triage, factors) {
 // 저장 동의 — 건강정보는 민감정보라 별도 동의가 필요하다.
 // 동의 전에는 어떤 결과도 서버로 보내지 않는다. 사진은 애초에 저장하지 않는다.
 // ------------------------------------------------------------------
+let _saveConsent = null;
+
+function cancelSaveConsent() {
+    _saveConsent = null;
+    const box = document.getElementById('consent-box');
+    if (box) { box.innerHTML = ''; box.classList.add('hidden'); }
+}
+
 function requestSaveConsent(payload) {
+    _saveConsent = { payload: JSON.parse(JSON.stringify(payload)), phase: 'idle' };
+    refreshSaveConsent();
+}
+
+function refreshSaveConsent() {
+    const flow = _saveConsent;
+    if (!flow) return;
     const t = translations[state.lang];
     const box = document.getElementById('consent-box');
     if (!box) return;
@@ -207,45 +225,50 @@ function requestSaveConsent(payload) {
 
     const agree = document.createElement('button');
     agree.className = 'flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-[12px] btn-pop';
-    agree.textContent = t.consent_agree || '동의하고 저장';
+    agree.textContent = flow.phase === 'failed' ? t.save_retry : t.consent_agree;
+    agree.disabled = flow.phase === 'saving' || flow.phase === 'saved';
     // 저장 결과를 사용자에게 알린다. 서버는 DB 장애 시에도 200 + status:'skipped'를
     // 돌려주므로(앱을 죽이지 않기 위해) 상태 코드만 보면 '성공'으로 착각한다.
     // 동의까지 받아놓고 실제로는 저장이 안 됐다면 그 사실을 알려야 한다.
     const status = document.createElement('p');
     status.className = 'text-[11px] font-bold mt-2';
+    status.setAttribute('role', 'status');
+    const statusKeys = { saving: 'save_saving', saved: 'save_done', failed: 'save_failed' };
+    status.textContent = t[statusKeys[flow.phase]] || '';
     agree.onclick = async () => {
-        agree.disabled = true;
-        status.className = 'text-[11px] font-bold mt-2 text-slate-500';
-        status.textContent = t.save_saving || '저장 중...';
-        if (!wrap.contains(status)) wrap.appendChild(status);
+        if (_saveConsent !== flow || !['idle', 'failed'].includes(flow.phase)) return;
+        flow.phase = 'saving';
+        refreshSaveConsent();
         try {
             const res = await fetch('/api/save-diagnosis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(flow.payload)
             });
             const data = await res.json().catch(() => ({}));
+            if (_saveConsent !== flow) return;
             if (res.ok && data.status === 'saved') {
-                status.className = 'text-[11px] font-bold mt-2 text-emerald-600';
-                status.textContent = t.save_done || '저장했습니다.';
-                setTimeout(() => box.classList.add('hidden'), 1200);
+                flow.phase = 'saved';
             } else {
                 throw new Error(data.status || 'failed');
             }
         } catch (e) {
-            status.className = 'text-[11px] font-bold mt-2 text-amber-700';
-            status.textContent = t.save_failed || '저장하지 못했습니다. 결과는 화면에서 계속 보실 수 있습니다.';
-            agree.disabled = false;
-            agree.textContent = t.save_retry || '다시 시도';
+            if (_saveConsent !== flow) return;
+            flow.phase = 'failed';
         }
+        if (_saveConsent === flow) refreshSaveConsent();
     };
 
     const skip = document.createElement('button');
     skip.className = 'flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-[12px] btn-pop';
     skip.textContent = t.consent_skip || '저장하지 않기';
-    skip.onclick = () => box.classList.add('hidden');
+    skip.disabled = flow.phase === 'saving';
+    skip.classList.toggle('hidden', flow.phase === 'saved');
+    skip.onclick = () => {
+        if (_saveConsent === flow && flow.phase !== 'saving') cancelSaveConsent();
+    };
 
     row.appendChild(agree); row.appendChild(skip);
-    wrap.appendChild(title); wrap.appendChild(body); wrap.appendChild(row);
+    wrap.appendChild(title); wrap.appendChild(body); wrap.appendChild(row); wrap.appendChild(status);
     box.appendChild(wrap);
 }

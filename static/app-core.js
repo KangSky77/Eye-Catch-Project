@@ -55,6 +55,7 @@ const state = {
 
 /** 백내장 결과를 현재 언어 문자열로. 원자료가 없으면 "-". */
 function formatCataractResult() {
+    if (typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded() && state.riskAnswers?.surgery === 'past') return translations[state.lang].photo_history_limit;
     // 수술 4주 이내면 사진 판독을 쓰지 않는다.
     //
     // 전용 입구(aiResultCode==='postop')만 막으면 구멍이 남는다: 사진을 먼저 올린 뒤
@@ -96,6 +97,10 @@ function formatAmslerResult() {
     const r = state.amslerResult;
     if (!r || !Object.keys(r).length) return "-";
     const t = translations[state.lang];
+    if (r.left === 'unable' || r.right === 'unable') {
+        const value = v => v === true ? t.ams_eye_bad : v === false ? t.ams_eye_ok : t.ams_unmeasured;
+        return `${t.eye_left}: ${value(r.left)} · ${t.eye_right}: ${value(r.right)}`;
+    }
     if (!amslerComplete()) {
         // 한쪽만 답한 상태 — 이상 응답이 이미 있으면 그건 말해주되, 나머지는 미확인이다
         if (r.left === true) return t.ams_result_left || '왼쪽 눈 이상';
@@ -280,6 +285,9 @@ function updateUI(lang) {
     const rpi = document.getElementById('result-photo');
     if (rpi && translations[lang].result_photo_label) rpi.alt = translations[lang].result_photo_label;
     if (typeof refreshChatLanguage === 'function') refreshChatLanguage();
+    // 동의 상자는 결과 완료 후 동적으로 만들어지므로 data-i18n 갱신만으로는
+    // 이미 생성된 한국어 버튼·설명이 바뀌지 않는다.
+    if (typeof refreshSaveConsent === 'function') refreshSaveConsent();
     const findBox = document.getElementById('findings-box');
     if (findBox && findBox.children.length && typeof renderFindings === 'function') {
         renderFindings(findBox);
@@ -412,6 +420,7 @@ function resetScreeningState() {
 /** Invalidate derived report data when its screening inputs are restarted. */
 function invalidateScreeningReport() {
     cancelAiOpinion();
+    if (typeof cancelSaveConsent === 'function') cancelSaveConsent();
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
     const opinion = document.getElementById('gemma-opinion-text');
     if (opinion) { opinion.textContent = ''; opinion.classList.add('hidden'); }

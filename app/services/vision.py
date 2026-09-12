@@ -141,6 +141,17 @@ async def validate_and_read_image(file: UploadFile) -> Image.Image:
 BLUR_MIN_SHARPNESS = 0.030
 
 
+def _underexposed(img: Image.Image) -> bool:
+    """Only reject severe underexposure; this does not detect closed eyelids.
+
+    Inspect the whole inference crop, not a fixed central band: the eye can be
+    off-centre. Require both a low mean (<35/255) and a low 95th percentile
+    (<60/255); these are exposure heuristics, not eyelid or disease detection.
+    """
+    g = np.asarray(img.convert("L").resize((224, 224)), dtype=np.float32)
+    return float(g.mean()) < 35.0 and float(np.percentile(g, 95)) < 60.0
+
+
 # 업로드 거부 사유는 화면에 그대로 표시된다. 한국어 문자열만 보내면 앱을 영어·일본어로
 # 쓰는 사용자에게도 한국어 오류가 뜬다(6개 언어 중 5개에서 실측 확인). 그래서 언어 중립
 # 코드를 함께 보내고, 문구는 프론트가 translations에서 고른다(static/app-vision.js).
@@ -289,6 +300,13 @@ def predict_cataract(img: Image.Image):
         return _empty_result(
             "blurry", "판독 보류 (사진이 흔들렸습니다)", mode, len(eye_crops),
             sharpness=round(sharp, 4),
+        )
+
+    if any(_underexposed(t) for t in targets):
+        logger.info("판독 보류 — 심한 노출 부족")
+        return _empty_result(
+            "dark", "사진이 너무 어둡습니다 (밝은 곳에서 재촬영 필요)",
+            mode, len(eye_crops),
         )
 
     # 흔들림 게이트가 먼저다: 흐린 눈 사진을 눈 게이트에 먼저 넣으면 '눈이 아님/가려짐'으로 잘못 안내된다

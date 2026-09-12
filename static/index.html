@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260909g">
+    <link rel="stylesheet" href="/static/style.css?v=20260912a">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -106,6 +106,8 @@
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
                 </button>
                 <button type="button" onclick="startPostoperativeCheck()" data-i18n="surgery_entry" class="block mx-auto mt-4 text-sm font-bold text-blue-700 underline">수술 후 상태 확인하기</button>
+                <button type="button" onclick="startSymptomCheck()" data-i18n="symptom_entry" class="block mx-auto mt-4 text-sm font-bold text-blue-700 underline">사진 없이 증상 확인하기</button>
+                <p class="mt-4 text-sm text-rose-700" data-i18n="early_warning"></p>
             </div>
         </div>
 
@@ -237,12 +239,14 @@
                 <p id="amsler-eye-instruction" class="text-[12px] font-bold text-blue-700 bg-blue-50 rounded-xl px-3 py-2 mb-5 leading-relaxed"></p>
                 <!-- 노안 사용자는 16~21cm에서 맨눈으로 초점이 맞지 않는다. 흐린 것을 왜곡으로 답하면 없는 황반 이상이 만들어지고 권장 조치가 응급 쪽으로 올라간다. 임상 암슬러도 근용 교정 착용이 기본이다. -->
                 <p id="amsler-glasses-note" class="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4 leading-relaxed text-left" data-i18n="ams_glasses_note"></p>
+                <p class="text-sm text-rose-700 mb-4" data-i18n="early_warning"></p>
                 <div id="amsler-box" class="amsler-grid mb-3" aria-hidden="true"><div class="amsler-dot"></div></div>
                 <!-- 격자를 실물 크기로 그린 뒤, 그 크기가 20°를 덮는 거리를 계산해 알려준다 -->
                 <p id="amsler-dist-note" class="text-[12px] font-bold text-slate-500 mb-3"></p>
                 <div class="space-y-3">
                     <button type="button" onclick="recordAmsler(false)" class="w-full py-3.5 bg-slate-100 text-slate-700 rounded-2xl font-bold btn-pop" data-i18n="ams_ok">정상 (곧게 보임)</button>
                     <button type="button" id="amsler-bad-btn" onclick="recordAmsler(true)" class="w-full py-3.5 bg-rose-50 text-rose-600 rounded-2xl font-bold border border-rose-100 btn-pop" data-i18n="ams_bad">휘어보임/암점</button>
+                    <button type="button" onclick="recordAmsler('unable')" class="w-full py-3.5 bg-slate-100 text-slate-700 rounded-2xl font-bold btn-pop" data-i18n="ams_unable">잘 보이지 않거나 검사할 수 없어요</button>
                 </div>
 
                 <!-- 왜곡 '예시'는 반드시 검사 격자(#amsler-box)와 분리한다.
@@ -465,17 +469,27 @@
         </button>
     </nav>
 
-    <script src="/static/data.js?v=20260909g"></script>
+    <dialog id="photo-review" aria-labelledby="photo-review-title" class="photo-review">
+        <h2 id="photo-review-title" data-i18n="review_title">사진에서 눈동자가 보이나요?</h2>
+        <img id="photo-review-image" alt="" />
+        <p data-i18n="review_body"></p>
+        <button type="button" id="photo-review-retake" data-i18n="review_retake">다른 사진 고르기</button>
+        <button type="button" id="photo-review-symptoms" data-i18n="photo_symptom_entry">수술한 눈·안대·사진 촬영 어려움 → 문진</button>
+        <button type="button" id="photo-review-confirm" data-i18n="review_confirm" disabled>눈동자가 보여요 · 분석하기</button>
+    </dialog>
+    <script src="/static/data.js?v=20260912a"></script>
+    <script src="/static/app-photo-review.js?v=20260912a"></script>
+    <script src="/static/app-safety-copy.js?v=20260912a"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-report-text.js?v=20260909g"></script>
-    <script src="/static/app-surgery.js?v=20260909g"></script>
-    <script src="/static/app-core.js?v=20260909g"></script>
-    <script src="/static/app-vision.js?v=20260909g"></script>
-    <script src="/static/app-chat.js?v=20260909g"></script>
-    <script src="/static/app-report.js?v=20260909g"></script>
-    <script src="/static/app-disease.js?v=20260909g"></script>
-    <script src="/static/app-assess.js?v=20260909g"></script>
-    <script src="/static/app-findings.js?v=20260909g"></script>
-    <script src="/static/app-map.js?v=20260909g"></script>
+    <script src="/static/app-report-text.js?v=20260912a"></script>
+    <script src="/static/app-surgery.js?v=20260912a"></script>
+    <script src="/static/app-core.js?v=20260912a"></script>
+    <script src="/static/app-vision.js?v=20260912a"></script>
+    <script src="/static/app-chat.js?v=20260912a"></script>
+    <script src="/static/app-report.js?v=20260912a"></script>
+    <script src="/static/app-disease.js?v=20260912a"></script>
+    <script src="/static/app-assess.js?v=20260912a"></script>
+    <script src="/static/app-findings.js?v=20260912a"></script>
+    <script src="/static/app-map.js?v=20260912a"></script>
 </body>
 </html>
