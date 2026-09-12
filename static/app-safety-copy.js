@@ -74,6 +74,32 @@ const noPhotoCopy = {
  zh:['本次未进行照片分析。本报告不包含白内障照片判读结果。','1. 照片判读（本次不适用）']
 };
 for(const [lang,[skipped,label]] of Object.entries(noPhotoCopy)) Object.assign(translations[lang],{photo_skipped:skipped,rep_l1_excluded:label});
+// 한쪽 눈만 수술한 사람의 반대쪽 눈 판독.
+// 문항은 '가장 최근'이 아니라 '지금까지 받은 모든 수술'을 묻는다 — 양안 백내장 수술은
+// 몇 주 간격으로 따로 받는 것이 일반적이라, 시기를 섞으면 인공수정체 눈을 판독해 버린다.
+const fellowEyeCopy = {
+ ko:['지금까지 눈 수술을 받은 눈은 한쪽인가요, 양쪽인가요? (시기가 다르더라도 받은 적이 있으면 모두 포함해 주세요)',
+  '한쪽 눈만 받았어요','양쪽 눈 모두 받았어요','잘 모르겠어요','수술하지 않은 눈 기준',
+  '수술한 눈은 인공수정체가 있어 판독에서 제외했습니다. 아래 백내장 판독은 수술하지 않은 눈에 대한 것입니다.'],
+ en:['Have you had eye surgery on one eye or on both? Include every operation, even if they happened at different times.',
+  'One eye only','Both eyes','Not sure','Unoperated eye only',
+  'The operated eye was excluded because of its artificial lens. The cataract reading below refers to the unoperated eye.'],
+ es:['¿Le han operado de un ojo o de los dos? Incluya todas las cirugías, aunque fueran en momentos distintos.',
+  'Solo un ojo','Ambos ojos','No estoy seguro/a','Solo el ojo no operado',
+  'El ojo operado se excluyó por su lente artificial. La lectura de catarata siguiente corresponde al ojo no operado.'],
+ fr:['Avez-vous été opéré d’un seul œil ou des deux ? Comptez toutes les opérations, même à des dates différentes.',
+  'D’un seul œil','Des deux yeux','Je ne sais pas','Œil non opéré uniquement',
+  'L’œil opéré a été exclu en raison de son implant. La lecture de cataracte ci-dessous concerne l’œil non opéré.'],
+ ja:['これまでに手術を受けた目は片方だけですか、両方ですか？時期が違っても、受けたものはすべて含めてください。',
+  '片方の目だけ','両方の目','わかりません','手術していない目のみ',
+  '手術した目は眼内レンズがあるため判読から除外しました。以下の白内障判読は手術していない目に対するものです。'],
+ zh:['您做过手术的眼睛是一只还是两只？即使时间不同，也请把所有手术都算进来。',
+  '只有一只眼','两只眼','不清楚','仅未手术眼',
+  '手术眼因植入人工晶状体已排除判读。以下白内障判读针对未手术眼。']
+};
+for(const [lang,v] of Object.entries(fellowEyeCopy)) Object.assign(translations[lang],
+ {surgery_both_q:v[0],surgery_both_one:v[1],surgery_both_both:v[2],surgery_both_unknown:v[3],
+  photo_fellow_only:v[4],find_cat_fellow:v[5]});
 const painCopy = {
  ko:['지금 어느 쪽 눈이든 심한 통증이 있나요? 두통·구역질·무지개 테가 없어도 답해주세요.','심한 눈 통증'],
  en:['Do you have severe pain in either eye now, even without headache, nausea or halos?','Severe eye pain'],

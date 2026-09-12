@@ -74,6 +74,12 @@ function formatCataractResult() {
     const t = translations[state.lang];
     const text = t['ai_' + r.code] || r.code;
     const score = t.score_label || 'AI 특징 점수';   // 확률이 아니므로 x/100 특징 점수로 표기 (외부 리뷰)
+    // 한쪽만 수술한 사람의 반대쪽 눈 판독. 좌우별 점수를 붙이면 안 된다 —
+    // eyes[].side는 사진 x좌표 기준이라(셀카는 거울상) '왼쪽 눈'이 해부학적 왼눈이 아니다.
+    // 두 눈 판정이 일치할 때만 이 경로가 열리므로, 좌우 없이 대표 점수 하나로 말한다.
+    if (typeof fellowEyeAssessable === 'function' && fellowEyeAssessable()) {
+        return `${text} · ${score} ${r.probability}/100 · ${t.photo_fellow_only}`;
+    }
     if (r.twoEyes) {
         const by = {};
         (r.eyes || []).forEach(e => { by[e.side] = e; });

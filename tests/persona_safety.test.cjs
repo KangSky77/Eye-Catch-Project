@@ -113,6 +113,76 @@ test('the postoperative entry drops its marker when surgery turns out not to be 
  }
 });
 
+// 한쪽 눈만 수술한 사람의 반대쪽(수술하지 않은) 눈은 판독을 살린다.
+// 좌우 라벨(eyes[].side)은 사진 x좌표 기준이라 해부학적 좌우가 아니다 — 셀카는 거울상이다.
+// 그래서 '두 눈 판정이 일치할 때만 살린다'는 좌우 무관 규칙을 쓴다.
+function twoEyes(c, codeA, codeB, probability = 90) {
+ c.state.aiResultCode = codeA === codeB ? codeA : 'risk';
+ c.state.aiResultData = {code: c.state.aiResultCode, probability, twoEyes: true,
+  eyes: [{side: 'left', probability, code: codeA}, {side: 'right', probability, code: codeB}]};
+}
+test('one operated eye keeps the fellow eye reading only when both eyes agree',()=>{
+ for(const lang of ['ko','en','es','fr','ja','zh'])for(const type of ['cataract','unknown'])
+ for(const verdict of ['risk','borderline','uncertain','normal']){
+  const c=setup('past',lang);c.state.riskAnswers.surgery_type=type;
+  // 두 눈 판정이 일치 + 한쪽만 수술 → 판독을 그대로 쓴다.
+  twoEyes(c,verdict,verdict);c.state.riskAnswers.surgery_both='one';
+  assert.equal(vm.runInContext('fellowEyeAssessable()',c),true);
+  assert.equal(vm.runInContext('photoAssessmentExcluded()',c),false);
+  assert.equal(vm.runInContext('effectiveCataractCode()',c),verdict);
+  const shown=vm.runInContext('formatCataractResult()',c);
+  assert.ok(shown.includes(vm.runInContext('translations[state.lang].photo_fellow_only',c)),lang);
+  // 좌우 라벨을 신뢰하지 않는다 — '왼쪽/오른쪽 눈'별 점수를 붙이면 안 된다.
+  assert.ok(!shown.includes(vm.runInContext('translations[state.lang].eye_left',c)),lang);
+  assert.ok(shown.length<=200);
+  const findings=vm.runInContext('buildFindings()',c);
+  assert.ok(findings.includes(vm.runInContext('translations[state.lang].find_cat_fellow',c)),lang);
+  assert.ok(!findings.includes(vm.runInContext('translations[state.lang].photo_history_limit',c)),lang);
+  // risk면 진료 시점이 실제로 올라가야 한다 — 이 기능의 요점이다.
+  if(verdict==='risk')assert.equal(vm.runInContext("computeTriage({cataractCode:state.aiResultCode,redFlags:[]}).level",c),'now');
+
+  // 양쪽 모두 수술 / 모르겠음 → 살릴 눈이 없다.
+  for(const scope of ['both','unknown',undefined]){
+   c.state.riskAnswers.surgery_both=scope;
+   assert.equal(vm.runInContext('fellowEyeAssessable()',c),false,`${lang}/${scope}`);
+   assert.equal(vm.runInContext('photoAssessmentExcluded()',c),true,`${lang}/${scope}`);
+   assert.equal(vm.runInContext('effectiveCataractCode()',c),'excluded');
+  }
+ }
+});
+test('a fellow-eye reading is refused when the two eyes disagree or only one eye was photographed',()=>{
+ const c=setup('past');c.state.riskAnswers.surgery_type='cataract';c.state.riskAnswers.surgery_both='one';
+ // 판정이 갈리면 위험 신호가 인공수정체 때문인지 진짜 혼탁인지 구분할 수 없다.
+ twoEyes(c,'risk','normal');
+ assert.equal(vm.runInContext('bothEyesAgree()',c),false);
+ assert.equal(vm.runInContext('photoAssessmentExcluded()',c),true);
+ assert.equal(vm.runInContext("activeRiskQuestions().some(q=>q.code==='surgery_both')",c),false,'답이 판정을 못 바꾸면 묻지 않는다');
+ // 단안 클로즈업은 어느 눈을 찍었는지 알 수 없다.
+ c.state.aiResultCode='risk';
+ c.state.aiResultData={code:'risk',probability:90,twoEyes:false,eyes:[{side:'single',probability:90,code:'risk'}]};
+ assert.equal(vm.runInContext('bothEyesAgree()',c),false);
+ assert.equal(vm.runInContext('photoAssessmentExcluded()',c),true);
+ // 라식 등 인공수정체가 아닌 이력은 애초에 제외 대상이 아니므로 이 문항을 묻지 않는다.
+ twoEyes(c,'risk','risk');c.state.riskAnswers.surgery_type='laser';
+ assert.equal(vm.runInContext("activeRiskQuestions().some(q=>q.code==='surgery_both')",c),false);
+ assert.equal(vm.runInContext('photoAssessmentExcluded()',c),false);
+ // 4주 이내 수술은 술후 확인 경로다 — 반대쪽 눈 판독을 끌어오지 않는다.
+ const recent=setup('today');recent.state.riskAnswers.surgery_type='cataract';recent.state.riskAnswers.surgery_both='one';
+ twoEyes(recent,'risk','risk');
+ assert.equal(vm.runInContext('fellowEyeAssessable()',recent),false);
+ assert.equal(vm.runInContext('photoAssessmentExcluded()',recent),true);
+});
+test('the fellow-eye question is asked and never contradicts the asymmetry finding',()=>{
+ const c=setup('past');c.state.riskAnswers.surgery_type='cataract';twoEyes(c,'risk','risk');
+ assert.equal(vm.runInContext("activeRiskQuestions().map(q=>q.code).join()",c),
+  'surgery,surgery_type,surgery_both,age,diabetes,hypertension,family,smoking');
+ // 두 눈 판정이 같을 때만 열리는 경로이므로 '한쪽 눈만 위험'(asymmetric)과 겹칠 수 없다.
+ c.state.riskAnswers.surgery_both='one';c.state.asymmetric=true;
+ const findings=vm.runInContext('buildFindings()',c);
+ assert.ok(vm.runInContext("state.aiResultData.eyes[0].code===state.aiResultData.eyes[1].code",c));
+ assert.ok(findings.includes(vm.runInContext('translations.ko.find_cat_fellow',c)));
+});
+
 // 'past'에서 수술한 쪽(surgery_eye)은 소견서·리포트·판정 어디에도 쓰이지 않는다.
 test('remote surgery history asks only the question that changes the outcome',()=>{
  const c=setup('past');

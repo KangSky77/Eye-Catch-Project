@@ -3,10 +3,18 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function activeRiskQuestions() {
-    // 4주 초과 이력에는 수술 '종류'만 묻는다 — 인공수정체/불명이면 사진 판독을 빼야 하므로
+    // 4주 초과 이력에는 수술 '종류'를 묻는다 — 인공수정체/불명이면 사진 판독을 빼야 하므로
     // 판정에 실제로 쓰인다. 수술한 '쪽'(surgery_eye)은 이 경로에서 소견서·리포트·판정
     // 어디에도 쓰이지 않는데(hasSurgery() 게이트 안에서만 읽힌다) 문항만 하나 늘렸다.
-    if (state.riskAnswers?.surgery === 'past') return [riskQuestions[0], surgeryRiskQuestions[0], ...riskQuestions.slice(1)];
+    // 대신 '한쪽만인가 양쪽인가'는 답이 판정을 바꿀 수 있을 때만 묻는다 —
+    // 한쪽만이면 수술하지 않은 눈의 판독을 살린다(app-surgery.js의 fellowEyeAssessable).
+    if (state.riskAnswers?.surgery === 'past') {
+        const extra = [surgeryRiskQuestions[0]];
+        if (typeof fellowEyeQuestionApplies === 'function' && fellowEyeQuestionApplies()) {
+            extra.push(remoteSurgeryScopeQuestion);
+        }
+        return [riskQuestions[0], ...extra, ...riskQuestions.slice(1)];
+    }
     if (typeof hasSurgery !== 'function' || !hasSurgery()) return riskQuestions;
     return [riskQuestions[0], ...surgeryRiskQuestions];
 }
@@ -170,15 +178,21 @@ function surveyProgress() {
 
 /** 위험요인 문항 수의 '최대치'.
  *
- *  수술 이력을 묻기 전에는 뒤에 수술 종류 문항이 붙을지 알 수 없다. 그 동안 현재
- *  개수를 그대로 쓰면 '4주보다 이전'을 고르는 순간 분모가 26에서 27로 늘어난다 —
+ *  수술 이력과 그 종류를 묻기 전에는 뒤에 문항이 몇 개 더 붙을지 알 수 없다. 그 동안
+ *  현재 개수를 그대로 쓰면 '4주보다 이전'을 고르는 순간 분모가 26에서 27로 늘어난다 —
  *  이 함수 바로 위 주석이 "총수가 줄기만 하게 한다, 늘어나면 끝이 멀어지는 느낌을
- *  준다"고 정한 원칙을 진행률 자신이 어겼다. 모르는 동안에는 가장 긴 가지로 잡는다. */
+ *  준다"고 정한 원칙을 진행률 자신이 어겼다. 모르는 동안에는 가장 긴 가지로 잡는다.
+ *
+ *  가장 긴 가지는 'past' + 백내장/불명이다: 기본 문항 + 수술 종류 + (두 눈 판정이
+ *  일치할 때만 붙는) 한쪽/양쪽 문항. 나머지 가지는 모두 이보다 짧으므로 분모는 줄기만 한다. */
 function riskQuestionCountUpperBound() {
     const current = activeRiskQuestions().length;
-    return state.riskAnswers?.surgery === undefined
-        ? Math.max(current, riskQuestions.length + 1)   // 'past' 가지 = 기본 + 수술 종류
-        : current;
+    const a = state.riskAnswers || {};
+    const branchUnknown = a.surgery === undefined
+        || (a.surgery === 'past' && a.surgery_type === undefined);
+    if (!branchUnknown) return current;
+    const fellowAsk = typeof bothEyesAgree === 'function' && bothEyesAgree() ? 1 : 0;
+    return Math.max(current, riskQuestions.length + 1 + fellowAsk);
 }
 
 /** 맞춤 질문 구간의 진행 표시 — 고정 질문 다음 번호부터 이어진다. */

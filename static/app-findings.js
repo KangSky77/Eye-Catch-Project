@@ -58,6 +58,8 @@ function buildFindings() {
         out.push(state.aiResultCode === 'postop' ? t.post_limit : t.photo_skipped);
     }
     if (!postop) {
+        // 반대쪽 눈만 판독한 경우, 아래 백내장 소견이 어느 눈에 대한 것인지 먼저 밝힌다.
+        if (typeof fellowEyeAssessable === 'function' && fellowEyeAssessable()) out.push(t.find_cat_fellow);
         if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
         else if (state.aiResultCode === 'borderline') out.push(t.find_cat_borderline);
         else if (state.aiResultCode === 'uncertain') out.push(t.find_cat_uncertain);

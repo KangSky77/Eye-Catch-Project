@@ -224,11 +224,50 @@ function hasSurgery() { return ['today','recent'].includes(state.riskAnswers?.su
 // '인공수정체'라고 말했다). 제외 판단은 판독 결과가 있을 때만 의미가 있다.
 const PHOTO_VERDICTS = ['risk', 'borderline', 'uncertain', 'normal'];
 function hasPhotoVerdict() { return PHOTO_VERDICTS.includes(state.aiResultCode); }
+// ------------------------------------------------------------------
+// 한쪽 눈만 수술한 사람의 '반대쪽(수술하지 않은) 눈'은 판독할 수 있다.
+//
+// 왜 살릴 가치가 있는가: 백내장 수술을 한쪽 받은 사람은 대개 65세 이상이고, 남은
+// 자연 수정체 눈이 백내장으로 진행할 확률이 평균보다 높다. 이 사람들에게 스크리닝을
+// 통째로 막으면 가장 필요한 대상에게서 기능을 빼앗는다.
+//
+// 왜 좌우를 쓰지 않는가: vision.py의 eyes[].side는 '사진 x좌표' 기준이다
+// (eye_detector.py가 x좌표로 정렬한다). 셀카는 기기·설정에 따라 거울상으로 저장되므로
+// 사진의 왼쪽 눈이 해부학적 왼눈인지 알 수 없다. 그래서 좌우 매핑에는 절대 의존하지 않는다.
+//
+// 대신 좌우와 무관하게 성립하는 규칙을 쓴다:
+//   두 눈 크롭의 판정이 서로 같으면, 수술하지 않은 눈이 둘 중 어느 쪽이든 그 판정이다.
+// 판정이 갈리면 위험 신호가 인공수정체(반사) 때문인지 진짜 혼탁인지 구분할 수 없으므로
+// 종전대로 판독 전체를 버린다.
+/** 사진이 두 눈을 함께 담았고, 두 눈의 판정이 일치하는가. */
+function bothEyesAgree() {
+ const eyes = state.aiResultData?.eyes;
+ return !!state.aiResultData?.twoEyes && Array.isArray(eyes) && eyes.length === 2
+  && eyes.every(e => e && e.side !== 'single') && eyes[0].code === eyes[1].code;
+}
+/** 4주 초과 백내장·불명 수술 이력에서 '수술한 눈이 한쪽인가'를 물을 가치가 있는가.
+ *  답이 판정을 바꿀 수 없으면(단안 클로즈업, 두 눈 판정 불일치) 묻지 않는다. */
+function fellowEyeQuestionApplies() {
+ return state.riskAnswers?.surgery === 'past'
+  && ['cataract','unknown'].includes(state.riskAnswers?.surgery_type)
+  && bothEyesAgree();
+}
+/** 수술하지 않은 반대쪽 눈의 판독을 그대로 쓸 수 있는가.
+ *  'both'(양쪽 수술)·'unknown'(모르겠음)은 살릴 눈이 없거나 확신할 수 없으므로 제외한다.
+ *  4주 이내(hasSurgery)는 술후 확인 경로 자체가 스크리닝이 아니므로 여기서 다루지 않는다. */
+function fellowEyeAssessable() {
+ return hasPhotoVerdict() && !hasSurgery()
+  && state.riskAnswers?.surgery_both === 'one'
+  && fellowEyeQuestionApplies();
+}
 // The upload has no reliable anatomical side. Do not apply its cataract score
 // to a person with an artificial lens, or an unknown remote operation.
 function photoAssessmentExcluded() {
- return hasPhotoVerdict() && (hasSurgery() ||
-  (state.riskAnswers?.surgery === 'past' && ['cataract','unknown'].includes(state.riskAnswers.surgery_type)));
+ if (!hasPhotoVerdict()) return false;
+ if (hasSurgery()) return true;
+ const remoteLens = state.riskAnswers?.surgery === 'past'
+  && ['cataract','unknown'].includes(state.riskAnswers.surgery_type);
+ return remoteLens && !fellowEyeAssessable();
 }
 function effectiveCataractCode() {
  if (hasSurgery() || state.aiResultCode === 'postop') return 'postop';
@@ -243,6 +282,14 @@ const surgeryRiskQuestions = [
  ['surgery_eye','surgery_eye_q',['left','right','both'],'surgery_eye_'],
  ['surgery_sym_eye','surgery_sym_eye_q',['left','right','both','none'],'surgery_eye_']
 ].map(([code,key,values,prefix]) => ({code,key,type:'choice',options:values.map(v=>({v,key:prefix+v,score:0}))}));
+// 4주 초과 이력 전용 문항. surgery_eye('가장 최근에 수술한 눈')를 재사용하면 안 된다 —
+// 양안 백내장 수술은 몇 주 간격으로 따로 받는 것이 일반적이라, '가장 최근은 왼쪽'이라는
+// 답을 '오른쪽은 수술하지 않았다'로 읽으면 인공수정체 눈을 판독해 버린다.
+// 그래서 시기를 묻지 않고 '수술받은 눈이 한쪽인가 양쪽인가'만, 문항 안에서 명시해 묻는다.
+const remoteSurgeryScopeQuestion = {
+ code:'surgery_both', key:'surgery_both_q', type:'choice',
+ options:['one','both','unknown'].map(v=>({v,key:'surgery_both_'+v,score:0}))
+};
 const postoperativeQuestions = ['pain','vision','redness','flashes','glare','worse','followup'].map(kind=>({
  code:'post_'+kind,key:'q_post_'+kind,disease:'general',weight:0,
  redFlag:['pain','vision','redness','flashes'].includes(kind),invert:kind==='followup',
