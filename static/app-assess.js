@@ -101,14 +101,21 @@ function computeTriage(ctx) {
     // "판단이 어려우니 다시 찍어보라"고 하는데 권장 조치는 "빠른 확인을 권할 신호는
     // 없었습니다"라고 정반대로 말했다. 판정 4단계가 추가될 때 이 함수가 함께 갱신되지 않은
     // 누락이었다(vision.py의 _classify()와 짝을 맞춰야 한다).
+    // 검사하지 못한 눈이 있으면 monitor의 기본 설명("빠른 확인을 권할 신호는 없었습니다")은
+    // 거짓이 된다 — 신호가 없는 게 아니라 보지 못한 것이다. 그래서 why를 갈아끼운다.
     const incomplete = Object.values(state.amslerResult || {}).includes('unable');
-    const retakeNote = [ctx.cataractCode === 'uncertain' ? t.tri_note_uncertain : '', incomplete ? t.ams_unable_note : '',
-        typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded() ? t.photo_history_limit : ''].filter(Boolean).join(' ');
+    const why = incomplete && level === 'monitor' ? t.ams_unable_note : (t['tri_' + level + '_why'] || '');
+    // note는 why와 같은 문장을 되풀이하지 않는다. 둘 다 ams_unable_note를 담던 동안
+    // 권장 조치 카드 안에 똑같은 두 문장이 연달아 두 번 찍혔다(6개 언어 전부 재현).
+    // 판독 제외·미측정의 '해석'은 검사 요약 해석(buildFindings)이 이미 한 줄로 말하므로,
+    // 여기에는 진료 시점을 바꾸지 않는 재촬영 안내만 남긴다.
+    const retakeNote = [ctx.cataractCode === 'uncertain' ? t.tri_note_uncertain : '']
+        .filter(text => text && text !== why).join(' ');
 
     return {
         level,
         label: t['tri_' + level] || level,
-        why: incomplete && level === 'monitor' ? t.ams_unable_note : (t['tri_' + level + '_why'] || ''),
+        why,
         note: retakeNote,        // 진료 시점은 그대로 두고 덧붙이는 안내 (없으면 빈 문자열)
         riskScore: risk,
         riskMax: RISK_MAX,

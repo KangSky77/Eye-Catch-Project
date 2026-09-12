@@ -3,7 +3,10 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function activeRiskQuestions() {
-    if (state.riskAnswers?.surgery === 'past') return [riskQuestions[0], ...surgeryRiskQuestions.slice(0,2), ...riskQuestions.slice(1)];
+    // 4주 초과 이력에는 수술 '종류'만 묻는다 — 인공수정체/불명이면 사진 판독을 빼야 하므로
+    // 판정에 실제로 쓰인다. 수술한 '쪽'(surgery_eye)은 이 경로에서 소견서·리포트·판정
+    // 어디에도 쓰이지 않는데(hasSurgery() 게이트 안에서만 읽힌다) 문항만 하나 늘렸다.
+    if (state.riskAnswers?.surgery === 'past') return [riskQuestions[0], surgeryRiskQuestions[0], ...riskQuestions.slice(1)];
     if (typeof hasSurgery !== 'function' || !hasSurgery()) return riskQuestions;
     return [riskQuestions[0], ...surgeryRiskQuestions];
 }
@@ -90,8 +93,16 @@ function handleAnswer(value, label) {
         const q = activeRiskQuestions()[state.riskIdx];
         addMsg('user', label);
         state.riskAnswers[q.code] = value;
-        if (q.code === 'surgery' && value === 'none' && state.aiResultCode === 'postop') {
-            resetScreeningState(); nextStep('step-guide'); return;
+        // 수술 후 전용 입구(aiResultCode==='postop')로 들어왔는데 4주 이내가 아니라고 답한 경우.
+        //   'none' — 입구 자체를 잘못 골랐다. 처음 화면으로 돌려보낸다.
+        //   'past' — 일반 검진을 그대로 받아야 한다. 여기서 'postop' 표식을 지우지 않으면
+        //     (1) 사진을 한 장도 올리지 않았는데 리포트에 '사진 판독을 적용하지 않습니다'가 뜨고
+        //     (2) effectiveCataractCode()가 'postop'을 내보내 서버가 술후 전용 프롬프트를 골라
+        //         12년 전 라식을 받은 사람에게 '퇴원 지침과 예정된 진료를 따르세요'가 나간다
+        //         (llm.py의 cataract_code=='postop' 분기). 화면 카드는 '정기 검진으로 경과 관찰'인데.
+        if (q.code === 'surgery' && state.aiResultCode === 'postop' && !['today', 'recent'].includes(value)) {
+            if (value === 'none') { resetScreeningState(); nextStep('step-guide'); return; }
+            state.aiResultCode = 'skipped';   // 사진 없이 문진만 받는 회차
         }
         if (q.code === 'surgery' && value !== 'none') addMsg('bot', translations[state.lang].surgery_note);
         state.chatHistory.push({ q: translations[state.lang][q.key] || q.key, a: label });
@@ -150,18 +161,31 @@ function surveyProgress() {
     const symCount = branchKnown ? activeSymptomQuestions().length : symptomQuestions.length;
     // 맞춤 질문도 총수에 넣는다. 넣지 않으면 마지막 고정 질문에서 '15 / 15'가 떠
     // 다 끝난 줄 알았는데 번호 없는 질문이 두 개 더 나온다.
-    const total = activeRiskQuestions().length + symCount + (state.maxDynamic || 0);
+    const total = riskQuestionCountUpperBound() + symCount + (state.maxDynamic || 0);
     const pos = state.riskIdx < activeRiskQuestions().length
         ? state.riskIdx + 1
         : activeRiskQuestions().length + state.symIdx + 1;
     return `${Math.min(pos, total)} / ${total}`;
 }
 
+/** 위험요인 문항 수의 '최대치'.
+ *
+ *  수술 이력을 묻기 전에는 뒤에 수술 종류 문항이 붙을지 알 수 없다. 그 동안 현재
+ *  개수를 그대로 쓰면 '4주보다 이전'을 고르는 순간 분모가 26에서 27로 늘어난다 —
+ *  이 함수 바로 위 주석이 "총수가 줄기만 하게 한다, 늘어나면 끝이 멀어지는 느낌을
+ *  준다"고 정한 원칙을 진행률 자신이 어겼다. 모르는 동안에는 가장 긴 가지로 잡는다. */
+function riskQuestionCountUpperBound() {
+    const current = activeRiskQuestions().length;
+    return state.riskAnswers?.surgery === undefined
+        ? Math.max(current, riskQuestions.length + 1)   // 'past' 가지 = 기본 + 수술 종류
+        : current;
+}
+
 /** 맞춤 질문 구간의 진행 표시 — 고정 질문 다음 번호부터 이어진다. */
 function dynamicProgress() {
     const branchKnown = state.riskAnswers.diabetes !== undefined;
     const symCount = branchKnown ? activeSymptomQuestions().length : symptomQuestions.length;
-    const fixed = activeRiskQuestions().length + symCount;
+    const fixed = riskQuestionCountUpperBound() + symCount;
     const total = fixed + (state.maxDynamic || 0);
     return `${Math.min(fixed + (state.dynamicCount || 0) + 1, total)} / ${total}`;
 }

@@ -215,14 +215,24 @@ Object.keys(translations).forEach(lang => Object.assign(translations[lang], surg
 // 오래된 수술 이력은 일반 검진을 그대로 받고, 적신호 3개만 얹는다
 // (data.js의 surgery_pain·surgery_vision·surgery_redness).
 function hasSurgery() { return ['today','recent'].includes(state.riskAnswers?.surgery); }
+// 이 회차에 '실제 사진 판독 결과'가 있는가.
+//
+// 'postop'(수술 후 입구)과 'skipped'(사진 없이 증상 확인)는 사진을 한 장도 받지 않은
+// 상태 표시다. 이 둘을 아래 '판독 제외'에 함께 묶으면, 올린 적도 없는 사진을 두고
+// "인공수정체 때문에 사진 판독을 적용하지 않습니다"라고 설명하게 된다 —
+// 수술 후 입구에서 '4주보다 이전'을 고른 경로에서 그대로 재현됐다(라식이라고 답해도
+// '인공수정체'라고 말했다). 제외 판단은 판독 결과가 있을 때만 의미가 있다.
+const PHOTO_VERDICTS = ['risk', 'borderline', 'uncertain', 'normal'];
+function hasPhotoVerdict() { return PHOTO_VERDICTS.includes(state.aiResultCode); }
 // The upload has no reliable anatomical side. Do not apply its cataract score
 // to a person with an artificial lens, or an unknown remote operation.
 function photoAssessmentExcluded() {
- return hasSurgery() || state.aiResultCode === 'postop' ||
-  (state.riskAnswers?.surgery === 'past' && ['cataract','unknown'].includes(state.riskAnswers.surgery_type));
+ return hasPhotoVerdict() && (hasSurgery() ||
+  (state.riskAnswers?.surgery === 'past' && ['cataract','unknown'].includes(state.riskAnswers.surgery_type)));
 }
 function effectiveCataractCode() {
- return hasSurgery() || state.aiResultCode === 'postop' ? 'postop' : photoAssessmentExcluded() ? 'excluded' : state.aiResultCode;
+ if (hasSurgery() || state.aiResultCode === 'postop') return 'postop';
+ return photoAssessmentExcluded() ? 'excluded' : state.aiResultCode;
 }
 function startSymptomCheck() {
  resetScreeningState(); state.aiResultCode='skipped';

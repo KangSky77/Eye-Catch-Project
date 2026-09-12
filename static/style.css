@@ -1509,11 +1509,17 @@ body.modal-open { overflow: hidden; }
     scroll-margin-top: 88px;
 }
 
-dialog.photo-review { width: calc(100% - 32px); max-width: 520px; max-height: calc(100dvh - 32px); margin: auto; padding: 24px; border: 0; border-radius: 20px; overflow: auto; color: #1e293b; }
+/* 제목과 버튼은 고정, 사진·설명만 스크롤. display:flex는 반드시 [open]에만 건다 —
+   dialog는 닫혀 있을 때 display:none으로 숨으므로, 셀렉터에서 [open]을 빼면 항상 보인다. */
+dialog.photo-review { width: calc(100% - 32px); max-width: 520px; max-height: calc(100dvh - 32px); margin: auto; padding: 24px; border: 0; border-radius: 20px; overflow: hidden; color: #1e293b; }
+dialog.photo-review[open] { display: flex; flex-direction: column; }
 dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
-.photo-review h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; }
-.photo-review img { display: block; max-width: 100%; max-height: 40dvh; margin: 0 auto 16px; object-fit: contain; }
-.photo-review p { line-height: 1.6; margin-bottom: 16px; }
+.photo-review h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; flex: none; }
+/* min-height:0 이 없으면 flex 자식이 내용 높이만큼 버텨서 스크롤이 생기지 않는다. */
+.photo-review .pr-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.photo-review .pr-actions { flex: none; padding-top: 4px; }
+.photo-review img { display: block; max-width: 100%; max-height: 34dvh; margin: 0 auto 16px; object-fit: contain; }
+.photo-review p { line-height: 1.6; margin-bottom: 8px; }
 .photo-review button { display: block; width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; background: #e2e8f0; font: inherit; font-weight: 700; }
 .photo-review button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
 #photo-review-confirm { background: #2563eb; color: white; }

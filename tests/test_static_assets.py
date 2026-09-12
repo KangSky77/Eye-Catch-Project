@@ -824,7 +824,11 @@ def test_문진_진행률이_처음부터_끝까지_이어진다():
     chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
     assert "function surveyProgress()" in chat
     assert chat.count("surveyProgress()") >= 3, "위험요인·증상 양쪽에서 써야 한다"
-    assert "activeRiskQuestions().length + symCount" in chat
+    # 분모는 위험요인 문항까지 포함해야 한다. 다만 수술 이력을 묻기 전에는 뒤에 수술 종류
+    # 문항이 붙을지 알 수 없으므로 '최대치'로 잡는다 — 현재 개수를 그대로 쓰면
+    # '4주보다 이전'을 고르는 순간 분모가 26에서 27로 늘어난다(끝이 멀어지는 느낌).
+    assert "riskQuestionCountUpperBound() + symCount" in chat
+    assert "function riskQuestionCountUpperBound()" in chat
 
 
 def test_촬영안내가_두_화면에서_같은_말을_한다():

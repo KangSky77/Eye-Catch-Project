@@ -66,6 +66,9 @@ function formatCataractResult() {
         || (typeof hasSurgery === 'function' && hasSurgery())) {
         return translations[state.lang].post_limit;
     }
+    // 사진 없이 문진만 받은 회차. 여기서 "-"를 돌려주면 리포트 '1. 백내장 AI 결과'에
+    // 값이 대시 하나만 찍혀, 사진을 건너뛴 것이 아니라 '이상 없음'으로 읽힌다.
+    if (state.aiResultCode === 'skipped') return translations[state.lang].photo_skipped;
     const r = state.aiResultData;
     if (!r) return "-";
     const t = translations[state.lang];

@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260912a">
+    <link rel="stylesheet" href="/static/style.css?v=20260912d">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -469,27 +469,35 @@
         </button>
     </nav>
 
-    <dialog id="photo-review" aria-labelledby="photo-review-title" class="photo-review">
+    <!-- 사진·설명만 스크롤하고 버튼 3개는 항상 보이게 고정한다.
+         한 덩어리로 두면 360x640 화면에서 파란 '분석하기' 버튼이 다이얼로그 밖으로
+         밀려난다(기본 글자 크기 ko 84px·en 213px, 최대 글자 크기 ko 309px 잘림).
+         이 단계는 사진 분석의 필수 관문이라 여기서 막히면 앱 전체가 막힌다. -->
+    <dialog id="photo-review" aria-labelledby="photo-review-title" aria-describedby="photo-review-body" class="photo-review">
         <h2 id="photo-review-title" data-i18n="review_title">사진에서 눈동자가 보이나요?</h2>
-        <img id="photo-review-image" alt="" />
-        <p data-i18n="review_body"></p>
-        <button type="button" id="photo-review-retake" data-i18n="review_retake">다른 사진 고르기</button>
-        <button type="button" id="photo-review-symptoms" data-i18n="photo_symptom_entry">수술한 눈·안대·사진 촬영 어려움 → 문진</button>
-        <button type="button" id="photo-review-confirm" data-i18n="review_confirm" disabled>눈동자가 보여요 · 분석하기</button>
+        <div class="pr-scroll">
+            <img id="photo-review-image" alt="" />
+            <p id="photo-review-body" data-i18n="review_body"></p>
+        </div>
+        <div class="pr-actions">
+            <button type="button" id="photo-review-retake" data-i18n="review_retake">다른 사진 고르기</button>
+            <button type="button" id="photo-review-symptoms" data-i18n="photo_symptom_entry">수술한 눈·안대·사진 촬영 어려움 → 문진</button>
+            <button type="button" id="photo-review-confirm" data-i18n="review_confirm" disabled>눈동자가 보여요 · 분석하기</button>
+        </div>
     </dialog>
-    <script src="/static/data.js?v=20260912a"></script>
-    <script src="/static/app-photo-review.js?v=20260912a"></script>
-    <script src="/static/app-safety-copy.js?v=20260912a"></script>
+    <script src="/static/data.js?v=20260912d"></script>
+    <script src="/static/app-photo-review.js?v=20260912d"></script>
+    <script src="/static/app-safety-copy.js?v=20260912d"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-report-text.js?v=20260912a"></script>
-    <script src="/static/app-surgery.js?v=20260912a"></script>
-    <script src="/static/app-core.js?v=20260912a"></script>
-    <script src="/static/app-vision.js?v=20260912a"></script>
-    <script src="/static/app-chat.js?v=20260912a"></script>
-    <script src="/static/app-report.js?v=20260912a"></script>
-    <script src="/static/app-disease.js?v=20260912a"></script>
-    <script src="/static/app-assess.js?v=20260912a"></script>
-    <script src="/static/app-findings.js?v=20260912a"></script>
-    <script src="/static/app-map.js?v=20260912a"></script>
+    <script src="/static/app-report-text.js?v=20260912d"></script>
+    <script src="/static/app-surgery.js?v=20260912d"></script>
+    <script src="/static/app-core.js?v=20260912d"></script>
+    <script src="/static/app-vision.js?v=20260912d"></script>
+    <script src="/static/app-chat.js?v=20260912d"></script>
+    <script src="/static/app-report.js?v=20260912d"></script>
+    <script src="/static/app-disease.js?v=20260912d"></script>
+    <script src="/static/app-assess.js?v=20260912d"></script>
+    <script src="/static/app-findings.js?v=20260912d"></script>
+    <script src="/static/app-map.js?v=20260912d"></script>
 </body>
 </html>

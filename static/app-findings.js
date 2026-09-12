@@ -47,6 +47,16 @@ function buildFindings() {
     // 이미 말했는데, 바로 아래에 '백내장 위험' 소견을 붙이면 그 말을 스스로 뒤집는다.
     const postop = typeof photoAssessmentExcluded === 'function' ? photoAssessmentExcluded() : (typeof hasSurgery === 'function' && hasSurgery());
     if (postop && !hasSurgery()) out.push(t.photo_history_limit);
+    // 사진을 한 장도 받지 않은 회차는 '판독 제외'가 아니라 '판독 없음'이다.
+    // 아무 줄도 남기지 않으면 사진 항목만 조용히 사라져 무엇이 빠졌는지 알 수 없다.
+    //
+    // 다만 위 hasSurgery() 블록이 이미 post_limit('사진이나 이 문진만으로는 판정할 수
+    // 없습니다')을 내보냈다면 겹쳐 쓰지 않는다 — '사진 없이 증상 확인하기'로 들어와
+    // 문진에서 '오늘 수술했습니다'를 고르면 같은 뜻의 두 줄이 나란히 찍혔다.
+    // 우선순위는 formatCataractResult()와 같게 둔다(술후 문구 > 사진 없음).
+    if (!hasSurgery() && ['postop', 'skipped'].includes(state.aiResultCode)) {
+        out.push(state.aiResultCode === 'postop' ? t.post_limit : t.photo_skipped);
+    }
     if (!postop) {
         if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
         else if (state.aiResultCode === 'borderline') out.push(t.find_cat_borderline);

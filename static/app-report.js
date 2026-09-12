@@ -146,8 +146,20 @@ function refreshReportResults() {
     // 제목만 '백내장 AI 결과'로 남으면 판독을 한 것처럼 읽힌다.
     const l1 = document.getElementById('rep-l1');
     if (l1) {
-        const postop = typeof hasSurgery === 'function' && hasSurgery();
-        l1.textContent = (postop && t.rep_l1_postop) || t.rep_l1 || l1.textContent;
+        // 판독을 쓰지 않은 회차는 제목도 바꿔야 한다. 값은 '적용하지 않습니다'인데 제목만
+        // '백내장 AI 결과'로 남으면 판독을 해놓고 숨긴 것처럼 읽힌다.
+        // 4주 이내 수술은 술후 문구를, 그 밖(사진 없음·인공수정체 이력)은 중립 문구를 쓴다 —
+        // 사진을 건너뛴 비수술자에게 '수술 후에는 적용하지 않음'이라고 말하면 안 된다.
+        //
+        // 조건은 반드시 formatCataractResult()와 같은 술어에서 파생시킨다. 제목이 조건을
+        // 따로 세면(예전에는 hasSurgery()만 봤다) 값은 post_limit인데 제목은 '백내장 AI 결과'로
+        // 남는 조합이 생긴다 — 6개 언어 × 조합 전수 점검에서 144건이 그렇게 어긋났다.
+        const postop = state.aiResultCode === 'postop'
+            || (typeof hasSurgery === 'function' && hasSurgery());
+        const excluded = state.aiResultCode === 'skipped'
+            || (typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded());
+        l1.textContent = (postop && t.rep_l1_postop) || (excluded && t.rep_l1_excluded)
+            || t.rep_l1 || l1.textContent;
     }
     const urgentNote = document.getElementById('opinion-urgent-note');
     if (urgentNote) {
