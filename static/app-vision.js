@@ -320,6 +320,15 @@ async function runAIAnalysis(droppedFile) {
         pNote.dataset.role = 'score-note';
         pNote.textContent = t.score_note || '';
         disp.appendChild(pNote);
+        // 이 화면은 수술 이력을 묻기 전이다. 수술 다음 날 투명 보호대를 댄 눈처럼 눈이 실제로
+        // 보이는 사진은 게이트가 막을 수 없어, 수술한 눈에도 판정이 먼저 뜬다(2026-09-13 실측:
+        // 투명 보호대 얼굴 0.909/0.979 통과 → '혼탁 없음'). 리포트는 문진 뒤에 이 판정을 빼지만,
+        // 사용자는 여기서 이미 결과를 읽는다 — 그래서 결과 바로 아래에서 적용 범위를 말한다.
+        const pSurgery = document.createElement('p');
+        pSurgery.className = 'text-[11px] font-bold text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mt-2 leading-relaxed';
+        pSurgery.dataset.role = 'surgery-photo-note';
+        pSurgery.textContent = t.surgery_photo_note || '';
+        disp.appendChild(pSurgery);
 
         // 애매한 신호(uncertain / 얼굴 모드의 borderline) → 눈 클로즈업 재촬영 권유.
         // 얼굴 사진은 편의 기능이고, 정확도는 눈을 한쪽씩 가까이 찍는 쪽이 훨씬 높다.
@@ -445,6 +454,7 @@ function refreshAiResultDisplay() {
     set('score', `${t.score_label || 'AI feature score'} ${r.probability}/100`);
     set('verdict', t['ai_' + r.code] || r.code);
     set('score-note', t.score_note || '');
+    set('surgery-photo-note', t.surgery_photo_note || '');
     set('closeup-hint', t.closeup_hint || '');
     set('closeup-btn', t.closeup_btn || '');
     set('eye-title', t.eye_breakdown_title || '');

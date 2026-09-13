@@ -125,6 +125,16 @@ const photoSideCopy = {
 };
 for(const [lang,[l,r,note]] of Object.entries(photoSideCopy)) Object.assign(translations[lang],
  {eye_photo_left:l,eye_photo_right:r,eye_ref_note:note});
+// 사진 결과 화면의 수술 안내 — 수술 이력은 이 화면 다음 문진에서 묻는다(app-vision.js 참고).
+const surgeryPhotoNote = {
+ ko:'최근 눈 수술을 받았거나 인공수정체가 있는 눈이라면 이 사진 결과는 그 눈에 적용하지 않습니다. 다음 문진에서 수술 이력을 알려주세요.',
+ en:'If this eye had recent surgery or has an artificial lens, this photo result does not apply to it. Tell us about the surgery in the next questions.',
+ es:'Si este ojo se operó hace poco o tiene una lente artificial, este resultado no se aplica a él. Indique la cirugía en las próximas preguntas.',
+ fr:'Si cet œil a été opéré récemment ou porte un implant, ce résultat ne s’applique pas à lui. Signalez l’opération dans les prochaines questions.',
+ ja:'最近手術を受けた目や眼内レンズがある目には、この写真の結果は適用しません。次の問診で手術歴を教えてください。',
+ zh:'如果这只眼近期做过手术或植入了人工晶状体，本照片结果不适用于该眼。请在接下来的问卷中告知手术史。'
+};
+for (const [lang, text] of Object.entries(surgeryPhotoNote)) translations[lang].surgery_photo_note = text;
 const painCopy = {
  ko:['지금 어느 쪽 눈이든 심한 통증이 있나요? 두통·구역질·무지개 테가 없어도 답해주세요.','심한 눈 통증'],
  en:['Do you have severe pain in either eye now, even without headache, nausea or halos?','Severe eye pain'],
