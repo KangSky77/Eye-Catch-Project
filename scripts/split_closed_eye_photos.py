@@ -41,7 +41,11 @@ def main():
     review = json.loads((D / "review.json").read_text(encoding="utf-8"))
     # 대상 크롭이 있는 사진 전부를 나눈다 — 감은 눈 폴더의 excluded_open_eye(뜬 눈 양성)도 같은 분할을 따라야
     # 한 사진의 감은 눈과 뜬 눈이 학습·평가로 갈라지지 않는다.
-    target = set(review.get(args.key, [])) | set(review.get("excluded_open_eye", []))
+    # 판정기가 쓰는 크롭 목록 전부를 한 분할로 묶는다(closed·open·excluded_open_eye). 웃는 얼굴 폴더는
+    # 한 사진에 감은 눈과 뜬 눈이 함께 있을 수 있어, 키별로 따로 나누면 같은 얼굴이 학습·평가로 갈라진다.
+    # 기존 두 폴더는 쓰지 않는 키가 비어 있으므로 분할 결과가 바뀌지 않는다.
+    target = (set(review.get(args.key, [])) | set(review.get("closed", [])) | set(review.get("open", []))
+              | set(review.get("excluded_open_eye", [])))
     stems = sorted({c.split("__f")[0] for c in target})
     by_stem = {p.stem: p for p in D.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png")}
     photos = [by_stem[s] for s in stems if s in by_stem]

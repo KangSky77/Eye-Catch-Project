@@ -69,3 +69,8 @@ dataset_openeye/*
 !dataset_openeye/ATTRIBUTION.csv
 !dataset_openeye/review.json
 !dataset_openeye/split.json
+# 웃는 얼굴의 가늘게 뜬 눈·웃으며 감은 눈(Wikimedia Commons). 초상권이 있으므로 사진·크롭은 배포하지 않는다.
+dataset_smileeye/*
+!dataset_smileeye/ATTRIBUTION.csv
+!dataset_smileeye/review.json
+!dataset_smileeye/split.json

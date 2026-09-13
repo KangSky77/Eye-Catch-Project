@@ -12,8 +12,11 @@
         뜸 여부 판정기    — 눈 영역이라면, 홍채·동공이 보이게 뜨고 있는가 (이 스크립트)
 
 데이터 (모두 Wikimedia Commons 자유 라이선스, 사진은 git 제외, 크롭은 사람이 검수):
-    양성 = dataset_openeye/review.json "open" + dataset_closedeye/review.json "excluded_open_eye"
-    음성 = dataset_closedeye/review.json "closed"
+    양성 = dataset_openeye "open" + dataset_closedeye "excluded_open_eye" + dataset_smileeye "open"
+    음성 = dataset_closedeye "closed" + dataset_smileeye "closed"
+    dataset_smileeye는 웃는 얼굴에서 홍채가 보이는 가늘게 뜬 눈(open)과 웃으며 감은 눈(closed)이다.
+    AI로 만든 '웃으며 눈 감은 얼굴'이 뜸 0.345/0.357로 통과해 추가했다 — 기존 검수는 웃거나 찡그린
+    눈을 양쪽 모두 애매로 빼서 판정기가 초승달 모양 눈꺼풀을 배운 적이 없었다.
     각 폴더의 split.json(근접중복 묶음 단위)을 따라 학습/평가를 나눈다.
 
 입력 특징: ImageNet ResNet18(눈 게이트와 같은 백본)의
@@ -144,10 +147,14 @@ def main():
     args = ap.parse_args()
     random.seed(SEED); torch.manual_seed(SEED)
 
-    tr_open = load_split("dataset_openeye", "open", "train") + load_split("dataset_closedeye", "excluded_open_eye", "train")
-    ho_open = load_split("dataset_openeye", "open", "holdout") + load_split("dataset_closedeye", "excluded_open_eye", "holdout")
-    tr_closed = load_split("dataset_closedeye", "closed", "train")
-    ho_closed = load_split("dataset_closedeye", "closed", "holdout")
+    tr_open = (load_split("dataset_openeye", "open", "train") + load_split("dataset_closedeye", "excluded_open_eye", "train")
+               + load_split("dataset_smileeye", "open", "train"))
+    ho_open = (load_split("dataset_openeye", "open", "holdout") + load_split("dataset_closedeye", "excluded_open_eye", "holdout")
+               + load_split("dataset_smileeye", "open", "holdout"))
+    tr_closed = load_split("dataset_closedeye", "closed", "train") + load_split("dataset_smileeye", "closed", "train")
+    ho_closed = load_split("dataset_closedeye", "closed", "holdout") + load_split("dataset_smileeye", "closed", "holdout")
+    # 웃는 얼굴 계열만 따로 본 성능(평가분) — 전체 수치에 묻히지 않게 따로 보고한다
+    smile_ho = (load_split("dataset_smileeye", "open", "holdout"), load_split("dataset_smileeye", "closed", "holdout"))
     print(f"뜬 눈: 학습 {len(tr_open)} / 평가 {len(ho_open)}   감은 눈: 학습 {len(tr_closed)} / 평가 {len(ho_closed)}  (device {device})")
     if min(len(tr_open), len(tr_closed), len(ho_open), len(ho_closed)) < 20:
         raise SystemExit("검수된 크롭이 부족하다 — review.json·split.json을 먼저 만들 것")
@@ -159,6 +166,12 @@ def main():
         r = run(k, bb, data); results[k] = r
         name = {"A": "마지막층 512", "B": "마지막층 + layer3 전체", "D": "B + layer3·layer4 중앙"}[k]
         print(f"  [{k}] {name:24s} 임계 {r['thr']:.3f}  뜬 눈 통과 {r['open_pass']*100:5.1f}%  감은 눈 거부 {r['closed_reject']*100:5.1f}%")
+        so, sc = smile_ho
+        if so or sc:
+            po = torch.sigmoid(bb.features([open_rgb(p) for p in so], k) @ r["w"] + r["b"]) if so else torch.tensor([])
+            pc = torch.sigmoid(bb.features([open_rgb(p) for p in sc], k) @ r["w"] + r["b"]) if sc else torch.tensor([])
+            print(f"       └ 웃는 얼굴(평가): 가늘게 뜬 눈 통과 {float((po >= r['thr']).float().mean())*100 if so else float('nan'):5.1f}% (n={len(so)})"
+                  f"  웃으며 감은 눈 거부 {float((pc < r['thr']).float().mean())*100 if sc else float('nan'):5.1f}% (n={len(sc)})")
     if args.compare or not args.out:
         return
     r = results[args.features]

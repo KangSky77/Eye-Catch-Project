@@ -17,6 +17,7 @@
 - centroid는 dataset으로 사전 계산해 app/models/eye_centroid.npy에 저장(데이터셋 비포함 대비).
 - 로드는 Lock으로 보호: warmup()과 동시에 들어온 요청이 모델을 중복 로드하지 않도록 함.
 """
+import copy
 import logging
 import threading
 from pathlib import Path
@@ -70,6 +71,28 @@ _open_kind = None
 _layer3_out = None   # layer3 출력 (forward hook이 채운다)
 _layer4_out = None   # layer4 출력
 
+# 미세조정 판정기 (scripts/train_eye_open_cnn.py 산출물). 있으면 위 선형 판정기 대신 쓴다.
+# 선형 판정기는 고정 특징 위의 선 하나라, AI로 만든 '웃으며 눈 감은 얼굴'(초승달 모양 눈꺼풀)을
+# 0.345/0.357로 통과시켰다. 이 판정기는 layer4를 뜸 여부에 맞춰 다시 학습해 그 경우를 거부했고,
+# 실제 인물 크롭의 추가 거부도 7개 → 5개로 줄었다(2026-09-13, docs/eye-gate-closed-eye.md).
+# layer1~3은 눈 게이트와 같은 ImageNet 가중치를 공유한다 — 게이트 순전파의 layer3 출력을 받아 쓴다.
+# *.pth는 git에 올리지 않는다(백내장 모델과 같은 규칙). 파일이 없으면 커밋된 선형 판정기로 동작한다.
+_OPEN_CNN_PATH = _MODEL_DIR / "eye_open_cnn.pth"
+_open_cnn = None
+_open_cnn_thr = None
+
+
+class _OpenHead(torch.nn.Module):
+    """layer3 출력 → 뜸 여부 로짓. scripts/train_eye_open_cnn.py의 Head와 구조·이름이 같아야 한다."""
+
+    def __init__(self, layer4):
+        super().__init__()
+        self.layer4 = layer4
+        self.fc = torch.nn.Sequential(torch.nn.Dropout(0.3), torch.nn.Linear(512, 1))
+
+    def forward(self, l3):
+        return self.fc(self.layer4(l3).mean(dim=(2, 3))).squeeze(1)
+
 
 def _try_load() -> bool:
     """모델·센트로이드 로드 시도. 성공 시에만 True를 캐시(실패는 다음 호출에 재시도)."""
@@ -113,8 +136,17 @@ def _try_load() -> bool:
 
 
 def _load_open_gate() -> bool:
-    """뜸 여부 판정기 가중치를 읽는다(파일이 없으면 False). 호출자가 _load_lock을 잡는다."""
-    global _open_w, _open_b, _open_thr, _open_kind
+    """뜸 여부 판정기를 읽는다 — 미세조정 판정기가 있으면 그것을, 없으면 선형 판정기를.
+    둘 다 없으면 False. 호출자가 _load_lock을 잡는다(_net이 이미 로드된 뒤에 부른다)."""
+    global _open_w, _open_b, _open_thr, _open_kind, _open_cnn, _open_cnn_thr
+    if _OPEN_CNN_PATH.exists():
+        ck = torch.load(_OPEN_CNN_PATH, map_location=device, weights_only=True)
+        head = _OpenHead(copy.deepcopy(_net.layer4))
+        head.load_state_dict({k: v.float() for k, v in ck["state_dict"].items()})
+        _open_cnn = head.eval().to(device)
+        _open_cnn_thr = float(ck["meta"]["threshold"])
+        logger.info("눈 뜸 여부 판정기(미세조정) 로드: 임계값 %.3f", _open_cnn_thr)
+        return True
     if not _OPEN_GATE_PATH.exists():
         return False
     og = np.load(_OPEN_GATE_PATH)
@@ -171,6 +203,9 @@ def _open_prob(img) -> float:
     last = _net(x)[0]
     last = last / (last.norm() + 1e-8)
     unit = lambda v: v / (v.norm() + 1e-8)
+    if _open_cnn is not None:
+        # 위 _net(x)가 layer3 훅을 채웠다 — 같은 순전파 결과를 이어받는다
+        return float(torch.sigmoid(_open_cnn(_layer3_out))[0].item())
     if _open_kind == "A":
         feat = last
     else:
@@ -191,23 +226,27 @@ def open_gate_available() -> bool:
     """
     if not _try_load():
         return False
-    if _open_w is None and _OPEN_GATE_PATH.exists():
+    if _open_w is None and _open_cnn is None and (_OPEN_GATE_PATH.exists() or _OPEN_CNN_PATH.exists()):
         with _load_lock:
-            if _open_w is None:
+            if _open_w is None and _open_cnn is None:
                 try:
                     _load_open_gate()
                 except Exception:
                     logger.warning("⚠️  눈 뜸 여부 판정기 로드 실패", exc_info=True)
-    return _open_w is not None
+    return _open_w is not None or _open_cnn is not None
+
+
+def _open_threshold() -> float:
+    return _open_cnn_thr if _open_cnn is not None else _open_thr
 
 
 def check_eye_open(img):
     """(is_open, score). 계산 실패는 (None, None) — 호출자는 fail-closed(차단)해야 한다."""
-    if not _try_load() or _open_w is None:
+    if not _try_load() or (_open_w is None and _open_cnn is None):
         return None, None
     try:
         p = _open_prob(img)
-        return p >= _open_thr, p
+        return p >= _open_threshold(), p
     except Exception:
         logger.warning("⚠️  눈 뜸 여부 계산 실패", exc_info=True)
         return None, None
@@ -222,7 +261,7 @@ def is_ready() -> bool:
     base = bool(_loaded and _net is not None and _centroid is not None and _gate_w is not None)
     # 판정기 파일이 배포돼 있는데 로드되지 않았다면 준비 완료가 아니다 — 감은 눈이 통과하는 상태로
     # 트래픽을 받지 않게 한다(파일이 없는 개발 환경은 기존 동작 유지).
-    if base and _OPEN_GATE_PATH.exists():
+    if base and (_OPEN_GATE_PATH.exists() or _OPEN_CNN_PATH.exists()):
         return open_gate_available()
     return base
 

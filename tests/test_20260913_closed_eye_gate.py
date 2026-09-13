@@ -115,6 +115,8 @@ def test_판정기_파일이_늦게_생겨도_조용히_꺼진_채로_남지_않
         pytest.skip("판정기 파일 없음")
     late = tmp_path / "eye_open_gate.npz"
     monkeypatch.setattr(EV, "_OPEN_GATE_PATH", late)
+    monkeypatch.setattr(EV, "_OPEN_CNN_PATH", tmp_path / "없음.pth")
+    monkeypatch.setattr(EV, "_open_cnn", None)
     monkeypatch.setattr(EV, "_open_w", None)
     # 파일이 아직 없는 동안: 준비 상태는 기존 게이트 기준, 판정기는 없음
     assert EV.open_gate_available() is False
@@ -132,6 +134,42 @@ def test_판정기_파일이_있는데_로드에_실패하면_준비_완료가_�
     broken = tmp_path / "eye_open_gate.npz"
     broken.write_bytes(b"not a numpy file")
     monkeypatch.setattr(EV, "_OPEN_GATE_PATH", broken)
+    monkeypatch.setattr(EV, "_OPEN_CNN_PATH", tmp_path / "없음.pth")
+    monkeypatch.setattr(EV, "_open_cnn", None)
     monkeypatch.setattr(EV, "_open_w", None)
     assert EV.open_gate_available() is False
     assert EV.is_ready() is False, "판정기 없이 감은 눈이 통과하는 상태로 트래픽을 받으면 안 된다"
+
+
+def test_미세조정_판정기는_학습_스크립트와_구조가_같고_없으면_선형으로_동작한다(monkeypatch, tmp_path):
+    """*.pth는 git에 없다. 새로 받은 저장소에서도 앱이 막히지 않고 커밋된 선형 판정기로 돌아야 한다."""
+    import sys
+    import torch
+    from app.services import eye_validator as EV
+    if not EV.warmup() or not EV.gate_available():
+        pytest.skip("눈 게이트 가중치 없음")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import copy
+    from train_eye_open_cnn import Head
+    trained_keys = set(Head(copy.deepcopy(EV._net.layer4)).state_dict())
+    served_keys = set(EV._OpenHead(copy.deepcopy(EV._net.layer4)).state_dict())
+    assert trained_keys == served_keys, "학습·추론 구조가 다르면 가중치를 읽을 수 없다"
+
+    # 파일이 없으면 선형 판정기
+    monkeypatch.setattr(EV, "_OPEN_CNN_PATH", tmp_path / "없음.pth")
+    monkeypatch.setattr(EV, "_open_cnn", None)
+    monkeypatch.setattr(EV, "_open_w", None)
+    assert EV.open_gate_available() is True and EV._open_cnn is None and EV._open_w is not None
+
+    # 파일이 있으면 미세조정 판정기, 임계값은 파일에 기록된 값
+    fake = tmp_path / "eye_open_cnn.pth"
+    head = Head(copy.deepcopy(EV._net.layer4))
+    torch.save({"state_dict": {k: v.half() for k, v in head.state_dict().items()}, "meta": {"threshold": 0.4242}}, fake)
+    monkeypatch.setattr(EV, "_OPEN_CNN_PATH", fake)
+    monkeypatch.setattr(EV, "_open_cnn", None)
+    monkeypatch.setattr(EV, "_open_w", None)
+    assert EV.open_gate_available() is True and EV._open_cnn is not None
+    assert abs(EV._open_threshold() - 0.4242) < 1e-6
+    from PIL import Image
+    ok, score = EV.check_eye_open(Image.new("RGB", (120, 120), (150, 110, 90)))
+    assert ok in (True, False) and 0.0 <= score <= 1.0
