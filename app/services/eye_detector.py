@@ -77,7 +77,9 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
         boxes, probs, landmarks = mtcnn.detect(img, landmarks=True)
     except Exception as exc:
         logger.warning("MTCNN 얼굴 검출 실패: %s", type(exc).__name__)
-        return []  # 검출 실패는 조용히 클로즈업 경로로
+        # 클로즈업 경로로 보낸다 — 거기서 눈 게이트와 눈 뜸 판정기를 모두 거치므로 얼굴 전체나
+        # 감은 눈이 판독까지 가지 않는다. (보류로 막았더니 실제 백내장 클로즈업에서도 오류가 났다)
+        return []
 
     if boxes is None or landmarks is None:
         return []
@@ -89,6 +91,10 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
         logger.info("얼굴 사진에 여러 얼굴이 감지되어 판독을 보류합니다")
         return None
     if not valid:
+        # 얼굴 후보의 확신도가 낮다 = 대개 눈 클로즈업의 눈꺼풀·주름을 얼굴로 잘못 본 것.
+        # 2026-09-13 이를 '판독 보류'로 바꿨더니 데이터셋의 뚜렷한 백내장 클로즈업 3.3~5.7%가
+        # '눈을 확인하지 못했어요'로 막혔다(막힌 사진은 모두 뜬 눈). 클로즈업 경로에는 눈 게이트와
+        # 눈 뜸 판정기가 있어 얼굴 전체·감은 눈은 거기서 걸러진다.
         return []
     best = valid[0]
 

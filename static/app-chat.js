@@ -3,13 +3,18 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function activeRiskQuestions() {
-    // 4주 초과 이력에는 수술 '종류'를 묻는다 — 인공수정체/불명이면 사진 판독을 빼야 하므로
-    // 판정에 실제로 쓰인다. 수술한 '쪽'(surgery_eye)은 이 경로에서 소견서·리포트·판정
+    // 4주 초과 이력에는 수술 '종류'와 필요한 경우 인공수정체 이력을 묻는다 —
+    // 과거 백내장 수술을 놓치지 않고 사진 판독 제외 여부에 실제로 쓴다.
+    // 수술한 '쪽'(surgery_eye)은 이 경로에서 소견서·리포트·판정
     // 어디에도 쓰이지 않는데(hasSurgery() 게이트 안에서만 읽힌다) 문항만 하나 늘렸다.
     // 대신 '한쪽만인가 양쪽인가'는 답이 판정을 바꿀 수 있을 때만 묻는다 —
     // 한쪽만이면 수술하지 않은 눈의 판독을 살린다(app-surgery.js의 fellowEyeAssessable).
     if (state.riskAnswers?.surgery === 'past') {
         const extra = [surgeryRiskQuestions[0]];
+        // 최근 수술이 백내장이 아닌 경우에도 예전 인공수정체 이력을 별도로 확인한다.
+        if (state.riskAnswers.surgery_type && state.riskAnswers.surgery_type !== 'cataract') {
+            extra.push(remoteLensHistoryQuestion);
+        }
         if (typeof fellowEyeQuestionApplies === 'function' && fellowEyeQuestionApplies()) {
             extra.push(remoteSurgeryScopeQuestion);
         }
@@ -91,6 +96,24 @@ function renderChatOptions(opts, onPick) {
         b.onclick = () => pick(o.value, o.label);
         box.appendChild(b);
     });
+    // 모바일에서 선택지가 두 줄 이상으로 늘어나면 controls 높이가 바뀌며 chat-box가
+    // 다시 줄어든다. 버튼을 그리기 전에 맞춘 scrollTop은 이 재배치 뒤 최신 질문을 놓칠 수
+    // 있으므로 레이아웃이 확정된 프레임에서 한 번 더 끝으로 보낸다.
+    scrollChatToLatest();
+}
+
+function scrollChatToLatest() {
+    const box = document.getElementById('chat-box');
+    if (!box) return;
+    const settle = () => { box.scrollTop = box.scrollHeight; };
+    settle();
+    if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(settle);
+    } else {
+        // 일부 인앱·구형 WebView에는 rAF가 없지만, 0ms 뒤에는 controls의 줄바꿈과
+        // flex 재배치가 끝난다.
+        setTimeout(settle, 0);
+    }
 }
 
 /** 위험요인 구간과 증상 구간을 하나의 입구로 처리. */
@@ -183,16 +206,21 @@ function surveyProgress() {
  *  이 함수 바로 위 주석이 "총수가 줄기만 하게 한다, 늘어나면 끝이 멀어지는 느낌을
  *  준다"고 정한 원칙을 진행률 자신이 어겼다. 모르는 동안에는 가장 긴 가지로 잡는다.
  *
- *  가장 긴 가지는 'past' + 백내장/불명이다: 기본 문항 + 수술 종류 + (두 눈 판정이
- *  일치할 때만 붙는) 한쪽/양쪽 문항. 나머지 가지는 모두 이보다 짧으므로 분모는 줄기만 한다. */
+ *  가장 긴 가지는 'past' + 다른 수술 + 인공수정체 이력 + (두 눈 판정이 일치할 때만
+ *  붙는) 한쪽/양쪽 문항이다. 나머지 가지는 모두 이보다 짧으므로 분모는 줄기만 한다. */
 function riskQuestionCountUpperBound() {
     const current = activeRiskQuestions().length;
     const a = state.riskAnswers || {};
+    const lensPending = a.surgery === 'past'
+        && a.surgery_type !== undefined
+        && a.surgery_type !== 'cataract'
+        && a.surgery_lens_history === undefined;
     const branchUnknown = a.surgery === undefined
-        || (a.surgery === 'past' && a.surgery_type === undefined);
+        || (a.surgery === 'past' && a.surgery_type === undefined)
+        || lensPending;
     if (!branchUnknown) return current;
-    const fellowAsk = typeof bothEyesAgree === 'function' && bothEyesAgree() ? 1 : 0;
-    return Math.max(current, riskQuestions.length + 1 + fellowAsk);
+    // surgery_type + surgery_lens_history + surgery_both를 모두 포함한 최대치.
+    return Math.max(current, riskQuestions.length + 3);
 }
 
 /** 맞춤 질문 구간의 진행 표시 — 고정 질문 다음 번호부터 이어진다. */
@@ -290,7 +318,7 @@ function addMsg(sender, text, progress) {
     div.appendChild(bubble);
     if (sender === 'bot') div.dataset.chatBot = '1';
     box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
+    scrollChatToLatest();
 }
 
 function refreshChatLanguage() {
@@ -356,7 +384,7 @@ function addLoadingMsg(text) {
     bubble.appendChild(loader.el);
     div.appendChild(bubble);
     box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
+    scrollChatToLatest();
     state._chatLoaderStop = loader.stop;
 }
 

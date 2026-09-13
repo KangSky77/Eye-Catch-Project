@@ -663,6 +663,15 @@ def test_외부리뷰_반영_모달_zindex_배너_개인정보_예시위치():
         assert data.count(key) == 6, f"{key} 가 6개 언어에 모두 있어야 한다"
 
 
+def test_모바일_문진은_선택지_높이가_질문을_가리지_않는다():
+    css = (STATIC / "style.css").read_text(encoding="utf-8")
+    assert ".chat-shell { height: auto; max-height: none; }" in css
+    assert ".chat-box { height: 140px; flex: none; }" in css
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+    assert "function scrollChatToLatest()" in chat and "requestAnimationFrame" in chat
+    assert chat.index("scrollChatToLatest();", chat.index("function renderChatOptions")) < chat.index("function scrollChatToLatest")
+
+
 def test_외부리뷰_문구_진단_아닌_리포트_점수는_100점만점_범위_명시():
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert "진단 리포트" not in data and "Diagnostic Report" not in data, "'진단'은 서비스 안내와 충돌한다 → 눈 건강 리포트"

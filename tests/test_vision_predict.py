@@ -34,7 +34,7 @@ def loaded(monkeypatch):
     # 얼굴 모드는 뜸 여부 판정기도 거친다(2026-09-13). 기본은 '뜬 눈' — 실제 가중치를 더미 노이즈 이미지에
     # 돌리면 분기 테스트가 모델 품질에 좌우된다.
     monkeypatch.setattr(eye_validator, "open_gate_available", lambda: True)
-    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i: (True, 0.95))
+    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i, closeup=False: (True, 0.95))
 
 
 def test_가중치_미로드시_503(monkeypatch, img):
@@ -111,7 +111,7 @@ def test_얼굴모드_한쪽눈이라도_감겼으면_eyes_hidden(monkeypatch, l
     # 감긴 눈꺼풀은 눈 게이트를 0.9 안팎으로 통과한다(2026-09-13 실측) — 뜸 여부로 따로 막는다.
     # 윙크처럼 한쪽만 감아도 두 눈 비교가 무의미하므로 되돌려보낸다.
     opens = iter([(True, 0.93), (False, 0.08)])
-    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i: next(opens))
+    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i, closeup=False: next(opens))
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [img, img])
     def boom(t):
         raise AssertionError("감은 눈은 모델 추론까지 가면 안 됩니다")
@@ -122,31 +122,46 @@ def test_얼굴모드_한쪽눈이라도_감겼으면_eyes_hidden(monkeypatch, l
 
 
 def test_얼굴모드_뜸여부_계산실패는_fail_closed_503(monkeypatch, loaded, img):
-    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i: (None, None))
+    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i, closeup=False: (None, None))
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [img, img])
     with pytest.raises(HTTPException) as e:
         vision.predict_cataract(img)
     assert e.value.status_code == 503
 
 
-def test_뜸여부_판정기가_없으면_기존_흐름(monkeypatch, loaded, img):
+def test_뜸여부_판정기가_없으면_얼굴도_fail_closed_503(monkeypatch, loaded, img):
     monkeypatch.setattr(eye_validator, "open_gate_available", lambda: False)
-    def must_not_call(i):
-        raise AssertionError("판정기 파일이 없으면 부르지 않는다")
+    def must_not_call(i, closeup=False):
+        raise AssertionError("판정기 파일이 없으면 모델 추론까지 가면 안 됩니다")
     monkeypatch.setattr(eye_validator, "check_eye_open", must_not_call)
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [img, img])
-    monkeypatch.setattr(vision, "_predict_single", lambda t: 1.0)
-    assert vision.predict_cataract(img)["result_code"] == "normal"
+    with pytest.raises(HTTPException) as e:
+        vision.predict_cataract(img)
+    assert e.value.status_code == 503
 
 
-def test_클로즈업은_뜸여부_판정기를_거치지_않는다(monkeypatch, loaded, img):
-    # 판정기는 얼굴 사진의 눈 크롭으로 학습했다. 구도가 다른 초근접 사진에는 적용 근거가 없다.
-    def must_not_call(i):
-        raise AssertionError("클로즈업에는 적용하지 않는다")
-    monkeypatch.setattr(eye_validator, "check_eye_open", must_not_call)
+def test_클로즈업도_감은_눈이면_eyes_hidden(monkeypatch, loaded, img):
+    # 얼굴 검출에 실패한 감은 눈·안대 사진이 일반 눈 사진 경로로 우회하지 않도록 같은
+    # 눈 뜸 판정기를 적용한다.
+    seen = []
+    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i, closeup=False: (seen.append(closeup), (False, 0.12))[1])
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [])
-    monkeypatch.setattr(vision, "_predict_single", lambda t: 1.0)
-    assert vision.predict_cataract(img)["mode"] == "eye"
+    def boom(t):
+        raise AssertionError("감은 눈은 모델 추론까지 가면 안 됩니다")
+    monkeypatch.setattr(vision, "_predict_single", boom)
+    out = vision.predict_cataract(img)
+    assert out["mode"] == "eye"
+    assert out["result_code"] == "eyes_hidden"
+    assert out["eye_open_score"] == 0.12
+    assert seen == [True], "클로즈업은 클로즈업용 기준으로 판정해야 한다"
+
+
+def test_클로즈업_뜸여부_계산실패는_fail_closed_503(monkeypatch, loaded, img):
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [])
+    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i, closeup=False: (None, None))
+    with pytest.raises(HTTPException) as e:
+        vision.predict_cataract(img)
+    assert e.value.status_code == 503
 
 
 def test_얼굴모드_검증기_불능이면_503(monkeypatch, loaded, img):

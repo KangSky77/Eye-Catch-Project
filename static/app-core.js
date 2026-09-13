@@ -78,7 +78,9 @@ function formatCataractResult() {
     // eyes[].side는 사진 x좌표 기준이라(셀카는 거울상) '왼쪽 눈'이 해부학적 왼눈이 아니다.
     // 두 눈 판정이 일치할 때만 이 경로가 열리므로, 좌우 없이 대표 점수 하나로 말한다.
     if (typeof fellowEyeAssessable === 'function' && fellowEyeAssessable()) {
-        return `${text} · ${score} ${r.probability}/100 · ${t.photo_fellow_only}`;
+        // r.probability는 두 눈 중 최댓값이라 어느 눈의 점수인지 알 수 없다.
+        // 판정 범주만 반대쪽 눈에 적용하고 개별 점수는 표시하지 않는다.
+        return `${text} · ${t.photo_fellow_only}`;
     }
     if (r.twoEyes) {
         const by = {};
@@ -417,6 +419,9 @@ function resetScreeningState() {
     state.sessionGeneration++;
     if (state._chatLoaderStop) state._chatLoaderStop();
     if (typeof cancelEyeAnalysis === 'function') cancelEyeAnalysis();
+    // 새 회차에서는 이전 사진의 감은 눈·오류 배너를 그대로 보여주지 않는다.
+    // 결과와 입력값만 비워도 업로드 카드의 고정 배너는 DOM에 남아 시연·재검사 사용자를 혼란스럽게 한다.
+    if (typeof clearUploadError === 'function') clearUploadError();
     state.stepIdx = 0; state.dynamicCount = 0; state.chatHistory = [];
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
     state.dynamicAnswers = []; state.chatBusy = false;

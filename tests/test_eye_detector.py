@@ -41,8 +41,17 @@ def test_눈_순서는_랜드마크_순서가_아니라_사진_x좌표로(monkey
 
 
 def test_얼굴_확신도가_낮으면_클로즈업_경로(monkeypatch, face_img):
+    # 클로즈업 경로에서 눈 게이트·눈 뜸 판정기를 거친다. 보류로 막으면 실제 백내장 클로즈업이 막힌다.
     _fake(monkeypatch, [[100, 150], [300, 150], [200, 200], [150, 250], [250, 250]],
           probs=[settings.face_prob_threshold - 0.01])
+    assert eye_detector.extract_eye_crops(face_img) == []
+
+
+def test_얼굴_검출_오류도_클로즈업_경로(monkeypatch, face_img):
+    class BrokenMTCNN:
+        def detect(self, img, landmarks=True):
+            raise RuntimeError("detector unavailable")
+    monkeypatch.setattr(eye_detector, "_get_mtcnn", lambda: BrokenMTCNN())
     assert eye_detector.extract_eye_crops(face_img) == []
 
 

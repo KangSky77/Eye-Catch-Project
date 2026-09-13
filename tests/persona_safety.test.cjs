@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 function setup(surgery='none',lang='ko'){
  const c=vm.createContext({state:{lang,riskAnswers:{surgery},symptomAnswers:{},amslerResult:{},chatSymptoms:[]},window:{addEventListener(){}},console});
- for(const f of ['data.js','app-safety-copy.js','app-report-text.js','app-surgery.js','app-chat.js','app-assess.js','app-findings.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
+ for(const f of ['data.js','app-safety-copy.js','app-report-text.js','app-surgery.js','app-chat.js','app-assess.js','app-findings.js','app-report.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
  const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
  vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
  return c;
@@ -122,9 +122,10 @@ function twoEyes(c, codeA, codeB, probability = 90) {
   eyes: [{side: 'left', probability, code: codeA}, {side: 'right', probability, code: codeB}]};
 }
 test('one operated eye keeps the fellow eye reading only when both eyes agree',()=>{
- for(const lang of ['ko','en','es','fr','ja','zh'])for(const type of ['cataract','unknown'])
+ for(const lang of ['ko','en','es','fr','ja','zh'])for(const [type,lensHistory] of [['cataract',undefined],['unknown','yes']])
  for(const verdict of ['risk','borderline','uncertain','normal']){
   const c=setup('past',lang);c.state.riskAnswers.surgery_type=type;
+  if(lensHistory)c.state.riskAnswers.surgery_lens_history=lensHistory;
   // 두 눈 판정이 일치 + 한쪽만 수술 → 판독을 그대로 쓴다.
   twoEyes(c,verdict,verdict);c.state.riskAnswers.surgery_both='one';
   assert.equal(vm.runInContext('fellowEyeAssessable()',c),true);
@@ -134,6 +135,7 @@ test('one operated eye keeps the fellow eye reading only when both eyes agree',(
   assert.ok(shown.includes(vm.runInContext('translations[state.lang].photo_fellow_only',c)),lang);
   // 좌우 라벨을 신뢰하지 않는다 — '왼쪽/오른쪽 눈'별 점수를 붙이면 안 된다.
   assert.ok(!shown.includes(vm.runInContext('translations[state.lang].eye_left',c)),lang);
+  assert.ok(!shown.includes('90/100'),lang);
   assert.ok(shown.length<=200);
   const findings=vm.runInContext('buildFindings()',c);
   assert.ok(findings.includes(vm.runInContext('translations[state.lang].find_cat_fellow',c)),lang);
@@ -150,6 +152,16 @@ test('one operated eye keeps the fellow eye reading only when both eyes agree',(
   }
  }
 });
+test('fellow-eye result does not expose the operated-eye maximum score',()=>{
+ const c=setup('past','ko');
+ c.state.riskAnswers.surgery_type='cataract';c.state.riskAnswers.surgery_both='one';
+ c.state.aiResultCode='risk';
+ c.state.aiResultData={code:'risk',probability:99,twoEyes:true,
+  eyes:[{side:'left',probability:99,code:'risk'},{side:'right',probability:51,code:'risk'}]};
+ const shown=vm.runInContext('formatCataractResult()',c);
+ assert.ok(shown.includes(vm.runInContext('translations[state.lang].photo_fellow_only',c)));
+ assert.ok(!shown.includes('99/100'));
+});
 test('a fellow-eye reading is refused when the two eyes disagree or only one eye was photographed',()=>{
  const c=setup('past');c.state.riskAnswers.surgery_type='cataract';c.state.riskAnswers.surgery_both='one';
  // 판정이 갈리면 위험 신호가 인공수정체 때문인지 진짜 혼탁인지 구분할 수 없다.
@@ -163,7 +175,7 @@ test('a fellow-eye reading is refused when the two eyes disagree or only one eye
  assert.equal(vm.runInContext('bothEyesAgree()',c),false);
  assert.equal(vm.runInContext('photoAssessmentExcluded()',c),true);
  // 라식 등 인공수정체가 아닌 이력은 애초에 제외 대상이 아니므로 이 문항을 묻지 않는다.
- twoEyes(c,'risk','risk');c.state.riskAnswers.surgery_type='laser';
+ twoEyes(c,'risk','risk');c.state.riskAnswers.surgery_type='laser';c.state.riskAnswers.surgery_lens_history='no';
  assert.equal(vm.runInContext("activeRiskQuestions().some(q=>q.code==='surgery_both')",c),false);
  assert.equal(vm.runInContext('photoAssessmentExcluded()',c),false);
  // 4주 이내 수술은 술후 확인 경로다 — 반대쪽 눈 판독을 끌어오지 않는다.
@@ -188,8 +200,25 @@ test('remote surgery history asks only the question that changes the outcome',()
  const c=setup('past');
  const asked=vm.runInContext('activeRiskQuestions().map(q=>q.code)',c);
  assert.ok(asked.includes('surgery_type'));
+ assert.ok(!asked.includes('surgery_lens_history'));
  assert.ok(!asked.includes('surgery_eye'));
  assert.ok(!asked.includes('surgery_sym_eye'));
+ c.state.riskAnswers.surgery_type='other';
+ const otherAsked=vm.runInContext('activeRiskQuestions().map(q=>q.code)',c);
+ assert.ok(otherAsked.includes('surgery_lens_history'));
+ c.state.riskAnswers.surgery_lens_history='yes';
+ assert.ok(vm.runInContext('buildFindings()',c).some(item=>item.includes(vm.runInContext('translations[state.lang].find_remote_context',c).split('{items}')[0])));
+ assert.ok(vm.runInContext('buildOpinionSymptoms()',c).some(item=>item.includes('Reported remote surgery')));
+ // 답 라벨만 나열하면('… · 없어요') 무엇에 대한 답인지 알 수 없다 — 항목 이름이 붙어야 한다.
+ for(const lang of ['ko','en','es','fr','ja','zh']){
+  c.state.lang=lang;c.state.riskAnswers={surgery:'past',surgery_type:'laser',surgery_lens_history:'no'};
+  const t=vm.runInContext('translations[state.lang]',c);
+  const line=vm.runInContext('buildFindings()',c).find(item=>item.startsWith(t.find_remote_context.split('{items}')[0]));
+  assert.ok(line.includes(t.remote_lens_label+': '+t.surgery_lens_history_no),lang);
+  assert.ok(line.includes(t.remote_type_label+': '+t.surgery_type_laser),lang);
+  assert.ok(vm.runInContext('buildOpinionSymptoms()',c).includes('Reported remote surgery: '+t.remote_lens_label+': '+t.surgery_lens_history_no),lang);
+ }
+ c.state.lang='ko';
  // 4주 이내는 세 문항 모두 리포트의 '확인된 수술 정보'에 실리므로 그대로 묻는다.
  const recent=setup('today');
  assert.equal(vm.runInContext("activeRiskQuestions().map(q=>q.code).join()",recent),
@@ -219,7 +248,9 @@ test('12960 combinations preserve urgency, postoperative limits and remote laser
   const c=setup('none',lang);
   for(const surgery of ['none','past','today','recent'])for(const type of ['cataract','laser','unknown'])for(const eye of ['left','right','both'])
   for(const symptomEye of ['left','right','none'])for(const photo of ['normal','risk','uncertain','skipped','postop'])for(const ams of [true,false,'unable','none']){
-   c.state.riskAnswers={surgery,surgery_type:type,surgery_eye:eye,surgery_sym_eye:symptomEye};c.state.symptomAnswers={post_followup:true};
+   c.state.riskAnswers={surgery,surgery_type:type,surgery_eye:eye,surgery_sym_eye:symptomEye};
+   if(surgery==='past' && type!=='cataract') c.state.riskAnswers.surgery_lens_history=type==='laser'?'no':'unknown';
+   c.state.symptomAnswers={post_followup:true};
    c.state.aiResultCode=photo;c.state.aiResultData={code:photo,probability:90};c.state.amslerResult=ams==='none'?{}:{left:ams,right:false};c.state.hasAmsler=ams===true;
    c.ctx={cataractCode:photo,amslerAbnormal:ams===true,redFlags:['rf_sudden']};
    assert.equal(vm.runInContext('computeTriage(ctx).level',c),'urgent');

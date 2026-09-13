@@ -280,7 +280,7 @@ def predict_cataract(img: Image.Image):
         )
 
     # 얼굴 사진이면 눈 부위만 크롭해서 분석 (모델이 눈 클로즈업으로 학습됐기 때문)
-    # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주
+    # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주하되, 아래의 눈 뜸 검증도 반드시 거친다.
     eye_crops = eye_detector.extract_eye_crops(img)
     if eye_crops is None:
         return _empty_result(
@@ -328,6 +328,24 @@ def predict_cataract(img: Image.Image):
                 "invalid", "눈 사진이 아닌 것 같습니다", mode, 0,
                 eye_score=round(score, 3),
             )
+        if not eye_validator.open_gate_available():
+            # 눈 뜸 판정기 없이 클로즈업을 모델에 넣으면 감은 눈·안대도
+            # 정상/위험 결과로 이어질 수 있으므로 검증 없이 진행하지 않는다.
+            raise _upload_error(
+                503, "VALIDATOR_UNAVAILABLE",
+                "눈 뜸 여부 판정기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            )
+        is_open, open_score = eye_validator.check_eye_open(img, closeup=True)
+        if is_open is None:
+            raise _upload_error(
+                503, "VALIDATOR_UNAVAILABLE",
+                "눈 뜸 여부 판정기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            )
+        if not is_open:
+            return _empty_result(
+                "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)", mode, 0,
+                eye_open_score=round(open_score, 3),
+            )
 
     # [검증·얼굴 모드] MTCNN은 얼굴 '기하'에서 눈 위치를 추정할 뿐, 그 자리에 눈이 보이는지는 모른다.
     # 눈을 감았거나 선글라스·안대로 가린 얼굴도 눈 좌표를 돌려주므로, 피부·검정·흰색 조각이 모델에
@@ -347,19 +365,23 @@ def predict_cataract(img: Image.Image):
         # [뜸 여부] 눈 게이트는 '눈 영역인가'만 본다. 감긴 눈꺼풀도 눈 영역이라 0.9 안팎으로 통과해
         # '혼탁 특징 없음'이 나갔다(2026-09-13 실측: AI 생성 감은 눈 얼굴 3장 전부, Commons 수면 사진
         # 크롭 58.9%). 한쪽만 감아도(윙크) 두 눈 비교가 무의미하므로 하나라도 감겼으면 되돌려보낸다.
-        # 판정기 파일이 있으면 계산 실패는 fail-closed로 막는다(눈 게이트와 같은 원칙).
-        if eye_validator.open_gate_available():
-            opens = [eye_validator.check_eye_open(c) for c in eye_crops]
-            if any(ok is None for ok, _ in opens):
-                raise _upload_error(
-                    503, "VALIDATOR_UNAVAILABLE",
-                    "눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
-                )
-            if not all(ok for ok, _ in opens):
-                return _empty_result(
-                    "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
-                    mode, len(eye_crops), eye_open_score=round(min(s for _, s in opens), 3),
-                )
+        # 판정기 파일이 없거나 계산에 실패하면 fail-closed로 막는다(눈 게이트와 같은 원칙).
+        if not eye_validator.open_gate_available():
+            raise _upload_error(
+                503, "VALIDATOR_UNAVAILABLE",
+                "눈 뜸 여부 판정기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            )
+        opens = [eye_validator.check_eye_open(c) for c in eye_crops]
+        if any(ok is None for ok, _ in opens):
+            raise _upload_error(
+                503, "VALIDATOR_UNAVAILABLE",
+                "눈 뜸 여부 판정기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+            )
+        if not all(ok for ok, _ in opens):
+            return _empty_result(
+                "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
+                mode, len(eye_crops), eye_open_score=round(min(s for _, s in opens), 3),
+            )
 
     # [반사 게이트] 플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
     # 실측: 정상 눈에 반사점을 합성하니 최대 70%가 '위험'으로 뒤집혔다(위 상수 주석 표).

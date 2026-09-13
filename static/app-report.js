@@ -25,7 +25,9 @@ function buildOpinionSymptoms() {
                 ? ['Eye surgery: ' + state.riskAnswers.surgery + ' / ' + translations[state.lang]['surgery_' + state.riskAnswers.surgery]] : [],
             // 오래된 수술 이력은 '술후 관리' 대상이 아니라 그냥 병력이다. 사실만 전달한다.
             (state.riskAnswers?.surgery === 'past')
-                ? [translations[state.lang].q_surgery + ': ' + translations[state.lang].surgery_past] : [],
+                ? (typeof remoteSurgeryLabels === 'function'
+                    ? remoteSurgeryLabels().map(item => 'Reported remote surgery: ' + item)
+                    : [translations[state.lang].q_surgery + ': ' + translations[state.lang].surgery_past]) : [],
             formatSymptoms(),
             ...(typeof hasSurgery === 'function' && hasSurgery()
                 ? postoperativeQuestions.filter(q => typeof state.symptomAnswers?.[q.code] === 'boolean')

@@ -41,6 +41,10 @@ function buildFindings() {
         ].filter(Boolean);
         if (parts.length) out.push((t.find_post_context || '{items}').replace('{items}', parts.join(' · ')));
     }
+    if (state.riskAnswers?.surgery === 'past' && typeof remoteSurgeryLabels === 'function') {
+        const parts = remoteSurgeryLabels();
+        if (parts.length) out.push((t.find_remote_context || '{items}').replace('{items}', parts.join(' · ')));
+    }
 
     // --- 백내장 사진 판독 ---
     // 수술 4주 이내면 건너뛴다. 위에서 post_limit로 '사진만으로는 판정할 수 없다'고

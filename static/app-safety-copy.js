@@ -100,6 +100,38 @@ const fellowEyeCopy = {
 for(const [lang,v] of Object.entries(fellowEyeCopy)) Object.assign(translations[lang],
  {surgery_both_q:v[0],surgery_both_one:v[1],surgery_both_both:v[2],surgery_both_unknown:v[3],
   photo_fellow_only:v[4],find_cat_fellow:v[5]});
+const remoteLensHistoryCopy = {
+ ko:['지금까지 백내장 수술이나 인공수정체 삽입을 받은 적이 있나요? 최근 수술이 다른 종류였어도 포함해 주세요.', '네, 받은 적 있어요', '없어요', '잘 모르겠어요'],
+ en:['Have you ever had cataract surgery or an artificial lens, even if your most recent operation was for something else?', 'Yes, I have', 'No', 'Not sure'],
+ es:['¿Le han operado de cataratas o le han colocado una lente artificial, aunque su cirugía más reciente fuera de otro tipo?', 'Sí', 'No', 'No estoy seguro/a'],
+ fr:['Avez-vous déjà été opéré d’une cataracte ou reçu un implant, même si votre dernière opération était différente ?', 'Oui', 'Non', 'Je ne sais pas'],
+ ja:['最近の手術が別の種類でも、これまでに白内障手術や眼内レンズの挿入を受けたことがありますか？', 'はい、あります', 'ありません', 'わかりません'],
+ zh:['即使最近一次手术是其他类型，您以前是否做过白内障手术或植入过人工晶状体？', '有过', '没有', '不清楚']
+};
+for (const [lang,v] of Object.entries(remoteLensHistoryCopy)) Object.assign(translations[lang], {
+ surgery_lens_history_q:v[0], surgery_lens_history_yes:v[1], surgery_lens_history_no:v[2], surgery_lens_history_unknown:v[3]
+});
+const remoteHistorySummaryCopy = {
+ ko:'보고된 과거 수술 정보: {items}',
+ en:'Reported previous eye surgery: {items}',
+ es:'Cirugía ocular previa indicada: {items}',
+ fr:'Opération oculaire antérieure indiquée : {items}',
+ ja:'申告された過去の目の手術: {items}',
+ zh:'已报告的既往眼部手术：{items}'
+};
+for (const [lang,text] of Object.entries(remoteHistorySummaryCopy)) translations[lang].find_remote_context = text;
+// 과거 수술 요약의 항목 이름 — [수술 종류, 인공수정체 이력, 수술한 눈] (시기 '4주보다 이전'은 그 자체로 읽힌다)
+const remoteHistoryLabelCopy = {
+ ko:['수술 종류','백내장 수술·인공수정체 이력','수술한 눈'],
+ en:['Type of surgery','Cataract surgery / artificial lens history','Operated eyes'],
+ es:['Tipo de cirugía','Antecedente de cirugía de cataratas / lente artificial','Ojos operados'],
+ fr:['Type d’opération','Antécédent d’opération de la cataracte / implant','Yeux opérés'],
+ ja:['手術の種類','白内障手術・眼内レンズの既往','手術した目'],
+ zh:['手术类型','白内障手术/人工晶状体史','手术眼']
+};
+for (const [lang,v] of Object.entries(remoteHistoryLabelCopy)) Object.assign(translations[lang], {
+ remote_type_label:v[0], remote_lens_label:v[1], remote_scope_label:v[2]
+});
 // 사진에서 나온 좌/우는 해부학적 좌우가 아니다.
 //
 // vision.py는 eyes[].side를 ["left","right"]로 붙이는데, eye_detector.py가 사진의

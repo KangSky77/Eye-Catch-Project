@@ -8,6 +8,9 @@ AI로 만든 감은 눈 얼굴 세 장이 게이트를 0.897~0.978로 통과해 
 때만 돌고, 구조 테스트는 항상 돈다.
 """
 import json
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -173,3 +176,57 @@ def test_미세조정_판정기는_학습_스크립트와_구조가_같고_없�
     from PIL import Image
     ok, score = EV.check_eye_open(Image.new("RGB", (120, 120), (150, 110, 90)))
     assert ok in (True, False) and 0.0 <= score <= 1.0
+
+
+def test_뜸여부_특징은_동시호출에서도_섞이지_않는다(monkeypatch):
+    """forward hook이 전역 특징을 기록해도 두 요청이 한 번에 순전파되지 않아야 한다."""
+    import torch
+    from PIL import Image
+    from app.services import eye_validator as EV
+
+    active = 0
+    max_active = 0
+    guard = threading.Lock()
+
+    class DummyNet(torch.nn.Module):
+        def forward(self, x):
+            nonlocal active, max_active
+            with guard:
+                active += 1
+                max_active = max(max_active, active)
+            try:
+                # 겹치면 전역 hook 출력이 서로 덮이는 실제 장애를 재현한다.
+                time.sleep(0.02)
+                EV._layer3_out = torch.zeros((1, 256, 14, 14), device=x.device)
+                EV._layer4_out = torch.zeros((1, 512, 7, 7), device=x.device)
+                return torch.ones((1, 512), device=x.device)
+            finally:
+                with guard:
+                    active -= 1
+
+    monkeypatch.setattr(EV, "_net", DummyNet())
+    monkeypatch.setattr(EV, "_open_cnn", None)
+    monkeypatch.setattr(EV, "_open_kind", "A")
+    monkeypatch.setattr(EV, "_open_w", torch.zeros(512, device=EV.device))
+    monkeypatch.setattr(EV, "_open_b", 0.0)
+    image = Image.new("RGB", (120, 120), (150, 110, 90))
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        values = list(pool.map(EV._open_prob, [image, image]))
+    assert max_active == 1
+    assert values == pytest.approx([0.5, 0.5], abs=1e-6)
+
+
+def test_클로즈업은_얼굴보다_낮은_뜸_기준을_쓴다(monkeypatch):
+    """얼굴 크롭 기준(0.66대)을 클로즈업에 그대로 쓰면 흰색으로 진행된 백내장이 '눈 감음'으로 막힌다."""
+    from PIL import Image
+    from app.services import eye_validator as EV
+
+    assert EV._try_load() and EV.open_gate_available()
+    face_thr, close_thr = EV._open_threshold(), EV._closeup_threshold()
+    assert close_thr < face_thr
+    assert set(EV.CLOSEUP_OPEN_THRESHOLD) == {"cnn", "linear"}
+    between = (face_thr + close_thr) / 2
+    monkeypatch.setattr(EV, "_open_prob", lambda img: between)
+    img = Image.new("RGB", (120, 120), (150, 110, 90))
+    assert EV.check_eye_open(img)[0] is False
+    assert EV.check_eye_open(img, closeup=True)[0] is True

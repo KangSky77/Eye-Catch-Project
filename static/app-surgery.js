@@ -249,7 +249,7 @@ function bothEyesAgree() {
  *  답이 판정을 바꿀 수 없으면(단안 클로즈업, 두 눈 판정 불일치) 묻지 않는다. */
 function fellowEyeQuestionApplies() {
  return state.riskAnswers?.surgery === 'past'
-  && ['cataract','unknown'].includes(state.riskAnswers?.surgery_type)
+  && remoteLensStatus() === 'yes'
   && bothEyesAgree();
 }
 /** 수술하지 않은 반대쪽 눈의 판독을 그대로 쓸 수 있는가.
@@ -260,14 +260,28 @@ function fellowEyeAssessable() {
   && state.riskAnswers?.surgery_both === 'one'
   && fellowEyeQuestionApplies();
 }
+/** 과거 수술 이력에서 인공수정체·백내장 수술 여부를 보수적으로 해석한다. */
+function remoteLensStatus() {
+ const a = state.riskAnswers || {};
+ if (a.surgery !== 'past') return 'no';
+ if (a.surgery_type === 'cataract' || a.surgery_lens_history === 'yes') return 'yes';
+ if (a.surgery_lens_history === 'no') return 'no';
+ // 추가 질문에 아직 답하지 않았거나 '모르겠어요'라면 사진을 수술 눈에
+ // 적용할 가능성을 배제할 수 없으므로 제외한다.
+ // 라식 수술자가 '모르겠어요'라고 답해도 제외한다 — 2026-09-13 Commons 인공수정체 눈 사진
+ // (자유 라이선스, 측정 전용)을 실제 판독에 넣었더니 수술 중이 아닌 겉사진 2장이 risk 100·uncertain,
+ // 수술 현미경 사진 5장 중 3장이 risk였다. 인공수정체 눈에서는 판독이 경보를 내므로
+ // 인공수정체 여부를 모르면 판독을 믿을 수 없다(표본이 작아 방향만 확인한 것이다).
+ return 'unknown';
+}
 // The upload has no reliable anatomical side. Do not apply its cataract score
 // to a person with an artificial lens, or an unknown remote operation.
 function photoAssessmentExcluded() {
  if (!hasPhotoVerdict()) return false;
  if (hasSurgery()) return true;
- const remoteLens = state.riskAnswers?.surgery === 'past'
-  && ['cataract','unknown'].includes(state.riskAnswers.surgery_type);
- return remoteLens && !fellowEyeAssessable();
+ return state.riskAnswers?.surgery === 'past'
+  && remoteLensStatus() !== 'no'
+  && !fellowEyeAssessable();
 }
 function effectiveCataractCode() {
  if (hasSurgery() || state.aiResultCode === 'postop') return 'postop';
@@ -282,6 +296,32 @@ const surgeryRiskQuestions = [
  ['surgery_eye','surgery_eye_q',['left','right','both'],'surgery_eye_'],
  ['surgery_sym_eye','surgery_sym_eye_q',['left','right','both','none'],'surgery_eye_']
 ].map(([code,key,values,prefix]) => ({code,key,type:'choice',options:values.map(v=>({v,key:prefix+v,score:0}))}));
+// 최근 수술이 백내장이 아니어도 과거 인공수정체 이력을 놓치지 않도록 분리해 묻는다.
+// '가장 최근 수술' 하나만으로는 백내장 수술 후 다른 수술을 받은 사용자를 표현할 수 없다.
+const remoteLensHistoryQuestion = {
+ code:'surgery_lens_history', key:'surgery_lens_history_q', type:'choice',
+ options:['yes','no','unknown'].map(v=>({v,key:'surgery_lens_history_'+v,score:0}))
+};
+
+function remoteSurgeryLabels() {
+ const t = translations[state.lang];
+ const label = (q, value) => {
+  const opt = q && q.options.find(o => o.v === value);
+  return opt ? t[opt.key] : '';
+ };
+ // 답 라벨만 나열하면 '… · 없어요 · 잘 모르겠어요'처럼 무엇에 대한 답인지 알 수 없다.
+ // 각 답 앞에 항목 이름을 붙인다(리포트와 AI 소견 입력에 그대로 쓰인다).
+ const named = (name, q, value) => {
+  const text = label(q, value);
+  return text ? `${t[name]}: ${text}` : '';
+ };
+ return [
+  t.surgery_past,
+  named('remote_type_label', surgeryRiskQuestions[0], state.riskAnswers?.surgery_type),
+  named('remote_lens_label', remoteLensHistoryQuestion, state.riskAnswers?.surgery_lens_history),
+  named('remote_scope_label', remoteSurgeryScopeQuestion, state.riskAnswers?.surgery_both),
+ ].filter(Boolean);
+}
 // 4주 초과 이력 전용 문항. surgery_eye('가장 최근에 수술한 눈')를 재사용하면 안 된다 —
 // 양안 백내장 수술은 몇 주 간격으로 따로 받는 것이 일반적이라, '가장 최근은 왼쪽'이라는
 // 답을 '오른쪽은 수술하지 않았다'로 읽으면 인공수정체 눈을 판독해 버린다.

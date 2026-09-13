@@ -1353,6 +1353,11 @@ body.modal-open { overflow: hidden; }
 .dm-sim-note { margin: 10px 0 0; color: #64748b; font-size: .68rem; line-height: 1.5; }
 
 @media (max-width: 640px) {
+    /* 선택지가 3×3으로 늘어나는 문진에서는 고정 60dvh 카드가 controls를 밀어
+       chat-box를 82px까지 줄인다. 질문 말풍선이 버튼 아래로 가려지지 않게 카드가
+       내용만큼 늘고, 대화 영역은 최신 질문을 읽을 수 있는 높이를 유지한다. */
+    .chat-shell { height: auto; max-height: none; }
+    .chat-box { height: 140px; flex: none; }
     .dm-sim { padding: 13px; }
     .dm-sim-controls { gap: 8px; }
 }

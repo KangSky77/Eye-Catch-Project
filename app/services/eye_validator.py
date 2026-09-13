@@ -70,6 +70,7 @@ _open_thr = None
 _open_kind = None
 _layer3_out = None   # layer3 출력 (forward hook이 채운다)
 _layer4_out = None   # layer4 출력
+_feature_lock = threading.Lock()  # hook 출력은 요청별 계산이 끝날 때까지 보호한다
 
 # 미세조정 판정기 (scripts/train_eye_open_cnn.py 산출물). 있으면 위 선형 판정기 대신 쓴다.
 # 선형 판정기는 고정 특징 위의 선 하나라, AI로 만든 '웃으며 눈 감은 얼굴'(초승달 모양 눈꺼풀)을
@@ -173,9 +174,12 @@ def warmup() -> bool:
 
 @torch.no_grad()
 def _embedding(img) -> torch.Tensor:
-    x = _preprocess(img.convert("RGB")).unsqueeze(0).to(device)
-    feat = _net(x)[0]
-    return feat / (feat.norm() + 1e-8)
+    # ResNet hook이 모듈 전역 변수에 layer3/layer4를 기록하므로, 다른 요청이
+    # 같은 순전파를 끼워 넣지 못하게 한다. 모델 로드 락만으로는 추론 경합을 막지 못한다.
+    with _feature_lock:
+        x = _preprocess(img.convert("RGB")).unsqueeze(0).to(device)
+        feat = _net(x)[0]
+        return feat / (feat.norm() + 1e-8)
 
 
 def _similarity(img) -> float:
@@ -199,21 +203,23 @@ def _center_mean(fmap, frac=0.5):
 @torch.no_grad()
 def _open_prob(img) -> float:
     """눈을 뜨고 있을 확률(0~1). 눈 게이트와 같은 백본 한 번의 순전파로 두 층을 함께 쓴다."""
-    x = _preprocess(img.convert("RGB")).unsqueeze(0).to(device)
-    last = _net(x)[0]
-    last = last / (last.norm() + 1e-8)
-    unit = lambda v: v / (v.norm() + 1e-8)
-    if _open_cnn is not None:
-        # 위 _net(x)가 layer3 훅을 채웠다 — 같은 순전파 결과를 이어받는다
-        return float(torch.sigmoid(_open_cnn(_layer3_out))[0].item())
-    if _open_kind == "A":
-        feat = last
-    else:
-        parts = [last, unit(_layer3_out.mean(dim=(2, 3))[0])]
-        if _open_kind == "D":
-            parts += [unit(_center_mean(_layer3_out)[0]), unit(_center_mean(_layer4_out)[0])]
-        feat = torch.cat(parts)
-    return float(torch.sigmoid(torch.dot(feat, _open_w) + _open_b).item())
+    # layer3/layer4 hook 출력과 그 출력을 읽는 분류기까지 하나의 임계구역으로 묶는다.
+    with _feature_lock:
+        x = _preprocess(img.convert("RGB")).unsqueeze(0).to(device)
+        last = _net(x)[0]
+        last = last / (last.norm() + 1e-8)
+        unit = lambda v: v / (v.norm() + 1e-8)
+        if _open_cnn is not None:
+            # 위 _net(x)가 layer3 훅을 채웠다 — 같은 순전파 결과를 이어받는다
+            return float(torch.sigmoid(_open_cnn(_layer3_out))[0].item())
+        if _open_kind == "A":
+            feat = last
+        else:
+            parts = [last, unit(_layer3_out.mean(dim=(2, 3))[0])]
+            if _open_kind == "D":
+                parts += [unit(_center_mean(_layer3_out)[0]), unit(_center_mean(_layer4_out)[0])]
+            feat = torch.cat(parts)
+        return float(torch.sigmoid(torch.dot(feat, _open_w) + _open_b).item())
 
 
 def open_gate_available() -> bool:
@@ -240,13 +246,27 @@ def _open_threshold() -> float:
     return _open_cnn_thr if _open_cnn is not None else _open_thr
 
 
-def check_eye_open(img):
-    """(is_open, score). 계산 실패는 (None, None) — 호출자는 fail-closed(차단)해야 한다."""
+# 눈 클로즈업(eye 모드)용 뜸 기준. 판정기는 얼굴 사진의 눈 크롭으로 학습했고, 기준값도 그 분포에서
+# '뜬 눈 99% 통과'로 골랐다. 클로즈업에 같은 기준을 쓰면 흰색으로 진행된 뚜렷한 백내장이 0.62~0.66에
+# 몰려 '눈이 감겨 있어요'로 막혔다(2026-09-13, 데이터셋 표본 두 묶음에서 백내장 3.0%·1.4%).
+# 클로즈업에서 실제로 감긴 눈은 훨씬 낮게 나와 기준을 낮춰도 거의 다 걸린다 — 근거 표는
+# docs/eye-gate-closed-eye.md '클로즈업 기준값'. 판정기 종류마다 점수 척도가 달라 따로 둔다.
+CLOSEUP_OPEN_THRESHOLD = {"cnn": 0.35, "linear": 0.13}
+
+
+def _closeup_threshold() -> float:
+    kind = "cnn" if _open_cnn is not None else "linear"
+    return min(_open_threshold(), CLOSEUP_OPEN_THRESHOLD[kind])
+
+
+def check_eye_open(img, closeup: bool = False):
+    """(is_open, score). 계산 실패는 (None, None) — 호출자는 fail-closed(차단)해야 한다.
+    closeup=True면 눈 클로즈업용 기준(_closeup_threshold)을 쓴다."""
     if not _try_load() or (_open_w is None and _open_cnn is None):
         return None, None
     try:
         p = _open_prob(img)
-        return p >= _open_threshold(), p
+        return p >= (_closeup_threshold() if closeup else _open_threshold()), p
     except Exception:
         logger.warning("⚠️  눈 뜸 여부 계산 실패", exc_info=True)
         return None, None
