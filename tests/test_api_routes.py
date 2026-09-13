@@ -28,9 +28,17 @@ def test_readyz는_모델이_로드되면_200(client, monkeypatch):
     from app.services import eye_validator
     monkeypatch.setattr(vision, "weights_loaded", True)
     monkeypatch.setattr(eye_validator, "is_ready", lambda: True)
+    monkeypatch.setattr(routes.eye_detector, "is_ready", lambda: True)
     r = client.get("/readyz")
     assert r.status_code == 200
     assert r.json() == {"status": "ready", "model": "ready"}
+
+
+def test_readyz는_얼굴검출기가_없으면_503(client, monkeypatch):
+    monkeypatch.setattr(routes.vision, "weights_loaded", True)
+    monkeypatch.setattr(routes.eye_validator, "is_ready", lambda: True)
+    monkeypatch.setattr(routes.eye_detector, "is_ready", lambda: False)
+    assert client.get("/readyz").status_code == 503
 
 
 CANNED = {

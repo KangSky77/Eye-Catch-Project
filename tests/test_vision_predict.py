@@ -54,6 +54,24 @@ def test_눈검증기_불능이면_fail_closed_503(monkeypatch, loaded, img):
     assert e.value.status_code == 503
 
 
+def test_얼굴검출_장애는_503이고_모델에_입력하지_않는다(monkeypatch, loaded, img):
+    def unavailable(_):
+        raise eye_detector.EyeDetectionError("detection failed")
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", unavailable)
+    monkeypatch.setattr(vision, "_predict_single", lambda _: pytest.fail("검출 실패를 판독하면 안 된다"))
+    with pytest.raises(HTTPException) as e:
+        vision.predict_cataract(img)
+    assert e.value.status_code == 503
+
+
+@pytest.mark.parametrize("size", [(18, 14), (31, 200), (200, 31)])
+def test_아주_작은_사진은_검출기_장애_대신_재촬영(monkeypatch, loaded, size):
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda _: pytest.fail("해상도 부족"))
+    out = vision.predict_cataract(Image.new("RGB", size))
+    assert out["result_code"] == "blurry"
+    assert out["eyes"] == [] and out["eye_probs"] == []
+
+
 def test_비눈사진은_invalid_판정(monkeypatch, loaded, img):
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [])
     monkeypatch.setattr(eye_validator, "check_eye", lambda i: (False, 0.41))

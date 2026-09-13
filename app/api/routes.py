@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from app.core.config import settings
 from app.services.vision import predict_cataract, validate_and_read_image
-from app.services import vision, eye_validator
+from app.services import vision, eye_validator, eye_detector
 from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_next_question, KEEPALIVE, KEEPALIVE_INTERVAL
 from app.services.clinics import search_eye_clinics
 from app.services.database import save_diagnosis
@@ -26,7 +26,9 @@ async def healthz():
 @router.get("/readyz")
 async def readyz():
     """실제 이미지 분석을 받을 준비가 됐는지 확인하는 readiness 체크."""
-    if not vision.weights_loaded or not eye_validator.is_ready():
+    if (not vision.weights_loaded
+            or not await run_in_threadpool(eye_detector.is_ready)
+            or not await run_in_threadpool(eye_validator.is_ready)):
         return JSONResponse(status_code=503, content={"status": "not_ready", "model": "unavailable"})
     return {"status": "ready", "model": "ready"}
 

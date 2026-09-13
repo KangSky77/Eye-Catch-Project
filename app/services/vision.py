@@ -279,9 +279,23 @@ def predict_cataract(img: Image.Image):
             "AI 모델이 준비되지 않았습니다. 관리자에게 문의하세요. (가중치 미로드)"
         )
 
+    # 32px 눈 크롭조차 만들 수 없는 원본은 검사 대상이 아니다. 작은 입력에서
+    # MTCNN이 빈 텐서 오류를 내는 경우도 서비스 장애와 구별해 재촬영을 안내한다.
+    if min(img.size) < eye_detector.MIN_CROP_PX:
+        return _empty_result(
+            "blurry", "사진 해상도가 너무 낮습니다 (선명한 원본 사진으로 다시 촬영해 주세요)",
+            "eye", 0,
+        )
+
     # 얼굴 사진이면 눈 부위만 크롭해서 분석 (모델이 눈 클로즈업으로 학습됐기 때문)
     # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주하되, 아래의 눈 뜸 검증도 반드시 거친다.
-    eye_crops = eye_detector.extract_eye_crops(img)
+    try:
+        eye_crops = eye_detector.extract_eye_crops(img)
+    except eye_detector.EyeDetectionError as exc:
+        raise _upload_error(
+            503, "VALIDATOR_UNAVAILABLE",
+            "사진 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+        ) from exc
     if eye_crops is None:
         return _empty_result(
             "multiple_faces", "여러 얼굴이 감지되었습니다 (한 사람만 정면에서 다시 촬영해 주세요)",

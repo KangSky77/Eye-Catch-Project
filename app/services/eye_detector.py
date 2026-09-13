@@ -7,7 +7,7 @@
 - MTCNN(facenet-pytorch): 얼굴 박스 + 5개 랜드마크(양쪽 눈 중심 포함) 검출
 - 얼굴이 검출되면  → 양쪽 눈 크롭 리스트 반환
 - 얼굴이 없으면    → 빈 리스트 반환 (vision.py가 원본 전체를 눈 클로즈업으로 간주)
-- facenet-pytorch 미설치여도 앱은 정상 동작 (눈 크롭 기능만 비활성화)
+- 검출기 미설치·실행 실패는 EyeDetectionError (검증 없이 사진 판독하지 않음)
 
 설치:  uv pip install facenet-pytorch --no-deps --python .venv
        uv pip install requests --python .venv
@@ -18,7 +18,7 @@ import threading
 import logging
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,43 @@ EYE_CROP_RATIO = 0.45
 MIN_CROP_PX = 32
 
 _mtcnn = None
+
+
+class EyeDetectionError(RuntimeError):
+    """검출 실패를 '얼굴 없음/눈 클로즈업'으로 오해하지 않도록 구분한다."""
+
+
+def _retry_edge_face(mtcnn, img):
+    """잘린 얼굴 후보를 여백에서 재검출한다. 원본 픽셀과 판정 기준은 유지한다.
+
+    저신뢰 후보를 일괄 차단하면 실제 백내장 클로즈업도 막힌다. 반대로 원본을
+    그대로 판독하면 가려진 얼굴이 들어간다. 여백으로 경계를 복원한 재검출에서
+    기존 얼굴 기준을 통과하고, 원본 안에 분석 가능한 두 눈 위치가 있을 때만
+    얼굴 경로를 복구한다. 여백 자체는 눈 크롭/백내장 모델에 절대 넣지 않는다.
+    """
+    # 극단적으로 긴 24MP 입력도 여백 추가로 메모리를 수백 MP까지 키우지 않는다.
+    work = img.copy()
+    work.thumbnail((1600, 1600))
+    pad = max(1, int(max(work.size) * 0.25))
+    padded = ImageOps.expand(work, border=pad, fill=(128, 128, 128))
+    boxes, probs, landmarks = mtcnn.detect(padded, landmarks=True)
+    if boxes is None or landmarks is None:
+        return None, None, None
+    scale = np.array([img.width / work.width, img.height / work.height])
+    landmarks = (np.asarray(landmarks, dtype=np.float32) - pad) * scale
+    boxes = (np.asarray(boxes, dtype=np.float32) - pad) * np.tile(scale, 2)
+    usable = []
+    for i, prob in enumerate(probs):
+        eyes = landmarks[i][:2]
+        # 재검출이 작은 주름을 얼굴로 착각할 수 있다. 크롭을 32px로 인위적으로
+        # 키우지 않아도 두 눈을 검사할 해상도가 있어야 재검출을 채택한다.
+        if (prob >= settings.face_prob_threshold and np.isfinite(eyes).all()
+                and all(0 <= x < img.width and 0 <= y < img.height for x, y in eyes)
+                and np.linalg.norm(eyes[1] - eyes[0]) * 2 * EYE_CROP_RATIO >= MIN_CROP_PX):
+            usable.append(i)
+    if not usable:
+        return None, None, None
+    return boxes[usable], np.asarray(probs)[usable], landmarks[usable]
 
 
 def is_available() -> bool:
@@ -61,6 +98,15 @@ def warmup() -> bool:
     return _get_mtcnn() is not None
 
 
+def is_ready() -> bool:
+    """패키지 설치 여부뿐 아니라 검출기 초기화 성공도 확인한다."""
+    try:
+        return warmup()
+    except Exception:
+        logger.warning("얼굴 검출기 초기화 실패", exc_info=True)
+        return False
+
+
 
 def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
     """얼굴 사진이면 [왼눈, 오른눈] 크롭 반환, 얼굴이 없으면 빈 리스트.
@@ -69,33 +115,34 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
 
     빈 리스트 = '얼굴 없음' → 호출자는 원본을 눈 클로즈업으로 처리하면 됨.
     """
-    mtcnn = _get_mtcnn()
-    if mtcnn is None:
-        return []
-
     try:
+        mtcnn = _get_mtcnn()
+        if mtcnn is None:
+            raise EyeDetectionError("얼굴 검출기를 사용할 수 없습니다")
         boxes, probs, landmarks = mtcnn.detect(img, landmarks=True)
     except Exception as exc:
         logger.warning("MTCNN 얼굴 검출 실패: %s", type(exc).__name__)
-        # 클로즈업 경로로 보낸다 — 거기서 눈 게이트와 눈 뜸 판정기를 모두 거치므로 얼굴 전체나
-        # 감은 눈이 판독까지 가지 않는다. (보류로 막았더니 실제 백내장 클로즈업에서도 오류가 났다)
-        return []
-
-    if boxes is None or landmarks is None:
-        return []
+        raise EyeDetectionError("얼굴 검출 실패") from exc
 
     # 여러 얼굴이 보이면 누구의 눈인지 결정할 수 없으므로 의료 결과를 만들지 않는다.
     # 예전에는 가장 확신도 높은 얼굴 하나를 조용히 골라 다른 사람의 결과가 나갈 수 있었다.
-    valid = [i for i, p in enumerate(probs) if p >= settings.face_prob_threshold]
+    valid = ([] if boxes is None or landmarks is None else
+             [i for i, p in enumerate(probs) if p >= settings.face_prob_threshold])
+    if not valid:
+        # 같은 잘린 얼굴도 좌우 반전만으로 후보가 완전히 사라질 수 있다.
+        # 따라서 후보가 없는 경우도 한 번 재검출한 뒤 클로즈업으로 보낸다.
+        try:
+            boxes, probs, landmarks = _retry_edge_face(mtcnn, img)
+        except Exception as exc:
+            raise EyeDetectionError("잘린 얼굴 재검출 실패") from exc
+        if boxes is None:
+            # 얼굴이라는 근거가 없으면 기존 클로즈업 경로를 보존한다.
+            # 전체 얼굴·가림 사진을 모두 차단한다는 보장은 아니다.
+            return []
+        valid = list(range(len(boxes)))
     if len(valid) > 1:
         logger.info("얼굴 사진에 여러 얼굴이 감지되어 판독을 보류합니다")
         return None
-    if not valid:
-        # 얼굴 후보의 확신도가 낮다 = 대개 눈 클로즈업의 눈꺼풀·주름을 얼굴로 잘못 본 것.
-        # 2026-09-13 이를 '판독 보류'로 바꿨더니 데이터셋의 뚜렷한 백내장 클로즈업 3.3~5.7%가
-        # '눈을 확인하지 못했어요'로 막혔다(막힌 사진은 모두 뜬 눈). 클로즈업 경로에는 눈 게이트와
-        # 눈 뜸 판정기가 있어 얼굴 전체·감은 눈은 거기서 걸러진다.
-        return []
     best = valid[0]
 
     # 랜드마크 순서: [왼눈, 오른눈, 코, 입왼쪽, 입오른쪽]

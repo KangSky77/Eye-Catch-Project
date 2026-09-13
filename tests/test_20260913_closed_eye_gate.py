@@ -121,9 +121,9 @@ def test_판정기_파일이_늦게_생겨도_조용히_꺼진_채로_남지_않
     monkeypatch.setattr(EV, "_OPEN_CNN_PATH", tmp_path / "없음.pth")
     monkeypatch.setattr(EV, "_open_cnn", None)
     monkeypatch.setattr(EV, "_open_w", None)
-    # 파일이 아직 없는 동안: 준비 상태는 기존 게이트 기준, 판정기는 없음
+    # 파일이 아직 없는 동안: 분석 요청과 준비 상태 모두 중단한다.
     assert EV.open_gate_available() is False
-    assert EV.is_ready() is True
+    assert EV.is_ready() is False
     # 파일이 생기면 재시작 없이 바로 켜져야 한다
     shutil.copy(real, late)
     assert EV.open_gate_available() is True
@@ -165,6 +165,7 @@ def test_미세조정_판정기는_학습_스크립트와_구조가_같고_없�
     assert EV.open_gate_available() is True and EV._open_cnn is None and EV._open_w is not None
 
     # 파일이 있으면 미세조정 판정기, 임계값은 파일에 기록된 값
+    monkeypatch.setattr(EV, "_open_cnn_thr", EV._open_cnn_thr)
     fake = tmp_path / "eye_open_cnn.pth"
     head = Head(copy.deepcopy(EV._net.layer4))
     torch.save({"state_dict": {k: v.half() for k, v in head.state_dict().items()}, "meta": {"threshold": 0.4242}}, fake)

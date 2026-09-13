@@ -277,13 +277,11 @@ def gate_available() -> bool:
 
 
 def is_ready() -> bool:
-    """True only after the embedding network, centroid, and trained gate are loaded."""
+    """사진 분석에 필수인 눈 게이트와 눈 뜸 판정기가 모두 준비됐는가."""
     base = bool(_loaded and _net is not None and _centroid is not None and _gate_w is not None)
-    # 판정기 파일이 배포돼 있는데 로드되지 않았다면 준비 완료가 아니다 — 감은 눈이 통과하는 상태로
-    # 트래픽을 받지 않게 한다(파일이 없는 개발 환경은 기존 동작 유지).
-    if base and (_OPEN_GATE_PATH.exists() or _OPEN_CNN_PATH.exists()):
-        return open_gate_available()
-    return base
+    # vision.py는 파일 유무와 무관하게 뜸 판정기를 요구한다. 파일이 모두 빠졌을 때도
+    # readyz가 200을 반환하면 분석은 503인 서버로 트래픽을 보내게 된다.
+    return base and open_gate_available()
 
 
 def check_eye(img):
