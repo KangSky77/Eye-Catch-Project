@@ -123,6 +123,22 @@ def main():
         paths = rng.sample(paths, min(args.sample, len(paths)))
         scores[category] = [eye_validator._gate_prob(_load(p)) for p in paths]
 
+    # 익상편 눈 — 정상 폴더 안의 소수 계열이라 정상 눈 거부율에 가려진다. v6가 편입한 질환군이므로
+    # 따로 잰다(2026-09-13 실측: 임계 0.60에서 10% 거부가 이 표에 보이지 않았다).
+    pter_paths = sorted((ROOT / "dataset" / "0_normal").glob("pterygium_*"))
+    pter_paths = rng.sample(pter_paths, min(args.sample, len(pter_paths)))
+    scores["pterygium"] = [eye_validator._gate_prob(_load(p)) for p in pter_paths]
+
+    # 실제로 감긴 눈 — 학습에 쓰지 않은 사진(split.json holdout)의 검수 통과 크롭만.
+    closed_scores = []
+    cdir = ROOT / "dataset_closedeye"
+    if (cdir / "review.json").exists() and (cdir / "split.json").exists():
+        stems = {Path(n).stem for n in json.loads((cdir / "split.json").read_text(encoding="utf-8"))["holdout"]}
+        for name in json.loads((cdir / "review.json").read_text(encoding="utf-8"))["closed"]:
+            path = cdir / "crops" / name
+            if name.split("__f")[0] in stems and path.exists():
+                closed_scores.append(eye_validator._gate_prob(_load(path)))
+
     negatives = build_negatives()
     neg_scores = {k: eye_validator._gate_prob(v) for k, v in negatives.items()}
 
@@ -134,19 +150,25 @@ def main():
         face_eyes = [eye_validator._gate_prob(c) for c in face_crops]
 
     n_neg = len(neg_scores)
-    print(f"눈 표본: 정상 {len(scores['0_normal'])}장 / 백내장 {len(scores['1_cataract'])}장")
+    print(f"눈 표본: 정상 {len(scores['0_normal'])}장 / 백내장 {len(scores['1_cataract'])}장 / 익상편 {len(scores['pterygium'])}장")
+    print(f"감은 눈 표본(학습 미사용 사진): {len(closed_scores)}개")
     print(f"비-눈 표본: {n_neg}개 (실제 사진 크롭 + 합성)")
     print(f"얼굴 사진의 눈 크롭 점수: {[round(s, 3) for s in face_eyes]}  ← 반드시 통과해야 함")
     print()
-    print(f"{'임계값':>10} | {'정상 눈 거부':>12} | {'백내장 눈 거부':>14} | {'비-눈 통과':>12}")
-    print("-" * 62)
+    print(f"{'임계값':>10} | {'정상 눈 거부':>12} | {'백내장 눈 거부':>14} | {'익상편 눈 거부':>14} | {'비-눈 통과':>12} | {'감은 눈 통과(holdout)':>16}")
+    print("-" * 104)
     for t in THRESHOLDS:
         nrm = sum(s < t for s in scores["0_normal"])
         cat = sum(s < t for s in scores["1_cataract"])
         leak = sum(s >= t for s in neg_scores.values())
+        pt = sum(s < t for s in scores["pterygium"]); npt = max(1, len(scores["pterygium"]))
+        cl = sum(s >= t for s in closed_scores); ncl = len(closed_scores)
+        closed_txt = f"{cl:>3}/{ncl} ({cl/ncl:>5.1%})" if ncl else "   (검수 자료 없음)"
         print(f"{t:>10.3f} | {nrm:>4}/{len(scores['0_normal'])} ({nrm/len(scores['0_normal']):>5.1%})"
               f" | {cat:>4}/{len(scores['1_cataract'])} ({cat/len(scores['1_cataract']):>5.1%})"
-              f" | {leak:>3}/{n_neg} ({leak/n_neg:>5.1%})")
+              f" | {pt:>4}/{len(scores['pterygium'])} ({pt/npt:>5.1%})"
+              f" | {leak:>3}/{n_neg} ({leak/n_neg:>5.1%})"
+              f" | {closed_txt}")
 
     holdout_scores = {k: v for k, v in neg_scores.items() if k.startswith("holdout/")}
     if holdout_scores:

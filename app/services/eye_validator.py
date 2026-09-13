@@ -55,6 +55,21 @@ _gate_b = 0.0
 _gate_thr = None     # 게이트 임계값 (npz에 기록된 값)
 _load_lock = threading.Lock()   # 동시 요청이 모델을 중복 로드하지 않도록 보호
 
+# 얼굴 모드 눈 크롭의 '눈 뜸 여부' 판정기 (scripts/build_eye_open_gate.py 산출물).
+# 2026-09-13 실측: 감은 눈 얼굴(AI 생성 3장, Commons 수면 사진)이 위 눈 게이트를 0.9 안팎으로 통과해
+# '혼탁 특징 없음'이 나갔다. 눈 게이트에 감은 눈을 음성으로 더하면 뜬 눈 거부가 늘어서, 질문을
+# 나눴다 — 눈 게이트는 '눈 영역인가', 이 판정기는 '눈 영역이라면 뜨고 있는가'만 본다.
+# features: "A" = L2(최종 512) / "B" = A + L2(layer3 전체평균 256)
+#           "D" = B + L2(layer3 중앙평균 256) + L2(layer4 중앙평균 512)   ← 배포본
+# 중앙평균은 scripts/build_eye_open_gate.py의 center_mean과 반드시 같아야 한다(학습·추론 특징 일치).
+_OPEN_GATE_PATH = _MODEL_DIR / "eye_open_gate.npz"
+_open_w = None
+_open_b = 0.0
+_open_thr = None
+_open_kind = None
+_layer3_out = None   # layer3 출력 (forward hook이 채운다)
+_layer4_out = None   # layer4 출력
+
 
 def _try_load() -> bool:
     """모델·센트로이드 로드 시도. 성공 시에만 True를 캐시(실패는 다음 호출에 재시도)."""
@@ -70,6 +85,14 @@ def _try_load() -> bool:
             net.eval().to(device)
             centroid = np.load(_CENTROID_PATH).astype(np.float32)
             centroid = centroid / (np.linalg.norm(centroid) + 1e-8)
+            def _keep_layer3(_module, _inputs, output):
+                global _layer3_out
+                _layer3_out = output
+            def _keep_layer4(_module, _inputs, output):
+                global _layer4_out
+                _layer4_out = output
+            net.layer3.register_forward_hook(_keep_layer3)
+            net.layer4.register_forward_hook(_keep_layer4)
             _net = net
             _centroid = torch.from_numpy(centroid).to(device)
             if _GATE_PATH.exists():
@@ -80,12 +103,30 @@ def _try_load() -> bool:
                 logger.info("눈 게이트 로드: 임계값 %.3f", _gate_thr)
             else:
                 logger.error("⚠️  eye_gate.npz 없음 — 검증기를 준비 완료로 취급하지 않습니다")
+            _load_open_gate()
             _loaded = True
         except Exception:
             # 일시적 실패(네트워크 등)는 영구 캐시하지 않음 → 다음 요청에 재시도
             logger.warning("⚠️  눈 검증기 로드 실패(다음 요청에 재시도)", exc_info=True)
             _loaded = False
     return _loaded
+
+
+def _load_open_gate() -> bool:
+    """뜸 여부 판정기 가중치를 읽는다(파일이 없으면 False). 호출자가 _load_lock을 잡는다."""
+    global _open_w, _open_b, _open_thr, _open_kind
+    if not _OPEN_GATE_PATH.exists():
+        return False
+    og = np.load(_OPEN_GATE_PATH)
+    kind = str(og["features"])
+    if kind not in ("A", "B", "D"):
+        raise ValueError(f"eye_open_gate.npz features={kind!r} 알 수 없음")
+    _open_w = torch.from_numpy(og["w"].astype(np.float32)).to(device)
+    _open_b = float(og["b"][0])
+    _open_thr = float(og["threshold"])
+    _open_kind = kind
+    logger.info("눈 뜸 여부 판정기 로드: 특징 %s, 임계값 %.3f", kind, _open_thr)
+    return True
 
 
 def warmup() -> bool:
@@ -115,13 +156,75 @@ def _gate_prob(img) -> float:
     return float(torch.sigmoid(torch.dot(_embedding(img), _gate_w) + _gate_b).item())
 
 
+def _center_mean(fmap, frac=0.5):
+    """특징 지도 가운데 frac 영역의 평균 (build_eye_open_gate.center_mean과 동일)."""
+    h, w = fmap.shape[2:]
+    ch, cw = max(1, int(h * frac)), max(1, int(w * frac))
+    y, x = (h - ch) // 2, (w - cw) // 2
+    return fmap[:, :, y:y + ch, x:x + cw].mean(dim=(2, 3))
+
+
+@torch.no_grad()
+def _open_prob(img) -> float:
+    """눈을 뜨고 있을 확률(0~1). 눈 게이트와 같은 백본 한 번의 순전파로 두 층을 함께 쓴다."""
+    x = _preprocess(img.convert("RGB")).unsqueeze(0).to(device)
+    last = _net(x)[0]
+    last = last / (last.norm() + 1e-8)
+    unit = lambda v: v / (v.norm() + 1e-8)
+    if _open_kind == "A":
+        feat = last
+    else:
+        parts = [last, unit(_layer3_out.mean(dim=(2, 3))[0])]
+        if _open_kind == "D":
+            parts += [unit(_center_mean(_layer3_out)[0]), unit(_center_mean(_layer4_out)[0])]
+        feat = torch.cat(parts)
+    return float(torch.sigmoid(torch.dot(feat, _open_w) + _open_b).item())
+
+
+def open_gate_available() -> bool:
+    """뜸 여부 판정기가 로드됐는가. 파일은 저장소에 포함되며 테스트가 존재를 강제한다.
+
+    파일이 있는데 아직 로드되지 않았으면 여기서 다시 읽는다. 2026-09-13 실제로 겪었다: 서버가
+    코드 변경으로 재시작하며 검증기를 먼저 로드한 뒤에 판정기 파일이 저장돼, _loaded=True가 캐시된
+    채 판정기만 꺼져 있었다 — 감은 눈 사진이 API에서 그대로 '정상'으로 나갔다. 조용히 꺼진 상태로
+    남지 않게 한다. 파일이 있는데 읽기에 실패하면 예외 대신 False를 돌려주고, is_ready()가 막는다.
+    """
+    if not _try_load():
+        return False
+    if _open_w is None and _OPEN_GATE_PATH.exists():
+        with _load_lock:
+            if _open_w is None:
+                try:
+                    _load_open_gate()
+                except Exception:
+                    logger.warning("⚠️  눈 뜸 여부 판정기 로드 실패", exc_info=True)
+    return _open_w is not None
+
+
+def check_eye_open(img):
+    """(is_open, score). 계산 실패는 (None, None) — 호출자는 fail-closed(차단)해야 한다."""
+    if not _try_load() or _open_w is None:
+        return None, None
+    try:
+        p = _open_prob(img)
+        return p >= _open_thr, p
+    except Exception:
+        logger.warning("⚠️  눈 뜸 여부 계산 실패", exc_info=True)
+        return None, None
+
+
 def gate_available() -> bool:
     return _gate_w is not None
 
 
 def is_ready() -> bool:
     """True only after the embedding network, centroid, and trained gate are loaded."""
-    return bool(_loaded and _net is not None and _centroid is not None and _gate_w is not None)
+    base = bool(_loaded and _net is not None and _centroid is not None and _gate_w is not None)
+    # 판정기 파일이 배포돼 있는데 로드되지 않았다면 준비 완료가 아니다 — 감은 눈이 통과하는 상태로
+    # 트래픽을 받지 않게 한다(파일이 없는 개발 환경은 기존 동작 유지).
+    if base and _OPEN_GATE_PATH.exists():
+        return open_gate_available()
+    return base
 
 
 def check_eye(img):

@@ -344,6 +344,22 @@ def predict_cataract(img: Image.Image):
                 "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
                 mode, len(eye_crops), eye_score=round(min(s for _, s in checks), 3),
             )
+        # [뜸 여부] 눈 게이트는 '눈 영역인가'만 본다. 감긴 눈꺼풀도 눈 영역이라 0.9 안팎으로 통과해
+        # '혼탁 특징 없음'이 나갔다(2026-09-13 실측: AI 생성 감은 눈 얼굴 3장 전부, Commons 수면 사진
+        # 크롭 58.9%). 한쪽만 감아도(윙크) 두 눈 비교가 무의미하므로 하나라도 감겼으면 되돌려보낸다.
+        # 판정기 파일이 있으면 계산 실패는 fail-closed로 막는다(눈 게이트와 같은 원칙).
+        if eye_validator.open_gate_available():
+            opens = [eye_validator.check_eye_open(c) for c in eye_crops]
+            if any(ok is None for ok, _ in opens):
+                raise _upload_error(
+                    503, "VALIDATOR_UNAVAILABLE",
+                    "눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
+                )
+            if not all(ok for ok, _ in opens):
+                return _empty_result(
+                    "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
+                    mode, len(eye_crops), eye_open_score=round(min(s for _, s in opens), 3),
+                )
 
     # [반사 게이트] 플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
     # 실측: 정상 눈에 반사점을 합성하니 최대 70%가 '위험'으로 뒤집혔다(위 상수 주석 표).
