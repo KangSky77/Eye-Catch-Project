@@ -363,6 +363,7 @@ async function runAIAnalysis(droppedFile) {
         // 어떤 사진이 분석됐는지 결과 화면에서도 확인할 수 있어야 한다.
         // (로딩 화면에만 있어서, 사진을 잘못 고른 것을 결과에서 알아챌 방법이 없었다)
         showAnalyzedPhoto();
+        refreshAiResultDisplay();
 
         setTimeout(() => {
             if (requestId === _analysisRequestId) nextStep('step-ai-result');
@@ -451,6 +452,24 @@ function refreshAiResultDisplay() {
     const t = translations[state.lang];
     const pick = role => disp.querySelector(`[data-role="${role}"]`);
     const set = (role, text) => { const el = pick(role); if (el) el.textContent = text; };
+    const history = state.riskAnswers || {};
+    const pending = history.surgery === undefined || (history.surgery === 'past' && (
+        history.surgery_type === undefined
+        || (history.surgery_type !== 'cataract' && history.surgery_lens_history === undefined)
+        || (typeof fellowEyeQuestionApplies === 'function' && fellowEyeQuestionApplies() && history.surgery_both === undefined)
+    ));
+    const excluded = typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded();
+    const fellow = typeof fellowEyeAssessable === 'function' && fellowEyeAssessable();
+    // Hide the whole eye breakdown too: its raw scores are not anatomically localized.
+    for (const child of disp.children) {
+        const hidden = (pending || excluded || fellow) && child.dataset.role !== 'verdict';
+        child.hidden = hidden;
+        child.classList.toggle('hidden', hidden);
+    }
+    if (pending || excluded || fellow) {
+        set('verdict', pending ? t.photo_history_pending : formatCataractResult());
+        return;
+    }
 
     set('score', `${t.score_label || 'AI feature score'} ${r.probability}/100`);
     set('verdict', t['ai_' + r.code] || r.code);

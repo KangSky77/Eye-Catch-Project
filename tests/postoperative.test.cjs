@@ -48,8 +48,9 @@ test('old surgery history keeps the full screening and only adds red flags',()=>
  for(const code of ['rf_acute','rf_sudden','cat_glare','gla_field','chk_recent'])
   assert.ok(sym(past).includes(code),code+' 문항이 사라졌다');
  // 술후 적신호는 얹되, 눈부심은 cat_glare가 이미 물으므로 중복시키지 않는다
- for(const code of ['surgery_pain','surgery_vision','surgery_redness'])
+ for(const code of ['rf_pain','surgery_vision','surgery_redness'])
   assert.ok(sym(past).includes(code),code+' 문항이 없다');
+ assert.ok(!sym(past).includes('surgery_pain'),'통증은 한 번만 묻는다');
  assert.ok(!sym(past).includes('surgery_glare'));
  // 리포트에 i18n 키가 그대로 노출되지 않도록 라벨이 6개 언어에 다 있어야 한다
  for(const lang of vm.runInContext('Object.keys(translations)',past))

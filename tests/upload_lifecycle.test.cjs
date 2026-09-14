@@ -71,6 +71,7 @@ function setup() {
         cancelAiOpinion: () => {},
         renderEyeBreakdown: () => {},
         showAnalyzedPhoto: () => {},
+        refreshAiResultDisplay: () => {}, // Visibility policy is exercised in persona_safety.
         startLoadingProgress: () => ({ setProgress() {}, toAnalyzing() {}, stop() {} }),
         uploadWithProgress: () => new Promise((resolve, reject) => pending.push({ resolve, reject })),
     };

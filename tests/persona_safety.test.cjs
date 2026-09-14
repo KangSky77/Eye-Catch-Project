@@ -38,6 +38,58 @@ test('slow personalized question falls back at six seconds and discards late AI 
  assert.equal(shown.length,1);assert.equal(c.state.chatBusy,false);
 });
 
+test('duplicate AI, empty replies and failed requests never repeat the fallback',async()=>{
+ for(const lang of ['ko','en','es','fr','ja','zh'])for(const mode of ['empty','duplicate','failed']){
+  const c=setup('past',lang);let shown=[],finishes=0;
+  Object.assign(c,{fetch:async()=>{if(mode==='failed')throw Error('offline');return {json:async()=>({question:mode==='duplicate'?vm.runInContext('translations[state.lang].nextq_fallback',c):''})}},
+   removeLoadingMsg(){},addMsg(sender,q){shown.push(q)},setChatAnswerMode(){},renderChatOptions(){},clearChatControls(){},finish(){finishes++}});
+  c.state.chatHistory=[];c.state.sessionGeneration=1;
+  await vm.runInContext('fetchNextQuestion()',c);
+  c.state.chatHistory.at(-1).a='No';
+  await vm.runInContext('fetchNextQuestion()',c);
+  assert.equal(shown.length,1,lang+'/'+mode);assert.equal(finishes,1);
+  assert.equal(c.state.chatHistory.length,1);
+ }
+});
+
+test('remote pain wording is consistent in display and AI history and still ends urgently',()=>{
+ for(const lang of ['ko','en','es','fr','ja','zh']){
+  const c=setup('past',lang);let shown,finishes=0;
+  Object.assign(c,{addMsg(sender,q){if(sender==='bot')shown=q},renderChatOptions(){},clearChatControls(){},finish(){finishes++}});
+  c.state.symIdx=vm.runInContext("activeSymptomQuestions().findIndex(q=>q.code==='rf_pain')",c);
+  c.state.chatHistory=[];c.state.symptomCodes=[];c.state.redFlags=[];c.state.chatSymptoms=[];
+  vm.runInContext('askSymptomQuestion();handleSymptomAnswer(true)',c);
+  assert.equal(shown,vm.runInContext('translations[state.lang].q_remote_pain',c));
+  assert.equal(c.state.chatHistory.at(-1).q,shown);assert.equal(finishes,1);
+ }
+});
+
+test('photo screen hides all raw scores when excluded or limited to the fellow eye and restores on restart',()=>{
+ const c=setup('none');
+ const child=role=>({dataset:{role},textContent:'raw score',hidden:false,classList:{toggle(){}}});
+ const verdict=child('verdict'),score=child('score'),breakdown=child('');
+ const disp={children:[score,verdict,breakdown],querySelector:s=>s.includes('verdict')?verdict:s.includes('score"')?score:null,querySelectorAll:()=>[]};
+ c.document={getElementById:()=>disp};
+ const src=fs.readFileSync(path.join(__dirname,'../static/app-vision.js'),'utf8');
+ vm.runInContext(src.slice(src.indexOf('function refreshAiResultDisplay()'),src.indexOf('\nfunction startAmslerStep()')),c);
+ c.state.aiResultCode='normal';c.state.aiResultData={code:'normal',probability:0};
+ vm.runInContext('refreshAiResultDisplay()',c);assert.equal(score.hidden,false);
+ for(const lang of ['ko','en','es','fr','ja','zh']){
+  c.state.lang=lang;c.state.riskAnswers={surgery:'past',surgery_type:'cataract'};
+  vm.runInContext('refreshAiResultDisplay()',c);
+  assert.equal(score.hidden,true);assert.equal(breakdown.hidden,true);assert.equal(verdict.hidden,false);
+  assert.equal(verdict.textContent,vm.runInContext('formatCataractResult()',c));
+ }
+ c.state.aiResultData={code:'normal',probability:0,twoEyes:true,eyes:[{side:'left',code:'normal'},{side:'right',code:'normal'}]};
+ c.state.riskAnswers.surgery_both='one';vm.runInContext('refreshAiResultDisplay()',c);
+ assert.equal(score.hidden,true);assert.equal(breakdown.hidden,true);
+ assert.equal(verdict.textContent,vm.runInContext('formatCataractResult()',c));
+ c.state.riskAnswers={};vm.runInContext('refreshAiResultDisplay()',c);
+ assert.equal(score.hidden,true);assert.equal(verdict.textContent,vm.runInContext('translations[state.lang].photo_history_pending',c));
+ c.state.riskAnswers={surgery:'none'};vm.runInContext('refreshAiResultDisplay()',c);
+ assert.equal(score.hidden,false);assert.equal(breakdown.hidden,false);
+});
+
 test('finishing a screening renders the report without asking notification permission',async()=>{
  for(const permission of ['default','granted','denied']){
   const c=setup('today');
@@ -283,7 +335,7 @@ test('every urgent question ends the actual questionnaire before any extra AI re
   }
   assert.equal(finishes,flags.length);
  }
- assert.equal(checked,114);
+ assert.equal(checked,108); // Six languages no longer repeat remote-surgery severe pain.
 });
 
 test('12960 combinations preserve urgency, postoperative limits and remote laser screening',()=>{

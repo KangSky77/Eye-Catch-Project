@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260914a">
+    <link rel="stylesheet" href="/static/style.css?v=20260914b">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -40,7 +40,7 @@
     <svg width="0" height="0" aria-hidden="true" focusable="false"><filter id="wavy"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg>
 
     <nav class="site-header sticky top-0 z-50" data-i18n-aria="aria_nav_main" aria-label="주 메뉴">
-        <div class="max-w-6xl mx-auto px-5 py-3.5 flex justify-between items-center">
+        <div class="header-inner max-w-6xl mx-auto px-5 py-3.5 flex justify-between items-center">
             <button type="button" class="brand-btn flex items-center gap-2.5" onclick="goHome()" data-i18n-aria="aria_home" aria-label="처음 화면으로">
                 <span class="brand-mark" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none"><path d="M2.75 12s3.45-5.25 9.25-5.25S21.25 12 21.25 12 17.8 17.25 12 17.25 2.75 12 2.75 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
@@ -48,7 +48,7 @@
                 <span class="brand-name">Eye-Catch</span>
             </button>
 
-            <div class="flex items-center gap-5">
+            <div class="header-controls flex items-center gap-5">
                 <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
                     <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</button>
                     <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" data-i18n="sim_title" class="nav-pill">시야 체험</button>

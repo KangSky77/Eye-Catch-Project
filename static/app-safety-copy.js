@@ -186,3 +186,26 @@ const declinedUnknownCopy = {
  zh:'未发送额外保存请求。无法确认之前的保存请求是否完成。'
 };
 for (const [lang, text] of Object.entries(declinedUnknownCopy)) translations[lang].save_declined_unknown = text;
+
+// Remote operations may have happened years ago. Ask about current/recent change,
+// including worsening pain that is not yet severe, without repeating severe pain.
+const remoteWarningCopy = {
+ ko:['지금 어느 쪽 눈이든 심한 통증이 있거나, 최근 통증이 점점 심해지고 있나요? 두통·구역질·무지개 테가 없어도 답해주세요.', '수술한 눈의 시력이 최근 새로 떨어졌거나, 현재 점점 더 흐려지고 있나요? 오래전에 생겼다가 해결된 변화는 제외해주세요.', '수술한 눈의 충혈이나 끈적한 분비물이 최근 새로 생겼거나 현재 점점 심해지고 있나요? 오래전에 생겼다가 해결된 증상은 제외해주세요.'],
+ en:['Is either eye severely painful now, or has pain been increasing recently, even without headache, nausea or halos?', 'Has vision in the operated eye newly decreased recently, or is it getting progressively blurrier now? Exclude old changes that resolved.', 'Is redness or sticky discharge in the operated eye new recently or increasing now? Exclude old symptoms that resolved.'],
+ es:['¿Tiene dolor intenso ahora en algún ojo, o dolor creciente recientemente, incluso sin cefalea, náuseas ni halos?', '¿Ha disminuido recientemente la visión del ojo operado o se vuelve más borrosa ahora? Excluya cambios antiguos ya resueltos.', '¿Tiene enrojecimiento o secreción pegajosa nuevos o crecientes ahora en el ojo operado? Excluya síntomas antiguos ya resueltos.'],
+ fr:['Un œil est-il très douloureux maintenant, ou la douleur augmente-t-elle récemment, même sans céphalées, nausées ni halos ?', 'La vision de l’œil opéré a-t-elle diminué récemment ou devient-elle plus floue maintenant ? Excluez les changements anciens résolus.', 'L’œil opéré présente-t-il une rougeur ou des sécrétions collantes nouvelles ou croissantes maintenant ? Excluez les symptômes anciens résolus.'],
+ ja:['今、どちらかの目に強い痛みがあるか、最近痛みが増していますか？頭痛・吐き気・虹輪視がなくてもお答えください。', '手術した目の視力が最近新たに低下したり、今だんだんぼやけたりしていますか？昔起きて解消した変化は除いてください。', '手術した目の充血や粘り気のある目やにが最近新たに出たり、今増えたりしていますか？昔起きて解消した症状は除いてください。'],
+ zh:['现在任一眼是否剧烈疼痛，或最近疼痛逐渐加重？即使没有头痛、恶心或虹视也请回答。', '手术眼最近是否新出现视力下降，或目前越来越模糊？请排除很久以前发生且已解决的变化。', '手术眼最近是否新出现充血或黏性分泌物，或目前逐渐加重？请排除很久以前发生且已解决的症状。']
+};
+for (const [lang, [pain, vision, redness]] of Object.entries(remoteWarningCopy))
+    Object.assign(translations[lang], {q_remote_pain:pain, q_surgery_vision:vision, q_surgery_redness:redness});
+
+const photoHistoryPendingCopy = {
+ ko:'사진 분석은 완료했습니다. 다음 문진에서 수술·인공수정체 이력을 확인한 뒤, 이 사진의 판독을 적용할 수 있는지 안내합니다. 확인 전에는 점수와 판정을 표시하지 않습니다.',
+ en:'Photo analysis is complete. The next questions check surgery and artificial-lens history before deciding whether the assessment applies. Scores and findings are withheld until then.',
+ es:'El análisis de la foto terminó. Las siguientes preguntas comprueban cirugías e implantes antes de decidir si se aplica. Hasta entonces no se muestran puntuaciones ni resultados.',
+ fr:'L’analyse de la photo est terminée. Les prochaines questions vérifient les opérations et implants avant de décider si elle s’applique. Les scores et résultats restent masqués jusque-là.',
+ ja:'写真分析は完了しました。次の問診で手術・眼内レンズ歴を確認してから、この判読を適用できるか案内します。確認前は点数と判定を表示しません。',
+ zh:'照片分析已完成。接下来的问卷会确认手术及人工晶状体史，再说明能否适用此判读。确认前不显示分数和判定。'
+};
+for (const [lang, text] of Object.entries(photoHistoryPendingCopy)) translations[lang].photo_history_pending = text;

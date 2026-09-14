@@ -917,8 +917,12 @@ html[data-font="2"] { font-size: 20px; }
        (처음엔 최대 단계에서 브랜드명을 숨겼는데, 실기기 피드백: 이름이 사라지면 앱이 바뀐 것처럼 보인다) */
     /* 아래의 .brand-name { font-size: 1.05rem } 같은 기존 규칙보다 뒤에 오지 않으므로 선택자 우선순위로 이긴다 */
     .site-header .gap-5 { gap: .5rem; }
-    .site-header .brand-name { font-size: 17px; overflow: hidden; text-overflow: ellipsis; }   /* 모자라면 숨기지 말고 말줄임 */
-    .site-header .brand-btn { min-width: 0; }
+    /* Cover screens and enlarged text: wrap tools instead of clipping the brand. */
+    .site-header .header-inner { flex-wrap: wrap; gap: 8px; }
+    .site-header .header-controls { flex-shrink: 0; flex-wrap: wrap; max-width: 100%; margin-left: auto; }
+    .site-header .brand-name { font-size: 17px; overflow: visible; }
+    .site-header .brand-btn { min-width: 0; flex-shrink: 0; gap: 8px; }
+    .site-header .brand-mark { flex-shrink: 0; }
     .site-header .font-ctl { padding: 1px; }
     .site-header .font-ctl button { min-width: 30px; height: 32px; padding: 0 6px; font-size: 12px; }
     .site-header .font-ctl button + button { font-size: 15px; }
@@ -1385,8 +1389,7 @@ body.modal-open { overflow: hidden; }
 .vt-cant-see:hover { background: #f1f5f9; color: var(--ec-navy); }
 .vt-cant-see:focus-visible { outline: 3px solid rgba(21, 94, 239, .24); outline-offset: 2px; }
 
-/* 폴더블 커버 화면(갤럭시 Z 폴드 접힘 ≈ 320px)·구형 소형 기기 — 헤더 한 줄에 로고·이름·글자크기·언어가 다 들어가야 한다.
-   실측(2026-09-02): 320px에서 위 규칙만으로는 'Eye-Ca…'로 잘려서 한 단계 더 줄인다. */
+/* Narrow cover screens: compact controls, with wrapping when a single row cannot fit. */
 @media (max-width: 340px) {
     .site-header .max-w-6xl { padding: .6rem .7rem; }
     .site-header .brand-btn { gap: 6px; }

@@ -51,6 +51,7 @@ function startChat() {
     state.symptomAnswers = {};
     state.symptomScore = 0;
     state.redFlags = [];
+    if (typeof refreshAiResultDisplay === 'function') refreshAiResultDisplay();
 
     askRiskQuestion();
 }
@@ -124,6 +125,7 @@ function handleAnswer(value, label) {
         const q = activeRiskQuestions()[state.riskIdx];
         addMsg('user', label);
         state.riskAnswers[q.code] = value;
+        if (typeof refreshAiResultDisplay === 'function') refreshAiResultDisplay();
         // 수술 후 전용 입구(aiResultCode==='postop')로 들어왔는데 4주 이내가 아니라고 답한 경우.
         //   'none' — 입구 자체를 잘못 골랐다. 처음 화면으로 돌려보낸다.
         //   'past' — 일반 검진을 그대로 받아야 한다. 여기서 'postop' 표식을 지우지 않으면
@@ -163,6 +165,9 @@ function activeSymptomQuestions() {
     const list = (typeof hasSurgery === 'function' && hasSurgery())
         ? postoperativeQuestions : symptomQuestions;
     return list.filter(q => {
+        // Remote surgery: the general pain question covers severe AND worsening pain in either eye.
+        // Do not ask the same warning sign again for the operated eye.
+        if (state.riskAnswers.surgery === 'past' && q.code === 'surgery_pain') return false;
         if (q.showIf) {
             if (typeof q.showIf === 'string' && state.riskAnswers[q.showIf] !== true) return false;
             if (typeof q.showIf === 'object' && !q.showIf.values.includes(state.riskAnswers[q.showIf.code])) return false;
@@ -237,7 +242,9 @@ function askSymptomQuestion() {
     if (state.symIdx >= list.length) { finishSurvey(); return; }
     const q = list[state.symIdx];
     const t = translations[state.lang];
-    addMsg('bot', t[q.key] || q.key, surveyProgress());
+    const text = q.code === 'rf_pain' && state.riskAnswers.surgery === 'past'
+        ? t.q_remote_pain : (t[q.key] || q.key);
+    addMsg('bot', text, surveyProgress());
     renderChatOptions([
         { label: t.chat_yes, value: true },
         { label: t.chat_no,  value: false },
@@ -258,7 +265,8 @@ function handleSymptomAnswer(yes) {
     const t = translations[state.lang];
     const label = yes ? t.chat_yes : t.chat_no;
     addMsg('user', label);
-    state.chatHistory.push({ q: t[q.key] || q.key, a: label });
+    state.chatHistory.push({ q: q.code === 'rf_pain' && state.riskAnswers.surgery === 'past'
+        ? t.q_remote_pain : (t[q.key] || q.key), a: label });
     state.symptomAnswers[q.code] = yes;   // skipIf 판단용(언어 중립)
 
     // invert: '아니오'가 위험 신호인 문항(최근 검진 없음, 안저검사 미시행 등)
@@ -354,7 +362,8 @@ function refreshChatLanguage() {
     } else {
         const q = activeSymptomQuestions()[state.symIdx];
         if (q) {
-            question = translations[state.lang][q.key] || q.key;
+            question = q.code === 'rf_pain' && state.riskAnswers.surgery === 'past'
+                ? translations[state.lang].q_remote_pain : (translations[state.lang][q.key] || q.key);
             renderChatOptions([{ label: translations[state.lang].chat_yes, value: true }, { label: translations[state.lang].chat_no, value: false }]);
         }
     }
@@ -498,6 +507,14 @@ async function fetchNextQuestion() {
         clearTimeout(deadline);
         if (state.sessionGeneration !== generation) return;
         removeLoadingMsg(); // "생성 중..." 메시지 제거
+        // Fallbacks must pass the same check as AI questions. End optional questions
+        // when no fresh question is available instead of repeating an answered one.
+        if (!q.trim() || isDuplicateQuestion(q)) {
+            state.chatBusy = true;
+            clearChatControls();
+            finish();
+            return;
+        }
         addMsg('bot', q, dynamicProgress());
         state.chatHistory.push({ q: q, a: "" });
         setChatAnswerMode(answerType);
