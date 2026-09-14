@@ -185,6 +185,7 @@ let _activeOpinion = null;
 
 function cancelAiOpinion() {
     state.opinionFullText = '';
+    state.opinionSummaryText = '';
     const details = document.getElementById('opinion-details');
     if (details) { details.open = false; details.classList.add('hidden'); }
     const active = _activeOpinion;
@@ -279,9 +280,12 @@ async function runAiOpinion() {
         // 마커가 오면 앞이 상세, 뒤가 요약이다. 모델이 마커를 빠뜨리는 일이 실제로 있는데,
         // 그때 전문을 양쪽에 다 넣으면 같은 글이 요약칸과 상세칸에 두 번 보인다.
         // 마커가 없으면 앞 3줄을 요약으로 쓰고 나머지를 상세로 돌린다.
-        const summary = parts.length > 1 ? lines(parts.slice(1).join('')) : lines(clean).slice(0, 3);
+        const markedSummary = parts.length > 1 ? lines(parts.slice(1).join('\n')) : [];
+        const summary = markedSummary.length ? markedSummary : lines(parts[0]).slice(0, 3);
+        if (!summary.length) { showFailure(); return; }
         const detail = parts.length > 1 ? parts[0].trim() : lines(clean).slice(3).join('\n');
         opinionText.innerText = summary.slice(0, 3).join('\n');
+        state.opinionSummaryText = opinionText.innerText;
         state.opinionFullText = clean.replace('<<<SUMMARY>>>', '\n\n');
         const details = document.getElementById('opinion-details');
         const detailText = document.getElementById('opinion-detail-text');
@@ -443,7 +447,7 @@ function buildReportPdf() {
     const amslerResult = escapeHTML(document.getElementById('pdf-amsler-result').innerText);
     const chatResult = escapeHTML(document.getElementById('pdf-chat-result').innerText);
     // LLM 출력도 escape (다른 필드와 동일하게 — innerHTML 삽입 전 XSS 방지)
-    const gemmaOpinion = escapeHTML(state.opinionFullText || document.getElementById('gemma-opinion-text').innerText);
+    const gemmaOpinion = escapeHTML(state.opinionSummaryText || '');
 
     // 권장 조치와 검사 요약 해석 — 화면의 DOM을 긁지 않고 원자료에서 다시 만든다.
     //
@@ -531,9 +535,8 @@ function buildReportPdf() {
             ${L.findNote ? `<p style="font-size: 11px; color: #94a3b8; margin: 10px 0 0; line-height: 1.5;">${escapeHTML(L.findNote)}</p>` : ''}
         </div>` : ''}
 
-        <!-- 소견서는 한 페이지보다 길 수 있으므로 page-break-inside: avoid를 넣으면 안 됨
-             (avoid를 넣으면 html2pdf가 자를 곳을 못 찾아 내용이 통째로 잘림) -->
-        <div style="margin-bottom: 40px;">
+        <!-- 전문 대신 3줄 요약만 출력하므로 제목과 요약 박스를 같은 페이지에 유지한다. -->
+        <div style="margin-bottom: 40px; page-break-inside: avoid;">
             <h3 style="font-size: 18px; color: #0f172a; border-left: 5px solid #0f172a; padding-left: 10px; margin-bottom: 15px; margin-top: 0;">${L.s4}</h3>
             <div style="padding: 25px; border: 2px solid #cbd5e1; background: #ffffff; line-height: 1.8; font-size: 15px; color: #334155; font-weight: 500;">
                 ${triage && triage.level === 'urgent' && L.urgentNote ? `<p style="margin: 0 0 14px; padding: 10px 12px; border: 2px solid #fecdd3; background: #fff1f2; color: #9f1239; font-weight: 800; font-size: 13px; line-height: 1.6;">${escapeHTML(L.urgentNote)}</p>` : ''}
@@ -553,7 +556,7 @@ function buildReportPdf() {
     // 내용이 가로/세로로 밀려 백지·반토막 PDF가 나오는 html2canvas 버그들이 있음.
     // 고정 위치에 부착하면 좌표 계산이 어긋날 여지가 없다.
     const host = document.createElement('div');
-    host.style.cssText = 'position:fixed; top:0; left:0; z-index:-9999; opacity:0; pointer-events:none; background:#ffffff;';
+    host.style.cssText = 'position:fixed; top:0; left:0; z-index:-9999; pointer-events:none; background:#ffffff;';
     host.appendChild(printDiv);
     document.body.appendChild(host);
     _pdfHost = host;
@@ -583,6 +586,10 @@ let _pdfBusy = false;
 function downloadPDF() {
     if (_pdfBusy) return;   // 생성에 몇 초 걸려 연타하면 PDF가 여러 장 만들어진다
     const t = translations[state.lang];
+    if (_activeOpinion || !state.opinionSummaryText) {
+        showToast(t.pdf_wait_opinion, 'info');
+        return;
+    }
     if (!state.aiResultData) {  // 전부 "-"인 빈 리포트를 내려받는 일 방지
         showToast(t.report_hint_empty || "Run the AI analysis first.", 'info');
         return;

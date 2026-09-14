@@ -4,7 +4,7 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 const path=require('node:path');
 function setup(surgery='none',lang='ko'){
- const c=vm.createContext({state:{lang,riskAnswers:{surgery},symptomAnswers:{},amslerResult:{},chatSymptoms:[]},window:{addEventListener(){}},console});
+ const c=vm.createContext({state:{lang,riskAnswers:{surgery},symptomAnswers:{},amslerResult:{},chatSymptoms:[]},window:{addEventListener(){}},console,setTimeout,clearTimeout,AbortController});
  for(const f of ['data.js','app-safety-copy.js','app-report-text.js','app-surgery.js','app-chat.js','app-assess.js','app-findings.js','app-report.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
  const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
  vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
@@ -24,6 +24,18 @@ test('postoperative symptoms use reported-symptom wording in all six languages',
   assert.ok(findings.includes(expected),`${lang}/${surgery}`);
   assert.ok(!findings.includes(excluded),`${lang}/${surgery}`);
  }
+});
+
+test('slow personalized question falls back at six seconds and discards late AI response',async()=>{
+ const c=setup('today');let expire,late,signal,shown=[];
+ Object.assign(c,{setTimeout(fn,ms){assert.equal(ms,6000);expire=fn;return 1},clearTimeout(){},
+  fetch(url,options){signal=options.signal;return new Promise(resolve=>late=resolve)},
+  removeLoadingMsg(){},addMsg(sender,q){shown.push(q)},setChatAnswerMode(){},renderChatOptions(){}});
+ c.state.chatHistory=[];c.state.sessionGeneration=1;
+ const pending=vm.runInContext('fetchNextQuestion()',c);expire();await pending;
+ assert.equal(signal.aborted,true);assert.equal(shown[0],vm.runInContext('translations.ko.nextq_fallback',c));
+ late({json:async()=>({question:'Late AI question'})});await new Promise(r=>setImmediate(r));
+ assert.equal(shown.length,1);assert.equal(c.state.chatBusy,false);
 });
 
 test('finishing a screening renders the report without asking notification permission',async()=>{

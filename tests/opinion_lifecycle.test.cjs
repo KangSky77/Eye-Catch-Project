@@ -57,6 +57,25 @@ test('detail is collapsed, summary is displayed, and full advice is saved', asyn
     assert.equal(c.state.opinionFullText, '');
 });
 
+test('empty summary marker falls back to advice and empty advice cannot be saved', async () => {
+ const h=setup(), c=h.context;
+ c.state.opinionRequest=h.request('fallback');
+ let pending=c.runAiOpinion();
+ h.calls[0].resolve({ok:true,text:'Useful advice.\n<<<SUMMARY>>>\n'});await pending;
+ assert.equal(c.state.opinionSummaryText,'Useful advice.');
+ pending=c.runAiOpinion();h.calls[1].resolve({ok:true,text:'<<<SUMMARY>>>'});await pending;
+ assert.equal(c.state.opinionSummaryText,'');
+ assert.equal(h.saves.length,1);
+});
+
+test('PDF is blocked while streaming and after failed or cleared advice', () => {
+ const h=setup(),c=h.context,notices=[];
+ c.showToast=message=>notices.push(message);c.translations.ko.pdf_wait_opinion='Wait';
+ c.state.aiResultData={code:'normal'};
+ c.downloadPDF();assert.deepEqual(notices,['Wait']);
+ c.cancelAiOpinion();c.downloadPDF();assert.equal(notices.length,2);
+});
+
 test('restart aborts pending fetch; late old response cannot overwrite new report or consent', async () => {
     const h = setup(), c = h.context;
     c.state.opinionRequest = h.request('old');

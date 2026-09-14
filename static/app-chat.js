@@ -309,15 +309,30 @@ function addMsg(sender, text, progress) {
     if (progress) {
         const p = document.createElement('span');
         p.className = 'block text-[10px] font-black text-slate-400 mb-1';
-        p.textContent = progress;
+        p.textContent = (translations[state.lang].chat_progress || 'Question {n}').replace('{n}', String(progress).split('/')[0].trim());
+        p.setAttribute('aria-hidden', 'true');
         bubble.appendChild(p);
         bubble.appendChild(document.createTextNode(text));
+        if (sender === 'bot') {
+            const previous = document.getElementById('chat-current-question');
+            if (previous) previous.removeAttribute('id');
+            bubble.id = 'chat-current-question';
+            bubble.setAttribute('role', 'heading');
+            bubble.setAttribute('aria-level', '2');
+            bubble.tabIndex = -1;
+            const controls = document.getElementById('chat-controls');
+            if (controls) {
+                controls.setAttribute('role', 'group');
+                controls.setAttribute('aria-labelledby', bubble.id);
+            }
+        }
     } else {
         bubble.textContent = text;
     }
     div.appendChild(bubble);
     if (sender === 'bot') div.dataset.chatBot = '1';
     box.appendChild(div);
+    if (sender === 'bot' && progress && typeof bubble.focus === 'function') bubble.focus({ preventScroll: true });
     scrollChatToLatest();
 }
 
@@ -447,9 +462,12 @@ async function fetchNextQuestion() {
     // 서버 실패·빈 응답이면 선택 언어의 기본 질문으로 폴백 (백엔드도 실패 시 ""를 반환)
     let q = translations[state.lang].nextq_fallback || "추가적으로 눈이 불편하신 곳이 있나요?";
     let answerType = 'yesno';
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    let deadline;
     try {
-        const response = await fetch('/api/generate-next-question', {
+        const request = fetch('/api/generate-next-question', {
             method: 'POST',
+            signal: controller ? controller.signal : undefined,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 lang: state.lang,
@@ -457,8 +475,14 @@ async function fetchNextQuestion() {
                 amsler_res: amslerRes,
                 chat_history: state.chatHistory
             })
-        });
-        const result = await response.json();
+        }).then(response => response.json());
+        // Bound the complete response, including its body. A stalled AI must not block the survey.
+        const result = await Promise.race([request, new Promise((_, reject) => {
+            deadline = setTimeout(() => {
+                if (controller) controller.abort();
+                reject(new Error('question deadline'));
+            }, 6000);
+        })]);
         if (result.question && !isDuplicateQuestion(result.question)) {
             q = result.question;
             // 서버가 이 질문을 네/아니오로 답할 수 있는지 알려준다.
@@ -471,6 +495,7 @@ async function fetchNextQuestion() {
     } catch (e) {
         // 네트워크 오류 → 위의 폴백 질문(예/아니오형) 그대로 사용
     } finally {
+        clearTimeout(deadline);
         if (state.sessionGeneration !== generation) return;
         removeLoadingMsg(); // "생성 중..." 메시지 제거
         addMsg('bot', q, dynamicProgress());

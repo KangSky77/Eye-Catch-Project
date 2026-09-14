@@ -176,3 +176,13 @@ const painCopy = {
  zh:['现在任一眼是否剧烈疼痛？即使没有头痛、恶心或虹视也请回答。','剧烈眼痛']
 };
 for(const [lang,[question,label]] of Object.entries(painCopy)) Object.assign(translations[lang],{q_rf_pain:question,sym_rf_pain:label});
+
+const declinedUnknownCopy = {
+ ko:'추가 저장 요청은 보내지 않았습니다. 이전 저장 요청의 완료 여부는 확인하지 못했습니다.',
+ en:'No further save request was sent. The earlier save request could not be confirmed.',
+ es:'No se envió otra solicitud de guardado. No se pudo confirmar la solicitud anterior.',
+ fr:'Aucune autre demande d’enregistrement n’a été envoyée. La précédente n’a pas pu être confirmée.',
+ ja:'追加の保存要求は送信していません。前の保存要求が完了したかは確認できませんでした。',
+ zh:'未发送额外保存请求。无法确认之前的保存请求是否完成。'
+};
+for (const [lang, text] of Object.entries(declinedUnknownCopy)) translations[lang].save_declined_unknown = text;

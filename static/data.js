@@ -1248,7 +1248,7 @@ Object.assign(translations.ko, {
   vt_cross_match: "사진 분석에서도 좌우 차이 소견이 있었습니다(두 결과 모두 참고용입니다).",
   tri_factors: "정기 검진을 권하는 이유: {items}",
   tri_note_uncertain: "다만 이번 사진은 판독이 어려웠습니다. 눈을 한쪽씩 가까이(20~30cm) 다시 찍어 확인해 주세요.",
-  save_saving: "저장 중...", save_done: "저장했습니다.",
+  save_saving: "저장 중...", save_done: "저장했습니다.", save_declined: "저장에 동의하지 않아 서버에 저장하지 않았습니다.", chat_progress: "문진 진행 중 · {n}번째 질문", pdf_wait_opinion: "AI 소견이 완성된 후 PDF를 내려받을 수 있습니다. 생성에 실패했다면 다시 시도해주세요.",
   save_failed: "저장하지 못했습니다. 결과는 화면에서 계속 보실 수 있습니다.", save_retry: "다시 시도",
   calib_stale: "화면 설정이 바뀐 것 같습니다(회전·확대·창 크기). 정확한 측정을 위해 다시 보정해 주세요."
 });
@@ -1258,7 +1258,7 @@ Object.assign(translations.en, {
   vt_cross_match: "The photo analysis also showed a side difference (both are reference findings).",
   tri_factors: "Why regular check-ups are recommended: {items}",
   tri_note_uncertain: "That said, this photo was hard to read. Please retake it one eye at a time, up close (20-30 cm), and check again.",
-  save_saving: "Saving...", save_done: "Saved.",
+  save_saving: "Saving...", save_done: "Saved.", save_declined: "You declined consent. This result was not saved to the server.", chat_progress: "Survey in progress · Question {n}", pdf_wait_opinion: "Download the PDF after the AI advice is complete. If generation failed, please retry.",
   save_failed: "Could not save. Your results remain visible on screen.", save_retry: "Try again",
   calib_stale: "Your display settings seem to have changed (rotation, zoom, window size). Please calibrate again for an accurate measurement."
 });
@@ -1268,7 +1268,7 @@ Object.assign(translations.es, {
   vt_cross_match: "El análisis de foto también mostró diferencia lateral (ambos son hallazgos de referencia).",
   tri_factors: "Por qué se recomiendan revisiones periódicas: {items}",
   tri_note_uncertain: "Aun así, esta foto fue difícil de interpretar. Vuelva a tomarla de cerca (20-30 cm), un ojo cada vez, y compruébelo de nuevo.",
-  save_saving: "Guardando...", save_done: "Guardado.",
+  save_saving: "Guardando...", save_done: "Guardado.", save_declined: "No dio su consentimiento. Este resultado no se guardó en el servidor.", chat_progress: "Cuestionario en curso · Pregunta {n}", pdf_wait_opinion: "Descargue el PDF cuando termine el informe de IA. Si falla, vuelva a intentarlo.",
   save_failed: "No se pudo guardar. Sus resultados siguen visibles en pantalla.", save_retry: "Reintentar",
   calib_stale: "Parece que cambió la configuración de pantalla (rotación, zoom, tamaño). Calibre de nuevo."
 });
@@ -1278,7 +1278,7 @@ Object.assign(translations.fr, {
   vt_cross_match: "L'analyse photo montrait aussi une différence latérale (les deux sont indicatifs).",
   tri_factors: "Pourquoi des contrôles réguliers sont recommandés : {items}",
   tri_note_uncertain: "Cette photo restait toutefois difficile à interpréter. Reprenez-la de près (20-30 cm), un œil à la fois, puis vérifiez de nouveau.",
-  save_saving: "Enregistrement...", save_done: "Enregistré.",
+  save_saving: "Enregistrement...", save_done: "Enregistré.", save_declined: "Vous avez refusé. Ce résultat n’a pas été enregistré sur le serveur.", chat_progress: "Questionnaire en cours · Question {n}", pdf_wait_opinion: "Téléchargez le PDF une fois l’avis IA terminé. En cas d’échec, réessayez.",
   save_failed: "Enregistrement impossible. Vos résultats restent affichés.", save_retry: "Réessayer",
   calib_stale: "Vos réglages d'affichage semblent avoir changé (rotation, zoom, taille). Veuillez recalibrer."
 });
@@ -1288,7 +1288,7 @@ Object.assign(translations.ja, {
   vt_cross_match: "写真解析でも左右差の所見がありました（いずれも参考情報です）。",
   tri_factors: "定期検診をお勧めする理由: {items}",
   tri_note_uncertain: "ただし今回の写真は判読が難しい状態でした。片目ずつ近く（20〜30cm）で撮り直して、もう一度ご確認ください。",
-  save_saving: "保存中...", save_done: "保存しました。",
+  save_saving: "保存中...", save_done: "保存しました。", save_declined: "保存に同意しなかったため、この結果はサーバーに保存していません。", chat_progress: "問診中 · {n}問目", pdf_wait_opinion: "AI所見の完成後にPDFをダウンロードできます。生成に失敗した場合は再試行してください。",
   save_failed: "保存できませんでした。結果は画面で引き続きご確認いただけます。", save_retry: "再試行",
   calib_stale: "画面設定が変わったようです（回転・ズーム・サイズ）。正確な測定のため再調整してください。"
 });
@@ -1298,7 +1298,7 @@ Object.assign(translations.zh, {
   vt_cross_match: "照片分析也显示了单侧差异（两者均为参考信息）。",
   tri_factors: "建议定期检查的原因：{items}",
   tri_note_uncertain: "不过这张照片难以判读。请一次拍一只眼睛，靠近（20~30厘米）重新拍摄后再确认。",
-  save_saving: "保存中...", save_done: "已保存。",
+  save_saving: "保存中...", save_done: "已保存。", save_declined: "您未同意保存。本结果未保存到服务器。", chat_progress: "问卷进行中 · 第{n}题", pdf_wait_opinion: "AI意见完成后才能下载PDF。若生成失败，请重试。",
   save_failed: "未能保存。结果仍会显示在屏幕上。", save_retry: "重试",
   calib_stale: "屏幕设置似乎已更改（旋转、缩放、窗口大小）。请重新校准以确保测量准确。"
 });

@@ -233,14 +233,15 @@ function refreshSaveConsent() {
     const agree = document.createElement('button');
     agree.className = 'flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-[12px] btn-pop';
     agree.textContent = flow.phase === 'failed' ? t.save_retry : t.consent_agree;
-    agree.disabled = flow.phase === 'saving' || flow.phase === 'saved';
+    agree.disabled = ['saving', 'saved', 'declined', 'declined_unknown'].includes(flow.phase);
+    row.classList.toggle('hidden', flow.phase.startsWith('declined'));
     // 저장 결과를 사용자에게 알린다. 서버는 DB 장애 시에도 200 + status:'skipped'를
     // 돌려주므로(앱을 죽이지 않기 위해) 상태 코드만 보면 '성공'으로 착각한다.
     // 동의까지 받아놓고 실제로는 저장이 안 됐다면 그 사실을 알려야 한다.
     const status = document.createElement('p');
     status.className = 'text-[11px] font-bold mt-2';
     status.setAttribute('role', 'status');
-    const statusKeys = { saving: 'save_saving', saved: 'save_done', failed: 'save_failed' };
+    const statusKeys = { saving: 'save_saving', saved: 'save_done', failed: 'save_failed', declined: 'save_declined', declined_unknown: 'save_declined_unknown' };
     status.textContent = t[statusKeys[flow.phase]] || '';
     agree.onclick = async () => {
         if (_saveConsent !== flow || !['idle', 'failed'].includes(flow.phase)) return;
@@ -272,7 +273,11 @@ function refreshSaveConsent() {
     skip.disabled = flow.phase === 'saving';
     skip.classList.toggle('hidden', flow.phase === 'saved');
     skip.onclick = () => {
-        if (_saveConsent === flow && flow.phase !== 'saving') cancelSaveConsent();
+        if (_saveConsent === flow && ['idle', 'failed'].includes(flow.phase)) {
+            // A lost response can follow a committed save. Do not promise deletion/non-storage.
+            flow.phase = flow.phase === 'failed' ? 'declined_unknown' : 'declined';
+            refreshSaveConsent();
+        }
     };
 
     row.appendChild(agree); row.appendChild(skip);
