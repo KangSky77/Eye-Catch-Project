@@ -209,3 +209,14 @@ const photoHistoryPendingCopy = {
  zh:'照片分析已完成。接下来的问卷会确认手术及人工晶状体史，再说明能否适用此判读。确认前不显示分数和判定。'
 };
 for (const [lang, text] of Object.entries(photoHistoryPendingCopy)) translations[lang].photo_history_pending = text;
+
+const childQuestionCopy = {
+ ko:['불빛을 볼 때 빛이 심하게 번져 보이거나 눈이 부신가요?', '최근 몇 년 사이 안경 도수를 자주 바꾸었나요? 안경을 쓰지 않는다면 아니오를 선택해주세요.'],
+ en:['Do lights look very scattered or cause glare?', 'Has your glasses prescription changed often in the past few years? Choose No if you do not wear glasses.'],
+ es:['¿Las luces se ven muy dispersas o le deslumbran?', '¿Ha cambiado con frecuencia la graduación de sus gafas en los últimos años? Elija No si no usa gafas.'],
+ fr:['Les lumières paraissent-elles très dispersées ou vous éblouissent-elles ?', 'La correction de vos lunettes a-t-elle souvent changé ces dernières années ? Répondez Non si vous ne portez pas de lunettes.'],
+ ja:['明かりを見ると光が大きくにじんだり、まぶしく感じたりしますか？', 'ここ数年、眼鏡の度数をよく変えましたか？眼鏡を使っていなければ「いいえ」を選んでください。'],
+ zh:['看灯光时，光线是否明显散开或感到刺眼？', '最近几年是否经常更换眼镜度数？如果不戴眼镜，请选择“否”。']
+};
+for (const [lang, [glare, glasses]] of Object.entries(childQuestionCopy))
+    Object.assign(translations[lang], {q_child_cat_glare:glare, q_child_cat_glasses:glasses});

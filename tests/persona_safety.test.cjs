@@ -64,6 +64,34 @@ test('remote pain wording is consistent in display and AI history and still ends
  }
 });
 
+test('under-ten questions omit smoking and preserve child wording in answers and AI history',()=>{
+ for(const lang of ['ko','en','es','fr','ja','zh'])for(const surgery of ['none','past']){
+  const c=setup(surgery,lang);c.state.riskAnswers.age='under10';
+  assert.equal(vm.runInContext("activeRiskQuestions().some(q=>q.code==='smoking')",c),false);
+  for(const code of ['cat_glare','cat_glasses']){
+   let shown;c.code=code;
+   Object.assign(c,{addMsg(sender,q){if(sender==='bot')shown=q},renderChatOptions(){},setTimeout(){}});
+   c.state.symIdx=vm.runInContext('activeSymptomQuestions().findIndex(q=>q.code===code)',c);
+   c.state.chatHistory=[];vm.runInContext('askSymptomQuestion();handleSymptomAnswer(false)',c);
+   assert.equal(shown,vm.runInContext("translations[state.lang]['q_child_'+code]",c));
+   assert.equal(c.state.chatHistory.at(-1).q,shown);
+  }
+  c.state.riskAnswers.age='20s';
+  assert.equal(vm.runInContext("activeRiskQuestions().some(q=>q.code==='smoking')",c),true);
+ }
+});
+
+test('progress language changes retain message ordinals even during answer transitions',()=>{
+ const c=setup('none');const labels=[{dataset:{questionNumber:'1'}},{dataset:{questionNumber:'8'}}];
+ const text={nodeType:3,nodeValue:'question'},bubble={lastChild:text};
+ const box={querySelectorAll:s=>s==='[data-question-number]'?labels:[{firstElementChild:bubble}]};
+ c.document={getElementById:id=>id==='chat-box'?box:{classList:{contains:()=>true}}};c.Node={TEXT_NODE:3};c.renderChatOptions=()=>{};c.state.riskIdx=0;
+ for(const busy of [true,false])for(const lang of ['ko','en','es','fr','ja','zh']){
+  c.state.chatBusy=busy;c.state.lang=lang;vm.runInContext('refreshChatLanguage()',c);
+  for(const label of labels)assert.equal(label.textContent,vm.runInContext('translations[state.lang].chat_progress',c).replace('{n}',label.dataset.questionNumber));
+ }
+});
+
 test('photo screen hides all raw scores when excluded or limited to the fellow eye and restores on restart',()=>{
  const c=setup('none');
  const child=role=>({dataset:{role},textContent:'raw score',hidden:false,classList:{toggle(){}}});

@@ -3,6 +3,7 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function activeRiskQuestions() {
+    const base = riskQuestions.filter(q => !(state.riskAnswers?.age === 'under10' && q.code === 'smoking'));
     // 4주 초과 이력에는 수술 '종류'와 필요한 경우 인공수정체 이력을 묻는다 —
     // 과거 백내장 수술을 놓치지 않고 사진 판독 제외 여부에 실제로 쓴다.
     // 수술한 '쪽'(surgery_eye)은 이 경로에서 소견서·리포트·판정
@@ -18,9 +19,9 @@ function activeRiskQuestions() {
         if (typeof fellowEyeQuestionApplies === 'function' && fellowEyeQuestionApplies()) {
             extra.push(remoteSurgeryScopeQuestion);
         }
-        return [riskQuestions[0], ...extra, ...riskQuestions.slice(1)];
+        return [base[0], ...extra, ...base.slice(1)];
     }
-    if (typeof hasSurgery !== 'function' || !hasSurgery()) return riskQuestions;
+    if (typeof hasSurgery !== 'function' || !hasSurgery()) return base;
     return [riskQuestions[0], ...surgeryRiskQuestions];
 }
 
@@ -101,6 +102,14 @@ function renderChatOptions(opts, onPick) {
     // 다시 줄어든다. 버튼을 그리기 전에 맞춘 scrollTop은 이 재배치 뒤 최신 질문을 놓칠 수
     // 있으므로 레이아웃이 확정된 프레임에서 한 번 더 끝으로 보낸다.
     scrollChatToLatest();
+}
+
+function symptomQuestionText(q) {
+    const t = translations[state.lang];
+    if (state.riskAnswers?.age === 'under10' && ['cat_glare', 'cat_glasses'].includes(q.code))
+        return t['q_child_' + q.code];
+    if (q.code === 'rf_pain' && state.riskAnswers?.surgery === 'past') return t.q_remote_pain;
+    return t[q.key] || q.key;
 }
 
 function scrollChatToLatest() {
@@ -242,8 +251,7 @@ function askSymptomQuestion() {
     if (state.symIdx >= list.length) { finishSurvey(); return; }
     const q = list[state.symIdx];
     const t = translations[state.lang];
-    const text = q.code === 'rf_pain' && state.riskAnswers.surgery === 'past'
-        ? t.q_remote_pain : (t[q.key] || q.key);
+    const text = symptomQuestionText(q);
     addMsg('bot', text, surveyProgress());
     renderChatOptions([
         { label: t.chat_yes, value: true },
@@ -265,8 +273,7 @@ function handleSymptomAnswer(yes) {
     const t = translations[state.lang];
     const label = yes ? t.chat_yes : t.chat_no;
     addMsg('user', label);
-    state.chatHistory.push({ q: q.code === 'rf_pain' && state.riskAnswers.surgery === 'past'
-        ? t.q_remote_pain : (t[q.key] || q.key), a: label });
+    state.chatHistory.push({ q: symptomQuestionText(q), a: label });
     state.symptomAnswers[q.code] = yes;   // skipIf 판단용(언어 중립)
 
     // invert: '아니오'가 위험 신호인 문항(최근 검진 없음, 안저검사 미시행 등)
@@ -317,6 +324,7 @@ function addMsg(sender, text, progress) {
     if (progress) {
         const p = document.createElement('span');
         p.className = 'block text-[10px] font-black text-slate-400 mb-1';
+        p.dataset.questionNumber = String(progress).split('/')[0].trim();
         p.textContent = (translations[state.lang].chat_progress || 'Question {n}').replace('{n}', String(progress).split('/')[0].trim());
         p.setAttribute('aria-hidden', 'true');
         bubble.appendChild(p);
@@ -348,6 +356,12 @@ function refreshChatLanguage() {
     const box = document.getElementById('chat-box');
     const chatStep = document.getElementById('step-chat');
     if (!box || !chatStep || !chatStep.classList.contains('active')) return;
+    // The displayed ordinal belongs to its message, not the already-advanced state indices.
+    // Translate it even during transitions and optional AI questions.
+    box.querySelectorAll('[data-question-number]').forEach(label => {
+        label.textContent = (translations[state.lang].chat_progress || 'Question {n}')
+            .replace('{n}', label.dataset.questionNumber);
+    });
     // 답변 직후 500ms 동안은 riskIdx/symIdx가 이미 '다음 질문'을 가리키는데
     // 화면에는 아직 이전 질문이 떠 있다. 그 틈에 언어를 바꾸면 이전 질문 버블을
     // 다음 질문 문구로 덮어써(사용자 답변 기록이 사라지고) 500ms 뒤 타이머가 같은 질문을
@@ -362,8 +376,7 @@ function refreshChatLanguage() {
     } else {
         const q = activeSymptomQuestions()[state.symIdx];
         if (q) {
-            question = q.code === 'rf_pain' && state.riskAnswers.surgery === 'past'
-                ? translations[state.lang].q_remote_pain : (translations[state.lang][q.key] || q.key);
+            question = symptomQuestionText(q);
             renderChatOptions([{ label: translations[state.lang].chat_yes, value: true }, { label: translations[state.lang].chat_no, value: false }]);
         }
     }
