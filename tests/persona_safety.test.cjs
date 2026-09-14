@@ -10,6 +10,38 @@ function setup(surgery='none',lang='ko'){
  vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
  return c;
 }
+
+test('postoperative symptoms use reported-symptom wording in all six languages',()=>{
+ for(const lang of ['ko','en','es','fr','ja','zh'])for(const surgery of ['today','recent','none','past']){
+  const c=setup(surgery,lang);
+  c.state.chatSymptoms=['test symptom'];
+  const t=vm.runInContext('translations[state.lang]',c);
+  assert.ok(t.find_post_sym.includes('{items}'),lang);
+  const findings=vm.runInContext('buildFindings()',c);
+  const postoperative=['today','recent'].includes(surgery);
+  const expected=(postoperative?t.find_post_sym:t.find_sym).replace('{items}','test symptom');
+  const excluded=(postoperative?t.find_sym:t.find_post_sym).replace('{items}','test symptom');
+  assert.ok(findings.includes(expected),`${lang}/${surgery}`);
+  assert.ok(!findings.includes(excluded),`${lang}/${surgery}`);
+ }
+});
+
+test('finishing a screening renders the report without asking notification permission',async()=>{
+ for(const permission of ['default','granted','denied']){
+  const c=setup('today');
+  let prompts=0, reports=0, opinions=0;
+  c.Notification={permission,requestPermission(){prompts++;return Promise.resolve('denied');}};
+  c.window.Notification=c.Notification;
+  c.document={getElementById:id=>id==='report-date'?{}:null};
+  c.refreshReportResults=()=>{};
+  c.showTab=tab=>{assert.equal(tab,'tab-report');reports++;};
+  c.runAiOpinion=async()=>{opinions++;};
+  await vm.runInContext('finish()',c);
+  assert.equal(prompts,0,permission);
+  assert.equal(reports,1,permission);
+  assert.equal(opinions,1,permission);
+ }
+});
 // 리포트 한 화면이 스스로 모순되지 않는가. 제목·값·검사 요약 해석·권장 조치는 서로
 // 다른 함수가 만들기 때문에, 한쪽만 고치면 조용히 어긋난다(실제로 그렇게 어긋나 있었다).
 test('the report never contradicts or repeats itself across 1728 combinations',()=>{

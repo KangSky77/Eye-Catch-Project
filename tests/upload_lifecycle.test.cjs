@@ -135,6 +135,27 @@ test('underexposure shows a localized retake message without a medical result', 
     assert.equal(c.state.aiResultCode,'');assert.equal(h.banners[0],'Too dark');
 });
 
+test('low resolution uses the real translation in all six languages and never becomes a diagnosis', async () => {
+    const dataContext = vm.createContext({});
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../static/data.js'), 'utf8'), dataContext);
+    const translations = vm.runInContext('translations', dataContext);
+    for (const lang of ['ko', 'en', 'es', 'fr', 'ja', 'zh']) {
+        const h = setup(), c = h.context;
+        c.state.lang = lang;
+        c.translations = translations;
+        const message = translations[lang].ai_low_resolution;
+        assert.ok(message?.length > 10, `missing ${lang}`);
+        assert.notEqual(message, translations[lang].ai_blurry);
+        const done = c.runAIAnalysis(h.file);
+        await new Promise(r => setImmediate(r));
+        h.resolve(h.ok({ result_code: 'low_resolution' }));
+        await done;
+        assert.equal(c.state.aiResultCode, '');
+        assert.equal(h.banners[0], message);
+        assert.equal(h.steps.at(-1), 'step-photo');
+    }
+});
+
 test('새 업로드가 시작되면 이전 업로드의 늦은 응답은 버려진다', async () => {
     const h = setup(), c = h.context;
     const first = c.runAIAnalysis(h.file);

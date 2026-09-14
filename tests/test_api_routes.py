@@ -60,6 +60,15 @@ def test_analyze_eye_성공_응답형태(client, monkeypatch):
     assert body["eye_score"] is None      # invalid 판정이 아닐 때는 미포함(None)
 
 
+def test_tiny_upload_returns_resolution_code_without_inference(client, monkeypatch):
+    monkeypatch.setattr(routes.vision, "weights_loaded", True)
+    monkeypatch.setattr(routes.eye_detector, "extract_eye_crops", lambda _: pytest.fail("too small for detector"))
+    r = client.post("/api/analyze-eye", files={"file": ("tiny.png", make_image_bytes(18, 14, fmt="PNG"), "image/png")})
+    assert r.status_code == 200
+    assert r.json()["result_code"] == "low_resolution"
+    assert r.json()["eyes"] == [] and r.json()["eye_probs"] == []
+
+
 def test_analyze_eye_텍스트파일_400(client):
     r = client.post("/api/analyze-eye", files={"file": ("a.txt", b"hello", "text/plain")})
     assert r.status_code == 400

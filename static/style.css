@@ -1528,4 +1528,7 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 .photo-review button { display: block; width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; background: #e2e8f0; font: inherit; font-weight: 700; }
 .photo-review button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
 #photo-review-confirm { background: #2563eb; color: white; }
+
+/* 확대해도 한국어 단어 중간에 제목이 끊기지 않도록 한다. */
+[data-i18n="rep_title"] { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
 .photo-review button:disabled { opacity: .45; }

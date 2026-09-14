@@ -84,7 +84,8 @@ function buildFindings() {
 
     // --- 문진 ---
     if (state.chatSymptoms && state.chatSymptoms.length) {
-        out.push((t.find_sym || '').replace('{items}', formatSymptoms().join(', ')));
+        const summary = hasSurgery() ? t.find_post_sym : t.find_sym;
+        out.push((summary || '').replace('{items}', formatSymptoms().join(', ')));
     } else {
         out.push(t.find_nosym);
     }

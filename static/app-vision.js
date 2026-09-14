@@ -267,6 +267,7 @@ async function runAIAnalysis(droppedFile) {
         // 판정 대신 재촬영을 요청하는 코드들 — 토스트 + 업로드 카드 상단 배너(다음 사진까지 유지)
         const retake = {
             dark: translations[state.lang].ai_dark,
+            low_resolution: translations[state.lang].ai_low_resolution,
             blurry: translations[state.lang].ai_blurry || "사진이 흔들려 판독할 수 없어요. 또렷하게 다시 찍어주세요.",
             hold: translations[state.lang].ai_hold || "플래시 반사가 강해 판독할 수 없어요. 플래시를 끄고 다시 찍어주세요.",
             eyes_hidden: translations[state.lang].ai_eyes_hidden || "눈이 감겨 있거나 가려진 것 같아요. 눈을 크게 뜨고 안경·선글라스를 벗은 뒤 다시 찍어주세요.",

@@ -12,8 +12,9 @@
         뜸 여부 판정기    — 눈 영역이라면, 홍채·동공이 보이게 뜨고 있는가 (이 스크립트)
 
 데이터 (모두 Wikimedia Commons 자유 라이선스, 사진은 git 제외, 크롭은 사람이 검수):
-    양성 = dataset_openeye "open" + dataset_closedeye "excluded_open_eye" + dataset_smileeye "open"
-    음성 = dataset_closedeye "closed" + dataset_smileeye "closed"
+    기본 양성 = dataset_openeye "open" + dataset_closedeye "excluded_open_eye"
+    기본 음성 = dataset_closedeye "closed"
+    --include-smileeye를 지정한 실험에서만 dataset_smileeye "open"/"closed"를 추가한다.
     dataset_smileeye는 웃는 얼굴에서 홍채가 보이는 가늘게 뜬 눈(open)과 웃으며 감은 눈(closed)이다.
     AI로 만든 '웃으며 눈 감은 얼굴'이 뜸 0.345/0.357로 통과해 추가했다 — 기존 검수는 웃거나 찡그린
     눈을 양쪽 모두 애매로 빼서 판정기가 초승달 모양 눈꺼풀을 배운 적이 없었다.
@@ -61,6 +62,19 @@ def load_split(folder: str, key: str, split: str) -> list[Path]:
     stems = {Path(n).stem for n in json.loads(sp.read_text(encoding="utf-8"))[split]}
     names = json.loads(review.read_text(encoding="utf-8")).get(key, [])
     return [d / "crops" / n for n in names if n.split("__f")[0] in stems and (d / "crops" / n).exists()]
+
+
+def load_training_splits(include_smileeye=False):
+    """배포 재현의 기본 데이터와 선택적 웃는 눈 실험 데이터를 분리한다."""
+    result = []
+    for split in ("train", "holdout"):
+        opened = load_split("dataset_openeye", "open", split) + load_split("dataset_closedeye", "excluded_open_eye", split)
+        closed = load_split("dataset_closedeye", "closed", split)
+        if include_smileeye:
+            opened += load_split("dataset_smileeye", "open", split)
+            closed += load_split("dataset_smileeye", "closed", split)
+        result.extend((opened, closed))
+    return tuple(result)
 
 
 def open_rgb(p):
@@ -144,15 +158,12 @@ def main():
     ap.add_argument("--compare", action="store_true")
     ap.add_argument("--features", choices=["A", "B", "D"], default="D")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--include-smileeye", action="store_true",
+                    help="실험용 웃는 눈 데이터를 학습·평가에 포함 (기본: 제외)")
     args = ap.parse_args()
     random.seed(SEED); torch.manual_seed(SEED)
 
-    tr_open = (load_split("dataset_openeye", "open", "train") + load_split("dataset_closedeye", "excluded_open_eye", "train")
-               + load_split("dataset_smileeye", "open", "train"))
-    ho_open = (load_split("dataset_openeye", "open", "holdout") + load_split("dataset_closedeye", "excluded_open_eye", "holdout")
-               + load_split("dataset_smileeye", "open", "holdout"))
-    tr_closed = load_split("dataset_closedeye", "closed", "train") + load_split("dataset_smileeye", "closed", "train")
-    ho_closed = load_split("dataset_closedeye", "closed", "holdout") + load_split("dataset_smileeye", "closed", "holdout")
+    tr_open, tr_closed, ho_open, ho_closed = load_training_splits(args.include_smileeye)
     # 웃는 얼굴 계열만 따로 본 성능(평가분) — 전체 수치에 묻히지 않게 따로 보고한다
     smile_ho = (load_split("dataset_smileeye", "open", "holdout"), load_split("dataset_smileeye", "closed", "holdout"))
     print(f"뜬 눈: 학습 {len(tr_open)} / 평가 {len(ho_open)}   감은 눈: 학습 {len(tr_closed)} / 평가 {len(ho_closed)}  (device {device})")
@@ -176,6 +187,7 @@ def main():
         return
     r = results[args.features]
     meta = {"trained": "2026-09-13", "seed": SEED, "features": args.features,
+            "include_smileeye": args.include_smileeye,
             "backbone": "resnet18 IMAGENET1K_V1; A=L2(final512) B=A+L2(GAP layer3) D=B+L2(center50% layer3)+L2(center50% layer4)",
             "n_train_open": len(tr_open), "n_train_closed": len(tr_closed),
             "n_holdout_open": len(ho_open), "n_holdout_closed": len(ho_closed),

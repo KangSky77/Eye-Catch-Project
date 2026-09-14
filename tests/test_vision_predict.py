@@ -68,7 +68,7 @@ def test_얼굴검출_장애는_503이고_모델에_입력하지_않는다(monke
 def test_아주_작은_사진은_검출기_장애_대신_재촬영(monkeypatch, loaded, size):
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda _: pytest.fail("해상도 부족"))
     out = vision.predict_cataract(Image.new("RGB", size))
-    assert out["result_code"] == "blurry"
+    assert out["result_code"] == "low_resolution"
     assert out["eyes"] == [] and out["eye_probs"] == []
 
 

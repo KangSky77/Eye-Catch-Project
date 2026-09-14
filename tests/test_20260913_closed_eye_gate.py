@@ -26,8 +26,7 @@ def test_뜸여부_판정기는_검수·분할_기록만으로_학습한다():
     body = trainer[trainer.index("def load_split("):trainer.index("def open_rgb(")]
     assert "review.json" in body and "split.json" in body
     assert "os.listdir" not in body and ".iterdir()" not in body and ".glob(" not in body
-    assert 'load_split("dataset_openeye", "open", "train")' in trainer
-    assert 'load_split("dataset_closedeye", "closed", "holdout")' in trainer
+    # 실제 train/holdout·라벨 선택은 test_eye_open_training_data.py에서 실행해 검사한다.
     # 얼굴 감사용 사진은 '학습에 쓰지 말 것'이 명시돼 있다
     assert "face-audit" not in body
 

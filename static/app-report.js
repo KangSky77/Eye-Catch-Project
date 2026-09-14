@@ -53,10 +53,7 @@ function buildOpinionSymptoms() {
 }
 
 async function finish() {
-    if ("Notification" in window && Notification.permission !== "denied") {
-        Notification.requestPermission();
-    }
-
+    // 리포트 진입은 알림 신청이 아니다. 권한 창이 진료 안내를 가리지 않게 한다.
     const d = new Date();
     document.getElementById('report-date').innerText = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ISSUED`;
 

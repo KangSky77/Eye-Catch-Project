@@ -283,7 +283,7 @@ def predict_cataract(img: Image.Image):
     # MTCNN이 빈 텐서 오류를 내는 경우도 서비스 장애와 구별해 재촬영을 안내한다.
     if min(img.size) < eye_detector.MIN_CROP_PX:
         return _empty_result(
-            "blurry", "사진 해상도가 너무 낮습니다 (선명한 원본 사진으로 다시 촬영해 주세요)",
+            "low_resolution", "사진 해상도가 너무 낮습니다 (더 큰 원본 사진을 선택해 주세요)",
             "eye", 0,
         )
 

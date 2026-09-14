@@ -9,8 +9,8 @@
   - 저장 파일은 layer4 + 헤드 가중치만(fp16) — 백본 전체보다 작다.
 
 데이터: build_eye_open_gate.py와 같다(검수된 review.json, 묶음 단위 split.json).
-  양성 = openeye "open" + closedeye "excluded_open_eye" + smileeye "open"
-  음성 = closedeye "closed" + smileeye "closed"
+  기본 양성 = openeye "open" + closedeye "excluded_open_eye", 음성 = closedeye "closed"
+  --include-smileeye를 지정한 실험에서만 smileeye "open"/"closed"를 추가한다.
 
 임계값: 학습 분할에서 사진 단위로 15%를 떼어 '검증'으로 쓰고, 검증의 뜬 눈 99%가 통과하는 값을
 고른다. 평가(holdout) 분할은 임계값 선택에 쓰지 않는다 — 평가 수치가 낙관적으로 부풀지 않게.
@@ -30,7 +30,7 @@ from torchvision import models, transforms
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_eye_open_gate import load_split, open_rgb   # 같은 검수·분할 규칙을 그대로 쓴다
+from build_eye_open_gate import load_split, load_training_splits, open_rgb
 
 SEED = 20260913
 TARGET_OPEN_PASS = 0.99
@@ -107,17 +107,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=None)
     ap.add_argument("--epochs", type=int, default=25)
+    ap.add_argument("--include-smileeye", action="store_true",
+                    help="실험용 웃는 눈 데이터를 학습·평가에 포함 (기본: 제외)")
     args = ap.parse_args()
     random.seed(SEED)
     np.random.seed(SEED)
     torch.manual_seed(SEED)
 
-    tr_open = (load_split("dataset_openeye", "open", "train") + load_split("dataset_closedeye", "excluded_open_eye", "train")
-               + load_split("dataset_smileeye", "open", "train"))
-    tr_closed = load_split("dataset_closedeye", "closed", "train") + load_split("dataset_smileeye", "closed", "train")
-    ho_open = (load_split("dataset_openeye", "open", "holdout") + load_split("dataset_closedeye", "excluded_open_eye", "holdout")
-               + load_split("dataset_smileeye", "open", "holdout"))
-    ho_closed = load_split("dataset_closedeye", "closed", "holdout") + load_split("dataset_smileeye", "closed", "holdout")
+    tr_open, tr_closed, ho_open, ho_closed = load_training_splits(args.include_smileeye)
     tr_open, va_open = split_validation(tr_open)
     tr_closed, va_closed = split_validation(tr_closed)
     print(f"뜬 눈 학습 {len(tr_open)}/검증 {len(va_open)}/평가 {len(ho_open)}  "
@@ -171,6 +168,7 @@ def main():
     if args.out:
         state = {k: v.half() for k, v in head.state_dict().items()}
         meta = {"trained": "2026-09-13", "seed": SEED, "threshold": thr, "target_open_pass": TARGET_OPEN_PASS,
+                "include_smileeye": args.include_smileeye,
                 "threshold_chosen_on": "validation carved from train split (photo-level)",
                 "holdout_open_pass": rate(ho, lambda v: v >= thr) / 100,
                 "holdout_closed_reject": rate(hc, lambda v: v < thr) / 100,
