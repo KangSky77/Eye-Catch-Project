@@ -475,6 +475,14 @@ function isDuplicateQuestion(q) {
     return asked.some(prev => _similarity(prev, q) >= DUP_QUESTION_THRESHOLD);
 }
 
+// 맞춤 질문 응답 대기 상한.
+// 멈춘 AI가 문진을 붙잡지 않게 하려는 안전장치이지, 평소 응답을 자르려는 값이 아니다.
+// 6초로 두었더니 로컬 Gemma(e2b, 모델이 이미 올라온 상태)가 6.5·6.3·7.8초로 3번 모두 넘겨
+// (2026-09-15 실측) 맞춤 질문이 한 번도 나오지 않았다 — 늘 기본 질문이 나오고, 두 번째는
+// 중복으로 걸려 문진이 그대로 끝났다. 노트북 실측 14.6~25.0초(addLoadingMsg 주석)를 덮되
+// 서버의 Ollama 타임아웃(120초)보다는 한참 짧게 둔다. 기다리는 동안 경과 시간이 표시된다.
+const NEXT_QUESTION_DEADLINE_MS = 30000;
+
 async function fetchNextQuestion() {
     const generation = state.sessionGeneration;
     const cataractRes = formatCataractResult();
@@ -503,7 +511,7 @@ async function fetchNextQuestion() {
             deadline = setTimeout(() => {
                 if (controller) controller.abort();
                 reject(new Error('question deadline'));
-            }, 6000);
+            }, NEXT_QUESTION_DEADLINE_MS);
         })]);
         if (result.question && !isDuplicateQuestion(result.question)) {
             q = result.question;

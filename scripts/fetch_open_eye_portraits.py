@@ -64,28 +64,26 @@ def main():
     if args.dry_run:
         return
     ok = []
-    for i, row in enumerate(rows, 1):
-        dest = OUT_DIR / row["filename"]
-        if not dest.exists():
-            got = False
-            for url in (row["file_url"], row["file_url"].replace("/1280px-", "/800px-")):
-                try:
-                    req = urllib.request.Request(url, headers={"User-Agent": base.UA})
-                    with urllib.request.urlopen(req, timeout=60) as resp:
-                        dest.write_bytes(resp.read())
-                    got = True; break
-                except Exception:
-                    continue
-            if not got:
-                print(f"  ⚠️ 실패 {row['filename']}"); continue
-            time.sleep(0.2)
-        ok.append(row)
-        if i % 50 == 0:
-            print(f"  ... {i}/{len(rows)}", flush=True)
-    with open(ATTRIBUTION, "w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["filename", "category", "title", "author",
-                                          "license", "source_page", "file_url"])
-        w.writeheader(); w.writerows(ok)
+    with base.AttributionLog(ATTRIBUTION) as log:
+        for i, row in enumerate(rows, 1):
+            dest = OUT_DIR / row["filename"]
+            if not dest.exists():
+                got = False
+                for url in (row["file_url"], row["file_url"].replace("/1280px-", "/800px-")):
+                    try:
+                        req = urllib.request.Request(url, headers={"User-Agent": base.UA})
+                        with urllib.request.urlopen(req, timeout=60) as resp:
+                            dest.write_bytes(resp.read())
+                        got = True; break
+                    except Exception:
+                        continue
+                if not got:
+                    print(f"  ⚠️ 실패 {row['filename']}"); continue
+                time.sleep(0.2)
+            ok.append(row)
+            log.add(row)   # 받은 즉시 기록 — 중간에 멈춰도 출처가 남는다(base.AttributionLog)
+            if i % 50 == 0:
+                print(f"  ... {i}/{len(rows)}", flush=True)
     print(f"\n💾 {OUT_DIR} 에 {len(ok)}장 — 출처 기록: {ATTRIBUTION}")
 
 

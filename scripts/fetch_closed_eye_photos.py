@@ -102,31 +102,28 @@ def main():
         print("(dry-run: 내려받지 않음)"); return
 
     ok = []
-    for i, row in enumerate(rows, 1):
-        dest = OUT_DIR / row["filename"]
-        if not dest.exists():
-            try:
-                req = urllib.request.Request(row["file_url"], headers={"User-Agent": base.UA})
-                with urllib.request.urlopen(req, timeout=60) as resp:
-                    dest.write_bytes(resp.read())
-            except Exception as exc:
-                # 1280px 썸네일이 없는 작은 원본은 800px 주소로 한 번 더 시도
+    with base.AttributionLog(ATTRIBUTION) as log:
+        for i, row in enumerate(rows, 1):
+            dest = OUT_DIR / row["filename"]
+            if not dest.exists():
                 try:
-                    req = urllib.request.Request(row["file_url"].replace("/1280px-", "/800px-"),
-                                                 headers={"User-Agent": base.UA})
+                    req = urllib.request.Request(row["file_url"], headers={"User-Agent": base.UA})
                     with urllib.request.urlopen(req, timeout=60) as resp:
                         dest.write_bytes(resp.read())
-                except Exception:
-                    print(f"  ⚠️ 실패 {row['filename']}: {type(exc).__name__}"); continue
-            time.sleep(0.2)
-        ok.append(row)
-        if i % 50 == 0:
-            print(f"  ... {i}/{len(rows)}", flush=True)
-
-    with open(ATTRIBUTION, "w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["filename", "category", "title", "author",
-                                          "license", "source_page", "file_url"])
-        w.writeheader(); w.writerows(ok)
+                except Exception as exc:
+                    # 1280px 썸네일이 없는 작은 원본은 800px 주소로 한 번 더 시도
+                    try:
+                        req = urllib.request.Request(row["file_url"].replace("/1280px-", "/800px-"),
+                                                     headers={"User-Agent": base.UA})
+                        with urllib.request.urlopen(req, timeout=60) as resp:
+                            dest.write_bytes(resp.read())
+                    except Exception:
+                        print(f"  ⚠️ 실패 {row['filename']}: {type(exc).__name__}"); continue
+                time.sleep(0.2)
+            ok.append(row)
+            log.add(row)   # 받은 즉시 기록 — 중간에 멈춰도 출처가 남는다(base.AttributionLog)
+            if i % 50 == 0:
+                print(f"  ... {i}/{len(rows)}", flush=True)
     print(f"\n💾 {OUT_DIR} 에 {len(ok)}장 — 출처·라이선스 전수 기록: {ATTRIBUTION}")
     print("   ⚠️ 학습 전에 scripts/review_closed_eye_crops.py로 크롭을 눈으로 검수할 것.")
 

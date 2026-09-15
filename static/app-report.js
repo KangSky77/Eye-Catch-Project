@@ -108,6 +108,18 @@ async function finish() {
     await runAiOpinion();
 }
 
+/** 사진 판독 절의 제목. 화면(rep-l1)과 PDF가 반드시 같은 술어를 쓴다.
+ *  술후는 술후 문구를, 사진 없음·인공수정체 이력으로 판독 제외는 중립 문구를 쓴다 —
+ *  사진을 건너뛴 비수술자에게 '수술 후에는 적용하지 않음'이라고 말하면 안 된다.
+ *  (화면만 고쳐 두면 PDF에는 값이 '적용하지 않습니다'인데 제목은 '백내장 AI 분석 결과'로 남는다.) */
+function photoSectionLabel(t, fallback) {
+    const postop = state.aiResultCode === 'postop'
+        || (typeof hasSurgery === 'function' && hasSurgery());
+    const excluded = state.aiResultCode === 'skipped'
+        || (typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded());
+    return (postop && t.rep_l1_postop) || (excluded && t.rep_l1_excluded) || fallback;
+}
+
 /** 리포트의 '값' 3칸을 현재 언어로 다시 그린다.
  *
  *  왜 필요한가: 예전에는 분석 시점 언어로 만든 문자열을 그대로 넣어놨기 때문에
@@ -153,12 +165,7 @@ function refreshReportResults() {
         // 조건은 반드시 formatCataractResult()와 같은 술어에서 파생시킨다. 제목이 조건을
         // 따로 세면(예전에는 hasSurgery()만 봤다) 값은 post_limit인데 제목은 '백내장 AI 결과'로
         // 남는 조합이 생긴다 — 6개 언어 × 조합 전수 점검에서 144건이 그렇게 어긋났다.
-        const postop = state.aiResultCode === 'postop'
-            || (typeof hasSurgery === 'function' && hasSurgery());
-        const excluded = state.aiResultCode === 'skipped'
-            || (typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded());
-        l1.textContent = (postop && t.rep_l1_postop) || (excluded && t.rep_l1_excluded)
-            || t.rep_l1 || l1.textContent;
+        l1.textContent = photoSectionLabel(t, t.rep_l1 || l1.textContent);
     }
     const urgentNote = document.getElementById('opinion-urgent-note');
     if (urgentNote) {
@@ -470,7 +477,7 @@ function buildReportPdf() {
     const L = {
         title:   t.pdf_doc_title || "Eye-Catch 정밀 진단 리포트",
         issued:  t.pdf_issued    || "발급일자",
-        s1:      t.pdf_s1        || "1. 백내장 AI 분석 결과",
+        s1:      photoSectionLabel(t, t.pdf_s1 || "1. 백내장 AI 분석 결과"),
         s2:      t.pdf_s2        || "2. 황반변성 자가진단 (Amsler Grid)",
         s3:      t.pdf_s3        || "3. AI 문진 주요 소견",
         s4:      t.pdf_s4        || "4. 종합 AI 소견서 (Powered by Gemma)",
@@ -540,7 +547,9 @@ function buildReportPdf() {
             <h3 style="font-size: 18px; color: #0f172a; border-left: 5px solid #0f172a; padding-left: 10px; margin-bottom: 15px; margin-top: 0;">${L.s4}</h3>
             <div style="padding: 25px; border: 2px solid #cbd5e1; background: #ffffff; line-height: 1.8; font-size: 15px; color: #334155; font-weight: 500;">
                 ${triage && triage.level === 'urgent' && L.urgentNote ? `<p style="margin: 0 0 14px; padding: 10px 12px; border: 2px solid #fecdd3; background: #fff1f2; color: #9f1239; font-weight: 800; font-size: 13px; line-height: 1.6;">${escapeHTML(L.urgentNote)}</p>` : ''}
-                ${toAvoidBreakParagraphs(gemmaOpinion)}
+                ${gemmaOpinion
+                    ? toAvoidBreakParagraphs(gemmaOpinion)
+                    : `<p style="margin: 0; color: #64748b; font-size: 13px;">${escapeHTML(t.pdf_no_opinion || '')}</p>`}
             </div>
         </div>
 
@@ -586,11 +595,18 @@ let _pdfBusy = false;
 function downloadPDF() {
     if (_pdfBusy) return;   // 생성에 몇 초 걸려 연타하면 PDF가 여러 장 만들어진다
     const t = translations[state.lang];
-    if (_activeOpinion || !state.opinionSummaryText) {
+    // 소견을 만드는 중이면 기다리게 한다 — 요약이 빠진 PDF가 먼저 저장되지 않게.
+    // 하지만 '실패'는 기다린다고 풀리지 않는다. 요약이 없다는 이유로 막았더니 Ollama가 꺼져 있으면
+    // PDF를 영영 받을 수 없었다. 권장 조치·검사 해석은 코드가 만든 결정론적 결과라 소견 없이도 본문이 된다.
+    if (_activeOpinion) {
         showToast(t.pdf_wait_opinion, 'info');
         return;
     }
-    if (!state.aiResultData) {  // 전부 "-"인 빈 리포트를 내려받는 일 방지
+    // 빈 리포트 방지는 '사진 결과가 있는가'가 아니라 '검사를 끝냈는가'로 판단한다(리포트 탭 게이트와 같은 기준).
+    // 사진 결과로 판단하면 '사진 없이 증상 확인하기'·수술 후 입구로 끝낸 사람은 PDF를 받을 방법이 없었다.
+    const completed = typeof hasCompletedScreening === 'function'
+        ? hasCompletedScreening() : !!state.aiResultData;
+    if (!completed) {
         showToast(t.report_hint_empty || "Run the AI analysis first.", 'info');
         return;
     }

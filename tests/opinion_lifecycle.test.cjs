@@ -68,12 +68,25 @@ test('empty summary marker falls back to advice and empty advice cannot be saved
  assert.equal(h.saves.length,1);
 });
 
-test('PDF is blocked while streaming and after failed or cleared advice', () => {
- const h=setup(),c=h.context,notices=[];
- c.showToast=message=>notices.push(message);c.translations.ko.pdf_wait_opinion='Wait';
- c.state.aiResultData={code:'normal'};
- c.downloadPDF();assert.deepEqual(notices,['Wait']);
- c.cancelAiOpinion();c.downloadPDF();assert.equal(notices.length,2);
+test('PDF waits only while advice is streaming; failed advice and photo-less sessions still export', async () => {
+ // 예전에는 요약이 없으면 무조건 막아, Ollama가 꺼져 있거나 '사진 없이 증상 확인'으로 끝낸 사람은
+ // PDF를 영영 받을 수 없었다. 기다리게 하는 것은 소견을 '만드는 중'일 때뿐이어야 한다.
+ const h=setup(),c=h.context,notices=[];let saved=0;
+ const tick=()=>new Promise(r=>setImmediate(r));
+ Object.assign(c,{showToast:m=>notices.push(m),setButtonBusy:()=>()=>{},hasCompletedScreening:()=>true,
+  buildReportPdf:()=>({save:()=>{saved++;return Promise.resolve();}})});
+ c.window.scrollTo=()=>{};
+ c.translations.ko.pdf_wait_opinion='Wait';
+ c.state.opinionRequest=h.request('x');
+ const pending=c.runAiOpinion();
+ c.downloadPDF();assert.deepEqual(notices,['Wait']);assert.equal(saved,0);
+ h.calls[0].resolve({ok:true,text:'x',error:true});await pending;      // 소견 생성 실패
+ assert.equal(c.state.opinionSummaryText,'');
+ c.downloadPDF();await tick();assert.equal(saved,1,'실패한 소견 때문에 PDF가 막혔다');
+ c.state.aiResultData=null;                                             // 사진 없이 끝낸 회차
+ c.downloadPDF();await tick();assert.equal(saved,2,'사진 없는 회차가 PDF를 못 받았다');
+ c.hasCompletedScreening=()=>false;                                     // 검사를 안 끝냈으면 막는다
+ c.downloadPDF();await tick();assert.equal(saved,2);assert.equal(notices.length,2);
 });
 
 test('restart aborts pending fetch; late old response cannot overwrite new report or consent', async () => {

@@ -136,6 +136,50 @@ def safe_name(category: str, title: str, index: int) -> str:
     return f"{cat}_{index:03d}_{stem}.jpg"
 
 
+FIELDS = ["filename", "category", "title", "author", "license", "source_page", "file_url"]
+
+
+class AttributionLog:
+    """사진을 받는 즉시 출처를 한 줄씩 기록한다(수집 스크립트 공용).
+
+    예전에는 모든 다운로드가 끝난 뒤 CSV를 한 번에 썼다. 2026-09-13 웃는 얼굴 수집이 도중에
+    끝나면서 사진 373장만 남고 출처 기록은 한 줄도 남지 않았다 — 그 사진으로 뜸 여부 판정기를
+    학습했는데 CC BY·CC BY-SA의 저작자 표시 근거가 사라진 것이다.
+    그래서 (1) 한 장마다 바로 디스크에 쓰고 (2) 기존 기록을 읽어 중복 없이 이어 쓰며
+    (3) 이미 받아 둔 파일도 기록에 없으면 채워, 재실행만으로 빠진 출처를 복구할 수 있게 한다.
+    """
+
+    def __init__(self, path):
+        self.path = Path(path)
+        self.known = set()
+        if self.path.exists() and self.path.stat().st_size:
+            with open(self.path, encoding="utf-8", newline="") as f:
+                self.known = {r["filename"] for r in csv.DictReader(f) if r.get("filename")}
+        fresh = not self.path.exists() or self.path.stat().st_size == 0
+        self._f = open(self.path, "a", encoding="utf-8", newline="")
+        self._w = csv.DictWriter(self._f, fieldnames=FIELDS, extrasaction="ignore")
+        if fresh:
+            self._w.writeheader()
+            self._f.flush()
+
+    def add(self, row) -> bool:
+        if not row.get("filename") or row["filename"] in self.known:
+            return False
+        self._w.writerow(row)
+        self._f.flush()          # 다음 사진을 받다가 멈춰도 이 줄은 남는다
+        self.known.add(row["filename"])
+        return True
+
+    def close(self):
+        self._f.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--per-category", type=int, default=12)
@@ -162,30 +206,27 @@ def main():
         print("(dry-run: 내려받지 않음)")
         return
 
-    for i, row in enumerate(rows, 1):
-        dest = OUT_DIR / row["filename"]
-        if dest.exists():
-            skipped += 1
-            continue
-        try:
-            req = urllib.request.Request(row["file_url"], headers={"User-Agent": UA})
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                dest.write_bytes(resp.read())
-        except Exception as exc:
-            print(f"  ⚠️ 실패 {row['filename']}: {type(exc).__name__}")
-            row["filename"] = ""
-            continue
-        if i % 20 == 0:
-            print(f"  ... {i}/{len(rows)}")
-        time.sleep(0.2)
+    with AttributionLog(ATTRIBUTION) as log:
+        for i, row in enumerate(rows, 1):
+            dest = OUT_DIR / row["filename"]
+            if dest.exists():
+                skipped += 1
+                log.add(row)          # 이미 받아 둔 파일도 기록에 없으면 채운다
+                continue
+            try:
+                req = urllib.request.Request(row["file_url"], headers={"User-Agent": UA})
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    dest.write_bytes(resp.read())
+            except Exception as exc:
+                print(f"  ⚠️ 실패 {row['filename']}: {type(exc).__name__}")
+                row["filename"] = ""
+                continue
+            log.add(row)              # 받은 즉시 기록 — 중간에 멈춰도 출처가 남는다
+            if i % 20 == 0:
+                print(f"  ... {i}/{len(rows)}")
+            time.sleep(0.2)
 
     rows = [r for r in rows if r["filename"]]
-    with open(ATTRIBUTION, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["filename", "category", "title", "author",
-                                               "license", "source_page", "file_url"])
-        writer.writeheader()
-        writer.writerows(rows)
-
     print(f"\n💾 {OUT_DIR} 에 {len(rows)}장 (이미 있던 {skipped}장 건너뜀)")
     print(f"   출처·라이선스 전수 기록: {ATTRIBUTION}")
     print("   ⚠️ 학습에 쓰기 전에 표본을 눈으로 확인할 것 — 눈이 찍힌 사진이 섞이면")
