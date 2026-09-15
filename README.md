@@ -270,6 +270,19 @@ OLLAMA_TIMEOUT_SECONDS=120
 KAKAO_REST_KEY=
 ```
 
+> 👁️ **눈 뜸 여부 판정기 가중치(선택)** — `app/models/eye_open_cnn.pth`(약 16.8MB)는 백내장 가중치와
+> 마찬가지로 **git에 없습니다.** 파일이 있으면 미세조정 판정기를, 없으면 저장소에 커밋된 선형 판정기
+> `app/models/eye_open_gate.npz`를 씁니다. 즉 **같은 코드라도 이 파일이 있는지에 따라 감은 눈 판정이
+> 달라질 수 있습니다.** 서버 시작 로그의 `눈 뜸 여부 판정기(미세조정) 로드` 또는
+> `눈 뜸 여부 판정기 로드: 특징 D`로 어느 쪽이 켜졌는지 확인하세요.
+> - 다시 만들기: `python scripts/train_eye_open_cnn.py --epochs 25 --out app/models/eye_open_cnn.pth`
+>   (학습 사진은 [데이터 출처 및 라이선스](#-데이터-출처-및-라이선스)의 '눈 뜸 여부 판정기 학습 사진')
+> - 2026-09-15 같은 입력 비교: 감은 눈 얼굴·안대 얼굴(Gemini 생성)은 둘 다 차단, 뜬 눈 얼굴은 둘 다
+>   `normal`, 백내장 클로즈업은 둘 다 `risk`로 같았습니다. 학습에 쓰지 않은 '웃으며 감은 눈' 10장에서는
+>   선형이 8장, 미세조정이 7장을 막았습니다 — **표본이 작아 어느 쪽이 낫다고 말할 수 없습니다.**
+>   근거 수치는 `docs/eye-gate-closed-eye.md`.
+> - 가중치가 없는 환경에서는 `tests/test_edge_face_api.py`의 8개 테스트가 건너뛰어집니다(skip).
+
 ### 4️⃣ AI 모델 학습 (또는 사전학습 가중치 다운로드)
 ```bash
 python scripts/dedup_dataset.py                            # 1회 — data/dataset_group_map.json 생성
@@ -675,6 +688,30 @@ OOD 게이트가 안저사진을 '눈'으로 통과시킵니다(실측 eye_score
 > 결과(수정체 혼탁 없음)도 "정상"에 부합해 두 파일을 `dataset/1_cataract` → `dataset/0_normal`로
 > 이동하고 `dedup_dataset.py`를 재실행해 그룹 매핑을 갱신함.
 
+### 익상편 사진 (v6 정상 클래스 편입)
+
+v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 `dataset/0_normal/pterygium_*.jpg`로 넣은 사진입니다
+(→ [EfficientNet-B0 v6](#efficientnet-b0-v6-익상편-편입-재학습--현재-서빙-가중치-재검토-중), `docs/retraining-v6.md`).
+
+| # | 출처 | 라이선스 | 판정 | 왜 그런가 |
+|---|---|---|---|---|
+| 12 | Kaggle에서 내려받은 Roboflow 내보내기본 (**데이터셋 페이지 링크 미확정**) | **확인 기록 없음** | 🔴 위험(미확정) | 이 저장소의 원칙대로 라이선스를 확인하지 못한 데이터는 '허락받지 않은 것'으로 취급합니다. 아래 사실만 확인됐습니다 |
+
+확인된 사실 (2026-09-15, 원본 폴더·커밋 기록 기준):
+
+- **원본:** `dataset_raw/2_pterygium_kaggle_raw/` 1,749장(git 제외). 파일명이 `108_jpg.rf.<해시>.jpg` 형식인
+  Roboflow 내보내기본이고, 대부분 640×640, EXIF 없음. 원본 식별자 440개에 원본 1장당 최대 16장의 증강본이 섞여 있습니다.
+- **실제 사용분:** `scripts/prepare_pterygium.py`가 원본 식별자마다 가장 깨끗한 1장만 남기고 검은 모서리가 큰 것은 버려
+  **226장(225그룹)**을 `0_normal`에 넣었습니다. 이 226장으로 서빙 중인 v6 가중치를 학습했습니다.
+- **남아 있지 않은 것:** Kaggle 데이터셋 주소, 라이선스 표기, 내려받은 zip, Roboflow가 함께 넣어주는
+  `README.dataset.txt`/`README.roboflow.txt`가 이 저장소·작업 PC·커밋 메시지·문서 어디에도 남아 있지 않습니다
+  (정리 과정에서 사진만 옮겼습니다). Roboflow Universe의 익상편 데이터셋은 여러 개이고 라이선스도 제각각이라,
+  제목이나 이미지 수만으로 출처를 단정하지 않았습니다(#2·#6·#10에서 얻은 교훈).
+- **확정하는 방법:** 후보 데이터셋을 받아 `dedup_dataset.py`와 같은 설정(phash 64비트, 해밍거리 ≤6)으로
+  `dataset/0_normal/pterygium_*` 226장과 대조하고, 일치한 데이터셋의 라이선스로 이 행을 고칩니다.
+- **라이선스 문제가 확인되면:** v6 이전 가중치 `model_archive/cataract_efficientnet_b0_v5_prepterygium.pth`로
+  되돌릴 수 있습니다(절차는 `docs/retraining-v6.md`). 사진과 가중치는 git으로 배포하지 않습니다.
+
 ### 일반 안구(정상) 사진
 
 | 데이터셋 | 라이선스 | 판정 | 비고 |
@@ -706,6 +743,31 @@ OOD 게이트가 안저사진을 '눈'으로 통과시킵니다(실측 eye_score
   학습/평가 분할(`split.json`)만 추적합니다.
 - **분할은 사진 단위입니다.** 같은 사진의 크롭이 학습과 평가에 함께 들어가면 평가 점수가
   일반화가 아니라 암기를 재게 됩니다.
+
+### 눈 뜸 여부 판정기 학습 사진 (2026-09-13 수집)
+
+감은 눈 얼굴에 백내장 판독이 나가던 문제를 막는 '눈 뜸 여부' 판정기
+(`app/models/eye_open_gate.npz` 커밋, `app/models/eye_open_cnn.pth` 비커밋)를 학습·평가하는 데 씁니다.
+눈이 아닌 사진과 마찬가지로 **모델이 판독하는 이미지가 아니라, 판독 전에 걸러내기 위한 데이터입니다.**
+
+| 폴더 | 내용 | 수량 | 라이선스 (Wikimedia Commons, 자유 라이선스만) | 전수 기록 |
+|---|---|---|---|---|
+| `dataset_closedeye/` | 감은 눈 | 1,437장 | CC0·Public domain 378 · CC BY 계열 359 · CC BY-SA 계열 700 | `ATTRIBUTION.csv` |
+| `dataset_openeye/` | 눈을 뜬 인물 사진 | 678장 | CC0·Public domain 275 · CC BY 계열 97 · CC BY-SA 계열 306 | `ATTRIBUTION.csv` |
+| `dataset_smileeye/` | 웃는 얼굴의 가늘게 뜬 눈·웃으며 감은 눈 | 373장 | CC0·Public domain 86 · CC BY 계열 118 · CC BY-SA 계열 169 | `ATTRIBUTION.csv` (2026-09-15 복구) |
+
+- **인물 사진이라 초상권이 있습니다.** 사진·크롭은 배포하지 않고 git에서도 제외하며, 출처(`ATTRIBUTION.csv`),
+  검수(`review.json`), 학습/평가 분할(`split.json`)만 추적합니다. CC BY(-SA)의 저작자 표시는 `ATTRIBUTION.csv`가 맡습니다.
+- **`dataset_smileeye` 출처 복구:** 첫 수집이 도중에 끝나 사진 373장은 남았는데 출처 기록은 한 줄도 없었습니다
+  (당시 스크립트는 다운로드가 모두 끝난 뒤에 CSV를 한 번에 썼습니다). Commons API로 다시 조회해 파일명을
+  대조하는 방식으로 **373장 전부 복구**했습니다(일치 373/373, 중복 0, 저작자 필드가 비어 있는 원본 3장).
+  지금은 모든 수집 스크립트가 사진을 받는 즉시 한 줄씩 기록합니다(`scripts/fetch_non_eye_photos.py`의
+  `AttributionLog`). 이미 받아 둔 사진의 출처만 채우려면:
+  `python scripts/fetch_smile_eye_photos.py --attribution-only --out-dir <사진 폴더>`
+- **라벨 검수는 아직 사람이 확인하지 않았습니다.** `review.json`의 뜸/감음 판정은 Claude가 대조 시트를 보고 했으므로,
+  배포 판정기를 다시 학습하기 전에 사람이 재확인해야 합니다.
+- CC BY-SA 사진으로 학습한 가중치를 공개 배포할 계획이 생기면, 학습 결과물에 ShareAlike 조건이 적용되는지
+  따로 검토해야 합니다(현재는 학습 전용 사용이고 사진은 재배포하지 않습니다).
 
 ### 🔴 위험 등급 출처를 그대로 유지하기로 한 이유
 

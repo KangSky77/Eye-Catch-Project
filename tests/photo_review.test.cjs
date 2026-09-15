@@ -27,3 +27,15 @@ test('new photo, navigation cancellation and decode failures settle old previews
  const broken=x.run('reviewPhoto({})');x.nodes['photo-review-image'].onerror();
  assert.equal(await broken,false);assert.deepEqual(x.errors,['IMAGE_INVALID']);
 });
+test('browsers without <dialog> still ask for confirmation instead of doing nothing',async()=>{
+ for(const answer of [true,false]){
+  const asked=[];
+  const c=vm.createContext({translations:Object.fromEntries(['ko','en','es','fr','ja','zh'].map(l=>[l,{}])),state:{lang:'ko'},
+   document:{getElementById:()=>({})},window:{confirm:m=>{asked.push(m);return answer}},
+   URL:{createObjectURL(){},revokeObjectURL(){}},showUploadError(){},uploadErrorMessage:e=>e.code});
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../static/app-photo-review.js'),'utf8'),c);
+  assert.equal(await vm.runInContext('reviewPhoto({})',c),answer);
+  assert.equal(asked.length,1,'확인창을 띄우지 않았다');
+  assert.ok(asked[0].includes(vm.runInContext('translations.ko.review_title',c)));
+ }
+});

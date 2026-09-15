@@ -36,6 +36,17 @@ class GemmaRequest(BaseModel):
     # (프론트가 안 보내도 동작 — 하위 호환)
     triage_level: str = Field(default="", max_length=20)
 
+# 화면의 해석 문장 한 줄. 가장 긴 고정 문장(암슬러 미측정 안내)이 200자 안팎이라 넉넉히 잡는다.
+FindingText = Annotated[str, Field(max_length=400)]
+
+
+class PlainFindingsRequest(BaseModel):
+    lang: str = Field(default="ko", max_length=10)
+    # 화면에 이미 떠 있는 해석 문장을 그대로 받는다. 서버는 이 문장들의 '말투'만 바꾸고,
+    # 검증을 통과하지 못한 줄은 원문 그대로 돌려준다(app/services/plain_language.py).
+    findings: list[FindingText] = Field(default_factory=list, max_length=20)
+
+
 class ChatRequest(BaseModel):
     lang: str = Field(default="ko", max_length=10)
     user_msg: str = Field(..., min_length=1, max_length=1000)

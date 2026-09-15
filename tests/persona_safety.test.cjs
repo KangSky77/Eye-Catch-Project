@@ -26,9 +26,12 @@ test('postoperative symptoms use reported-symptom wording in all six languages',
  }
 });
 
-test('slow personalized question falls back at six seconds and discards late AI response',async()=>{
+test('stalled personalized question falls back at the deadline and discards late AI response',async()=>{
  const c=setup('today');let expire,late,signal,shown=[];
- Object.assign(c,{setTimeout(fn,ms){assert.equal(ms,6000);expire=fn;return 1},clearTimeout(){},
+ const deadline=vm.runInContext('NEXT_QUESTION_DEADLINE_MS',c);
+ // 로컬 Gemma 실측(6.3~7.8초, 노트북 14.6~25.0초)보다 짧으면 맞춤 질문이 한 번도 나오지 않는다
+ assert.ok(deadline>=25000,'deadline '+deadline);
+ Object.assign(c,{setTimeout(fn,ms){assert.equal(ms,deadline);expire=fn;return 1},clearTimeout(){},
   fetch(url,options){signal=options.signal;return new Promise(resolve=>late=resolve)},
   removeLoadingMsg(){},addMsg(sender,q){shown.push(q)},setChatAnswerMode(){},renderChatOptions(){}});
  c.state.chatHistory=[];c.state.sessionGeneration=1;

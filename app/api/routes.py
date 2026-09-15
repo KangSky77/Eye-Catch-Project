@@ -8,8 +8,9 @@ from app.services.vision import predict_cataract, validate_and_read_image
 from app.services import vision, eye_validator, eye_detector
 from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_next_question, KEEPALIVE, KEEPALIVE_INTERVAL
 from app.services.clinics import search_eye_clinics
+from app.services.plain_language import rewrite_findings
 from app.services.database import save_diagnosis
-from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, SaveDiagnosisRequest
+from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, SaveDiagnosisRequest, PlainFindingsRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -110,6 +111,16 @@ async def generate_next_question_endpoint(req: QuestionGenRequest):
         )
     # answer_type: "yesno"(네/아니오 버튼) | "text"(자유 입력칸)
     return {"question": question, "answer_type": answer_type}
+
+@router.post("/api/plain-findings")
+async def plain_findings(req: PlainFindingsRequest):
+    """검사 요약 해석을 쉬운 말로 바꿔 돌려준다.
+
+    해석 자체는 프론트가 코드로 확정한 문장이고, 여기서는 말투만 바꾼다.
+    검증(숫자·질환명·확률/배제/진단 표현·길이)을 통과하지 못한 줄은 원문 그대로 나간다.
+    """
+    return {"lines": await rewrite_findings(req.findings, req.lang)}
+
 
 @router.post("/api/save-diagnosis")
 async def save_diagnosis_endpoint(req: SaveDiagnosisRequest):

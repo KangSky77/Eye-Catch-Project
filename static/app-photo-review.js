@@ -15,7 +15,18 @@ function cancelPhotoReview() { if (_photoReview) _photoReview(false); }
 function reviewPhoto(file) {
     cancelPhotoReview();
     const dialog = document.getElementById('photo-review');
-    if (!dialog || typeof dialog.showModal !== 'function') return Promise.resolve(false);
+    if (!dialog || typeof dialog.showModal !== 'function') {
+        // <dialog>를 지원하지 않는 브라우저(구형 iOS Safari·일부 인앱 WebView)에서는 여기서 false를
+        // 돌려주고 끝나, 사진을 골라도 오류 안내 없이 아무 일도 일어나지 않았다.
+        // 확인 단계를 건너뛰지는 않는다 — 기본 확인창으로 같은 질문을 한다.
+        const t = (typeof state !== 'undefined' && translations[state.lang]) || translations.ko || {};
+        const message = [t.review_title, t.review_body].filter(Boolean).join('\n\n');
+        const ask = typeof window !== 'undefined' && typeof window.confirm === 'function'
+            ? text => window.confirm(text)
+            : (typeof confirm === 'function' ? confirm : null);
+        if (!ask) { showUploadError(t.review_body || ''); return Promise.resolve(false); }
+        return Promise.resolve(!!ask(message));
+    }
     return new Promise(resolve => {
         const preview = document.getElementById('photo-review-image');
         const confirm = document.getElementById('photo-review-confirm');
