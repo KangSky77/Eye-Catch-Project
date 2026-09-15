@@ -94,6 +94,45 @@ function buildFindings() {
 }
 
 /** 해석 블록을 리포트에 그린다. */
+// 쉬운 말 변환 상태. 문장이 언어마다 다르므로 언어를 함께 기억한다.
+// on=false면 코드가 만든 원래 문장을 보여준다(기본값).
+let _plainFindings = null;   // { lang, on, loading, lines:[{text, rewritten}] }
+
+/** 화면에 실제로 보여줄 줄 목록. 검증을 통과하지 못한 줄은 원문 그대로 남는다. */
+function plainFindingsLines(fixed) {
+    const p = _plainFindings;
+    if (!p || !p.on || p.lang !== state.lang || !Array.isArray(p.lines)) return fixed;
+    return fixed.map((text, i) => (p.lines[i] && p.lines[i].rewritten) ? p.lines[i].text : text);
+}
+
+/** '쉬운 말로 보기' ↔ '원래 문장 보기'. 처음 누를 때만 서버에 요청한다. */
+async function togglePlainFindings() {
+    const box = document.getElementById('findings-box');
+    const t = translations[state.lang];
+    if (_plainFindings && _plainFindings.lang === state.lang && !_plainFindings.loading) {
+        _plainFindings.on = !_plainFindings.on;
+        renderFindings(box);
+        return;
+    }
+    const fixed = buildFindings();
+    _plainFindings = { lang: state.lang, on: false, loading: true, lines: [] };
+    renderFindings(box);
+    try {
+        const res = await fetch('/api/plain-findings', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lang: state.lang, findings: fixed })
+        });
+        const data = await res.json();
+        if (!res.ok || !Array.isArray(data.lines) || data.lines.length !== fixed.length) throw new Error('bad response');
+        _plainFindings = { lang: state.lang, on: true, loading: false, lines: data.lines };
+    } catch (e) {
+        // 서버가 없거나 응답이 이상하면 원래 문장을 그대로 둔다 — 해석은 코드가 만든 것이라 손실이 없다.
+        _plainFindings = null;
+        if (typeof showToast === 'function') showToast(t.plain_failed || '', 'info');
+    }
+    renderFindings(box);
+}
+
 function renderFindings(container) {
     const t = translations[state.lang];
     container.innerHTML = '';
@@ -103,9 +142,15 @@ function renderFindings(container) {
     head.textContent = t.find_title || '검사 요약 해석';
     container.appendChild(head);
 
+    const fixed = buildFindings();
+    const shown = plainFindingsLines(fixed);
+    const state_ = _plainFindings && _plainFindings.lang === state.lang ? _plainFindings : null;
+    const on = !!(state_ && state_.on);
+    const loading = !!(state_ && state_.loading);
+
     const ul = document.createElement('ul');
     ul.className = 'space-y-2';
-    buildFindings().forEach(text => {
+    shown.forEach(text => {
         const li = document.createElement('li');
         li.className = 'text-[12px] text-slate-600 leading-relaxed flex gap-2';
         const dot = document.createElement('span');
@@ -118,6 +163,27 @@ function renderFindings(container) {
         ul.appendChild(li);
     });
     container.appendChild(ul);
+
+    if (fixed.length) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'plain-findings-btn';
+        btn.className = 'mt-3 text-[11px] font-black text-blue-700 underline';
+        btn.textContent = loading ? (t.plain_loading || '') : on ? (t.plain_original_btn || '') : (t.plain_btn || '');
+        btn.disabled = loading;
+        btn.onclick = togglePlainFindings;
+        container.appendChild(btn);
+    }
+
+    if (on) {
+        // 말투만 바꿨다는 사실과, 검증에 걸려 원문으로 남은 줄 수를 함께 밝힌다.
+        const kept = (state_.lines || []).filter(l => !l.rewritten).length;
+        const plainNote = document.createElement('p');
+        plainNote.id = 'plain-findings-note';
+        plainNote.className = 'text-[10px] text-blue-700 mt-2 leading-relaxed';
+        plainNote.textContent = (t.plain_note || '') + (kept ? ' ' + (t.plain_kept || '').replace('{n}', kept) : '');
+        container.appendChild(plainNote);
+    }
 
     const note = document.createElement('p');
     note.className = 'text-[10px] text-slate-500 mt-3 leading-relaxed';
