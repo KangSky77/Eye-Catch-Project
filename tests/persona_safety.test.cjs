@@ -11,6 +11,28 @@ function setup(surgery='none',lang='ko'){
  return c;
 }
 
+test('recent surgery report titles follow actual photo applicability in every language',()=>{
+ for(const lang of ['ko','en','es','fr','ja','zh']) {
+  const c=setup('recent',lang);
+  Object.assign(c.state,{hadSurgery:true,aiResultCode:'risk',aiResultData:{code:'risk',probability:90}});
+  Object.assign(c.state.riskAnswers,{surgery_type:'laser',surgery_lens_history:'no'});
+  const title=()=>vm.runInContext('photoSectionLabel(translations[state.lang], translations[state.lang].rep_l1)',c);
+  const normalTitle=vm.runInContext('translations[state.lang].rep_l1',c);
+  assert.equal(title(),normalTitle,lang+'/natural lens');
+  assert.ok(vm.runInContext('buildFindings().includes(translations[state.lang].photo_lens_intact)',c));
+  c.state.riskAnswers={surgery:'recent',surgery_type:'cataract',surgery_both:'one'};
+  c.state.aiResultData={code:'risk',twoEyes:true,eyes:[{side:'left',code:'risk'},{side:'right',code:'risk'}]};
+  assert.equal(title(),normalTitle,lang+'/fellow eye');
+  const findings=vm.runInContext('buildFindings()',c);
+  assert.ok(findings.includes(vm.runInContext('translations[state.lang].find_cat_fellow',c)));
+  assert.ok(!findings.includes(vm.runInContext('translations[state.lang].photo_lens_intact',c)),lang+'/artificial lens was replaced');
+  c.state.riskAnswers.surgery_both='both';
+  assert.equal(title(),vm.runInContext('translations[state.lang].rep_l1_postop',c),lang+'/excluded');
+  c.state.aiResultCode='postop';c.state.aiResultData=null;
+  assert.equal(title(),vm.runInContext('translations[state.lang].rep_l1_postop',c),lang+'/no photo');
+ }
+});
+
 test('postoperative symptoms use reported-symptom wording in all six languages',()=>{
  for(const lang of ['ko','en','es','fr','ja','zh'])for(const surgery of ['today','recent','none','past']){
   const c=setup(surgery,lang);

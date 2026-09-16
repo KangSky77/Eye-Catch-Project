@@ -67,10 +67,22 @@ function startChat() {
     state.symptomAnswers = {};
     state.symptomScore = 0;
     state.redFlags = [];
+    updateSurveyModeBanner();
     if (typeof refreshAiResultDisplay === 'function') refreshAiResultDisplay();
 
     replayGateAnswers();
     askRiskQuestion();
+}
+
+/** 문진이 어느 경로인지 시작할 때 분명히 보여준다. */
+function updateSurveyModeBanner() {
+    if (typeof document === 'undefined') return;
+    const el = document.getElementById('survey-mode-banner');
+    if (!el) return;
+    const t = translations[state.lang] || {};
+    const postoperative = typeof hasSurgery === 'function' && hasSurgery();
+    el.className = 'survey-mode-banner ' + (postoperative ? 'survey-mode-postop' : 'survey-mode-general');
+    el.textContent = postoperative ? (t.survey_mode_postop || '') : (t.survey_mode_general || '');
 }
 
 /** 시작 화면에서 받은 답을 문진 대화에 먼저 적고, 그 다음 문항부터 묻게 한다.
@@ -184,6 +196,7 @@ function handleAnswer(value, label) {
         const q = activeRiskQuestions()[state.riskIdx];
         addMsg('user', label);
         state.riskAnswers[q.code] = value;
+        updateSurveyModeBanner();
         if (typeof refreshAiResultDisplay === 'function') refreshAiResultDisplay();
         // 수술 후 전용 입구(aiResultCode==='postop')로 들어왔는데 4주 이내가 아니라고 답한 경우.
         //   'none' — 입구 자체를 잘못 골랐다. 처음 화면으로 돌려보낸다.

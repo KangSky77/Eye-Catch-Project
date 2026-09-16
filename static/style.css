@@ -1260,6 +1260,10 @@ body.modal-open { overflow: hidden; }
     min-height: 380px;   /* 화면이 짧은 기기에서 대화가 한두 줄만 보이는 것 방지 */
     max-height: 560px;   /* 데스크톱에서 빈 여백만 길어지는 것 방지 */
 }
+
+.survey-mode-banner { padding: 12px 16px; font-size: .75rem; line-height: 1.5; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
+.survey-mode-general { color: #1d4ed8; background: #eff6ff; }
+.survey-mode-postop { color: #9a3412; background: #fff7ed; }
 .chat-box {
     padding: 20px;
     /* 마지막 말풍선이 아래 버튼 영역 경계선에 딱 붙어 보이던 문제 —
@@ -1574,6 +1578,8 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 .skip-photo-btn { display: block; width: 100%; margin-top: 12px; padding: 12px; border-radius: 16px;
     background: #f1f5f9; color: #334155; font-weight: 700; font-size: .875rem; }
 .skip-photo-btn:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+/* 버튼의 display 선언이 HTML hidden 속성을 덮어쓰지 않도록 한다. */
+[data-surgery-only][hidden] { display: none !important; }
 
 /* ── AI 사진 인식 기준 체크리스트 ─────────────────────────────────────────
    통과 ✓ / 막힘 ✕ / 앞 기준이 막혀 확인 못 함 –. 색만으로 구분하지 않는다(색각). */

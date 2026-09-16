@@ -123,3 +123,26 @@ test('일반 검사로 돌아오면 이전 회차의 수술 답이 남지 않는
  assert.equal(x.run('hasSurgery()'),false);
  assert.equal(x.steps[x.steps.length-1],'step-surgery');
 });
+
+test('일반 사용자나 수술 여부 미응답자는 사진을 건너뛸 수 없다',()=>{
+ for(const answer of [false,null]) {
+  const x=setup();
+  if(answer===false) x.run('answerSurgeryGate(false)');
+  else x.run('startScreening()');
+  const before=x.steps.length;
+  x.run('skipPhotoStep()');
+  assert.equal(x.steps.length,before,'사진 없이 암슬러로 이동했다');
+  assert.equal(x.c.state.aiResultCode,'','술후 회차로 잘못 표시했다');
+ }
+});
+
+test('문진 경로 배너가 일반/수술 후 상태를 구분한다',()=>{
+ const x=setup();
+ const banner={className:'',textContent:''};
+ x.c.document.getElementById=()=>banner;
+ x.run('updateSurveyModeBanner()');
+ assert.equal(banner.textContent,x.run("translations.ko.survey_mode_general"));
+ x.c.state.riskAnswers={surgery:'recent'};
+ x.run('updateSurveyModeBanner()');
+ assert.equal(banner.textContent,x.run("translations.ko.survey_mode_postop"));
+});

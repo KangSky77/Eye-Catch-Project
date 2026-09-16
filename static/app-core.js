@@ -303,6 +303,7 @@ function updateUI(lang) {
     const rpi = document.getElementById('result-photo');
     if (rpi && translations[lang].result_photo_label) rpi.alt = translations[lang].result_photo_label;
     if (typeof refreshChatLanguage === 'function') refreshChatLanguage();
+    if (typeof updateSurveyModeBanner === 'function') updateSurveyModeBanner();
     // 동의 상자는 결과 완료 후 동적으로 만들어지므로 data-i18n 갱신만으로는
     // 이미 생성된 한국어 버튼·설명이 바뀌지 않는다.
     if (typeof refreshSaveConsent === 'function') refreshSaveConsent();

@@ -763,6 +763,14 @@ Object.assign(translations.zh, {
   sym_surgery_redness: "术后充血 / 分泌物",
 });
 
+// 문진 경로를 질문 시작 전에 명확히 알린다. 수술 여부에 따라 실제 질문 목록도 달라진다.
+Object.assign(translations.ko, { survey_mode_general: "일반 눈 건강 문진 · 나이와 질환 위험 요인을 확인합니다.", survey_mode_postop: "수술 후 전용 문진 · 회복 상태와 수술 후 경고 신호를 확인합니다." });
+Object.assign(translations.en, { survey_mode_general: "General eye health questions · We check age and eye disease risk factors.", survey_mode_postop: "Post-surgery questions · We check recovery and warning signs after surgery." });
+Object.assign(translations.es, { survey_mode_general: "Cuestionario general · Comprobamos la edad y factores de riesgo ocular.", survey_mode_postop: "Cuestionario posoperatorio · Comprobamos la recuperación y señales de alerta." });
+Object.assign(translations.fr, { survey_mode_general: "Questionnaire général · Nous vérifions l’âge et les facteurs de risque oculaire.", survey_mode_postop: "Questionnaire postopératoire · Nous vérifions la récupération et les signes d’alerte." });
+Object.assign(translations.ja, { survey_mode_general: "通常の目の健康問診 · 年齢と目の病気のリスク要因を確認します。", survey_mode_postop: "術後専用問診 · 回復状態と術後の警告症状を確認します。" });
+Object.assign(translations.zh, { survey_mode_general: "常规眼部健康问诊 · 确认年龄和眼病风险因素。", survey_mode_postop: "术后专用问诊 · 确认恢复情况和术后警示症状。" });
+
 // 카드 방향 안내 — 폰은 카드를 세워야 폭 54mm·높이 85.6mm가 모두 화면에 들어간다.
 Object.assign(translations.ko, {
   vt_orient_portrait: "카드를 <b>세로로 세워</b> 화면에 대고, 파란 사각형을 카드와 똑같이 맞추세요.",

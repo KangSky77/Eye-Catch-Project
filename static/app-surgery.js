@@ -312,7 +312,9 @@ function photoAssessmentExcluded() {
 /** 수정체를 건드리지 않은 수술이라 판독을 그대로 적용한 경우.
  *  수술 직후에는 각막 부종으로 값이 달라질 수 있어, 그 사실을 함께 말해야 한다. */
 function photoAppliesDespiteSurgery() {
- return hasPhotoVerdict() && hasSurgery() && !photoAssessmentExcluded();
+ // 반대쪽 눈만 판독하는 경우에는 수술한 눈의 수정체가 실제로 교체됐다.
+ // '판독을 적용함'과 '수정체를 교체하지 않음'은 같은 조건이 아니다.
+ return hasPhotoVerdict() && hasSurgery() && lensStatus() === 'no';
 }
 function effectiveCataractCode() {
  // 사진을 한 장도 받지 않은 회차는 판독 자체가 없다.
@@ -417,6 +419,8 @@ function setGateAnswers(answers) {
 /** 수술한 눈은 안대·보호대로 촬영이 불가능할 수 있다. 사진 없이 나머지 단계를 잇는다.
  *  사진을 한 장도 받지 않았다는 표시가 'postop'이다(app-surgery.js 위쪽 주석). */
 function skipPhotoStep() {
+ // 숨겨진 버튼이나 오래된 이벤트로 일반 사용자가 술후 회차에 들어가지 않게 한다.
+ if (state.hadSurgery !== true && !hasSurgery()) return;
  cancelEyeAnalysis();
  state.aiResultCode = 'postop';
  state.aiResultData = null;

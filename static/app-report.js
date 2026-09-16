@@ -113,6 +113,10 @@ async function finish() {
  *  사진을 건너뛴 비수술자에게 '수술 후에는 적용하지 않음'이라고 말하면 안 된다.
  *  (화면만 고쳐 두면 PDF에는 값이 '적용하지 않습니다'인데 제목은 '백내장 AI 분석 결과'로 남는다.) */
 function photoSectionLabel(t, fallback) {
+    // 자연 수정체 또는 수술하지 않은 반대쪽 눈에 실제 판독을 적용한 회차는
+    // 수술 시기만으로 '적용하지 않음'이라고 표시하지 않는다. PDF도 이 함수를 쓴다.
+    if (typeof hasPhotoVerdict === 'function' && hasPhotoVerdict()
+        && !photoAssessmentExcluded()) return fallback;
     const postop = state.aiResultCode === 'postop'
         || (typeof hasSurgery === 'function' && hasSurgery());
     const excluded = state.aiResultCode === 'skipped'
