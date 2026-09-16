@@ -45,6 +45,13 @@ jobs:
       - name: 나머지 의존성 설치 (버전 고정)
         run: pip install -r requirements-base.txt
 
+      - name: 얼굴 검출기(facenet-pytorch) 설치
+        # tests/test_edge_face_api.py는 실제 MTCNN으로 '가려진 얼굴이 모델에 닿지 않는다'를
+        # 검사한다. 2026-09-13부터 검출기가 없으면 사진 분석이 503으로 중단되므로(의도),
+        # 검출기를 빼고 돌리면 그 테스트가 전부 실패한다 — CI가 이 경로를 실제로 검사하도록 설치한다.
+        # --no-deps: torch/torchvision은 위에서 CPU 빌드로 이미 고정했다.
+        run: pip install --no-deps facenet-pytorch
+
       - name: pytest
         # .pth(가중치)는 저장소에 없으므로 관련 2건은 자동 skip된다 — 정상 동작.
         run: pytest -q -rs

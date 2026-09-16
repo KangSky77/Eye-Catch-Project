@@ -9,7 +9,13 @@ import io
 import pytest
 from PIL import Image, ImageOps
 
-from app.services import eye_validator as EV, vision
+from app.services import eye_detector, eye_validator as EV, vision
+
+
+# 이 파일은 실제 MTCNN 경로를 검사한다. 검출기가 없으면 사진 분석이 503으로 중단되므로
+# (2026-09-13 설계) 테스트가 실패가 아니라 skip으로 드러나야 원인이 분명해진다.
+pytestmark = pytest.mark.skipif(not eye_detector.is_available(),
+                                reason="facenet-pytorch 미설치 — 얼굴 검출 경로를 검사할 수 없다")
 
 
 @pytest.mark.parametrize("kind", ["cnn", "linear"])
