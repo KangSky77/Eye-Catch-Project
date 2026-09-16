@@ -695,7 +695,7 @@ v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 
 
 | # | 출처 | 라이선스 | 판정 | 왜 그런가 |
 |---|---|---|---|---|
-| 12 | Kaggle에서 내려받은 Roboflow 내보내기본 (**데이터셋 페이지 링크 미확정**) | **확인 기록 없음** | 🔴 위험(미확정) | 이 저장소의 원칙대로 라이선스를 확인하지 못한 데이터는 '허락받지 않은 것'으로 취급합니다. 아래 사실만 확인됐습니다 |
+| 12 | [allwithouttestTow](https://universe.roboflow.com/eyezsmartdet/allwithouttesttow) (eyezSmartDet, `pterygium` 포함 Roboflow 데이터셋과 가장 일치) | **CC BY 4.0** | 🟡 조건부(출처 식별 주의) | Roboflow 페이지가 CC BY 4.0을 표시하며, 현재 원본 파일명·클래스·규모와 가장 잘 맞는다. 다만 당시 다운로드한 export의 원본 식별자/메타데이터가 보존되지 않아 100% 동일 데이터셋이라고 법적으로 확정할 수는 없다 |
 
 확인된 사실 (2026-09-15, 원본 폴더·커밋 기록 기준):
 
@@ -703,13 +703,14 @@ v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 
   Roboflow 내보내기본이고, 대부분 640×640, EXIF 없음. 원본 식별자 440개에 원본 1장당 최대 16장의 증강본이 섞여 있습니다.
 - **실제 사용분:** `scripts/prepare_pterygium.py`가 원본 식별자마다 가장 깨끗한 1장만 남기고 검은 모서리가 큰 것은 버려
   **226장(225그룹)**을 `0_normal`에 넣었습니다. 이 226장으로 서빙 중인 v6 가중치를 학습했습니다.
-- **남아 있지 않은 것:** Kaggle 데이터셋 주소, 라이선스 표기, 내려받은 zip, Roboflow가 함께 넣어주는
+- **남아 있지 않은 것:** 당시 Kaggle 데이터셋 주소, 라이선스 표기, 내려받은 zip, Roboflow가 함께 넣어주는
   `README.dataset.txt`/`README.roboflow.txt`가 이 저장소·작업 PC·커밋 메시지·문서 어디에도 남아 있지 않습니다
-  (정리 과정에서 사진만 옮겼습니다). Roboflow Universe의 익상편 데이터셋은 여러 개이고 라이선스도 제각각이라,
-  제목이나 이미지 수만으로 출처를 단정하지 않았습니다(#2·#6·#10에서 얻은 교훈).
-- **확정하는 방법:** 후보 데이터셋을 받아 `dedup_dataset.py`와 같은 설정(phash 64비트, 해밍거리 ≤6)으로
-  `dataset/0_normal/pterygium_*` 226장과 대조하고, 일치한 데이터셋의 라이선스로 이 행을 고칩니다.
-- **라이선스 문제가 확인되면:** v6 이전 가중치 `model_archive/cataract_efficientnet_b0_v5_prepterygium.pth`로
+  (정리 과정에서 사진만 옮겼습니다). 따라서 위 Roboflow 페이지는 파일명·클래스·규모를 기준으로 찾은 가장 유력한
+  출처이지, 보존된 export manifest로 완전 확정한 출처는 아닙니다.
+- **현재 확인:** [Roboflow의 `allwithouttestTow` 페이지](https://universe.roboflow.com/eyezsmartdet/allwithouttesttow)는
+  `pterygium` 클래스를 포함하고 `CC BY 4.0`을 표시합니다. 페이지의 데이터셋 버전과 현재 공개 상태는 바뀔 수 있으므로,
+  실제 배포·상업 이용 전에는 원본 export의 `README.roboflow.txt` 또는 저작자에게 다시 확인해야 합니다.
+- **라이선스가 다른 원본으로 확인되면:** v6 이전 가중치 `model_archive/cataract_efficientnet_b0_v5_prepterygium.pth`로
   되돌릴 수 있습니다(절차는 `docs/retraining-v6.md`). 사진과 가중치는 git으로 배포하지 않습니다.
 
 ### 일반 안구(정상) 사진
