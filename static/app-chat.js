@@ -3,26 +3,38 @@
 // app-core.js가 먼저 로드되어야 함 (state, createAiLoader, nextStep 등 사용)
 // ==========================================
 function activeRiskQuestions() {
-    const base = riskQuestions.filter(q => !(state.riskAnswers?.age === 'under10' && q.code === 'smoking'));
+    const base = riskQuestions
+        .filter(q => !(state.riskAnswers?.age === 'under10' && q.code === 'smoking'))
+        // 시작 화면에서 '예'라고 답한 사람에게 '수술한 적 없습니다'를 다시 보여주지 않는다.
+        // 같은 질문을 두 번 묻는 셈이고, 여기서 '없음'을 고르면 앞 답과 모순된다.
+        .map(q => q.code === 'surgery' && state.hadSurgery === true
+            ? { ...q, options: q.options.filter(o => o.v !== 'none') }
+            : q);
     // 4주 초과 이력에는 수술 '종류'와 필요한 경우 인공수정체 이력을 묻는다 —
     // 과거 백내장 수술을 놓치지 않고 사진 판독 제외 여부에 실제로 쓴다.
     // 수술한 '쪽'(surgery_eye)은 이 경로에서 소견서·리포트·판정
     // 어디에도 쓰이지 않는데(hasSurgery() 게이트 안에서만 읽힌다) 문항만 하나 늘렸다.
     // 대신 '한쪽만인가 양쪽인가'는 답이 판정을 바꿀 수 있을 때만 묻는다 —
     // 한쪽만이면 수술하지 않은 눈의 판독을 살린다(app-surgery.js의 fellowEyeAssessable).
-    if (state.riskAnswers?.surgery === 'past') {
-        const extra = [surgeryRiskQuestions[0]];
-        // 최근 수술이 백내장이 아닌 경우에도 예전 인공수정체 이력을 별도로 확인한다.
+    // 수술 이력이 있으면 '무엇을 수술했는가'를 먼저 확인한다. 사진 판독을 버릴지 말지가
+    // 수정체를 바꿨는지에 달려 있기 때문이다(app-surgery.js의 lensStatus).
+    const lensQuestions = () => {
+        const extra = [surgeryRiskQuestions[0]];   // 수술 종류
         if (state.riskAnswers.surgery_type && state.riskAnswers.surgery_type !== 'cataract') {
+            // 최근 수술이 백내장이 아니어도 예전 인공수정체 이력을 별도로 확인한다.
             extra.push(remoteLensHistoryQuestion);
         }
         if (typeof fellowEyeQuestionApplies === 'function' && fellowEyeQuestionApplies()) {
             extra.push(remoteSurgeryScopeQuestion);
         }
-        return [base[0], ...extra, ...base.slice(1)];
+        return extra;
+    };
+    if (state.riskAnswers?.surgery === 'past') {
+        return [base[0], ...lensQuestions(), ...base.slice(1)];
     }
     if (typeof hasSurgery !== 'function' || !hasSurgery()) return base;
-    return [riskQuestions[0], ...surgeryRiskQuestions];
+    // 4주 이내: 일반 위험요인 대신 술후 문항을 쓰되, 수정체 관련 문항은 같은 자리에 넣는다.
+    return [riskQuestions[0], ...lensQuestions(), ...surgeryRiskQuestions.slice(1)];
 }
 
 function startChat() {
@@ -48,23 +60,61 @@ function startChat() {
     // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
     state.riskIdx = 0;
     state.riskAnswers = {};
+    // 수술 관련 문항은 검사 시작 화면(step-surgery…)에서 이미 답했다. 같은 질문을 두 번
+    // 묻지 않고 건너뛰되, 대화 기록에는 남긴다 — 리포트·소견서 입력과 진행률이 이 기록을 쓴다.
+    Object.assign(state.riskAnswers, state.gateAnswers || {});
     state.symIdx = 0;
     state.symptomAnswers = {};
     state.symptomScore = 0;
     state.redFlags = [];
     if (typeof refreshAiResultDisplay === 'function') refreshAiResultDisplay();
 
+    replayGateAnswers();
     askRiskQuestion();
+}
+
+/** 시작 화면에서 받은 답을 문진 대화에 먼저 적고, 그 다음 문항부터 묻게 한다.
+ *
+ *  건너뛴 문항이 기록에서 빠지면 리포트·소견서가 수술 이력을 모르는 채로 만들어지고,
+ *  진행률의 첫 번호도 근거 없이 중간부터 시작한 것처럼 보인다.
+ *  게이트가 답한 문항은 항상 목록의 앞쪽에 모여 있으므로(수술 여부 → 종류 → 인공수정체),
+ *  앞에서부터 '답이 있는 동안' 세면 그대로 시작 위치가 된다. */
+function replayGateAnswers() {
+    const t = translations[state.lang];
+    const answers = state.gateAnswers || {};
+    const questions = activeRiskQuestions();
+    let idx = 0;
+    while (idx < questions.length && answers[questions[idx].code] !== undefined) {
+        const q = questions[idx];
+        const value = answers[q.code];
+        const opt = (q.options || []).find(o => o.v === value);
+        const question = t[q.key] || q.key;
+        const answer = opt ? (t[opt.key] || opt.v) : String(value);
+        addMsg('bot', question);
+        addMsg('user', answer);
+        state.chatHistory.push({ q: question, a: answer });
+        if (q.code === 'surgery' && value !== 'none') addMsg('bot', t.surgery_note);
+        idx++;
+    }
+    state.riskIdx = idx;
 }
 
 // ------------------------------------------------------------------
 // 1단계: 위험요인 문진 (나이·당뇨·고혈압·가족력·흡연)
 // 선택지형(나이)과 예/아니오형이 섞여 있어 버튼을 질문마다 새로 그린다.
 // ------------------------------------------------------------------
+/** 위험요인 문항의 화면 문구. 시작 화면에서 수술 여부를 이미 받았으면,
+ *  첫 문항은 '받은 적이 있나요?'가 아니라 '언제 받으셨나요?'가 되어야 한다. */
+function riskQuestionText(q) {
+    const t = translations[state.lang];
+    if (q.code === 'surgery' && state.hadSurgery === true) return t.gate_when_q || t[q.key];
+    return t[q.key] || q.key;
+}
+
 function askRiskQuestion() {
     const q = activeRiskQuestions()[state.riskIdx];
     const t = translations[state.lang];
-    addMsg('bot', t[q.key] || q.key, surveyProgress());
+    addMsg('bot', riskQuestionText(q), surveyProgress());
     if (q.type === 'choice') {
         renderChatOptions(q.options.map(o => ({ label: t[o.key] || o.v, value: o.v })));
     } else {
@@ -147,7 +197,7 @@ function handleAnswer(value, label) {
             state.aiResultCode = 'skipped';   // 사진 없이 문진만 받는 회차
         }
         if (q.code === 'surgery' && value !== 'none') addMsg('bot', translations[state.lang].surgery_note);
-        state.chatHistory.push({ q: translations[state.lang][q.key] || q.key, a: label });
+        state.chatHistory.push({ q: riskQuestionText(q), a: label });
         state.riskIdx++;
         const generation = state.sessionGeneration;
         setTimeout(() => {
@@ -174,9 +224,15 @@ function activeSymptomQuestions() {
     const list = (typeof hasSurgery === 'function' && hasSurgery())
         ? postoperativeQuestions : symptomQuestions;
     return list.filter(q => {
-        // Remote surgery: the general pain question covers severe AND worsening pain in either eye.
-        // Do not ask the same warning sign again for the operated eye.
-        if (state.riskAnswers.surgery === 'past' && q.code === 'surgery_pain') return false;
+        // 4주가 지난 수술은 '술후 경과'가 아니라 병력이다. 같은 위험 신호를 두 번 묻지 않는다:
+        //   surgery_pain  → 일반 통증 문항(rf_pain)이 '어느 쪽 눈이든 심하거나 악화되는 통증'을
+        //                   이미 묻고, 4주 초과에서는 q_remote_pain 문구로 바뀐다.
+        //   surgery_vision → 갑작스러운 시력저하는 rf_sudden이, 서서히 흐려지는 것은 cat_foggy가 묻는다.
+        //                   '수술 후 시력 악화'라는 이름만 붙었을 뿐 새로 얻는 정보가 없다.
+        // 충혈·분비물(surgery_redness)만 남긴다 — 일반 문진에 대응 문항이 없고, 지연성 감염은
+        // 수술 몇 주~몇 달 뒤에도 나타난다.
+        if (state.riskAnswers.surgery === 'past'
+            && ['surgery_pain', 'surgery_vision'].includes(q.code)) return false;
         if (q.showIf) {
             if (typeof q.showIf === 'string' && state.riskAnswers[q.showIf] !== true) return false;
             if (typeof q.showIf === 'object' && !q.showIf.values.includes(state.riskAnswers[q.showIf.code])) return false;
@@ -198,7 +254,7 @@ function surveyProgress() {
     if (typeof hasSurgery === 'function' && hasSurgery()) {
         // activeSymptomQuestions()를 써야 한다 — 수술 당일에는 경과 문항이 빠지므로
         // postoperativeQuestions.length를 그대로 쓰면 10문항에서 끝나는데 분모가 11이 된다.
-        const total = activeRiskQuestions().length + activeSymptomQuestions().length;
+        const total = riskQuestionCountUpperBound() + activeSymptomQuestions().length;
         const pos = state.riskIdx < activeRiskQuestions().length ? state.riskIdx + 1 : activeRiskQuestions().length + state.symIdx + 1;
         return `${Math.min(pos, total)} / ${total}`;
     }
@@ -225,15 +281,19 @@ function surveyProgress() {
 function riskQuestionCountUpperBound() {
     const current = activeRiskQuestions().length;
     const a = state.riskAnswers || {};
-    const lensPending = a.surgery === 'past'
+    const lensPending = a.surgery !== undefined && a.surgery !== 'none'
         && a.surgery_type !== undefined
         && a.surgery_type !== 'cataract'
         && a.surgery_lens_history === undefined;
     const branchUnknown = a.surgery === undefined
-        || (a.surgery === 'past' && a.surgery_type === undefined)
+        || (a.surgery !== 'none' && a.surgery_type === undefined)
         || lensPending;
     if (!branchUnknown) return current;
     // surgery_type + surgery_lens_history + surgery_both를 모두 포함한 최대치.
+    // 4주 이내 가지는 일반 위험요인 대신 술후 문항을 쓰므로 길이가 따로다.
+    if (typeof hasSurgery === 'function' && hasSurgery()) {
+        return Math.max(current, 1 + surgeryRiskQuestions.length + 2);
+    }
     return Math.max(current, riskQuestions.length + 3);
 }
 

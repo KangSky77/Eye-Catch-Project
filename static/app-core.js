@@ -35,7 +35,10 @@ const state = {
     // 히스토리를 무효화해야 하는 시점은 오직 goHome()뿐이다.
     navEpoch: 0,
     chatBusy: false,         // 문진 답변 처리 중 잠금 (중복 클릭 방지)
-    step: 'step-intro'       // 검사 흐름의 현재 단계 (진행 표시용)
+    step: 'step-intro',      // 검사 흐름의 현재 단계 (진행 표시용)
+    gateAnswers: {},         // 검사 시작 화면에서 받은 문진 답 (지금은 {surgery:'none'}뿐)
+    hadSurgery: null,        // 시작 화면의 '눈 수술을 받은 적이 있나요?' — true/false/미응답(null)
+    photoChecks: []          // 사진 인식 기준별 통과 여부 [{key, ok}]
 };
 
 // ------------------------------------------
@@ -55,16 +58,19 @@ const state = {
 
 /** 백내장 결과를 현재 언어 문자열로. 원자료가 없으면 "-". */
 function formatCataractResult() {
-    if (typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded() && state.riskAnswers?.surgery === 'past') return translations[state.lang].photo_history_limit;
-    // 수술 4주 이내면 사진 판독을 쓰지 않는다.
-    //
-    // 전용 입구(aiResultCode==='postop')만 막으면 구멍이 남는다: 사진을 먼저 올린 뒤
-    // 문진에서 '오늘 수술했습니다'를 고른 사람은 이 조건에 안 걸려서, 백내장 수술 당일
-    // 눈을 찍은 사진에 '백내장 위험'이 그대로 표시된다(LLM 요청에도 같이 실려 간다).
-    // 수술한 눈은 모델이 학습한 분포 밖이라 그 판독은 해석할 수 없다.
-    if (state.aiResultCode === 'postop'
-        || (typeof hasSurgery === 'function' && hasSurgery())) {
-        return translations[state.lang].post_limit;
+    // 사진을 한 장도 받지 않은 회차(수술자가 촬영을 건너뜀) — '판독 제외'가 아니라 '판독 없음'이다.
+    // 술후 회차라면 술후 문구를 쓴다(우선순위: 술후 문구 > 사진 없음). 같은 뜻의 두 줄이
+    // 리포트에 나란히 찍히는 것을 막기 위해 buildFindings와 순서를 맞춘다.
+    if (state.aiResultCode === 'postop') return translations[state.lang].post_limit;
+    if (state.aiResultCode === 'skipped') {
+        return (typeof hasSurgery === 'function' && hasSurgery())
+            ? translations[state.lang].post_limit : translations[state.lang].photo_skipped;
+    }
+    // 인공수정체가 들어갔거나 수정체 상태를 모르는 눈에는 판독을 적용하지 않는다.
+    // 무엇 때문에 적용하지 않는지까지 말한다 — '수술해서 안 된다'가 아니라 '수정체를
+    // 바꿔서 안 된다'가 이유다(app-surgery.js의 lensStatus 주석).
+    if (typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded()) {
+        return translations[state.lang].photo_history_limit;
     }
     // 사진 없이 문진만 받은 회차. 여기서 "-"를 돌려주면 리포트 '1. 백내장 AI 결과'에
     // 값이 대시 하나만 찍혀, 사진을 건너뛴 것이 아니라 '이상 없음'으로 읽힌다.
@@ -398,7 +404,9 @@ function renderStepProgress() {
 
 // 로고 클릭 — 새로고침(입력한 내용이 전부 날아감) 대신 첫 화면으로 돌아간다
 function goHome() {
+    state.gateAnswers = {}; state.hadSurgery = null;   // 새 회차는 수술 여부부터 다시 묻는다
     resetScreeningState();
+    if (typeof applyTrack === 'function') applyTrack();
     // 이전 회차의 단계 히스토리가 남아 있으면 홈에서 뒤로가기를 눌렀을 때
     // 초기화된 오래된 문진/암슬러 화면이 다시 나타난다. 여기서만 navEpoch를 올려
     // 그 전에 쌓인 항목을 전부 무효로 표시하고, 현재 항목을 새 기준점으로 바꾼다.
@@ -425,15 +433,21 @@ function resetScreeningState() {
     state.stepIdx = 0; state.dynamicCount = 0; state.chatHistory = [];
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
     state.dynamicAnswers = []; state.chatBusy = false;
-    state.riskAnswers = {}; state.symptomAnswers = {}; state.symptomScore = 0;
+    // 수술 여부는 회차 시작 화면(step-surgery)에서 이미 받았다. 사진을 올릴 때마다
+    // 이 초기화가 도는데 여기서 비워버리면, 문진에 닿기도 전에 '수술한 눈'이라는 사실이
+    // 사라져 사진 판독이 그대로 적용된다(formatCataractResult·photoAssessmentExcluded).
+    state.riskAnswers = { ...(state.gateAnswers || {}) };
+    state.symptomAnswers = {}; state.symptomScore = 0;
     state.redFlags = []; state._chatLoaderStop = null;
     state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
+    state.photoChecks = [];
     state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
     invalidateScreeningReport();
 }
 
 /** Invalidate derived report data when its screening inputs are restarted. */
 function invalidateScreeningReport() {
+    if (typeof resetPlainFindings === 'function') resetPlainFindings();
     cancelAiOpinion();
     if (typeof cancelSaveConsent === 'function') cancelSaveConsent();
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;

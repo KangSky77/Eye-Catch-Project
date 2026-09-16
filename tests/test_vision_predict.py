@@ -304,3 +304,51 @@ def test_애매한_신호는_눈클로즈업_재촬영을_권한다(monkeypatch,
     monkeypatch.setattr(vision, "_predict_single", lambda t: 90.0)
     assert vision.predict_cataract(img)["closeup_suggested"] is False
 
+
+
+def _checks(out):
+    return {c["key"]: c["ok"] for c in out["checks"]}
+
+
+def test_판독_성공하면_모든_인식_기준이_통과로_보고된다(monkeypatch, loaded, img):
+    """화면 체크리스트의 입력. 순서와 항목이 고정돼야 '무엇을 보고 판독했는지'를 말할 수 있다."""
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [])
+    monkeypatch.setattr(vision, "_predict_single", lambda t: 90.0)
+    out = vision.predict_cataract(img)
+    assert [c["key"] for c in out["checks"]] == list(vision.PHOTO_CHECKS)
+    assert all(c["ok"] is True for c in out["checks"])
+
+
+def test_막힌_기준만_X이고_그_뒤는_확인_못_함으로_남는다(monkeypatch, loaded, img):
+    """흔들린 사진의 눈 크롭은 눈 게이트에서 0.1점이 나온다(2026-09-02). 재 보지 않은 기준을
+    X로 칠하면 '눈이 없다'는 틀린 이유를 사용자에게 말하게 된다."""
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [])
+    monkeypatch.setattr(vision, "_sharpness", lambda t: 0.0)
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "blurry"
+    assert _checks(out) == {
+        "resolution": True, "single_face": True, "sharp": False,
+        "bright": None, "eye_visible": None, "eye_open": None, "no_glare": None,
+    }
+
+
+def test_눈을_감은_얼굴은_눈뜸_기준에서만_막힌다(monkeypatch, loaded, img):
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [img, img])
+    monkeypatch.setattr(eye_validator, "check_eye_open", lambda i, closeup=False: (False, 0.1))
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "eyes_hidden"
+    checks = _checks(out)
+    assert checks["eye_visible"] is True and checks["eye_open"] is False
+    assert checks["no_glare"] is None
+
+
+def test_저해상도와_다중얼굴도_기준_목록을_돌려준다(monkeypatch, loaded, img):
+    tiny = Image.new("RGB", (16, 16), (120, 120, 120))
+    out = vision.predict_cataract(tiny)
+    assert out["result_code"] == "low_resolution"
+    assert _checks(out)["resolution"] is False and _checks(out)["single_face"] is None
+
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: None)
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "multiple_faces"
+    assert _checks(out)["resolution"] is True and _checks(out)["single_face"] is False

@@ -7,6 +7,7 @@ const surgeryCopy = {
   surgery_eye_q: '가장 최근에 수술한 눈은 어느 쪽인가요?', surgery_sym_eye_q: '현재 불편한 눈은 어느 쪽인가요?',
   surgery_type_cataract: '백내장·인공수정체', surgery_type_laser: '라식·라섹 등 시력교정', surgery_type_other: '망막·녹내장·기타', surgery_type_unknown: '잘 모르겠어요',
   surgery_eye_left: '왼쪽', surgery_eye_right: '오른쪽', surgery_eye_both: '양쪽', surgery_eye_none: '불편함 없음',
+  q_post_day1: '수술을 받은 지 하루가 지났나요?',
   q_post_pain: '어느 쪽 눈이든 지금 심한 통증이 있거나 통증이 점점 심해지고 있나요?',
   q_post_vision: '시력이 새로 떨어지거나, 좋아졌다가 다시 흐려지는 등 악화되고 있나요?',
   q_post_redness: '충혈·붓기나 끈적한 분비물이 새로 생기거나 점점 심해지고 있나요?',
@@ -14,6 +15,7 @@ const surgeryCopy = {
   q_post_glare: '현재 빛 번짐이나 눈부심이 있나요?',
   q_post_worse: '수술 후 시간이 지나도 눈부심이나 불편함이 좋아지지 않거나, 오히려 심해지고 있나요?',
   q_post_followup: '퇴원 안내와 다음 진료 일정을 알고 있으며 그대로 따를 수 있나요?',
+  sym_post_day1: '수술 당일(하루 미만)',
   sym_post_pain: '심하거나 악화되는 눈 통증', sym_post_vision: '새롭거나 악화되는 시력 변화',
   sym_post_redness: '새롭거나 악화되는 충혈·분비물', sym_post_flashes: '새로운 광시증·비문증·시야 가림',
   sym_post_glare: '눈부심·빛 번짐', sym_post_worse: '좋아지지 않거나 심해지는 불편함', sym_post_followup: '퇴원 안내·추적 진료 확인 필요',
@@ -31,6 +33,7 @@ const surgeryCopy = {
   surgery_eye_q:'Which eye was most recently operated on?', surgery_sym_eye_q:'Which eye feels uncomfortable now?',
   surgery_type_cataract:'Cataract / lens', surgery_type_laser:'Laser vision correction', surgery_type_other:'Retina / glaucoma / other', surgery_type_unknown:'Not sure',
   surgery_eye_left:'Left', surgery_eye_right:'Right', surgery_eye_both:'Both', surgery_eye_none:'No discomfort',
+  q_post_day1:'Has at least one day passed since the surgery?',
   q_post_pain:'Is either eye severely painful or becoming more painful?',
   q_post_vision:'Is vision newly worse, or getting worse again after improving?',
   q_post_redness:'Is redness, swelling or sticky discharge new or increasing?',
@@ -38,7 +41,7 @@ const surgeryCopy = {
   q_post_glare:'Do you currently have glare or light scatter?',
   q_post_worse:'Is glare or discomfort failing to improve over time, or getting worse?',
   q_post_followup:'Do you understand and can you follow your discharge instructions and follow-up schedule?',
-  sym_post_pain:'Severe or worsening eye pain',sym_post_vision:'New or worsening vision change',sym_post_redness:'New or increasing redness / discharge',sym_post_flashes:'New flashes / floaters / curtain',sym_post_glare:'Glare / light scatter',sym_post_worse:'Discomfort not improving or worsening',sym_post_followup:'Aftercare / follow-up needs clarification',
+  sym_post_day1:'Same day as surgery (under 24 h)',sym_post_pain:'Severe or worsening eye pain',sym_post_vision:'New or worsening vision change',sym_post_redness:'New or increasing redness / discharge',sym_post_flashes:'New flashes / floaters / curtain',sym_post_glare:'Glare / light scatter',sym_post_worse:'Discomfort not improving or worsening',sym_post_followup:'Aftercare / follow-up needs clarification',
   post_eye_operated:'operated eye', post_eye_affected:'affected eye',
   find_post_context:'Reported surgery details: {items}',
   rep_l1_postop:'1. Photo analysis (not applied after surgery)',
@@ -66,6 +69,7 @@ Object.assign(surgeryCopy, {
     "surgery_eye_right": "Derecho",
     "surgery_eye_both": "Ambos",
     "surgery_eye_none": "Sin molestias",
+    "q_post_day1": "¿Ha pasado al menos un día desde la cirugía?",
     "q_post_pain": "¿Tiene dolor intenso o cada vez mayor en alguno de los ojos?",
     "q_post_vision": "¿Ha empeorado su visión recientemente o ha vuelto a empeorar tras mejorar?",
     "q_post_redness": "¿Tiene enrojecimiento, hinchazón o secreción pegajosa nuevos o crecientes?",
@@ -73,6 +77,7 @@ Object.assign(surgeryCopy, {
     "q_post_glare": "¿Tiene deslumbramiento o dispersión de la luz?",
     "q_post_worse": "¿El deslumbramiento o la molestia no mejora con el tiempo o está empeorando?",
     "q_post_followup": "¿Comprende y puede seguir las instrucciones de alta y las citas de seguimiento?",
+    "sym_post_day1": "El mismo día de la cirugía (menos de 24 h)",
     "sym_post_pain": "Dolor ocular intenso o creciente",
     "sym_post_vision": "Cambio visual nuevo o creciente",
     "sym_post_redness": "Enrojecimiento / secreción nuevos o crecientes",
@@ -105,6 +110,7 @@ Object.assign(surgeryCopy, {
     "surgery_eye_right": "Droit",
     "surgery_eye_both": "Les deux",
     "surgery_eye_none": "Aucune gêne",
+    "q_post_day1": "Au moins un jour s’est-il écoulé depuis l’opération ?",
     "q_post_pain": "Avez-vous une douleur intense ou croissante dans un œil ?",
     "q_post_vision": "Votre vision s’est-elle récemment dégradée ou se dégrade-t-elle après une amélioration ?",
     "q_post_redness": "Une rougeur, un gonflement ou des sécrétions collantes sont-ils apparus ou augmentent-ils ?",
@@ -112,6 +118,7 @@ Object.assign(surgeryCopy, {
     "q_post_glare": "Avez-vous actuellement des éblouissements ou une diffusion de la lumière ?",
     "q_post_worse": "L’éblouissement ou la gêne ne s’améliore-t-il pas avec le temps, ou s’aggrave-t-il ?",
     "q_post_followup": "Comprenez-vous et pouvez-vous suivre les consignes de sortie et le calendrier de suivi ?",
+    "sym_post_day1": "Le jour même de l’opération (moins de 24 h)",
     "sym_post_pain": "Douleur oculaire intense ou croissante",
     "sym_post_vision": "Baisse visuelle nouvelle ou croissante",
     "sym_post_redness": "Rougeur / sécrétions nouvelles ou croissantes",
@@ -144,6 +151,7 @@ Object.assign(surgeryCopy, {
     "surgery_eye_right": "右目",
     "surgery_eye_both": "両目",
     "surgery_eye_none": "不快感なし",
+    "q_post_day1": "手術から1日以上たちましたか？",
     "q_post_pain": "どちらかの目に強い痛み、または悪化する痛みがありますか？",
     "q_post_vision": "新たな視力低下や、一度改善した後に再び見えにくくなるなどの悪化がありますか？",
     "q_post_redness": "充血・腫れ・粘りのある目やにが新たに出た、または増えていますか？",
@@ -151,6 +159,7 @@ Object.assign(surgeryCopy, {
     "q_post_glare": "今、光のにじみやまぶしさがありますか？",
     "q_post_worse": "時間がたっても、まぶしさや不快感が改善しない、または悪化していますか？",
     "q_post_followup": "退院時の説明と次回の受診予定を理解し、そのとおりに対応できますか？",
+    "sym_post_day1": "手術当日（24時間未満）",
     "sym_post_pain": "強い、または悪化する目の痛み",
     "sym_post_vision": "新たな、または悪化する見え方の変化",
     "sym_post_redness": "新たな、または悪化する充血・目やに",
@@ -183,6 +192,7 @@ Object.assign(surgeryCopy, {
     "surgery_eye_right": "右眼",
     "surgery_eye_both": "双眼",
     "surgery_eye_none": "没有不适",
+    "q_post_day1": "手术已经过了一天以上吗？",
     "q_post_pain": "任一眼是否有剧烈或逐渐加重的疼痛？",
     "q_post_vision": "是否新出现视力下降，或好转后再次变得模糊？",
     "q_post_redness": "是否新出现或加重的充血、肿胀或黏性分泌物？",
@@ -190,6 +200,7 @@ Object.assign(surgeryCopy, {
     "q_post_glare": "目前是否有眩光或光线散射？",
     "q_post_worse": "随着时间推移，眩光或不适是否没有改善，甚至加重？",
     "q_post_followup": "您是否理解并能遵循出院指导和复诊安排？",
+    "sym_post_day1": "手术当天（不足24小时）",
     "sym_post_pain": "剧烈或加重的眼痛",
     "sym_post_vision": "新出现或加重的视力变化",
     "sym_post_redness": "新出现或加重的充血 / 分泌物",
@@ -245,52 +256,184 @@ function bothEyesAgree() {
  return !!state.aiResultData?.twoEyes && Array.isArray(eyes) && eyes.length === 2
   && eyes.every(e => e && e.side !== 'single') && eyes[0].code === eyes[1].code;
 }
-/** 4주 초과 백내장·불명 수술 이력에서 '수술한 눈이 한쪽인가'를 물을 가치가 있는가.
- *  답이 판정을 바꿀 수 없으면(단안 클로즈업, 두 눈 판정 불일치) 묻지 않는다. */
+/** '수술한 눈이 한쪽인가'를 물을 가치가 있는가.
+ *  답이 판정을 바꿀 수 없으면(단안 클로즈업, 두 눈 판정 불일치, 애초에 인공수정체가
+ *  아님) 묻지 않는다. 시기와 무관하게 성립한다 — 어제 한쪽을 수술했어도 반대쪽
+ *  자연 수정체 눈은 그대로 판독할 수 있다. */
 function fellowEyeQuestionApplies() {
- return state.riskAnswers?.surgery === 'past'
-  && remoteLensStatus() === 'yes'
-  && bothEyesAgree();
+ return lensStatus() === 'yes' && bothEyesAgree();
 }
 /** 수술하지 않은 반대쪽 눈의 판독을 그대로 쓸 수 있는가.
- *  'both'(양쪽 수술)·'unknown'(모르겠음)은 살릴 눈이 없거나 확신할 수 없으므로 제외한다.
- *  4주 이내(hasSurgery)는 술후 확인 경로 자체가 스크리닝이 아니므로 여기서 다루지 않는다. */
+ *  'both'(양쪽 수술)·'unknown'(모르겠음)은 살릴 눈이 없거나 확신할 수 없으므로 제외한다. */
 function fellowEyeAssessable() {
- return hasPhotoVerdict() && !hasSurgery()
+ return hasPhotoVerdict()
   && state.riskAnswers?.surgery_both === 'one'
   && fellowEyeQuestionApplies();
 }
-/** 과거 수술 이력에서 인공수정체·백내장 수술 여부를 보수적으로 해석한다. */
-function remoteLensStatus() {
+/** 이 사람의 눈에 인공수정체가 들어 있는가 — 사진 판독을 적용할 수 있는지를 가르는 기준.
+ *
+ *  왜 '수술을 받았는가'가 아니라 '수정체를 바꿨는가'인가:
+ *  모델은 자연 수정체 눈 사진으로 학습했다. 인공수정체(IOL)는 겉보기와 반사가 달라
+ *  판독이 뒤집힌다 — 2026-09-13 Commons 인공수정체 눈 사진(자유 라이선스, 측정 전용)을
+ *  실제 판독에 넣었더니 수술 중이 아닌 겉사진 2장이 risk 100·uncertain, 수술 현미경
+ *  사진 5장 중 3장이 risk였다(표본이 작아 방향만 확인한 것이다).
+ *  반대로 라식·라섹은 각막만 깎고 수정체를 건드리지 않으므로 판독의 근거가 그대로 남는다.
+ *  망막·녹내장 수술도 수정체 자체를 바꾸지는 않지만, 유리체절제술에 백내장 수술을 함께
+ *  하는 경우가 흔해 '인공수정체 이력'을 따로 확인한 뒤에만 판독을 적용한다.
+ *
+ *  예전에는 '수술한 적 있음' 하나로 전부 막았다. 그래서 12년 전 라식을 받은 사람과
+ *  어제 라섹을 받은 사람의 백내장 스크리닝이 통째로 사라졌다 — 수정체는 멀쩡한데도. */
+function lensStatus() {
  const a = state.riskAnswers || {};
- if (a.surgery !== 'past') return 'no';
+ // 시기를 아직 답하지 않았어도 게이트에서 '예'라고 했으면 수술 이력이 있는 것이다.
+ const operated = state.hadSurgery === true || (a.surgery && a.surgery !== 'none');
+ if (!operated) return 'no';
  if (a.surgery_type === 'cataract' || a.surgery_lens_history === 'yes') return 'yes';
  if (a.surgery_lens_history === 'no') return 'no';
- // 추가 질문에 아직 답하지 않았거나 '모르겠어요'라면 사진을 수술 눈에
- // 적용할 가능성을 배제할 수 없으므로 제외한다.
- // 라식 수술자가 '모르겠어요'라고 답해도 제외한다 — 2026-09-13 Commons 인공수정체 눈 사진
- // (자유 라이선스, 측정 전용)을 실제 판독에 넣었더니 수술 중이 아닌 겉사진 2장이 risk 100·uncertain,
- // 수술 현미경 사진 5장 중 3장이 risk였다. 인공수정체 눈에서는 판독이 경보를 내므로
- // 인공수정체 여부를 모르면 판독을 믿을 수 없다(표본이 작아 방향만 확인한 것이다).
+ // 종류를 아직 안 물었거나 '모르겠어요'라면 인공수정체 가능성을 배제할 수 없다.
  return 'unknown';
 }
+/** 수술 이력 문항 중 판독 적용 여부를 가르는 답이 아직 남아 있는가.
+ *  남아 있는 동안에는 점수·판정을 보여주지 않는다(나중에 취소해야 할 수도 있으므로). */
+function surgeryHistoryPending() {
+ const a = state.riskAnswers || {};
+ if (state.hadSurgery === false || a.surgery === 'none') return false;
+ if (a.surgery === undefined) return true;   // 수술은 했는데 시기를 아직 묻지 않았다
+ if (a.surgery_type === undefined) return true;
+ if (a.surgery_type !== 'cataract' && a.surgery_lens_history === undefined) return true;
+ return fellowEyeQuestionApplies() && a.surgery_both === undefined;
+}
 // The upload has no reliable anatomical side. Do not apply its cataract score
-// to a person with an artificial lens, or an unknown remote operation.
+// to an eye with an artificial lens, or when the lens status is unknown.
 function photoAssessmentExcluded() {
  if (!hasPhotoVerdict()) return false;
- if (hasSurgery()) return true;
- return state.riskAnswers?.surgery === 'past'
-  && remoteLensStatus() !== 'no'
-  && !fellowEyeAssessable();
+ return lensStatus() !== 'no' && !fellowEyeAssessable();
+}
+/** 수정체를 건드리지 않은 수술이라 판독을 그대로 적용한 경우.
+ *  수술 직후에는 각막 부종으로 값이 달라질 수 있어, 그 사실을 함께 말해야 한다. */
+function photoAppliesDespiteSurgery() {
+ return hasPhotoVerdict() && hasSurgery() && !photoAssessmentExcluded();
 }
 function effectiveCataractCode() {
- if (hasSurgery() || state.aiResultCode === 'postop') return 'postop';
+ // 사진을 한 장도 받지 않은 회차는 판독 자체가 없다.
+ if (state.aiResultCode === 'postop' || !hasPhotoVerdict()) return state.aiResultCode;
  return photoAssessmentExcluded() ? 'excluded' : state.aiResultCode;
 }
-function startSymptomCheck() {
- resetScreeningState(); state.aiResultCode='skipped';
- showTab('tab-test'); nextStep('step-chat'); startChat();
+// ------------------------------------------------------------------
+// 수술 여부 확인(step-surgery) — 검사의 첫 갈림길.
+//
+// 왜 사진보다 먼저 묻는가: 인공수정체가 들어간 눈은 사진 판독 대상이 아니고(모델 학습
+// 분포 밖이라 겉사진이 risk로 뒤집힌다 — 위 lensStatus() 주석의 2026-09-13 실측),
+// 4주 이내 수술이면 문진도 술후 전용 문항으로 통째로 바뀐다. 예전에는 문진 첫 문항으로
+// 물어서, 수술한 사람도 일반 촬영 가이드와 백내장 판정 화면을 먼저 다 보고 나서야
+// '이 판독은 적용하지 않습니다'를 읽었다.
+const surgeryGateCopy = {
+ ko: ['수술한 눈은 검사 방법이 달라, 시작하기 전에 한 가지만 여쭤봅니다.',
+  '수술에 맞춘 검사로 안내합니다', '일반 눈 건강 검사를 받습니다',
+  '언제 수술을 받으셨나요?',
+  '수술 후 촬영 안내',
+  '<li>의료용 안대·보호대는 그대로 두세요. 사진을 찍으려고 벗기지 마세요.</li><li>눈을 만지거나 억지로 크게 뜨지 마세요.</li><li>촬영이 어려우면 사진을 건너뛰고 다음 단계로 가세요.</li>',
+  '사진 없이 다음 단계로',
+  '수정체를 건드리지 않은 수술이라 사진 판독을 그대로 적용했습니다. 다만 수술 직후에는 각막이 붓거나 흐려 판독이 달라질 수 있습니다.'],
+ en: ['An operated eye is screened differently, so we ask one question before starting.',
+  'Screening matched to your surgery', 'Standard eye screening',
+  'When was the surgery?',
+  'Taking a photo after surgery',
+  '<li>Leave any medical patch or shield in place. Never remove it for a photo.</li><li>Do not touch the eye or force it open.</li><li>If a photo is difficult, skip it and continue.</li>',
+  'Continue without a photo',
+  'This surgery did not replace the lens, so the photo reading still applies. Just after surgery the cornea can be swollen or hazy, which may change the reading.'],
+ es: ['Un ojo operado se evalúa de otra forma, así que preguntamos una cosa antes de empezar.',
+  'Cribado adaptado a su cirugía', 'Cribado ocular estándar',
+  '¿Cuándo fue la cirugía?',
+  'Tomar la foto después de la cirugía',
+  '<li>Deje puesto el parche o protector médico. No lo retire para la foto.</li><li>No se toque el ojo ni lo abra a la fuerza.</li><li>Si le cuesta, omita la foto y continúe.</li>',
+  'Continuar sin foto',
+  'Esta cirugía no sustituyó el cristalino, así que la lectura de la foto sigue siendo válida. Justo después de operar, la córnea puede estar inflamada y alterar el resultado.'],
+ fr: ['Un œil opéré se dépiste autrement : une seule question avant de commencer.',
+  'Dépistage adapté à votre opération', 'Dépistage oculaire standard',
+  'Quand avez-vous été opéré ?',
+  'Photographier après une opération',
+  '<li>Laissez en place le pansement ou la coque de protection. Ne l’enlevez jamais pour la photo.</li><li>Ne touchez pas l’œil et ne le forcez pas à s’ouvrir.</li><li>Si la photo est difficile, passez-la et continuez.</li>',
+  'Continuer sans photo',
+  'Cette opération n’a pas remplacé le cristallin : la lecture de la photo reste valable. Juste après l’opération, la cornée peut être gonflée ou trouble et modifier le résultat.'],
+ ja: ['手術した目は検査の進め方が変わるため、始める前に一つだけ確認します。',
+  '手術に合わせた検査に進みます', '通常の目の健康チェック',
+  'いつ手術を受けましたか？',
+  '手術後の撮影について',
+  '<li>医療用の眼帯・保護具はそのままにしてください。撮影のために外さないでください。</li><li>目に触れたり、無理に大きく開けたりしないでください。</li><li>撮影が難しければ写真を飛ばして次へ進んでください。</li>',
+  '写真なしで次へ',
+  '水晶体を入れ替えていない手術のため、写真判読をそのまま適用しました。ただし術直後は角膜がむくんだり濁ったりして判読が変わることがあります。'],
+ zh: ['手术眼的检查方式不同，开始前先确认一件事。',
+  '按手术情况安排检查', '常规眼部健康检查',
+  '什么时候做的手术？',
+  '术后拍照须知',
+  '<li>请保留医用眼罩或护罩，不要为拍照而摘下。</li><li>不要触碰眼睛，也不要强行睁大。</li><li>如果拍照困难，可跳过照片继续下一步。</li>',
+  '不拍照，继续下一步',
+  '本次手术未更换晶状体，因此照片判读仍然适用。但术后初期角膜可能水肿或混浊，判读结果可能受影响。']
+};
+for (const [lang, copy] of Object.entries(surgeryGateCopy)) {
+ ['gate_desc','gate_d_yes','gate_d_none','gate_when_q',
+  'post_photo_title','post_photo_tips','post_skip_photo',
+  'photo_lens_intact'].forEach((key,i)=>translations[lang][key]=copy[i]);
 }
+
+/** 첫 화면의 시작 버튼 — 촬영이 아니라 수술 여부 확인으로 간다. */
+function startScreening() {
+ state.hadSurgery = null;    // 초기화가 이 값을 읽는다 — 먼저 비운다
+ state.gateAnswers = {};
+ resetScreeningState();
+ applyTrack();
+ showTab('tab-test'); nextStep('step-surgery');
+}
+
+/** 시작 전 단 하나의 질문: 눈 수술을 받은 적이 있는가.
+ *
+ *  시기·종류·인공수정체 이력은 여기서 묻지 않고 문진에서 이어 묻는다. 시작 화면에
+ *  네 화면을 세워 두면 검사를 시작하기도 전에 취조처럼 느껴진다(팀 피드백). 대신
+ *  이 한 답으로 사진을 찍기 '전에' 정해야 하는 것은 다 정해진다:
+ *    · 수술 후 촬영 안내(보호대를 벗지 마세요)를 보여줄지
+ *    · 안대 때문에 못 찍는 사람에게 '사진 없이 다음 단계로'를 열어줄지
+ *    · 판독 적용 여부가 아직 미정이라고 결과 화면에서 밝힐지(surgeryHistoryPending)
+ */
+function answerSurgeryGate(hadSurgery) {
+ state.hadSurgery = !!hadSurgery;
+ // '아니오'만 문진 첫 문항의 답이 된다. '예'는 시기를 모르므로 문진이 이어서 묻는다.
+ setGateAnswers(hadSurgery ? {} : { surgery: 'none' });
+ nextStep('step-guide');
+}
+
+/** 게이트에서 받은 답을 기록한다.
+ *
+ *  왜 riskAnswers와 따로 두는가: 사진을 올릴 때마다 resetScreeningState()가 돌면서
+ *  riskAnswers를 비운다. 게이트 답을 거기에만 두면 문진에 닿기도 전에 '수술한 눈'이라는
+ *  사실이 사라져 사진 판독이 그대로 적용된다. gateAnswers가 원본이고, 초기화는 매번
+ *  이 값을 riskAnswers에 다시 심는다(app-core.js의 resetScreeningState). */
+function setGateAnswers(answers) {
+ state.gateAnswers = answers;
+ resetScreeningState();      // riskAnswers를 gateAnswers로 다시 심는다
+ applyTrack();
+}
+
+/** 수술한 눈은 안대·보호대로 촬영이 불가능할 수 있다. 사진 없이 나머지 단계를 잇는다.
+ *  사진을 한 장도 받지 않았다는 표시가 'postop'이다(app-surgery.js 위쪽 주석). */
+function skipPhotoStep() {
+ cancelEyeAnalysis();
+ state.aiResultCode = 'postop';
+ state.aiResultData = null;
+ state.photoChecks = [];
+ startAmslerStep();
+}
+
+/** 수술 전용 안내·버튼을 이 회차의 경로에 맞춰 보이거나 감춘다.
+ *  시기를 묻기 전이라도 게이트에서 '예'라고 했으면 보여준다 — 보호대를 벗지 말라는
+ *  안내와 '사진 없이 다음 단계로'는 사진을 찍기 전에 필요하다. */
+function applyTrack() {
+ const surgery = state.hadSurgery === true || hasSurgery();
+ document.body.dataset.track = surgery ? 'surgery' : 'general';
+ document.querySelectorAll('[data-surgery-only]').forEach(el => { el.hidden = !surgery; });
+}
+
+
 const surgeryRiskQuestions = [
  ['surgery_type','surgery_type_q',['cataract','laser','other','unknown'],'surgery_type_'],
  ['surgery_eye','surgery_eye_q',['left','right','both'],'surgery_eye_'],
@@ -330,20 +473,22 @@ const remoteSurgeryScopeQuestion = {
  code:'surgery_both', key:'surgery_both_q', type:'choice',
  options:['one','both','unknown'].map(v=>({v,key:'surgery_both_'+v,score:0}))
 };
-const postoperativeQuestions = ['pain','vision','redness','flashes','glare','worse','followup'].map(kind=>({
+// 'day1'이 맨 앞인 이유: 경과를 묻는 문항(worse)은 수술 당일에 물으면 안 된다. 좋아질
+// 시간 자체가 없었기 때문에 정상 회복 중인 사람도 '예'가 나오고, 당연한 술후 눈부심이
+// '병원에 문의하세요'로 올라간다. (예전 q_post_change는 '수술 전에는 없었나'와 '좋아지지
+// 않나'를 한 문장에 묶어서, 당일 수술자는 앞 절이 항상 참이라 무조건 걸렸다.)
+//
+// 예전에는 이걸 시작 화면의 시기 선택지('오늘' vs '최근 4주 이내')로 갈랐다. 그런데 그 둘은
+// 서로 배타적이지도 않고(오늘도 4주 이내다), 사용자에게 보이는 차이도 없이 문항 하나를
+// 가르는 내부 사정일 뿐이었다. 질문은 문진에서 묻는 것이 맞다.
+const postoperativeQuestions = ['day1','pain','vision','redness','flashes','glare','worse','followup'].map(kind=>({
  code:'post_'+kind,key:'q_post_'+kind,disease:'general',weight:0,
- redFlag:['pain','vision','redness','flashes'].includes(kind),invert:kind==='followup',
- // 경과를 묻는 문항은 수술 당일에 물으면 안 된다. 좋아질 시간 자체가 없었기 때문에
- // 정상 회복 중인 사람도 '예'가 나오고, 당연한 술후 눈부심이 '병원에 문의하세요'로 올라간다.
- // (예전 q_post_change는 '수술 전에는 없었나'와 '좋아지지 않나'를 한 문장에 묶어서,
- //  당일 수술자는 앞 절이 항상 참이라 무조건 걸렸다.)
- ...(kind==='worse' ? {showIf:{code:'surgery',values:['recent']}} : {})
+ redFlag:['pain','vision','redness','flashes'].includes(kind),
+ // invert: '아니오'를 리포트에 남기는 문항. day1은 위험 신호가 아니라 맥락이다
+ // (weight 0·redFlag 없음) — '수술 당일'이라는 사실이 남아야 소견이 그 시점을 안다.
+ invert:['followup','day1'].includes(kind),
+ ...(kind==='worse' ? {skipIf:{code:'post_day1',answer:false}} : {})
 }));
-function startPostoperativeCheck() {
- resetScreeningState();
- state.aiResultCode = 'postop';
- showTab('tab-test'); nextStep('step-chat'); startChat();
-}
 function postoperativeTriage(ctx, t) {
  const urgent=(ctx.redFlags || []).length>0;
  const a=state.symptomAnswers || {};

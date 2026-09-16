@@ -1,0 +1,134 @@
+{
+  "ko": {
+    "find_cat_risk": {
+      "original": "백내장 AI가 수정체 혼탁으로 보이는 특징을 강하게 감지했습니다. 확진은 안과의 세극등 현미경 검사로만 가능합니다.",
+      "plain": "백내장 AI가 사진에서 눈 속 수정체가 뿌옇게 보이는 특징을 강하게 찾았습니다. 확진은 안과에서 세극등 현미경으로 검사해야만 할 수 있습니다."
+    },
+    "find_cat_borderline": {
+      "original": "백내장 AI 점수가 경계 구간입니다. 촬영 조건 때문일 수도 있어 재촬영 또는 안과 확인을 권합니다.",
+      "plain": "백내장 AI 점수가 경계 구간에 있습니다. 사진을 찍은 조건 때문일 수도 있습니다. 다시 찍거나 안과에서 확인해 보세요."
+    },
+    "find_cat_normal": {
+      "original": "백내장 AI가 이번 사진에서 뚜렷한 혼탁 특징을 감지하지 않았습니다. 다만 초기 백내장은 겉사진에 나타나지 않을 수 있어, 이 결과로 백내장을 배제할 수는 없습니다.",
+      "plain": "백내장 AI가 이번 사진에서 뚜렷하게 뿌연 특징을 찾지 못했습니다. 초기 백내장은 겉사진에 보이지 않을 수 있습니다. 따라서 이 결과만으로 백내장이 없다고 할 수는 없습니다."
+    },
+    "find_cat_uncertain": {
+      "original": "백내장 AI가 이번 사진에서 약한 혼탁 특징 신호를 보았지만 사진만으로는 판단이 어렵습니다. 눈을 한쪽씩 가까이 찍어 다시 확인하고, 신호가 반복되면 안과 검진을 받아보세요.",
+      "plain": "백내장 AI가 이번 사진에서 약하게 뿌연 특징을 찾았지만, 사진만으로는 판단하기 어렵습니다. 눈을 한쪽씩 가까이에서 다시 찍어 보세요. 같은 신호가 반복되면 안과 검진을 받아보세요."
+    },
+    "find_ams_normal": {
+      "original": "암슬러 격자 자가검사에서 좌우 모두 뚜렷한 왜곡·암점 응답이 없었습니다. 이 검사는 황반(중심시야)만 확인하므로, 다른 부위나 다른 질환은 평가하지 않습니다.",
+      "plain": "암슬러 격자 자가검사에서 양쪽 눈 모두 선이 뚜렷하게 휘거나 어둡게 가려 보인다는 응답은 없었습니다. 이 검사는 황반, 즉 시야의 중심 부분만 확인합니다. 다른 부위나 다른 질환은 확인하지 않습니다."
+    }
+  },
+  "en": {
+    "find_cat_risk": {
+      "original": "The cataract AI strongly detected features consistent with lens clouding. Only a slit-lamp exam at a clinic can confirm this.",
+      "plain": "The cataract AI found strong signs that the lens looks cloudy. Only an eye clinic exam using a slit lamp can confirm this."
+    },
+    "find_cat_borderline": {
+      "original": "The cataract AI score is in the borderline band. Photo conditions may explain it, so retaking the photo or an eye exam is recommended.",
+      "plain": "The cataract AI score is in the borderline range. The way the photo was taken may be the reason. Retake the photo or have an eye exam."
+    },
+    "find_cat_normal": {
+      "original": "The cataract AI did not detect clear clouding features in this photo. Early cataract may not be visible from the outside, so this result cannot rule cataract out.",
+      "plain": "The cataract AI did not find clear signs of clouding in this photo. Early cataract may not show in an outside photo. This result cannot tell you that you do not have cataract."
+    },
+    "find_cat_uncertain": {
+      "original": "The cataract AI saw a weak opacity signal in this photo, but it cannot be judged from the photo alone. Retake each eye up close; if the signal repeats, consider an eye exam.",
+      "plain": "The cataract AI found a faint sign of clouding in this photo, but a photo alone is not enough to judge it. Take another close-up of each eye. If the sign appears again, consider an eye exam."
+    },
+    "find_ams_normal": {
+      "original": "The Amsler self-test showed no clear distortion or blind-spot response in either eye. This test only checks the macula (central vision); it does not assess other areas or other conditions.",
+      "plain": "In the Amsler self-test, neither eye had a clear report of bent lines or blind spots. This test checks only the macula, the central part of vision. It does not check other areas or other conditions."
+    }
+  },
+  "es": {
+    "find_cat_risk": {
+      "original": "La IA detectó con fuerza rasgos compatibles con opacidad del cristalino. Solo un examen con lámpara de hendidura puede confirmarlo.",
+      "plain": "La IA encontró señales fuertes de que el cristalino se ve turbio. Solo un examen con lámpara de hendidura puede confirmarlo."
+    },
+    "find_cat_borderline": {
+      "original": "La puntuación está en la banda límite. Puede deberse a las condiciones de la foto; se recomienda repetirla o acudir a revisión.",
+      "plain": "La puntuación está en el intervalo límite. Puede deberse a cómo se tomó la foto. Se recomienda tomar otra foto o acudir a una revisión."
+    },
+    "find_cat_normal": {
+      "original": "La IA no detectó rasgos claros de opacidad en esta foto. Las cataratas iniciales pueden no verse desde fuera, así que este resultado no las descarta.",
+      "plain": "La IA no encontró señales claras de opacidad en esta foto. Las cataratas en fase inicial pueden no verse desde fuera. Este resultado no permite decir que no hay cataratas."
+    },
+    "find_cat_uncertain": {
+      "original": "La IA vio una señal débil de opacidad, pero no puede juzgarse solo con la foto. Vuelva a fotografiar cada ojo de cerca; si la señal se repite, considere un examen ocular.",
+      "plain": "La IA encontró una señal leve de opacidad, pero la foto sola no permite valorarla. Tome otra foto de cerca de cada ojo. Si la señal aparece de nuevo, considere un examen ocular."
+    },
+    "find_ams_normal": {
+      "original": "La autoprueba de Amsler no mostró distorsión ni escotoma claros en ninguno de los ojos. Esta prueba solo evalúa la mácula (visión central).",
+      "plain": "En la autoprueba de Amsler no se indicaron líneas claramente torcidas ni zonas sin visión en ninguno de los ojos. Esta prueba solo revisa la mácula, la parte central de la visión."
+    }
+  },
+  "fr": {
+    "find_cat_risk": {
+      "original": "L'IA a fortement détecté des signes compatibles avec une opacification du cristallin. Seul un examen à la lampe à fente peut le confirmer.",
+      "plain": "L’IA a trouvé des signes forts montrant que le cristallin paraît trouble. Seul un examen à la lampe à fente peut le confirmer."
+    },
+    "find_cat_borderline": {
+      "original": "Le score est dans la zone limite. Les conditions de prise de vue peuvent l'expliquer ; reprenez la photo ou consultez.",
+      "plain": "Le score est dans la zone limite. Cela peut venir des conditions de la photo. Reprenez la photo ou consultez."
+    },
+    "find_cat_normal": {
+      "original": "L'IA n'a pas détecté de signes nets d'opacification sur cette photo. Une cataracte débutante peut ne pas être visible de l'extérieur ; ce résultat ne l'exclut donc pas.",
+      "plain": "L’IA n’a pas trouvé de signes nets de trouble sur cette photo. Une cataracte débutante peut ne pas se voir de l’extérieur. Ce résultat ne permet donc pas de dire qu’il n’y a pas de cataracte."
+    },
+    "find_cat_uncertain": {
+      "original": "L'IA a vu un signal d'opacité faible, impossible à juger sur la seule photo. Reprenez chaque œil de près ; si le signal se répète, envisagez un examen ophtalmologique.",
+      "plain": "L’IA a trouvé un faible signe de trouble, mais la photo seule ne permet pas de le juger. Reprenez chaque œil en photo de près. Si le signe revient, envisagez un examen des yeux."
+    },
+    "find_ams_normal": {
+      "original": "L'auto-test d'Amsler n'a montré ni déformation ni scotome net des deux côtés. Ce test n'évalue que la macula (vision centrale).",
+      "plain": "Lors de l’auto-test d’Amsler, aucun des deux yeux n’a présenté de lignes nettement déformées ni de zones sans vision. Ce test vérifie seulement la macula, la partie centrale de la vision."
+    }
+  },
+  "ja": {
+    "find_cat_risk": {
+      "original": "白内障AIが水晶体の混濁に相当する特徴を強く検出しました。確定は眼科の細隙灯顕微鏡検査でのみ可能です。",
+      "plain": "白内障AIが、目の中の水晶体が濁って見える特徴を強く見つけました。確かめるには、眼科で細隙灯顕微鏡という機器を使った検査が必要です。"
+    },
+    "find_cat_borderline": {
+      "original": "白内障AIのスコアが境界域です。撮影条件による可能性もあるため、再撮影または眼科での確認をお勧めします。",
+      "plain": "白内障AIのスコアは境界の範囲にあります。写真の撮り方が影響しているかもしれません。撮り直すか、眼科で確認することをお勧めします。"
+    },
+    "find_cat_normal": {
+      "original": "今回の写真では明らかな混濁の特徴は検出されませんでした。初期白内障は外観に現れないことがあるため、この結果で白内障を否定することはできません。",
+      "plain": "今回の写真では、はっきりした濁りの特徴は見つかりませんでした。初期の白内障は外から見えないことがあります。この結果だけで白内障がないとは言えません。"
+    },
+    "find_cat_uncertain": {
+      "original": "白内障AIは弱い混濁の兆候を見ましたが、写真だけでは判断できません。片目ずつ近くで撮り直し、繰り返し出るなら眼科検診を受けてください。",
+      "plain": "白内障AIが弱い濁りの兆候を見つけましたが、写真だけでは判断できません。片目ずつ近くで撮り直してください。同じ兆候が繰り返し出るなら、眼科で検診を受けてください。"
+    },
+    "find_ams_normal": {
+      "original": "アムスラー自己検査では左右とも明らかな歪み・暗点の回答はありませんでした。この検査は黄斑(中心視野)のみを確認します。",
+      "plain": "アムスラー自己検査では、両目とも、線がはっきり曲がったり暗い部分が見えたりするという回答はありませんでした。この検査で確認するのは、黄斑という視野の中心部分だけです。"
+    }
+  },
+  "zh": {
+    "find_cat_risk": {
+      "original": "白内障AI强烈检测到与晶状体混浊相符的特征。确诊只能通过眼科裂隙灯检查。",
+      "plain": "白内障AI在照片中找到了很明显的晶状体看起来浑浊的特征。只有到眼科做裂隙灯检查才能确诊。"
+    },
+    "find_cat_borderline": {
+      "original": "白内障AI评分处于临界区间。可能与拍摄条件有关，建议重拍或到眼科确认。",
+      "plain": "白内障AI的分数处于临界范围。可能是拍照条件造成的。建议重新拍照，或到眼科确认。"
+    },
+    "find_cat_normal": {
+      "original": "本次照片未检测到明显的混浊特征。早期白内障可能在外观上看不出来，因此该结果不能排除白内障。",
+      "plain": "这次照片没有发现明显的浑浊特征。早期白内障可能从外观看不出来。所以，这个结果不能说明没有白内障。"
+    },
+    "find_cat_uncertain": {
+      "original": "白内障AI在此照片中看到轻微混浊信号，但仅凭照片无法判断。请分别近距离重拍每只眼睛；若信号重复出现，请到眼科检查。",
+      "plain": "白内障AI在照片中发现了轻微的浑浊信号，但只看照片无法判断。请靠近一些，分别重拍每只眼睛。如果信号再次出现，请到眼科检查。"
+    },
+    "find_ams_normal": {
+      "original": "阿姆斯勒自测中双眼均无明显变形或暗点。该检查仅评估黄斑（中心视野）。",
+      "plain": "阿姆斯勒自测中，两只眼都没有明显的线条变形或暗点。这项检查只看黄斑，也就是视野的中心部分。"
+    }
+  }
+}

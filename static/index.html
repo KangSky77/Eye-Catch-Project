@@ -27,7 +27,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260914b">
+    <link rel="stylesheet" href="/static/style.css?v=20260916f">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -51,7 +51,7 @@
             <div class="header-controls flex items-center gap-5">
                 <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
                     <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</button>
-                    <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" data-i18n="sim_title" class="nav-pill">시야 체험</button>
+                    <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" data-i18n="sim_title" class="nav-pill">안구 질환 체험</button>
                     <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</button>
                     <button type="button" onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</button>
                     <button type="button" onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</button>
@@ -101,13 +101,40 @@
                     </div>
                 </div>
 
-                <button type="button" onclick="nextStep('step-guide')" class="primary-cta btn-pop">
-                    <span data-i18n="start_btn">분석 시작하기</span>
+                <!-- 보조 입구(수술 후 확인·사진 없이 증상 확인)는 여기서 빼고 다음 화면인
+                     수술 여부 확인(step-surgery)으로 모았다. 첫 화면에 나란히 놓인 세 입구 중
+                     무엇을 골라야 하는지가 사용자에게 설명되지 않았다. -->
+                <button type="button" onclick="startScreening()" class="primary-cta btn-pop">
+                    <span data-i18n="start_btn">Eye-Catch Start!!!</span>
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
                 </button>
-                <button type="button" onclick="startPostoperativeCheck()" data-i18n="surgery_entry" class="block mx-auto mt-4 text-sm font-bold text-blue-700 underline">수술 후 상태 확인하기</button>
-                <button type="button" onclick="startSymptomCheck()" data-i18n="symptom_entry" class="block mx-auto mt-4 text-sm font-bold text-blue-700 underline">사진 없이 증상 확인하기</button>
-                <p class="mt-4 text-sm text-rose-700" data-i18n="early_warning"></p>
+            </div>
+        </div>
+
+        <!-- 수술 여부 확인 — 검사의 첫 갈림길이자 시작 화면의 유일한 질문.
+             왜 사진보다 먼저 묻는가: 사진을 찍기 '전에' 정해야 하는 것들이 이 답에 달려 있다.
+             수술 후 촬영 안내(보호대를 벗지 마세요), 안대 때문에 못 찍는 사람을 위한
+             '사진 없이 다음 단계로', 그리고 판독 적용 여부가 아직 미정이라는 표시.
+             시기·종류·인공수정체 이력은 문진에서 이어 묻는다 — 시작 화면에 네 화면을
+             세워 두면 검사를 시작하기도 전에 취조처럼 느껴진다(팀 피드백). -->
+        <div id="step-surgery" class="step-content text-center">
+            <div class="glass-card p-8 rounded-[2.5rem] max-w-md mx-auto">
+                <div class="section-icon mx-auto mb-6" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg>
+                </div>
+                <h2 class="text-2xl font-black mb-2" data-i18n="q_surgery">눈 수술을 받은 적이 있나요?</h2>
+                <p class="gate-desc" data-i18n="gate_desc"></p>
+                <div class="gate-options">
+                    <button type="button" onclick="answerSurgeryGate(true)">
+                        <span data-i18n="chat_yes">네</span>
+                        <small data-i18n="gate_d_yes"></small>
+                    </button>
+                    <button type="button" onclick="answerSurgeryGate(false)">
+                        <span data-i18n="chat_no">아니오</span>
+                        <small data-i18n="gate_d_none"></small>
+                    </button>
+                </div>
+                <button type="button" onclick="nextStep('step-intro')" class="back-link" data-i18n="back_btn">← 이전</button>
             </div>
         </div>
 
@@ -116,7 +143,12 @@
                 <div class="section-icon mx-auto mb-6" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none"><path d="M9 18h6M10 21h4M8.1 14.5A6 6 0 1 1 16 14.3c-.8.7-1.3 1.5-1.5 2.2h-5c-.2-.7-.6-1.4-1.4-2Z"/></svg>
                 </div>
-                <h2 class="text-2xl font-black mb-6" data-i18n="tips_title">정확한 분석을 위한<br>촬영 꿀팁</h2>
+                <h2 class="text-2xl font-black mb-4" data-i18n="tips_title">정확한 분석을 위한<br>촬영 꿀팁</h2>
+
+                <!-- 사진 AI가 무엇을 보는지(그리고 무엇은 못 보는지)는 사진을 찍기 직전에 읽혀야
+                     한다. 첫 화면에 길게 적어두면 한 줄도 읽히지 않는다는 외부 리뷰 지적에 따라
+                     인트로는 한 줄 요약만 두고, 실제 범위 설명은 촬영 직전인 이 화면에 둔다. -->
+                <p class="scope-note text-left" data-i18n="scope_note"></p>
 
                 <div class="space-y-4 text-left mb-8">
                     <div class="flex items-start gap-3 p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -159,8 +191,16 @@
                     <p class="ex-hint" data-i18n="ex_hint">예시는 퍼블릭 도메인(CC0) 사진을 가공한 것입니다.</p>
                 </div>
 
+                <!-- 수술 4주 이내에만 보인다(app-core.js의 applyTrack). 일반 촬영 팁만으로는
+                     보호대를 벗고 찍는 사람이 나온다 — 그건 상처를 여는 행동이다. -->
+                <div class="surgery-note text-left mb-6" data-surgery-only hidden>
+                    <p class="surgery-note-title" data-i18n="post_photo_title">수술 후 촬영 안내</p>
+                    <ul data-i18n="post_photo_tips"></ul>
+                </div>
+
                 <button type="button" onclick="nextStep('step-photo')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg btn-pop" data-i18n="tips_btn">이해했습니다!</button>
-                <button type="button" onclick="nextStep('step-intro')" class="back-link" data-i18n="back_btn">← 이전</button>
+                <button type="button" onclick="skipPhotoStep()" class="skip-photo-btn" data-surgery-only hidden data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
+                <button type="button" onclick="nextStep('step-surgery')" class="back-link" data-i18n="back_btn">← 이전</button>
             </div>
         </div>
 
@@ -191,6 +231,7 @@
                 <input type="file" id="cataract-file" class="sr-only" accept="image/*" onchange="runAIAnalysis()" aria-describedby="upload-guide">
                 <label for="cataract-file" class="upload-pick block w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-xl btn-pop cursor-pointer" data-i18n="upload_btn">사진 선택 및 전송</label>
                 <p class="dropzone-hint" data-i18n="upload_drop_hint">여기로 사진을 끌어다 놓아도 됩니다.</p>
+                <button type="button" onclick="skipPhotoStep()" class="skip-photo-btn" data-surgery-only hidden data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
                 <button type="button" onclick="nextStep('step-guide')" class="back-link" data-i18n="back_btn">← 이전</button>
             </div>
         </div>
@@ -226,7 +267,12 @@
                     <img id="result-photo" class="w-24 h-24 object-cover rounded-2xl mx-auto shadow-sm border-4 border-white" alt="">
                     <p id="result-photo-caption" class="text-[11px] font-bold text-slate-500 mt-2"></p>
                 </div>
-                <div id="ai-result-display" class="p-5 bg-slate-50 rounded-2xl mb-8" aria-live="polite"></div>
+                <div id="ai-result-display" class="p-5 bg-slate-50 rounded-2xl mb-4" aria-live="polite"></div>
+                <!-- AI가 무엇을 확인하고 판독했는지 (vision.py의 PHOTO_CHECKS) -->
+                <details id="photo-check-summary" class="pc-summary hidden mb-6">
+                    <summary data-i18n="check_pass_title">AI 사진 인식 기준 — 모두 통과</summary>
+                    <ul id="photo-check-summary-list" class="pc-list"></ul>
+                </details>
                 <button type="button" onclick="startAmslerStep()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold btn-pop" data-i18n="next_amsler">황반변성 정밀 테스트</button>
                 <button type="button" onclick="nextStep('step-photo')" class="back-link" data-i18n="retry_photo">← 다른 사진으로 다시 분석</button>
             </div>
@@ -313,7 +359,7 @@
     </main>
     <main id="tab-simulator" class="tab-content max-w-3xl mx-auto px-4 py-12" tabindex="-1">
         <section id="vision-sim-panel" class="sim-panel" aria-labelledby="sim-panel-title">
-            <h2 id="sim-panel-title" class="sim-panel-title" data-i18n="sim_title">시야 체험</h2>
+            <h2 id="sim-panel-title" class="sim-panel-title" data-i18n="sim_title">안구 질환 체험</h2>
             <p class="sim-panel-desc" data-i18n="sim_pick">체험할 질환을 고르고 아래 슬라이더를 움직여 보세요.</p>
             <div id="sim-chips" class="sim-chips" role="tablist"></div>
             <div id="sim-body"></div>
@@ -457,7 +503,7 @@
         <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" class="bnav-item">
             <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_test">AI 검사</span>
         </button>
-        <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" class="bnav-item"><span class="bnav-ico" aria-hidden="true">◉</span><span class="text-[10px] font-bold" data-i18n="sim_title">시야 체험</span></button>
+        <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" class="bnav-item"><span class="bnav-ico" aria-hidden="true">◉</span><span class="text-[10px] font-bold" data-i18n="sim_title">안구 질환 체험</span></button>
         <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
             <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5ZM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 소개</span>
         </button>
@@ -473,31 +519,37 @@
          한 덩어리로 두면 360x640 화면에서 파란 '분석하기' 버튼이 다이얼로그 밖으로
          밀려난다(기본 글자 크기 ko 84px·en 213px, 최대 글자 크기 ko 309px 잘림).
          이 단계는 사진 분석의 필수 관문이라 여기서 막히면 앱 전체가 막힌다. -->
-    <dialog id="photo-review" aria-labelledby="photo-review-title" aria-describedby="photo-review-body" class="photo-review">
-        <h2 id="photo-review-title" data-i18n="review_title">사진에서 눈동자가 보이나요?</h2>
+    <!-- AI 사진 인식 결과. 예전에는 사람에게 '사진에서 눈동자가 보이나요?'를 물어
+         스스로 통과시키게 했는데, 판단 기준을 아는 사람이 드물고 자기 사진은 대체로
+         통과시킨다. 같은 검사를 서버 게이트가 이미 하고 있으므로(vision.py의 PHOTO_CHECKS)
+         그 결과를 기준별로 보여주고, 막힌 기준이 있으면 다른 사진을 고르게 한다. -->
+    <dialog id="photo-check" aria-labelledby="photo-check-title" aria-describedby="photo-check-body" class="photo-review">
+        <h2 id="photo-check-title" data-i18n="check_fail_title">이 사진으로는 검사할 수 없어요</h2>
         <div class="pr-scroll">
-            <img id="photo-review-image" alt="" />
-            <p id="photo-review-body" data-i18n="review_body"></p>
+            <img id="photo-check-image" alt="" />
+            <!-- 기준 목록이 먼저다. 긴 안내 문장을 위에 두면 정작 '어디서 막혔는지'가
+                 스크롤 아래로 밀려 폰 화면에서 보이지 않는다. -->
+            <ul id="photo-check-list" class="pc-list"></ul>
+            <p id="photo-check-body" class="pc-reason"></p>
         </div>
         <div class="pr-actions">
-            <button type="button" id="photo-review-retake" data-i18n="review_retake">다른 사진 고르기</button>
-            <button type="button" id="photo-review-symptoms" data-i18n="photo_symptom_entry">수술한 눈·안대·사진 촬영 어려움 → 문진</button>
-            <button type="button" id="photo-review-confirm" data-i18n="review_confirm" disabled>눈동자가 보여요 · 분석하기</button>
+            <button type="button" id="photo-check-symptoms" data-surgery-only hidden data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
+            <button type="button" id="photo-check-retake" data-i18n="review_retake">다른 사진 고르기</button>
         </div>
     </dialog>
-    <script src="/static/data.js?v=20260914a"></script>
-    <script src="/static/app-photo-review.js?v=20260913a"></script>
-    <script src="/static/app-safety-copy.js?v=20260913d"></script>
+    <script src="/static/data.js?v=20260916f"></script>
+    <script src="/static/app-photo-review.js?v=20260916f"></script>
+    <script src="/static/app-safety-copy.js?v=20260916f"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-report-text.js?v=20260915a"></script>
-    <script src="/static/app-surgery.js?v=20260913d"></script>
-    <script src="/static/app-core.js?v=20260913c"></script>
-    <script src="/static/app-vision.js?v=20260913e"></script>
-    <script src="/static/app-chat.js?v=20260913c"></script>
+    <script src="/static/app-report-text.js?v=20260916a"></script>
+    <script src="/static/app-surgery.js?v=20260916f"></script>
+    <script src="/static/app-core.js?v=20260916f"></script>
+    <script src="/static/app-vision.js?v=20260916f"></script>
+    <script src="/static/app-chat.js?v=20260916f"></script>
     <script src="/static/app-report.js?v=20260914a"></script>
     <script src="/static/app-disease.js?v=20260913a"></script>
     <script src="/static/app-assess.js?v=20260913a"></script>
-    <script src="/static/app-findings.js?v=20260915a"></script>
+    <script src="/static/app-findings.js?v=20260916f"></script>
     <script src="/static/app-map.js?v=20260913a"></script>
 </body>
 </html>

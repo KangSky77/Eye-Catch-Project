@@ -14,9 +14,9 @@
 const translations = {
     ko: {
         nav_test: "AI 검사", nav_disease: "질환 소개", nav_report: "건강 리포트", nav_map: "병원 찾기",
-        intro_title: "당신의 눈 건강,<br>AI가 지켜드립니다", intro_desc: "사진 AI는 눈에 보이는 진행성 수정체 혼탁 특징만 확인합니다(초기 백내장은 사진으로 확인이 어렵습니다). 황반변성은 암슬러 격자 자가검사로, 녹내장·당뇨망막병증은 문진으로 위험 신호를 살펴봅니다.",
+        intro_title: "당신의 눈 건강,<br>Eye-Catch가 지켜드립니다", intro_desc: "사진 AI·자가검사·문진으로 눈 건강 위험 신호를 한 번에 확인합니다.", scope_note: "사진 AI는 눈에 보이는 진행성 수정체 혼탁 특징만 확인합니다(초기 백내장은 사진으로 확인이 어렵습니다). 황반변성은 암슬러 격자 자가검사로, 녹내장·당뇨망막병증은 문진으로 위험 신호를 살펴봅니다.",
         flow_photo: "사진 분석", flow_check: "자가진단", flow_report: "맞춤 리포트",
-        start_btn: "분석 시작하기", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
+        start_btn: "Eye-Catch Start!!!", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
         guide_title: "정확한 분석 가이드", guide_list: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요.</li>",
         tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "흔들리지 않게 촬영하세요", tip1_d: "팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사는 혼탁으로 잘못 읽힐 수 있어요. 직사광선이나 조명이 눈에 직접 비치지 않는 고른 실내 조명에서 찍어주세요.", tip3_t: "눈을 정면·중앙에 맞춰주세요", tip3_d: "한쪽 눈이 화면 중앙에 오도록 정면을 보고, 초점이 맞는 20~30cm 거리에서 찍어주세요.", tips_btn: "이해했습니다!",
         loading_title: "AI 딥러닝 분석 중...", ai_res_title: "혼탁 특징 분석 결과", next_amsler: "2단계: 황반변성 테스트",
@@ -28,7 +28,7 @@ const translations = {
         rep_warn: "본 리포트는 AI 자가진단 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.",
         dis_card_hint: "카드를 누르면 자세한 설명을 확인할 수 있어요.", dis_more: "자세히 보기 →", dis_modal_note: "이런 증상이 의심되면 안과 검진을 받아보세요.", dm_close: "닫기", dis_ai_badge: "AI 분석 지원",
         dis_modal_image: "임상 참고 이미지", dis_modal_symptoms: "주요 증상", dis_modal_risk: "위험 요인", dis_modal_care: "검사와 치료", dis_modal_urgent: "빠른 진료가 필요한 경우", dis_modal_source: "공식 질환 정보", dis_modal_image_note: "교육용 참고 이미지이며 사진만으로 질환을 진단할 수 없습니다.", dis_modal_image_source: "이미지 원본", dis_modal_license: "라이선스", dis_modal_image_change_reencoded: "원본 이미지를 웹 표시용으로 축소·재인코딩했습니다(내용 편집·크롭 없음).",
-        sim_title: "시야 체험", sim_desc: "이 질환이 진행되면 이렇게 보일 수 있어요", sim_normal: "정상 시야", sim_strength: "체험 강도", sim_disclaimer: "교육용 재현이며 실제 증상은 사람마다 다릅니다. 진단 도구가 아닙니다.", sim_pick: "체험할 질환을 고르고 아래 슬라이더를 움직여 보세요.", sim_photo_credit: "사진",
+        sim_title: "안구 질환 체험", sim_desc: "이 질환이 진행되면 이렇게 보일 수 있어요", sim_normal: "정상 시야", sim_strength: "체험 강도", sim_disclaimer: "교육용 재현이며 실제 증상은 사람마다 다릅니다. 진단 도구가 아닙니다.", sim_pick: "체험할 질환을 고르고 아래 슬라이더를 움직여 보세요.", sim_photo_credit: "사진",
         dis_modal_image_external: "외안부 사진", dis_modal_image_fundus: "안저 사진 · 병원 장비 필요", dis_modal_image_fundus_note: "눈 안쪽 망막에 생기는 질환이라 겉모습으로는 확인할 수 없고, 앱의 사진 분석 대상도 아닙니다.",
         map_page_title: "내 주변 안과 찾기", map_locate: "내 위치로 찾기", map_open_full: "카카오맵에서 전체 보기",
         map_status_idle: "아래 버튼을 눌러 가까운 안과를 찾아보세요.", map_example_badge: "예시 위치(서울 강남) — 아직 내 위치를 확인하지 않았어요", map_status_loading: "위치를 확인하는 중...", map_status_denied: "위치 권한이 거부되었어요. 전체 지도에서 검색해 주세요.", map_status_unsupported: "이 브라우저는 위치 기능을 지원하지 않아요.",
@@ -66,9 +66,9 @@ const translations = {
     },
     en: {
         nav_test: "AI Analysis", nav_disease: "Diseases", nav_report: "Report", nav_map: "Find Clinic",
-        intro_title: "Your Eye Health,<br>Protected by AI", intro_desc: "The photo AI only checks for visible progressive lens-opacity features (early cataract is hard to see in a photo). Macular degeneration uses the Amsler grid self-test; glaucoma and diabetic retinopathy risk comes from the questionnaire.",
+        intro_title: "Your Eye Health,<br>Protected by Eye-Catch", intro_desc: "Photo AI, self-tests and a questionnaire check your eyes for risk signals in one go.", scope_note: "The photo AI only checks for visible progressive lens-opacity features (early cataract is hard to see in a photo). Macular degeneration uses the Amsler grid self-test; glaucoma and diabetic retinopathy risk comes from the questionnaire.",
         flow_photo: "Photo analysis", flow_check: "Self-check", flow_report: "Personal report",
-        start_btn: "Start Analysis", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Screening results (verdict text, questionnaire answers, AI summary) are stored only if you consent on the report screen; the photo itself is never stored. Stored results stay in the team's own database.",
+        start_btn: "Eye-Catch Start!!!", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Screening results (verdict text, questionnaire answers, AI summary) are stored only if you consent on the report screen; the photo itself is never stored. Stored results stay in the team's own database.",
         guide_title: "Analysis Guide", guide_list: "<li>Hold the phone steady.</li><li>Turn the flash off.</li><li>Look straight ahead and center one eye at a time.</li>",
         tips_title: "Photo Tips for<br>Accurate Analysis", tip1_t: "Hold the phone steady", tip1_d: "Tuck your elbows in or lean on a wall, and wait for focus before shooting. Blurry photos can't be analyzed.", tip2_t: "Turn the flash off", tip2_d: "Flash reflections can be misread as clouding. Use soft, even room light without direct light reflecting in the eye.", tip3_t: "Look straight ahead and center the eye", tip3_d: "Center one eye in the frame and shoot from 20–30 cm, where the camera can focus.", tips_btn: "Got it!",
         loading_title: "AI Analyzing...", ai_res_title: "Opacity feature analysis", next_amsler: "Step 2: Macular Test",
@@ -80,7 +80,7 @@ const translations = {
         rep_warn: "This is an AI-assisted tool. Please consult an ophthalmologist for an accurate diagnosis.",
         dis_card_hint: "Tap a card to see the full description.", dis_more: "Learn more →", dis_modal_note: "If you notice these symptoms, please see an ophthalmologist.", dm_close: "Close", dis_ai_badge: "AI-Powered",
         dis_modal_image: "Clinical reference image", dis_modal_symptoms: "Common symptoms", dis_modal_risk: "Risk factors", dis_modal_care: "Exams and treatment", dis_modal_urgent: "When to seek prompt care", dis_modal_source: "Official condition guide", dis_modal_image_note: "For education only. A condition cannot be diagnosed from a photo alone.", dis_modal_image_source: "Image source", dis_modal_license: "License", dis_modal_image_change_reencoded: "The original image was downsized and re-encoded for web display (no content edits or cropping).",
-        sim_title: "Vision simulator", sim_desc: "How things may look as this condition progresses", sim_normal: "Normal vision", sim_strength: "Severity", sim_disclaimer: "An educational re-creation. Real symptoms vary by person. Not a diagnostic tool.", sim_pick: "Pick a condition, then move the slider.", sim_photo_credit: "Photo",
+        sim_title: "Eye disease simulator", sim_desc: "How things may look as this condition progresses", sim_normal: "Normal vision", sim_strength: "Severity", sim_disclaimer: "An educational re-creation. Real symptoms vary by person. Not a diagnostic tool.", sim_pick: "Pick a condition, then move the slider.", sim_photo_credit: "Photo",
         dis_modal_image_external: "External eye photo", dis_modal_image_fundus: "Fundus photo · clinic equipment needed", dis_modal_image_fundus_note: "This develops on the retina inside the eye, so it is invisible from the outside and is not covered by the app photo analysis.",
         map_page_title: "Find a Clinic Near You", map_locate: "Use My Location", map_open_full: "Open Full Map",
         map_status_idle: "Tap the button below to find nearby eye clinics.", map_example_badge: "Example location (Seoul) — your location hasn't been checked yet", map_status_loading: "Locating you...", map_status_denied: "Location denied. Please search on the full map.", map_status_unsupported: "This browser does not support geolocation.",
@@ -118,9 +118,9 @@ const translations = {
     },
     es: {
         nav_test: "Análisis IA", nav_disease: "Enfermedades", nav_report: "Informe", nav_map: "Clínicas",
-        intro_title: "Tu salud ocular,<br>protegida por IA", intro_desc: "La IA fotográfica solo detecta rasgos visibles de opacidad avanzada del cristalino (la catarata inicial es difícil de ver en una foto). La degeneración macular se revisa con la rejilla de Amsler, y el riesgo de glaucoma y retinopatía diabética mediante el cuestionario.",
+        intro_title: "Tu salud ocular,<br>protegida por Eye-Catch", intro_desc: "IA de fotos, autopruebas y cuestionario revisan de una vez las señales de riesgo ocular.", scope_note: "La IA fotográfica solo detecta rasgos visibles de opacidad avanzada del cristalino (la catarata inicial es difícil de ver en una foto). La degeneración macular se revisa con la rejilla de Amsler, y el riesgo de glaucoma y retinopatía diabética mediante el cuestionario.",
         flow_photo: "Análisis de foto", flow_check: "Autoevaluación", flow_report: "Informe personal",
-        start_btn: "Iniciar análisis", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados (texto del veredicto, respuestas, resumen de IA) se guardan solo si da su consentimiento en la pantalla del informe; la foto nunca se guarda.",
+        start_btn: "Eye-Catch Start!!!", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados (texto del veredicto, respuestas, resumen de IA) se guardan solo si da su consentimiento en la pantalla del informe; la foto nunca se guarda.",
         guide_title: "Guía", guide_list: "<li>Mantenga el teléfono firme.</li><li>Apague el flash.</li><li>Mire al frente y centre un ojo cada vez.</li>",
         tips_title: "Consejos de foto para<br>un análisis preciso", tip1_t: "Mantenga el teléfono firme", tip1_d: "Apoye los codos en el cuerpo o en una pared y espere a que enfoque antes de disparar. Las fotos movidas no se pueden analizar.", tip2_t: "Apague el flash", tip2_d: "Los reflejos pueden confundirse con opacidad. Use una luz interior suave y uniforme, sin reflejos directos en el ojo.", tip3_t: "Mire al frente y centre el ojo", tip3_d: "Centre un ojo en el encuadre y dispare a 20–30 cm, donde la cámara enfoque.", tips_btn: "¡Entendido!",
         loading_title: "IA analizando...", ai_res_title: "Análisis de rasgos de opacidad", next_amsler: "Paso 2: Mácula",
@@ -132,7 +132,7 @@ const translations = {
         rep_warn: "Herramienta asistida por IA. Consulte a un oftalmólogo para un diagnóstico preciso.",
         dis_card_hint: "Toca una tarjeta para ver la descripción completa.", dis_more: "Ver más →", dis_modal_note: "Si nota estos síntomas, consulte a un oftalmólogo.", dm_close: "Cerrar", dis_ai_badge: "Análisis con IA",
         dis_modal_image: "Imagen clínica de referencia", dis_modal_symptoms: "Síntomas frecuentes", dis_modal_risk: "Factores de riesgo", dis_modal_care: "Pruebas y tratamiento", dis_modal_urgent: "Cuándo buscar atención rápida", dis_modal_source: "Guía oficial", dis_modal_image_note: "Solo con fines educativos. Una foto por sí sola no permite diagnosticar.", dis_modal_image_source: "Fuente de la imagen", dis_modal_license: "Licencia", dis_modal_image_change_reencoded: "La imagen original se redujo y recodificó para la web (sin editar ni recortar el contenido).",
-        sim_title: "Simulador de visión", sim_desc: "Cómo puede verse a medida que avanza la enfermedad", sim_normal: "Visión normal", sim_strength: "Intensidad", sim_disclaimer: "Recreación educativa. Los síntomas reales varían según la persona. No es una herramienta diagnóstica.", sim_pick: "Elija una enfermedad y mueva el control deslizante.", sim_photo_credit: "Foto",
+        sim_title: "Simulador de enfermedad", sim_desc: "Cómo puede verse a medida que avanza la enfermedad", sim_normal: "Visión normal", sim_strength: "Intensidad", sim_disclaimer: "Recreación educativa. Los síntomas reales varían según la persona. No es una herramienta diagnóstica.", sim_pick: "Elija una enfermedad y mueva el control deslizante.", sim_photo_credit: "Foto",
         dis_modal_image_external: "Foto ocular externa", dis_modal_image_fundus: "Retinografía · requiere equipo clínico", dis_modal_image_fundus_note: "Se desarrolla en la retina, dentro del ojo, por lo que no se ve desde fuera ni lo cubre el análisis de fotos de la app.",
         map_page_title: "Encontrar una clínica cercana", map_locate: "Usar mi ubicación", map_open_full: "Abrir mapa completo",
         map_status_idle: "Pulse el botón para encontrar clínicas cercanas.", map_example_badge: "Ubicación de ejemplo (Seúl): su posición aún no se ha comprobado", map_status_loading: "Localizando...", map_status_denied: "Ubicación denegada. Busque en el mapa completo.", map_status_unsupported: "Este navegador no admite geolocalización.",
@@ -170,9 +170,9 @@ const translations = {
     },
     fr: {
         nav_test: "Analyse IA", nav_disease: "Maladies", nav_report: "Rapport", nav_map: "Trouver Clinique",
-        intro_title: "Votre santé oculaire,<br>protégée par l'IA", intro_desc: "L'IA photo ne repère que les signes visibles d'opacité évolutive du cristallin (une cataracte débutante y est difficile à voir). La DMLA est vérifiée avec la grille d'Amsler, le risque de glaucome et de rétinopathie diabétique par le questionnaire.",
+        intro_title: "Votre santé oculaire,<br>protégée par Eye-Catch", intro_desc: "IA photo, auto-tests et questionnaire vérifient d'un coup les signaux de risque oculaire.", scope_note: "L'IA photo ne repère que les signes visibles d'opacité évolutive du cristallin (une cataracte débutante y est difficile à voir). La DMLA est vérifiée avec la grille d'Amsler, le risque de glaucome et de rétinopathie diabétique par le questionnaire.",
         flow_photo: "Analyse photo", flow_check: "Auto-évaluation", flow_report: "Rapport personnel",
-        start_btn: "Démarrer l'analyse", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats (verdict, réponses au questionnaire, résumé IA) ne sont enregistrés que si vous y consentez sur l'écran du rapport ; la photo elle-même n'est jamais conservée.",
+        start_btn: "Eye-Catch Start!!!", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats (verdict, réponses au questionnaire, résumé IA) ne sont enregistrés que si vous y consentez sur l'écran du rapport ; la photo elle-même n'est jamais conservée.",
         guide_title: "Guide", guide_list: "<li>Tenez le téléphone bien stable.</li><li>Désactivez le flash.</li><li>Regardez droit devant et centrez un œil à la fois.</li>",
         tips_title: "Conseils photo pour<br>une analyse précise", tip1_t: "Tenez le téléphone bien stable", tip1_d: "Gardez les coudes contre le corps ou appuyez-vous au mur, et attendez la mise au point avant de déclencher. Une photo floue ne peut pas être analysée.", tip2_t: "Désactivez le flash", tip2_d: "Les reflets peuvent être pris pour une opacité. Utilisez un éclairage intérieur doux et uniforme, sans reflet direct dans l'œil.", tip3_t: "Regardez droit devant et centrez l'œil", tip3_d: "Centrez un œil dans l'image et photographiez à 20–30 cm, là où l'appareil fait la mise au point.", tips_btn: "Compris !",
         loading_title: "IA en analyse...", ai_res_title: "Analyse des signes d'opacité", next_amsler: "Étape 2: Macula",
@@ -184,7 +184,7 @@ const translations = {
         rep_warn: "Outil assisté par IA. Veuillez consulter un ophtalmologiste.",
         dis_card_hint: "Appuyez sur une carte pour voir la description complète.", dis_more: "En savoir plus →", dis_modal_note: "Si vous remarquez ces symptômes, consultez un ophtalmologiste.", dm_close: "Fermer", dis_ai_badge: "Analyse par IA",
         dis_modal_image: "Image clinique de référence", dis_modal_symptoms: "Symptômes fréquents", dis_modal_risk: "Facteurs de risque", dis_modal_care: "Examens et traitement", dis_modal_urgent: "Quand consulter rapidement", dis_modal_source: "Guide officiel", dis_modal_image_note: "Image éducative uniquement. Une photo seule ne permet pas de poser un diagnostic.", dis_modal_image_source: "Source de l’image", dis_modal_license: "Licence", dis_modal_image_change_reencoded: "L'image d'origine a été réduite et réencodée pour l'affichage web (sans retouche ni recadrage).",
-        sim_title: "Simulateur de vision", sim_desc: "À quoi cela peut ressembler quand la maladie progresse", sim_normal: "Vision normale", sim_strength: "Intensité", sim_disclaimer: "Reconstitution pédagogique. Les symptômes réels varient. Ce n'est pas un outil de diagnostic.", sim_pick: "Choisissez une maladie, puis déplacez le curseur.", sim_photo_credit: "Photo",
+        sim_title: "Simulateur de maladie", sim_desc: "À quoi cela peut ressembler quand la maladie progresse", sim_normal: "Vision normale", sim_strength: "Intensité", sim_disclaimer: "Reconstitution pédagogique. Les symptômes réels varient. Ce n'est pas un outil de diagnostic.", sim_pick: "Choisissez une maladie, puis déplacez le curseur.", sim_photo_credit: "Photo",
         dis_modal_image_external: "Photo oculaire externe", dis_modal_image_fundus: "Rétinographie · équipement clinique requis", dis_modal_image_fundus_note: "Cette atteinte se développe sur la rétine, à l'intérieur de l'œil : invisible de l'extérieur, elle n'est pas couverte par l'analyse photo de l'app.",
         map_page_title: "Trouver une clinique près de chez vous", map_locate: "Utiliser ma position", map_open_full: "Ouvrir la carte complète",
         map_status_idle: "Appuyez sur le bouton pour trouver des cliniques proches.", map_example_badge: "Emplacement d'exemple (Séoul) — votre position n'a pas encore été vérifiée", map_status_loading: "Localisation...", map_status_denied: "Position refusée. Recherchez sur la carte complète.", map_status_unsupported: "Ce navigateur ne prend pas en charge la géolocalisation.",
@@ -222,9 +222,9 @@ const translations = {
     },
     ja: {
         nav_test: "AI検査", nav_disease: "眼疾患について", nav_report: "健康レポート", nav_map: "病院検索",
-        intro_title: "あなたの目の健康、<br>AIがお守りします", intro_desc: "写真AIは目に見える進行性の水晶体混濁の特徴のみを確認します（初期白内障は写真では確認しにくい）。黄斑変性はアムスラーグリッドの自己検査で、緑内障・糖尿病網膜症は問診でリスクを確認します。",
+        intro_title: "あなたの目の健康、<br>Eye-Catchがお守りします", intro_desc: "写真AI・自己検査・問診で目のリスクサインをまとめて確認します。", scope_note: "写真AIは目に見える進行性の水晶体混濁の特徴のみを確認します（初期白内障は写真では確認しにくい）。黄斑変性はアムスラーグリッドの自己検査で、緑内障・糖尿病網膜症は問診でリスクを確認します。",
         flow_photo: "写真分析", flow_check: "セルフチェック", flow_report: "個別レポート",
-        start_btn: "検査開始", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "検査結果（判定文・問診回答・AI要約）はレポート画面で同意した場合のみ保存され、写真自体は保存されません。",
+        start_btn: "Eye-Catch Start!!!", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "検査結果（判定文・問診回答・AI要約）はレポート画面で同意した場合のみ保存され、写真自体は保存されません。",
         guide_title: "正確な分析のために", guide_list: "<li>手ブレしないように撮ってください。</li><li>フラッシュはオフにしてください。</li><li>正面を向き、片目ずつ画面中央に合わせてください。</li>",
         tips_title: "正確な分析のための<br>撮影のコツ", tip1_t: "手ブレしないように撮影", tip1_d: "肘を体につけるか壁にもたれ、ピントが合ってから撮ってください。ブレた写真は分析できません。", tip2_t: "フラッシュはオフに", tip2_d: "反射は濁りと誤読されることがあります。目に光が直接映り込まない、均一で柔らかな室内光で撮ってください。", tip3_t: "正面を向き目を中央に", tip3_d: "片目を画面中央に合わせ、ピントが合う20〜30cmで撮ってください。", tips_btn: "わかりました！",
         loading_title: "AI分析中...", ai_res_title: "混濁特徴の分析結果", next_amsler: "ステップ2：黄斑変性テスト",
@@ -236,7 +236,7 @@ const translations = {
         rep_warn: "本レポートはAIによる補助資料です。正確な診断のため眼科を受診してください。",
         dis_card_hint: "カードをタップすると詳しい説明が見られます。", dis_more: "詳しく見る →", dis_modal_note: "このような症状があれば眼科を受診してください。", dm_close: "閉じる", dis_ai_badge: "AI分析対応",
         dis_modal_image: "臨床参考画像", dis_modal_symptoms: "主な症状", dis_modal_risk: "リスク因子", dis_modal_care: "検査と治療", dis_modal_urgent: "早めの受診が必要な場合", dis_modal_source: "公的な疾患情報", dis_modal_image_note: "教育用の参考画像です。写真だけで診断することはできません。", dis_modal_image_source: "画像の出典", dis_modal_license: "ライセンス", dis_modal_image_change_reencoded: "元画像をウェブ表示用に縮小・再エンコードしました（内容の編集・トリミングなし）。",
-        sim_title: "見え方の体験", sim_desc: "この疾患が進行するとこう見えることがあります", sim_normal: "正常な見え方", sim_strength: "強さ", sim_disclaimer: "教育用の再現です。実際の症状は人により異なります。診断ツールではありません。", sim_pick: "疾患を選んでスライダーを動かしてください。", sim_photo_credit: "写真",
+        sim_title: "眼疾患の体験", sim_desc: "この疾患が進行するとこう見えることがあります", sim_normal: "正常な見え方", sim_strength: "強さ", sim_disclaimer: "教育用の再現です。実際の症状は人により異なります。診断ツールではありません。", sim_pick: "疾患を選んでスライダーを動かしてください。", sim_photo_credit: "写真",
         dis_modal_image_external: "外眼部写真", dis_modal_image_fundus: "眼底写真 · 医療機器が必要", dis_modal_image_fundus_note: "眼の内側の網膜に生じるため外見では確認できず、アプリの写真分析の対象外です。",
         map_page_title: "近くの眼科を探す", map_locate: "現在地で探す", map_open_full: "地図全体を開く",
         map_status_idle: "下のボタンを押して近くの眼科を探しましょう。", map_example_badge: "例の位置（ソウル）— 現在地はまだ確認していません", map_status_loading: "現在地を確認中...", map_status_denied: "位置情報が拒否されました。地図全体で検索してください。", map_status_unsupported: "このブラウザは位置情報に対応していません。",
@@ -274,9 +274,9 @@ const translations = {
     },
     zh: {
         nav_test: "AI检测", nav_disease: "疾病介绍", nav_report: "健康报告", nav_map: "寻找医院",
-        intro_title: "您的眼部健康，<br>由AI来守护", intro_desc: "照片AI仅检测可见的进行性晶状体混浊特征（早期白内障难以通过照片确认）。黄斑变性通过阿姆斯勒方格表自测，青光眼和糖尿病视网膜病变通过问卷评估风险。",
+        intro_title: "您的眼部健康，<br>由Eye-Catch守护", intro_desc: "照片AI、自测与问卷，一次性检查眼部风险信号。", scope_note: "照片AI仅检测可见的进行性晶状体混浊特征（早期白内障难以通过照片确认）。黄斑变性通过阿姆斯勒方格表自测，青光眼和糖尿病视网膜病变通过问卷评估风险。",
         flow_photo: "照片分析", flow_check: "自我检测", flow_report: "个性化报告",
-        start_btn: "开始检测", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "检测结果（判定文字、问卷答案、AI摘要）仅在报告页面同意后才会保存，照片本身不会保存。",
+        start_btn: "Eye-Catch Start!!!", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "检测结果（判定文字、问卷答案、AI摘要）仅在报告页面同意后才会保存，照片本身不会保存。",
         guide_title: "准确分析指南", guide_list: "<li>请保持手机稳定。</li><li>请关闭闪光灯。</li><li>请直视前方，每次将一只眼睛置于画面中央。</li>",
         tips_title: "拍摄小技巧<br>让分析更准确", tip1_t: "拍摄时请保持稳定", tip1_d: "手肘贴身或靠墙固定，等对焦后再拍。照片模糊将无法分析。", tip2_t: "请关闭闪光灯", tip2_d: "反光可能被误判为混浊。请在柔和、均匀的室内光线下拍摄，避免光线直接反射到眼睛。", tip3_t: "直视前方并将眼睛居中", tip3_d: "将一只眼睛置于画面中央，在相机能对焦的20–30厘米处拍摄。", tips_btn: "明白了！",
         loading_title: "AI分析中...", ai_res_title: "混浊特征分析结果", next_amsler: "第二步：黄斑变性测试",
@@ -288,7 +288,7 @@ const translations = {
         rep_warn: "本报告为AI辅助参考资料，为了获得准确诊断，请咨询眼科医生。",
         dis_card_hint: "点击卡片可查看详细说明。", dis_more: "查看详情 →", dis_modal_note: "如有这些症状，请及时就诊眼科。", dm_close: "关闭", dis_ai_badge: "支持AI分析",
         dis_modal_image: "临床参考图片", dis_modal_symptoms: "常见症状", dis_modal_risk: "风险因素", dis_modal_care: "检查与治疗", dis_modal_urgent: "需要尽快就医的情况", dis_modal_source: "官方疾病信息", dis_modal_image_note: "图片仅供健康教育参考，不能仅凭照片诊断疾病。", dis_modal_image_source: "图片来源", dis_modal_license: "许可证", dis_modal_image_change_reencoded: "原图已为网页显示缩小并重新编码（未编辑或裁剪内容）。",
-        sim_title: "视觉体验", sim_desc: "随着病情发展，可能会看到这样的画面", sim_normal: "正常视觉", sim_strength: "强度", sim_disclaimer: "这是教育用的模拟，实际症状因人而异，并非诊断工具。", sim_pick: "选择一种疾病，然后拖动滑块。", sim_photo_credit: "照片",
+        sim_title: "眼病视觉体验", sim_desc: "随着病情发展，可能会看到这样的画面", sim_normal: "正常视觉", sim_strength: "强度", sim_disclaimer: "这是教育用的模拟，实际症状因人而异，并非诊断工具。", sim_pick: "选择一种疾病，然后拖动滑块。", sim_photo_credit: "照片",
         dis_modal_image_external: "眼表照片", dis_modal_image_fundus: "眼底照片 · 需医院设备", dis_modal_image_fundus_note: "病变位于眼球内部的视网膜，从外观无法看出，也不在本应用的照片分析范围内。",
         map_page_title: "查找附近的眼科", map_locate: "使用我的位置", map_open_full: "打开完整地图",
         map_status_idle: "点击下方按钮查找附近的眼科。", map_example_badge: "示例位置（首尔）— 尚未获取您的位置", map_status_loading: "正在确认位置...", map_status_denied: "位置权限被拒绝，请在完整地图中搜索。", map_status_unsupported: "此浏览器不支持定位功能。",
@@ -696,8 +696,12 @@ Object.assign(translations.fr, {"age_under10":"Moins de 10 ans","age_10s":"10–
 Object.assign(translations.ja, {"age_under10":"10歳未満","age_10s":"10〜19歳","age_20s":"20〜29歳","age_30s":"30〜39歳"});
 Object.assign(translations.zh, {"age_under10":"10岁以下","age_10s":"10–19岁","age_20s":"20–29岁","age_30s":"30–39岁"});
 const riskQuestions = [
+  // 선택지에 '오늘'을 두지 않는다 — '오늘'과 '최근 4주 이내'는 서로 배타적이지 않아
+  // (오늘도 4주 이내다) 고르는 사람마다 다른 답을 낸다. 수술 당일인지는 술후 문진의
+  // 첫 문항(post_day1)이 따로 묻고, 그 답이 경과 문항을 뺀다(app-surgery.js).
+  // 'today' 값 자체는 계속 지원한다 — hasSurgery()·리포트 라벨이 그대로 읽는다.
   { code: 'surgery', key: 'q_surgery', type: 'choice', options:
-    ['today', 'recent', 'past', 'none'].map(v => ({ v, key: 'surgery_' + v, score: 0 })) },
+    ['recent', 'past', 'none'].map(v => ({ v, key: 'surgery_' + v, score: 0 })) },
   { code: 'age', key: 'q_age', type: 'choice',
     options: [
       { v: 'under10', key: 'age_under10', score: 0 },

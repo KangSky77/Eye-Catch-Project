@@ -163,7 +163,10 @@ test('the report never contradicts or repeats itself across 1728 combinations',(
    if(!VERDICT.includes(code))assert.notEqual(value,t.photo_history_limit,id);
    // 판독을 쓰지 않은 사실은 검사 요약 해석에도 있어야 하고, 딱 한 번만 있어야 한다.
    if(noVerdict)assert.ok(findings.includes(value),id);
-   assert.equal(findings.filter(x=>[t.photo_history_limit,t.photo_skipped,t.post_limit].includes(x)).length,noVerdict?1:0,id);
+   if(noVerdict)assert.equal(findings.filter(x=>x===value).length,1,id);
+   // 판독을 실제로 쓴 회차에 '판독 없음/제외' 문구가 섞이면 안 된다.
+   // (post_limit은 '술후 문진 자체의 한계'라 판독을 쓴 술후 회차에도 남는다 — 다른 사실이다.)
+   if(!noVerdict)assert.ok(!findings.includes(t.photo_history_limit)&&!findings.includes(t.photo_skipped),id);
    assert.equal(new Set(findings).size,findings.length,id);
    // 권장 조치 카드 안에서 같은 문장을 두 번 찍지 않는다.
    assert.ok(!tri.note||tri.note!==tri.why,id);
@@ -305,11 +308,18 @@ test('a fellow-eye reading is refused when the two eyes disagree or only one eye
  twoEyes(c,'risk','risk');c.state.riskAnswers.surgery_type='laser';c.state.riskAnswers.surgery_lens_history='no';
  assert.equal(vm.runInContext("activeRiskQuestions().some(q=>q.code==='surgery_both')",c),false);
  assert.equal(vm.runInContext('photoAssessmentExcluded()',c),false);
- // 4주 이내 수술은 술후 확인 경로다 — 반대쪽 눈 판독을 끌어오지 않는다.
+ // 4주 이내에 한쪽만 수술했어도, 수술하지 않은 반대쪽 눈은 자연 수정체 그대로다.
+ // 두 눈 판정이 일치하면 어느 쪽이 수술한 눈이든 그 판정은 반대쪽 눈의 판정이기도 하다.
+ // (예전에는 '수술 4주 이내'라는 이유만으로 이 사람들의 스크리닝을 통째로 버렸다.)
  const recent=setup('today');recent.state.riskAnswers.surgery_type='cataract';recent.state.riskAnswers.surgery_both='one';
  twoEyes(recent,'risk','risk');
- assert.equal(vm.runInContext('fellowEyeAssessable()',recent),false);
- assert.equal(vm.runInContext('photoAssessmentExcluded()',recent),true);
+ assert.equal(vm.runInContext('fellowEyeAssessable()',recent),true);
+ assert.equal(vm.runInContext('photoAssessmentExcluded()',recent),false);
+ // 양쪽 다 수술했거나 모르면 살릴 눈이 없다.
+ for(const scope of ['both','unknown']){
+  recent.state.riskAnswers.surgery_both=scope;
+  assert.equal(vm.runInContext('photoAssessmentExcluded()',recent),true,scope);
+ }
 });
 test('the fellow-eye question is asked and never contradicts the asymmetry finding',()=>{
  const c=setup('past');c.state.riskAnswers.surgery_type='cataract';twoEyes(c,'risk','risk');
@@ -366,7 +376,8 @@ test('every urgent question ends the actual questionnaire before any extra AI re
   }
   assert.equal(finishes,flags.length);
  }
- assert.equal(checked,108); // Six languages no longer repeat remote-surgery severe pain.
+ // 4주 초과 이력에서 통증(rf_pain)·시력저하(rf_sudden)를 두 번 묻지 않으므로 언어당 17개다.
+ assert.equal(checked,102);
 });
 
 test('12960 combinations preserve urgency, postoperative limits and remote laser screening',()=>{

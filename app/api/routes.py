@@ -78,6 +78,8 @@ async def analyze_eye(file: UploadFile = File(...)):
         "eye_score": None,
         "sharpness": None,
         "glare": None,
+        # 사진 인식 기준 체크리스트. 화면이 항상 같은 모양을 그릴 수 있게 기본값을 둔다.
+        "checks": [],
         **result,
     }
 
@@ -116,8 +118,8 @@ async def generate_next_question_endpoint(req: QuestionGenRequest):
 async def plain_findings(req: PlainFindingsRequest):
     """검사 요약 해석을 쉬운 말로 바꿔 돌려준다.
 
-    해석 자체는 프론트가 코드로 확정한 문장이고, 여기서는 말투만 바꾼다.
-    검증(숫자·질환명·확률/배제/진단 표현·길이)을 통과하지 못한 줄은 원문 그대로 나간다.
+    같은 언어의 원문과 정확히 일치하는 고정 표현만 사용한다.
+    준비된 표현이 없는 줄은 원문을 유지하며 LLM을 호출하지 않는다.
     """
     return {"lines": await rewrite_findings(req.findings, req.lang)}
 

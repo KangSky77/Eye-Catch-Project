@@ -49,8 +49,11 @@ function buildFindings() {
     // --- 백내장 사진 판독 ---
     // 수술 4주 이내면 건너뛴다. 위에서 post_limit로 '사진만으로는 판정할 수 없다'고
     // 이미 말했는데, 바로 아래에 '백내장 위험' 소견을 붙이면 그 말을 스스로 뒤집는다.
-    const postop = typeof photoAssessmentExcluded === 'function' ? photoAssessmentExcluded() : (typeof hasSurgery === 'function' && hasSurgery());
-    if (postop && !hasSurgery()) out.push(t.photo_history_limit);
+    // 판독을 버린 이유는 '수술을 받아서'가 아니라 '인공수정체가 들어갔거나 수정체 상태를
+    // 모르기 때문'이다. 4주 이내 수술이든 오래된 이력이든 같은 이유이므로 같은 문장을 쓴다
+    // (위의 post_limit은 '술후 문진 자체의 한계'라는 다른 사실을 말한다).
+    const postop = typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded();
+    if (postop) out.push(t.photo_history_limit);
     // 사진을 한 장도 받지 않은 회차는 '판독 제외'가 아니라 '판독 없음'이다.
     // 아무 줄도 남기지 않으면 사진 항목만 조용히 사라져 무엇이 빠졌는지 알 수 없다.
     //
@@ -62,6 +65,11 @@ function buildFindings() {
         out.push(state.aiResultCode === 'postop' ? t.post_limit : t.photo_skipped);
     }
     if (!postop) {
+        // 수정체를 바꾸지 않은 수술(라식·라섹 등)이라 판독을 그대로 적용한 경우, 왜 적용했고
+        // 무엇이 한계인지 먼저 밝힌다 — 바로 위 post_limit 줄과 나란히 읽히기 때문이다.
+        if (typeof photoAppliesDespiteSurgery === 'function' && photoAppliesDespiteSurgery()) {
+            out.push(t.photo_lens_intact);
+        }
         // 반대쪽 눈만 판독한 경우, 아래 백내장 소견이 어느 눈에 대한 것인지 먼저 밝힌다.
         if (typeof fellowEyeAssessable === 'function' && fellowEyeAssessable()) out.push(t.find_cat_fellow);
         if (state.aiResultCode === 'risk') out.push(t.find_cat_risk);
@@ -93,15 +101,29 @@ function buildFindings() {
     return out.filter(Boolean);
 }
 
-/** 해석 블록을 리포트에 그린다. */
-// 쉬운 말 변환 상태. 문장이 언어마다 다르므로 언어를 함께 기억한다.
-// on=false면 코드가 만든 원래 문장을 보여준다(기본값).
-let _plainFindings = null;   // { lang, on, loading, lines:[{text, rewritten}] }
+// 캐시와 요청 모두 검사 회차·언어·원문에 속한다. 예전 회차의 늦은 응답도 무효다.
+let _plainFindings = null;
 
-/** 화면에 실제로 보여줄 줄 목록. 검증을 통과하지 못한 줄은 원문 그대로 남는다. */
+function resetPlainFindings() {
+    const old = _plainFindings;
+    _plainFindings = null;
+    if (old && old.controller) old.controller.abort();
+}
+
+function plainFindingsMatch(p, fixed) {
+    return p && p.generation === state.sessionGeneration && p.lang === state.lang
+        && p.fixed.length === fixed.length && p.fixed.every((text, i) => text === fixed[i]);
+}
+
+function currentPlainFindings(fixed) {
+    if (_plainFindings && !plainFindingsMatch(_plainFindings, fixed)) resetPlainFindings();
+    return _plainFindings;
+}
+
+/** 화면에 실제로 보여줄 줄 목록. 준비된 쉬운 표현이 없는 줄은 원문 그대로 남는다. */
 function plainFindingsLines(fixed) {
-    const p = _plainFindings;
-    if (!p || !p.on || p.lang !== state.lang || !Array.isArray(p.lines)) return fixed;
+    const p = currentPlainFindings(fixed);
+    if (!p || !p.on || !Array.isArray(p.lines)) return fixed;
     return fixed.map((text, i) => (p.lines[i] && p.lines[i].rewritten) ? p.lines[i].text : text);
 }
 
@@ -109,25 +131,38 @@ function plainFindingsLines(fixed) {
 async function togglePlainFindings() {
     const box = document.getElementById('findings-box');
     const t = translations[state.lang];
-    if (_plainFindings && _plainFindings.lang === state.lang && !_plainFindings.loading) {
-        _plainFindings.on = !_plainFindings.on;
+    if (!box) return;
+    const fixed = buildFindings();
+    const cached = currentPlainFindings(fixed);
+    if (cached) {
+        if (cached.loading) return;
+        cached.on = !cached.on;
         renderFindings(box);
         return;
     }
-    const fixed = buildFindings();
-    _plainFindings = { lang: state.lang, on: false, loading: true, lines: [] };
+    const request = {
+        lang: state.lang, generation: state.sessionGeneration, fixed,
+        on: false, loading: true, lines: [],
+        controller: typeof AbortController === 'function' ? new AbortController() : null,
+    };
+    _plainFindings = request;
+    const isCurrent = () => _plainFindings === request && plainFindingsMatch(request, buildFindings());
     renderFindings(box);
     try {
         const res = await fetch('/api/plain-findings', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lang: state.lang, findings: fixed })
+            body: JSON.stringify({ lang: request.lang, findings: fixed }),
+            signal: request.controller ? request.controller.signal : undefined,
         });
         const data = await res.json();
-        if (!res.ok || !Array.isArray(data.lines) || data.lines.length !== fixed.length) throw new Error('bad response');
-        _plainFindings = { lang: state.lang, on: true, loading: false, lines: data.lines };
+        if (!isCurrent()) return;
+        if (!res.ok || !Array.isArray(data.lines) || data.lines.length !== fixed.length
+            || !data.lines.every(line => line && typeof line.text === 'string' && line.text.trim()
+                && typeof line.rewritten === 'boolean')) throw new Error('bad response');
+        Object.assign(request, { on: true, loading: false, lines: data.lines });
     } catch (e) {
-        // 서버가 없거나 응답이 이상하면 원래 문장을 그대로 둔다 — 해석은 코드가 만든 것이라 손실이 없다.
-        _plainFindings = null;
+        if (!isCurrent()) return;
+        resetPlainFindings();
         if (typeof showToast === 'function') showToast(t.plain_failed || '', 'info');
     }
     renderFindings(box);
@@ -176,7 +211,7 @@ function renderFindings(container) {
     }
 
     if (on) {
-        // 말투만 바꿨다는 사실과, 검증에 걸려 원문으로 남은 줄 수를 함께 밝힌다.
+        // 준비된 쉬운 표현이 없어 원문으로 남은 줄 수를 함께 밝힌다.
         const kept = (state_.lines || []).filter(l => !l.rewritten).length;
         const plainNote = document.createElement('p');
         plainNote.id = 'plain-findings-note';

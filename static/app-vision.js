@@ -18,7 +18,7 @@ let _analysisRequestId = 0;
 
 function cancelEyeAnalysis() {
     _analysisRequestId++;
-    if (typeof cancelPhotoReview === 'function') cancelPhotoReview();
+    if (typeof closePhotoCheck === 'function') closePhotoCheck();
     if (_analysisAbortController) _analysisAbortController.abort();
     _analysisAbortController = null;
 }
@@ -220,11 +220,9 @@ async function runAIAnalysis(droppedFile) {
         return;
     }
 
-    // 자동 검증기는 감은 눈을 확실히 구별하지 못한다. 전송 전에 실제 사진을
-    // 보여주고 사용자가 눈동자 노출을 확인해야 한다.
-    if (!await reviewPhoto(file)) return;
-    if (preparationId !== _analysisRequestId) return;
-
+    // 예전에는 여기서 사용자에게 '눈동자가 보이나요?'를 묻고 직접 통과시키게 했다.
+    // 같은 판단을 서버 게이트가 이미 하고 있으므로(vision.py의 PHOTO_CHECKS) 그쪽에
+    // 맡기고, 결과는 기준별 체크리스트로 돌려준다(아래 showPhotoCheckFailure).
     // 새 회차 초기화가 이전 분석을 취소하고 request id를 무효화한다.
     // 현재 요청 id는 반드시 초기화가 끝난 뒤 발급해야 정상 응답이 stale 처리되지 않는다.
     if (typeof resetScreeningState === 'function') resetScreeningState();
@@ -277,13 +275,19 @@ async function runAIAnalysis(droppedFile) {
         if (retake[d.result_code]) {
             showToast(retake[d.result_code], 'error', 7000);
             showUploadError(retake[d.result_code]);
+            state.photoChecks = d.checks || [];
             nextStep('step-photo');
+            // AI가 어떤 기준에서 막았는지 사진과 함께 보여주고 다른 사진을 고르게 한다.
+            if (typeof showPhotoCheckFailure === 'function') {
+                showPhotoCheckFailure(file, d.checks, retake[d.result_code]);
+            }
             return;
         }
 
         // 백내장 결과를 선택 언어로 표시 (result_code 기반)
         const resultText = t['ai_' + d.result_code] || d.result;
         state.aiResultCode = d.result_code;   // 언어 중립 코드 저장 (RAG 검색용)
+        state.photoChecks = d.checks || [];   // 사진 인식 기준별 통과 여부
         state.eyeBreakdown = d.eyes || [];
         state.asymmetric = !!d.asymmetric;
 
@@ -321,15 +325,27 @@ async function runAIAnalysis(droppedFile) {
         pNote.dataset.role = 'score-note';
         pNote.textContent = t.score_note || '';
         disp.appendChild(pNote);
-        // 이 화면은 수술 이력을 묻기 전이다. 수술 다음 날 투명 보호대를 댄 눈처럼 눈이 실제로
-        // 보이는 사진은 게이트가 막을 수 없어, 수술한 눈에도 판정이 먼저 뜬다(2026-09-13 실측:
-        // 투명 보호대 얼굴 0.909/0.979 통과 → '혼탁 없음'). 리포트는 문진 뒤에 이 판정을 빼지만,
-        // 사용자는 여기서 이미 결과를 읽는다 — 그래서 결과 바로 아래에서 적용 범위를 말한다.
-        const pSurgery = document.createElement('p');
-        pSurgery.className = 'text-[11px] font-bold text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mt-2 leading-relaxed';
-        pSurgery.dataset.role = 'surgery-photo-note';
-        pSurgery.textContent = t.surgery_photo_note || '';
-        disp.appendChild(pSurgery);
+        // 수술 이력을 아직 모를 때만 적용 범위를 경고한다. 수술 다음 날 투명 보호대를 댄 눈처럼
+        // 눈이 실제로 보이는 사진은 게이트가 막을 수 없어, 수술한 눈에도 판정이 먼저 뜬다
+        // (2026-09-13 실측: 투명 보호대 얼굴 0.909/0.979 통과 → '혼탁 없음').
+        // 지금은 검사 첫 화면(step-surgery)에서 수술 여부를 먼저 받으므로 보통은 답이 이미 있고,
+        // 수술한 사람에게는 refreshAiResultDisplay가 판정 자체를 가린다. 답을 모르는 경로
+        // (사진만 다시 올리는 딥링크·복구 등)에서만 이 경고가 남는다.
+        if (typeof photoAppliesDespiteSurgery === 'function' && photoAppliesDespiteSurgery()) {
+            // 수정체를 바꾸지 않은 수술(라식·라섹 등)이라 판독은 유효하다. 다만 수술 직후에는
+            // 각막이 붓거나 흐려 값이 달라질 수 있으므로 그 사실을 결과 옆에 붙인다.
+            const pLens = document.createElement('p');
+            pLens.className = 'text-[11px] font-bold text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mt-2 leading-relaxed';
+            pLens.dataset.role = 'lens-intact-note';
+            pLens.textContent = t.photo_lens_intact || '';
+            disp.appendChild(pLens);
+        } else if (state.riskAnswers?.surgery === undefined) {
+            const pSurgery = document.createElement('p');
+            pSurgery.className = 'text-[11px] font-bold text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mt-2 leading-relaxed';
+            pSurgery.dataset.role = 'surgery-photo-note';
+            pSurgery.textContent = t.surgery_photo_note || '';
+            disp.appendChild(pSurgery);
+        }
 
         // 애매한 신호(uncertain / 얼굴 모드의 borderline) → 눈 클로즈업 재촬영 권유.
         // 얼굴 사진은 편의 기능이고, 정확도는 눈을 한쪽씩 가까이 찍는 쪽이 훨씬 높다.
@@ -363,6 +379,7 @@ async function runAIAnalysis(droppedFile) {
         // 어떤 사진이 분석됐는지 결과 화면에서도 확인할 수 있어야 한다.
         // (로딩 화면에만 있어서, 사진을 잘못 고른 것을 결과에서 알아챌 방법이 없었다)
         showAnalyzedPhoto();
+        if (typeof showPhotoCheckSummary === 'function') showPhotoCheckSummary(state.photoChecks);
         refreshAiResultDisplay();
 
         setTimeout(() => {
@@ -446,18 +463,24 @@ function renderEyeBreakdown(container, eyes) {
  *    표시용 클래스는 디자인이 바뀌면 언제든 겹치므로 선택자로 쓰지 않는다.
  *    (요소를 새로 추가할 때는 data-role도 함께 붙일 것)
  */
+/** 다른 사진 고르기 — 업로드 화면으로 돌아가 파일 선택창을 바로 연다.
+ *  화면만 되돌리면 사용자가 '사진 선택' 버튼을 한 번 더 찾아야 한다. */
+function retakePhoto() {
+    nextStep('step-photo');
+    const input = document.getElementById('cataract-file');
+    if (input) input.click();
+}
+
 function refreshAiResultDisplay() {
+    // 기준 체크리스트의 문구도 현재 언어로 다시 그린다(언어 전환 시 여기로 들어온다).
+    if (typeof showPhotoCheckSummary === 'function') showPhotoCheckSummary(state.photoChecks);
     const r = state.aiResultData, disp = document.getElementById('ai-result-display');
     if (!r || !disp) return;
     const t = translations[state.lang];
     const pick = role => disp.querySelector(`[data-role="${role}"]`);
     const set = (role, text) => { const el = pick(role); if (el) el.textContent = text; };
-    const history = state.riskAnswers || {};
-    const pending = history.surgery === undefined || (history.surgery === 'past' && (
-        history.surgery_type === undefined
-        || (history.surgery_type !== 'cataract' && history.surgery_lens_history === undefined)
-        || (typeof fellowEyeQuestionApplies === 'function' && fellowEyeQuestionApplies() && history.surgery_both === undefined)
-    ));
+    // 판독을 적용할지 가르는 답(수술 종류·인공수정체 이력)이 아직 남아 있으면 점수를 감춘다.
+    const pending = typeof surgeryHistoryPending === 'function' && surgeryHistoryPending();
     const excluded = typeof photoAssessmentExcluded === 'function' && photoAssessmentExcluded();
     const fellow = typeof fellowEyeAssessable === 'function' && fellowEyeAssessable();
     // Hide the whole eye breakdown too: its raw scores are not anatomically localized.
@@ -475,6 +498,23 @@ function refreshAiResultDisplay() {
     set('verdict', t['ai_' + r.code] || r.code);
     set('score-note', t.score_note || '');
     set('surgery-photo-note', t.surgery_photo_note || '');
+
+    // '수정체를 건드리지 않은 수술이라 판독을 살렸다'는 사실은 사진을 올린 시점이 아니라
+    // 문진에서 수술 종류를 답한 뒤에 성립한다. 그래서 결과를 그릴 때가 아니라 '다시 그릴 때'
+    // 만든다 — 문진을 마치고 결과 화면으로 돌아와도 같은 안내가 보여야 한다.
+    const applies = typeof photoAppliesDespiteSurgery === 'function' && photoAppliesDespiteSurgery();
+    let lensNote = pick('lens-intact-note');
+    if (applies && !lensNote) {
+        lensNote = document.createElement('p');
+        lensNote.className = 'text-[11px] font-bold text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mt-2 leading-relaxed';
+        lensNote.dataset.role = 'lens-intact-note';
+        disp.appendChild(lensNote);
+    }
+    if (lensNote) {
+        lensNote.textContent = t.photo_lens_intact || '';
+        lensNote.hidden = !applies;
+        lensNote.classList.toggle('hidden', !applies);
+    }
     set('closeup-hint', t.closeup_hint || '');
     set('closeup-btn', t.closeup_btn || '');
     set('eye-title', t.eye_breakdown_title || '');

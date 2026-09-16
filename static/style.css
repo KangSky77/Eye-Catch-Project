@@ -878,6 +878,22 @@ html[data-font="2"] { font-size: 20px; }
     font-size: .78rem;
 }
 .font-ctl button + button { font-size: 1rem; }
+
+/* [머리글 고정] A−/A+는 '본문'을 키우는 기능이다. 머리글까지 rem으로 같이 커지면 언어 선택과
+   버튼 자체가 넓어지면서, A+를 누를 때마다 버튼이 옆·아래로 밀려 연속으로 누를 수 없었다
+   (데스크톱 실측). 머리글 조작부는 어느 글자 크기 단계에서도 같은 자리에 있도록 px로 고정한다.
+   본문은 그대로 커진다 — 이 블록은 .site-header 안에만 적용된다.
+   ⚠ 아래 미디어쿼리(폰·태블릿)가 같은 선택자를 더 뒤에서 덮으므로, 이 블록은 반드시
+      미디어쿼리보다 '앞'에 있어야 한다. */
+.site-header .header-inner { padding: 14px 20px; max-width: 1152px; }   /* max-w-6xl(72rem)이 rem이라 단계마다 머리글 폭이 바뀌었다 */
+.site-header .header-controls { gap: 20px; }
+.site-header .gap-1 { gap: 4px; }
+.site-header .brand-btn { gap: 10px; }
+.site-header .brand-name { font-size: 20px; }
+.site-header .nav-pill { font-size: 15px; }
+.site-header .font-ctl button { font-size: 13px; }
+.site-header .font-ctl button + button { font-size: 16px; }
+.site-header .language-select { font-size: 12px; width: 136px; }
 .font-ctl button:hover { background: var(--ec-blue-soft); color: var(--ec-blue); }
 .font-ctl button[disabled] { opacity: .35; cursor: default; background: transparent; color: #3b4b63; }
 .brand-name { white-space: nowrap; }
@@ -911,12 +927,12 @@ html[data-font="2"] { font-size: 20px; }
 .ex-hint { margin-top: .5rem; font-size: .62rem; color: #94a3b8; line-height: 1.4; }
 
 @media (max-width: 767px) {
-    .site-header .max-w-6xl { padding: .72rem 1rem; }
+    .site-header .max-w-6xl { padding: 12px 16px; }
     /* 큰 글자 단계에서 좁은 화면의 헤더가 넘치지 않도록.
        헤더의 로고·언어 선택·글자 크기 버튼은 '본문'이 아니라 도구이므로 root 크기를 따라가지 않게 px로 고정한다.
        (처음엔 최대 단계에서 브랜드명을 숨겼는데, 실기기 피드백: 이름이 사라지면 앱이 바뀐 것처럼 보인다) */
     /* 아래의 .brand-name { font-size: 1.05rem } 같은 기존 규칙보다 뒤에 오지 않으므로 선택자 우선순위로 이긴다 */
-    .site-header .gap-5 { gap: .5rem; }
+    .site-header .gap-5 { gap: 8px; }
     /* Cover screens and enlarged text: wrap tools instead of clipping the brand. */
     .site-header .header-inner { flex-wrap: wrap; gap: 8px; }
     .site-header .header-controls { flex-shrink: 0; flex-wrap: wrap; max-width: 100%; margin-left: auto; }
@@ -930,7 +946,7 @@ html[data-font="2"] { font-size: 20px; }
     .brand-mark { width: 34px; height: 34px; border-radius: 9px; }
     .brand-mark svg { width: 22px; height: 22px; }
     .brand-name { font-size: 1.05rem; }
-    .language-select { min-height: 36px; width: 125px; max-width: 125px; padding-left: 10px; font-size: .68rem; }
+    .language-select { min-height: 36px; width: 125px; max-width: 125px; padding-left: 10px; font-size: 11px; }
     .screening-main { padding-left: 1rem; padding-right: 1rem; }
     .intro-stage { min-height: calc(100vh - 126px); padding: 2rem 0 .75rem; overflow: visible; }
     .intro-stage::before, .intro-stage::after { display: none; }
@@ -1391,12 +1407,12 @@ body.modal-open { overflow: hidden; }
 
 /* Narrow cover screens: compact controls, with wrapping when a single row cannot fit. */
 @media (max-width: 340px) {
-    .site-header .max-w-6xl { padding: .6rem .7rem; }
+    .site-header .max-w-6xl { padding: 10px 11px; }
     .site-header .brand-btn { gap: 6px; }
     .site-header .brand-mark { width: 30px; height: 30px; }
     .site-header .brand-mark svg { width: 20px; height: 20px; }
     .site-header .brand-name { font-size: 15px; }
-    .site-header .gap-5 { gap: .35rem; }
+    .site-header .gap-5 { gap: 6px; }
     .site-header .font-ctl button { min-width: 26px; padding: 0 4px; }
     .site-header .language-select { width: 94px; max-width: 94px; padding: 0 22px 0 6px; background-position: right 6px center; }
 }
@@ -1535,3 +1551,49 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 /* 확대해도 한국어 단어 중간에 제목이 끊기지 않도록 한다. */
 [data-i18n="rep_title"] { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
 .photo-review button:disabled { opacity: .45; }
+
+/* ── 수술 여부 확인(step-surgery) ───────────────────────────────────────────
+   선택지가 곧 검사 경로다. 라벨만으로는 무엇이 달라지는지 알 수 없어
+   각 버튼 안에 결과(일반 검사 / 술후 전용 검사)를 함께 적는다. */
+.gate-desc { font-size: .8125rem; line-height: 1.6; color: #475569; margin-bottom: 20px; text-align: left; }
+.gate-options { display: grid; gap: 10px; margin-bottom: 18px; }
+.gate-options button {
+    display: block; width: 100%; text-align: left; padding: 14px 16px; border-radius: 16px;
+    background: #fff; border: 2px solid #dbeafe; font: inherit; transition: border-color .15s ease, background .15s ease;
+}
+.gate-options button:hover { border-color: var(--ec-blue, #2563eb); background: #f8fbff; }
+.gate-options button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+.gate-options button span { display: block; font-weight: 800; font-size: .9375rem; color: #1e293b; }
+.gate-options button small { display: block; margin-top: 2px; font-size: .75rem; color: #64748b; }
+.gate-link { display: block; width: 100%; margin-top: 4px; font-size: .8125rem; font-weight: 700; color: #1d4ed8; text-decoration: underline; }
+
+/* 수술 후 촬영 안내 — 보호대를 벗고 찍는 일이 없어야 한다 */
+.surgery-note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 16px; padding: 14px 16px; }
+.surgery-note-title { font-weight: 800; font-size: .8125rem; color: #9a3412; margin-bottom: 6px; }
+.surgery-note ul { list-style: disc; padding-left: 18px; font-size: .75rem; line-height: 1.7; color: #9a3412; }
+.skip-photo-btn { display: block; width: 100%; margin-top: 12px; padding: 12px; border-radius: 16px;
+    background: #f1f5f9; color: #334155; font-weight: 700; font-size: .875rem; }
+.skip-photo-btn:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
+/* ── AI 사진 인식 기준 체크리스트 ─────────────────────────────────────────
+   통과 ✓ / 막힘 ✕ / 앞 기준이 막혀 확인 못 함 –. 색만으로 구분하지 않는다(색각). */
+.pc-list { list-style: none; margin: 12px 0 4px; padding: 0; text-align: left; }
+.pc-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: .8125rem; line-height: 1.5; }
+.pc-mark { flex: none; width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center;
+    font-size: .75rem; font-weight: 800; }
+.pc-ok .pc-mark { background: #dcfce7; color: #15803d; }
+.pc-no .pc-mark { background: #fee2e2; color: #b91c1c; }
+.pc-unknown .pc-mark { background: #f1f5f9; color: #94a3b8; }
+.pc-ok { color: #334155; }
+.pc-no { color: #b91c1c; font-weight: 700; }
+.pc-unknown { color: #94a3b8; }
+.pc-summary { text-align: left; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px 16px; background: #fff; }
+.pc-summary > summary { font-size: .8125rem; font-weight: 700; color: #475569; cursor: pointer; }
+
+/* 사진 AI의 범위 고지 — 촬영 직전(step-guide)에서 읽힌다 */
+.scope-note { font-size: .75rem; line-height: 1.7; color: #475569; background: #f8fafc;
+    border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; margin-bottom: 20px; }
+
+/* 재촬영 안내 본문 — 기준 목록 아래의 보조 설명이므로 작게 */
+.photo-review .pc-reason { font-size: .75rem; line-height: 1.6; color: #475569; margin-top: 10px; }
+.photo-review img { max-height: 22dvh; }

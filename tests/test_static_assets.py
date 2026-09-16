@@ -679,7 +679,13 @@ def test_외부리뷰_문구_진단_아닌_리포트_점수는_100점만점_범�
     assert "특이 소견 없음 (정상)" not in data, "모델은 백내장만 본다 → '백내장 의심 소견 없음'"
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
     assert "/100" in vision and "${d.probability}%" not in vision, "리포트의 % 표기는 질병 확률로 읽힌다"
-    assert "진행성 수정체 혼탁 특징만 확인합니다" in data, "첫 화면에서 사진 AI의 범위(보이는 진행성 혼탁만)를 밝혀야 한다"
+    # 범위 고지는 인트로에서 촬영 가이드(step-guide)로 옮겼다 — 사진을 찍기 직전에 읽히고,
+    # 첫 화면은 한 줄 요약만 둔다. 어느 화면이든 '사라지지 않았는지'를 여기서 지킨다.
+    assert "진행성 수정체 혼탁 특징만 확인합니다" in data, "사진 AI의 범위(보이는 진행성 혼탁만)를 밝혀야 한다"
+    assert data.count("scope_note:") == 6, "범위 고지가 6개 언어에 모두 있어야 한다"
+    index = (STATIC / "index.html").read_text(encoding="utf-8")
+    guide = index[index.index('id="step-guide"'):index.index('id="step-photo"')]
+    assert 'data-i18n="scope_note"' in guide, "범위 고지가 촬영 직전 화면에 붙어 있어야 한다"
     assert "검사는 모두 마쳤지만" in data, "시력검사 실패 문구는 '완료됐지만 계산 불가'로"
     disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
     assert "_simLevel" in disease, "언어 전환 시 시야 체험 강도가 초기화되면 안 된다"

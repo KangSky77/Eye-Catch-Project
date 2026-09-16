@@ -1,58 +1,113 @@
-// Local preview only. No photo is sent until the user checks the visible eye.
-const photoReviewCopy = {
-    ko: ['사진에서 눈동자가 보이나요?', '눈을 뜬 상태에서 홍채와 동공이 또렷하게 보여야 합니다. 감은 눈, 안경 반사, 흐린 사진은 다시 골라주세요. 자동 검사는 감은 눈을 놓칠 수 있습니다.', '눈동자가 보여요 · 분석하기', '다른 사진 고르기', '사진이 너무 어두워 판독할 수 없어요. 플래시를 끄고 고른 밝은 조명에서 다시 찍어주세요.'],
-    en: ['Can you see the iris and pupil?', 'Check that the eye is open and the iris and pupil are clearly visible. Choose another photo if eyes are closed, blurred or obscured by glasses. Automatic checks may miss closed eyes.', 'They are visible · Analyze', 'Choose another photo', 'The photo is too dark to assess. Retake it in even, bright light with the flash off.'],
-    es: ['¿Se ven el iris y la pupila?', 'Compruebe que el ojo esté abierto y el iris y la pupila sean visibles. Cambie la foto si está borrosa, con ojos cerrados o reflejos de gafas. El control automático puede no detectar ojos cerrados.', 'Se ven · Analizar', 'Elegir otra foto', 'La foto es demasiado oscura. Repítala con luz uniforme y brillante, sin flash.'],
-    fr: ['Voyez-vous l’iris et la pupille ?', 'Vérifiez que l’œil est ouvert et que l’iris et la pupille sont visibles. Changez de photo si elle est floue, si les yeux sont fermés ou masqués par des reflets. Le contrôle automatique peut manquer les yeux fermés.', 'Ils sont visibles · Analyser', 'Choisir une autre photo', 'La photo est trop sombre. Reprenez-la sous un éclairage clair et uniforme, sans flash.'],
-    ja: ['虹彩と瞳孔が見えますか？', '目を開けた状態で虹彩と瞳孔がはっきり見えるか確認してください。閉じた目、眼鏡の反射、ぼやけた写真は選び直してください。自動チェックは閉じた目を見逃すことがあります。', '見えます・分析する', '別の写真を選ぶ', '写真が暗すぎます。フラッシュを切り、均一で明るい場所で撮り直してください。'],
-    zh: ['能看清虹膜和瞳孔吗？', '请确认眼睛睁开，虹膜和瞳孔清晰可见。如果闭眼、模糊或有眼镜反光，请重新选图。自动检查可能无法识别闭眼。', '看得清 · 开始分析', '选择其他照片', '照片太暗，无法评估。请关闭闪光灯，在明亮且均匀的光线下重新拍摄。']
+// AI 사진 인식 결과 — 서버 게이트(app/services/vision.py의 PHOTO_CHECKS)가 무엇을 보고
+// 통과/거절했는지 기준별로 보여준다.
+//
+// 예전에는 업로드 전에 사람에게 '사진에서 눈동자가 보이나요?'를 묻고 스스로 통과시키게
+// 했다. 판단 기준을 아는 사람이 드물고 자기 사진은 대체로 통과시키는 데다, 같은 검사를
+// 서버가 이미 하고 있어 질문이 두 번이었다. 이제는 AI가 판단하고, 사람은 결과를 본다.
+const photoCheckCopy = {
+    ko: ['이 사진으로는 검사할 수 없어요', 'AI 사진 인식 기준 — 모두 통과', '확인하지 못함',
+        '사진 크기가 충분해요', '한 사람만 찍혀 있어요', '초점이 맞고 흔들리지 않았어요', '밝기가 충분해요',
+        '눈을 찾았어요', '눈을 뜨고 있어요', '빛 반사에 가리지 않았어요'],
+    en: ['This photo cannot be assessed', 'AI photo checks — all passed', 'Not checked',
+        'Photo is large enough', 'Only one person in frame', 'In focus, not blurred', 'Bright enough',
+        'An eye was found', 'The eye is open', 'Not covered by glare'],
+    es: ['Esta foto no se puede evaluar', 'Comprobaciones de la IA: todas superadas', 'Sin comprobar',
+        'La foto es bastante grande', 'Solo una persona en la imagen', 'Enfocada, sin movimiento', 'Luz suficiente',
+        'Se ha encontrado un ojo', 'El ojo está abierto', 'Sin reflejos que tapen el ojo'],
+    fr: ['Cette photo ne peut pas être analysée', 'Contrôles de l’IA : tous réussis', 'Non vérifié',
+        'Photo assez grande', 'Une seule personne sur la photo', 'Nette, sans flou', 'Assez lumineuse',
+        'Un œil a été trouvé', 'L’œil est ouvert', 'Pas masqué par un reflet'],
+    ja: ['この写真では検査できません', 'AIの写真チェック — すべて通過', '未確認',
+        '写真の大きさが十分です', '写っているのは一人だけです', 'ピントが合いブレていません', '明るさが十分です',
+        '目を見つけました', '目が開いています', '光の反射で隠れていません'],
+    zh: ['这张照片无法检测', 'AI 照片识别标准 — 全部通过', '未检查',
+        '照片尺寸足够', '画面中只有一个人', '对焦清晰、未抖动', '亮度足够',
+        '已找到眼睛', '眼睛是睁开的', '没有被反光遮挡']
 };
-for (const [lang, copy] of Object.entries(photoReviewCopy)) {
-    ['review_title','review_body','review_confirm','review_retake','ai_dark'].forEach((key, i) => translations[lang][key] = copy[i]);
+const PHOTO_CHECK_KEYS = ['check_fail_title', 'check_pass_title', 'check_unknown',
+    'chk_resolution', 'chk_single_face', 'chk_sharp', 'chk_bright',
+    'chk_eye_visible', 'chk_eye_open', 'chk_no_glare'];
+for (const [lang, copy] of Object.entries(photoCheckCopy)) {
+    PHOTO_CHECK_KEYS.forEach((key, i) => translations[lang][key] = copy[i]);
 }
-let _photoReview = null;
-function cancelPhotoReview() { if (_photoReview) _photoReview(false); }
-function reviewPhoto(file) {
-    cancelPhotoReview();
-    const dialog = document.getElementById('photo-review');
-    if (!dialog || typeof dialog.showModal !== 'function') {
-        // <dialog>를 지원하지 않는 브라우저(구형 iOS Safari·일부 인앱 WebView)에서는 여기서 false를
-        // 돌려주고 끝나, 사진을 골라도 오류 안내 없이 아무 일도 일어나지 않았다.
-        // 확인 단계를 건너뛰지는 않는다 — 기본 확인창으로 같은 질문을 한다.
-        const t = (typeof state !== 'undefined' && translations[state.lang]) || translations.ko || {};
-        const message = [t.review_title, t.review_body].filter(Boolean).join('\n\n');
-        const ask = typeof window !== 'undefined' && typeof window.confirm === 'function'
-            ? text => window.confirm(text)
-            : (typeof confirm === 'function' ? confirm : null);
-        if (!ask) { showUploadError(t.review_body || ''); return Promise.resolve(false); }
-        return Promise.resolve(!!ask(message));
-    }
-    return new Promise(resolve => {
-        const preview = document.getElementById('photo-review-image');
-        const confirm = document.getElementById('photo-review-confirm');
-        const retake = document.getElementById('photo-review-retake');
-        const url = URL.createObjectURL(file);
-        const finish = accepted => {
-            if (_photoReview !== finish) return;
-            _photoReview = null;
-            preview.onload = preview.onerror = null;
-            preview.removeAttribute('src'); URL.revokeObjectURL(url);
-            dialog.close(); resolve(accepted);
-        };
-        _photoReview = finish;
-        confirm.disabled = true;
-        preview.onload = () => { if (_photoReview === finish) confirm.disabled = false; };
-        preview.onerror = () => {
-            finish(false);
-            showUploadError(uploadErrorMessage({code:'IMAGE_INVALID'}));
-        };
-        confirm.onclick = () => { if (!confirm.disabled) finish(true); };
-        retake.onclick = () => finish(false);
-        const symptoms = document.getElementById('photo-review-symptoms');
-        if (symptoms) symptoms.onclick = () => { finish(false); startSymptomCheck(); };
-        dialog.oncancel = event => { event.preventDefault(); finish(false); };
-        preview.src = url;
-        dialog.showModal();
-        retake.focus();
+
+/** 기준 목록을 <ul>에 그린다. ok=true 체크 / false 엑스 / null(앞 기준이 막혀 확인 못 함) 대시.
+ *
+ *  왜 null을 X로 칠하지 않는가: 게이트는 앞 기준이 무너지면 뒤를 보지 않는다. 흔들린 사진의
+ *  눈 크롭은 눈 게이트에서 0.1점이 나오므로, 측정했더라도 '눈이 없다'는 틀린 말이 된다. */
+function renderPhotoChecks(list, checks) {
+    if (!list) return;
+    const t = translations[state.lang] || {};
+    list.innerHTML = '';
+    (checks || []).forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'pc-item ' + (c.ok === true ? 'pc-ok' : c.ok === false ? 'pc-no' : 'pc-unknown');
+        const mark = document.createElement('span');
+        mark.className = 'pc-mark';
+        mark.setAttribute('aria-hidden', 'true');
+        mark.textContent = c.ok === true ? '✓' : c.ok === false ? '✕' : '–';
+        const label = document.createElement('span');
+        label.textContent = t['chk_' + c.key] || c.key;
+        // 표시가 기호뿐이면 스크린리더에는 '체크 / 엑스'가 읽히지 않는다.
+        if (c.ok !== true) li.setAttribute('aria-label',
+            `${label.textContent} — ${c.ok === false ? (t.check_fail_title || '') : (t.check_unknown || '')}`);
+        li.appendChild(mark);
+        li.appendChild(label);
+        list.appendChild(li);
     });
+}
+
+let _photoCheck = null;
+function closePhotoCheck() { if (_photoCheck) _photoCheck(); }
+
+/** 재촬영 판정을 받은 사진을 이유·기준과 함께 보여주고, 다른 사진을 고르게 한다.
+ *  file이 없으면(미리보기를 만들 수 없는 경로) 사진 없이 기준만 보여준다. */
+function showPhotoCheckFailure(file, checks, message) {
+    closePhotoCheck();
+    const dialog = document.getElementById('photo-check');
+    // <dialog> 미지원 브라우저(구형 iOS Safari·일부 인앱 WebView)에서는 업로드 카드의
+    // 고정 배너가 이미 같은 이유를 말한다. 사람에게 물어보던 것이 아니므로 막지 않는다.
+    if (!dialog || typeof dialog.showModal !== 'function') return;
+
+    const preview = document.getElementById('photo-check-image');
+    const body = document.getElementById('photo-check-body');
+    const retake = document.getElementById('photo-check-retake');
+    // 사진을 건너뛰는 버튼은 수술한 사람에게만 보인다(안대·보호대로 촬영이 불가능한 경우).
+    // 일반 검사는 사진이 검사의 본체라, 건너뛰면 남는 것이 문진뿐이다.
+    const symptoms = document.getElementById('photo-check-symptoms');
+    const url = file ? URL.createObjectURL(file) : '';
+    const finish = () => {
+        if (_photoCheck !== finish) return;
+        _photoCheck = null;
+        if (preview) { preview.removeAttribute('src'); preview.hidden = true; }
+        if (url) URL.revokeObjectURL(url);
+        dialog.close();
+    };
+    _photoCheck = finish;
+
+    if (body) body.textContent = message || '';
+    renderPhotoChecks(document.getElementById('photo-check-list'), checks);
+    if (preview) {
+        preview.hidden = !url;
+        if (url) preview.src = url; else preview.removeAttribute('src');
+    }
+    // 버튼 핸들러는 이 창이 아직 살아 있을 때만 움직인다. finish()만 막으면 이미 닫힌
+    // 창의 늦은 클릭(문진으로 빠진 뒤 재촬영 버튼)이 화면을 한 번 더 갈아탄다.
+    const act = run => () => { if (_photoCheck !== finish) return; finish(); run(); };
+    // 다른 사진 고르기 — 업로드 화면으로 돌려보내고 파일 선택창을 바로 연다.
+    if (retake) retake.onclick = act(() => { if (typeof retakePhoto === 'function') retakePhoto(); });
+    if (symptoms) symptoms.onclick = act(() => skipPhotoStep());
+    dialog.oncancel = event => { event.preventDefault(); finish(); };
+    dialog.showModal();
+    if (retake) retake.focus();
+}
+
+/** 결과 화면의 '무엇을 확인했는지' 접이식 요약. */
+function showPhotoCheckSummary(checks) {
+    const box = document.getElementById('photo-check-summary');
+    if (!box) return;
+    const has = Array.isArray(checks) && checks.length;
+    box.classList.toggle('hidden', !has);
+    if (!has) return;
+    renderPhotoChecks(document.getElementById('photo-check-summary-list'), checks);
 }

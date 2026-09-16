@@ -256,6 +256,18 @@ def _classify(prob: float):
     return "normal", "뚜렷한 진행성 혼탁 특징이 감지되지 않았습니다 (초기 백내장은 사진으로 확인이 어렵습니다)"
 
 
+# 사진 인식 기준 — 프론트가 이 순서 그대로 체크리스트로 보여준다(static/app-photo-review.js).
+# 순서는 아래 게이트가 실제로 도는 순서다. 앞 기준이 무너지면 뒤 기준은 재 봐야 의미가 없어
+# None(아직 확인 못 함)으로 남긴다: 흔들린 사진의 눈 크롭은 눈 게이트에서 0.106점이 나와
+# '눈이 가려졌다'고 잘못 말한다(2026-09-02 실측). 사용자에게는 무너진 첫 기준만 X로 보여준다.
+PHOTO_CHECKS = ("resolution", "single_face", "sharp", "bright", "eye_visible", "eye_open", "no_glare")
+
+
+def _checklist(passed: dict) -> list:
+    """기준별 통과 여부를 [{key, ok}]로. ok=None은 앞 기준이 막혀 확인하지 못한 항목."""
+    return [{"key": key, "ok": passed.get(key)} for key in PHOTO_CHECKS]
+
+
 def _empty_result(code: str, message: str, mode: str, eyes_detected: int, **details) -> dict:
     """판정을 내리지 않는 품질 실패 응답의 공통 필드를 만든다."""
     return {
@@ -279,13 +291,18 @@ def predict_cataract(img: Image.Image):
             "AI 모델이 준비되지 않았습니다. 관리자에게 문의하세요. (가중치 미로드)"
         )
 
+    # 통과한 기준을 담아 응답에 함께 실어 보낸다 — 화면에 체크리스트로 그린다.
+    passed = {}
+
     # 32px 눈 크롭조차 만들 수 없는 원본은 검사 대상이 아니다. 작은 입력에서
     # MTCNN이 빈 텐서 오류를 내는 경우도 서비스 장애와 구별해 재촬영을 안내한다.
     if min(img.size) < eye_detector.MIN_CROP_PX:
+        passed["resolution"] = False
         return _empty_result(
             "low_resolution", "사진 해상도가 너무 낮습니다 (더 큰 원본 사진을 선택해 주세요)",
-            "eye", 0,
+            "eye", 0, checks=_checklist(passed),
         )
+    passed["resolution"] = True
 
     # 얼굴 사진이면 눈 부위만 크롭해서 분석 (모델이 눈 클로즈업으로 학습됐기 때문)
     # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주하되, 아래의 눈 뜸 검증도 반드시 거친다.
@@ -297,10 +314,12 @@ def predict_cataract(img: Image.Image):
             "사진 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
         ) from exc
     if eye_crops is None:
+        passed["single_face"] = False
         return _empty_result(
             "multiple_faces", "여러 얼굴이 감지되었습니다 (한 사람만 정면에서 다시 촬영해 주세요)",
-            "face", 0,
+            "face", 0, checks=_checklist(passed),
         )
+    passed["single_face"] = True
     mode = "face" if eye_crops else "eye"
 
     targets = eye_crops if eye_crops else [img]
@@ -311,17 +330,21 @@ def predict_cataract(img: Image.Image):
     sharp = min(sharpnesses, default=0.0)
     if any(s < BLUR_MIN_SHARPNESS for s in sharpnesses):
         logger.info("판독 보류 — 흔들림/초점 흐림 (선명도 %.4f)", sharp)
+        passed["sharp"] = False
         return _empty_result(
             "blurry", "판독 보류 (사진이 흔들렸습니다)", mode, len(eye_crops),
-            sharpness=round(sharp, 4),
+            sharpness=round(sharp, 4), checks=_checklist(passed),
         )
+    passed["sharp"] = True
 
     if any(_underexposed(t) for t in targets):
         logger.info("판독 보류 — 심한 노출 부족")
+        passed["bright"] = False
         return _empty_result(
             "dark", "사진이 너무 어둡습니다 (밝은 곳에서 재촬영 필요)",
-            mode, len(eye_crops),
+            mode, len(eye_crops), checks=_checklist(passed),
         )
+    passed["bright"] = True
 
     # 흔들림 게이트가 먼저다: 흐린 눈 사진을 눈 게이트에 먼저 넣으면 '눈이 아님/가려짐'으로 잘못 안내된다
     # (실측 2026-09-02: 흔들린 얼굴 사진의 눈 크롭 게이트 점수 0.106 → eyes_hidden). 흐림은 흐림이라고 말한다.
@@ -338,10 +361,12 @@ def predict_cataract(img: Image.Image):
                 "눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not is_eye:
+            passed["eye_visible"] = False
             return _empty_result(
                 "invalid", "눈 사진이 아닌 것 같습니다", mode, 0,
-                eye_score=round(score, 3),
+                eye_score=round(score, 3), checks=_checklist(passed),
             )
+        passed["eye_visible"] = True
         if not eye_validator.open_gate_available():
             # 눈 뜸 판정기 없이 클로즈업을 모델에 넣으면 감은 눈·안대도
             # 정상/위험 결과로 이어질 수 있으므로 검증 없이 진행하지 않는다.
@@ -356,10 +381,12 @@ def predict_cataract(img: Image.Image):
                 "눈 뜸 여부 판정기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not is_open:
+            passed["eye_open"] = False
             return _empty_result(
                 "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)", mode, 0,
-                eye_open_score=round(open_score, 3),
+                eye_open_score=round(open_score, 3), checks=_checklist(passed),
             )
+        passed["eye_open"] = True
 
     # [검증·얼굴 모드] MTCNN은 얼굴 '기하'에서 눈 위치를 추정할 뿐, 그 자리에 눈이 보이는지는 모른다.
     # 눈을 감았거나 선글라스·안대로 가린 얼굴도 눈 좌표를 돌려주므로, 피부·검정·흰색 조각이 모델에
@@ -372,10 +399,13 @@ def predict_cataract(img: Image.Image):
                 "눈 이미지 검증기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not all(ok for ok, _ in checks):
+            passed["eye_visible"] = False
             return _empty_result(
                 "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
                 mode, len(eye_crops), eye_score=round(min(s for _, s in checks), 3),
+                checks=_checklist(passed),
             )
+        passed["eye_visible"] = True
         # [뜸 여부] 눈 게이트는 '눈 영역인가'만 본다. 감긴 눈꺼풀도 눈 영역이라 0.9 안팎으로 통과해
         # '혼탁 특징 없음'이 나갔다(2026-09-13 실측: AI 생성 감은 눈 얼굴 3장 전부, Commons 수면 사진
         # 크롭 58.9%). 한쪽만 감아도(윙크) 두 눈 비교가 무의미하므로 하나라도 감겼으면 되돌려보낸다.
@@ -392,10 +422,13 @@ def predict_cataract(img: Image.Image):
                 "눈 뜸 여부 판정기를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."
             )
         if not all(ok for ok, _ in opens):
+            passed["eye_open"] = False
             return _empty_result(
                 "eyes_hidden", "눈이 감겨 있거나 가려진 것 같습니다 (재촬영 필요)",
                 mode, len(eye_crops), eye_open_score=round(min(s for _, s in opens), 3),
+                checks=_checklist(passed),
             )
+        passed["eye_open"] = True
 
     # [반사 게이트] 플래시 반사가 눈동자를 덮으면 모델이 그것을 수정체 혼탁으로 읽는다.
     # 실측: 정상 눈에 반사점을 합성하니 최대 70%가 '위험'으로 뒤집혔다(위 상수 주석 표).
@@ -415,10 +448,12 @@ def predict_cataract(img: Image.Image):
     # 유효한 위험 신호까지 버리면 안 된다.
     if any(g >= GLARE_MAX_FRACTION and code != "normal" for g, code in zip(glare_values, eye_codes)):
         logger.info("판독 보류 — 조명 반사 감지 (순백비율 %.3f, 모델 %.1f%%)", glare, cat_p)
+        passed["no_glare"] = False
         return _empty_result(
             "hold", "판독 보류 (강한 조명 반사 감지됨)", mode, len(eye_crops),
-            glare=round(glare, 4),
+            glare=round(glare, 4), checks=_checklist(passed),
         )
+    passed["no_glare"] = True
 
     # result_code: 프론트엔드에서 언어별로 번역할 수 있도록 언어 중립적 코드 제공
     # 참고: 과거 'cat_p>=99 → 조명 반사 보류' 규칙은 약한 모델의 오탐을 막으려던
@@ -458,4 +493,5 @@ def predict_cataract(img: Image.Image):
         "eyes": eyes,                              # 눈별 [{side, probability, code}]
         "asymmetric": asymmetric,                  # 편측만 위험이면 True
         "closeup_suggested": closeup_suggested,    # 프론트가 '눈을 한쪽씩 가까이 다시 찍기'를 권함
+        "checks": _checklist(passed),              # 사진 인식 기준별 통과 여부 (화면 체크리스트)
     }

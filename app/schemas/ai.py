@@ -42,8 +42,8 @@ FindingText = Annotated[str, Field(max_length=400)]
 
 class PlainFindingsRequest(BaseModel):
     lang: str = Field(default="ko", max_length=10)
-    # 화면에 이미 떠 있는 해석 문장을 그대로 받는다. 서버는 이 문장들의 '말투'만 바꾸고,
-    # 검증을 통과하지 못한 줄은 원문 그대로 돌려준다(app/services/plain_language.py).
+    # 화면의 원문이 고정 표현 목록과 정확히 일치할 때만 쉬운 문장을 돌려준다.
+    # 그 외에는 원문을 유지한다(app/services/plain_language.py).
     findings: list[FindingText] = Field(default_factory=list, max_length=20)
 
 

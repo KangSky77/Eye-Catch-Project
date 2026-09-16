@@ -58,6 +58,8 @@ def test_analyze_eye_성공_응답형태(client, monkeypatch):
     assert body["result_code"] == "normal"
     assert body["eyes"][0]["side"] == "single"
     assert body["eye_score"] is None      # invalid 판정이 아닐 때는 미포함(None)
+    # 기준 목록은 항상 있는 필드다 — 판독기가 알려주지 않으면 빈 목록(화면이 요약을 숨긴다)
+    assert body["checks"] == []
 
 
 def test_tiny_upload_returns_resolution_code_without_inference(client, monkeypatch):
@@ -67,6 +69,8 @@ def test_tiny_upload_returns_resolution_code_without_inference(client, monkeypat
     assert r.status_code == 200
     assert r.json()["result_code"] == "low_resolution"
     assert r.json()["eyes"] == [] and r.json()["eye_probs"] == []
+    # 화면은 왜 막혔는지를 기준별로 보여준다 — 판정이 없을 때도 기준 목록은 와야 한다
+    assert {c["key"]: c["ok"] for c in r.json()["checks"]}["resolution"] is False
 
 
 def test_analyze_eye_텍스트파일_400(client):

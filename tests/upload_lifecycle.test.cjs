@@ -116,17 +116,31 @@ test('재촬영 코드는 결과가 아니라 안내로 처리된다', async () 
     assert.equal(h.banners.length, 1, '업로드 카드에 안내 배너가 없다');
 });
 
-test('photo review cancellation sends no upload; approval sends exactly one', async () => {
+// 사진 판단은 사람이 아니라 서버 게이트가 한다. 예전에는 업로드 전에 '눈동자가
+// 보이나요?'를 묻고 사용자가 스스로 통과시켰다(같은 검사를 서버가 이미 하는데도).
+test('선택한 사진은 확인창 없이 바로 한 번만 전송된다', async () => {
     const h=setup(),c=h.context;
-    let approve;
-    c.reviewPhoto=()=>new Promise(resolve=>approve=resolve);
-    let done=c.runAIAnalysis(h.file);
+    const done=c.runAIAnalysis(h.file);
     await new Promise(r=>setImmediate(r));
-    assert.equal(h.uploadCount(),0);
-    approve(false);await done;assert.equal(h.uploadCount(),0);
-    done=c.runAIAnalysis(h.file);await new Promise(r=>setImmediate(r));
-    approve(true);await new Promise(r=>setImmediate(r));
-    assert.equal(h.uploadCount(),1);h.resolve(h.ok());await done;
+    assert.equal(h.uploadCount(),1,'확인 단계에 걸려 업로드가 시작되지 않았다');
+    h.resolve(h.ok());await done;
+    assert.equal(h.uploadCount(),1);
+});
+
+test('재촬영 판정은 AI가 막은 기준을 사진과 함께 보여준다', async () => {
+    const h=setup(),c=h.context;
+    const shown=[];
+    c.showPhotoCheckFailure=(file,checks,message)=>shown.push({file,checks,message});
+    c.translations.ko.ai_blurry='흔들렸어요';
+    const checks=[{key:'resolution',ok:true},{key:'sharp',ok:false},{key:'eye_open',ok:null}];
+    const done=c.runAIAnalysis(h.file);
+    await new Promise(r=>setImmediate(r));
+    h.resolve(h.ok({result_code:'blurry',checks}));await done;
+    assert.equal(shown.length,1,'기준 체크리스트를 보여주지 않았다');
+    assert.equal(shown[0].message,'흔들렸어요');
+    assert.deepEqual(shown[0].checks,checks);
+    assert.equal(shown[0].file,h.file,'사용자가 방금 고른 사진이 아니다');
+    assert.equal(c.state.aiResultCode,'','재촬영 코드가 판정으로 저장됐다');
 });
 
 test('underexposure shows a localized retake message without a medical result', async () => {
