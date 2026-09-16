@@ -548,6 +548,8 @@ function startAmslerStep() {
     // 격자 크기는 부모의 실제 폭을 재서 정한다 — 화면에 붙이기 전에 계산하면
     // 폭이 0이라 잘못된 크기가 나온다. 그래서 nextStep() 다음에 그린다.
     nextStep('step-amsler');
+    const skipped = document.getElementById('photo-skipped-note');
+    if (skipped) skipped.classList.toggle('hidden', state.aiResultCode !== 'postop');
     updateAmslerPrompt();
 }
 

@@ -19,9 +19,9 @@ const translations = {
         start_btn: "Eye-Catch Start!!!", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
         guide_title: "정확한 분석 가이드", guide_list: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요.</li>",
         tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "흔들리지 않게 촬영하세요", tip1_d: "팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사는 혼탁으로 잘못 읽힐 수 있어요. 직사광선이나 조명이 눈에 직접 비치지 않는 고른 실내 조명에서 찍어주세요.", tip3_t: "눈을 정면·중앙에 맞춰주세요", tip3_d: "한쪽 눈이 화면 중앙에 오도록 정면을 보고, 초점이 맞는 20~30cm 거리에서 찍어주세요.", tips_btn: "이해했습니다!",
-        loading_title: "AI 딥러닝 분석 중...", ai_res_title: "혼탁 특징 분석 결과", next_amsler: "2단계: 황반변성 테스트",
-        ams_title: "황반변성 자가진단", ams_ok: "정상 (곧게 보임)", ams_bad: "휘어보임/암점",
-        ams_example_label: "예시 — 어떤 경우에 '휘어보임/암점'인가요?", ams_example_ok: "곧게 보임 → 정상", ams_example_bad: "휘거나 빈 곳이 보임 → 이상",
+        loading_title: "눈 사진을 확인하고 있어요...", ai_res_title: "사진에서 확인한 눈의 특징", next_amsler: "2단계: 선이 휘어 보이는지 확인하기",
+        ams_title: "격자무늬로 중심 시야 확인하기", ams_ok: "선이 곧게 보여요", ams_bad: "선이 휘거나 안 보이는 곳이 있어요",
+        ams_example_label: "예시 — 선이 휘거나 안 보이는 곳이 있나요?", ams_example_ok: "선이 곧게 보임", ams_example_bad: "선이 휘거나 빈 곳이 보임",
         chat_yes: "네", chat_no: "아니오", dis_main_title: "4대 주요 안질환 안내", rep_title: "Eye-Catch 눈 건강 리포트",
         rep_l1: "1. 백내장 AI 결과", rep_l2: "2. 황반변성 결과", rep_l3: "3. 문진 소견", rep_l4: "4. Gemma AI 맞춤 소견", pdf_btn: "PDF 다운로드", map_btn: "내 주변 안과 찾기",
         msg_gen: "리포트를 생성 중입니다...", res_ams_bad: "이상 소견 (검사 요망)", res_ams_ok: "특이사항 없음", res_chat_none: "주요 증상 없음",
@@ -325,6 +325,20 @@ const translations = {
         skip_to_content: "跳到正文", upload_drop_hint: "也可以把照片拖放到这里。", retry_photo: "← 换一张照片重新分析"
     }
 };
+
+// 첫 화면의 행동 문구는 브랜드명보다 사용자의 다음 행동이 먼저 읽히도록 한다.
+translations.ko.start_btn = 'Eye-Catch 시작하기';
+translations.en.start_btn = 'Start Eye-Catch';
+translations.es.start_btn = 'Iniciar Eye-Catch';
+translations.fr.start_btn = 'Démarrer Eye-Catch';
+translations.ja.start_btn = 'Eye-Catchを始める';
+translations.zh.start_btn = '开始 Eye-Catch';
+translations.ko.photo_skipped_note = '사진 분석을 건너뛰었어요. 이제 황반변성 자가검사를 진행합니다.';
+translations.en.photo_skipped_note = 'You skipped the photo check. Next is the Amsler self-test.';
+translations.es.photo_skipped_note = 'Has omitido la foto. Ahora sigue la prueba de Amsler.';
+translations.fr.photo_skipped_note = 'Vous avez passé la photo. Vous allez maintenant faire le test d’Amsler.';
+translations.ja.photo_skipped_note = '写真の確認をスキップしました。次にアムスラーグリッドを確認します。';
+translations.zh.photo_skipped_note = '您跳过了照片检查。接下来进行阿姆斯勒方格表自测。';
 
 // code: 언어 중립 질환 키 (백엔드 RAG 검색용 — 0=녹내장, 1=당뇨망막병증)
 const questions = {

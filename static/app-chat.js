@@ -4,6 +4,9 @@
 // ==========================================
 function activeRiskQuestions() {
     const base = riskQuestions
+        // 일반 경로에서는 게이트의 '수술 없음'을 다시 질문하거나 대화로 재생하지 않는다.
+        // 판정에 필요한 원래 답은 riskAnswers에 그대로 보존한다.
+        .filter(q => !(state.hadSurgery === false && q.code === 'surgery'))
         .filter(q => !(state.riskAnswers?.age === 'under10' && q.code === 'smoking'))
         // 시작 화면에서 '예'라고 답한 사람에게 '수술한 적 없습니다'를 다시 보여주지 않는다.
         // 같은 질문을 두 번 묻는 셈이고, 여기서 '없음'을 고르면 앞 답과 모순된다.
@@ -60,8 +63,7 @@ function startChat() {
     // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
     state.riskIdx = 0;
     state.riskAnswers = {};
-    // 수술 관련 문항은 검사 시작 화면(step-surgery…)에서 이미 답했다. 같은 질문을 두 번
-    // 묻지 않고 건너뛰되, 대화 기록에는 남긴다 — 리포트·소견서 입력과 진행률이 이 기록을 쓴다.
+    // 게이트 답은 판정 데이터에 보존한다. 일반 경로의 수술 없음은 대화에 다시 표시하지 않는다.
     Object.assign(state.riskAnswers, state.gateAnswers || {});
     state.symIdx = 0;
     state.symptomAnswers = {};

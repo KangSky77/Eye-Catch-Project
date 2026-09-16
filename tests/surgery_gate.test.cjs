@@ -39,6 +39,23 @@ function setup(){
  return {c,steps,messages,tracked,run:s=>vm.runInContext(s,c)};
 }
 
+test('시력교정 및 외상 수술도 초기화와 문진을 지나 이력이 유지된다',()=>{
+ for (const kind of ['laser', 'other']) {
+  const x=setup();
+  assert.match(x.run('translations.ko.gate_desc'), /라식·라섹/);
+  assert.match(x.run('translations.ko.gate_desc'), /다쳐서/);
+  assert.equal(x.run('translations.ko.gate_d_none'), '눈 수술을 받은 적 없어요');
+  x.run('answerSurgeryGate(true); resetScreeningState(); startChat()');
+  assert.equal(x.c.state.riskAnswers.surgery, undefined);
+  assert.equal(x.run('surgeryHistoryPending()'), true);
+  Object.assign(x.c.state.riskAnswers, {surgery:'recent', surgery_type:kind});
+  assert.ok(x.run("activeRiskQuestions().some(q=>q.code==='surgery_lens_history')"));
+  assert.equal(x.run('surgeryHistoryPending()'), true);
+  x.c.state.riskAnswers.surgery_lens_history='no';
+  assert.equal(x.run('surgeryHistoryPending()'), false);
+ }
+});
+
 test("'아니오'는 문진 첫 문항의 답이 되어 다시 묻지 않는다",()=>{
  const x=setup();
  x.run('answerSurgeryGate(false)');
@@ -46,8 +63,10 @@ test("'아니오'는 문진 첫 문항의 답이 되어 다시 묻지 않는다"
  x.run('resetScreeningState()');   // 사진을 한 장 올릴 때마다 일어나는 일
  assert.equal(x.c.state.riskAnswers.surgery,'none','초기화가 게이트 답을 지웠다');
  x.run('startChat()');
- assert.equal(x.c.state.riskIdx,1,'수술 여부를 다시 물었다');
+ assert.equal(x.c.state.riskIdx,0,'일반 문진은 첫 질문부터 시작해야 한다');
  assert.equal(x.run('activeRiskQuestions()[state.riskIdx].code'),'age');
+ assert.ok(!x.run("activeRiskQuestions().some(q=>q.code.startsWith('surgery'))"));
+ assert.ok(!x.messages.some(m=>m.includes('수술')),'일반 문진에 수술 대화가 재생됐다');
  assert.ok(!x.messages.some(m=>m.includes('수술 병원에 문의')),'수술자 안내가 잘못 붙었다');
  assert.equal(x.steps[x.steps.length-1],'step-guide');
 });
@@ -96,7 +115,7 @@ test('수술 후 촬영 안내는 시기를 묻기 전에 이미 보여야 한�
  // 보호대를 벗지 말라는 안내와 '사진 없이 다음 단계로'는 사진을 찍기 전에 필요하다.
  const x=setup();
  const only=[{hidden:true},{hidden:true}];
- x.c.document.querySelectorAll=()=>only;
+ x.c.document.querySelectorAll=selector => selector.includes('data-surgery-only') ? only : [];
  x.run('answerSurgeryGate(true)');
  assert.ok(only.every(el=>el.hidden===false),'수술 전용 안내가 감춰져 있다');
  x.run('answerSurgeryGate(false)');

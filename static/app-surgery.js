@@ -330,53 +330,73 @@ function effectiveCataractCode() {
 // 물어서, 수술한 사람도 일반 촬영 가이드와 백내장 판정 화면을 먼저 다 보고 나서야
 // '이 판독은 적용하지 않습니다'를 읽었다.
 const surgeryGateCopy = {
- ko: ['수술한 눈은 검사 방법이 달라, 시작하기 전에 한 가지만 여쭤봅니다.',
-  '수술에 맞춘 검사로 안내합니다', '일반 눈 건강 검사를 받습니다',
+ ko: ['어떤 검사로 시작할까요?', '질환 때문에 눈 수술을 받은 적이 있으면 수술 맞춤 검사로, 그렇지 않으면 일반 눈 건강 검사로 안내합니다.',
+  '질환 때문에 눈 수술을 받았어요', '수술 맞춤 검사', '질환 관련 수술은 없어요', '일반 눈 건강 검사',
   '언제 수술을 받으셨나요?',
-  '수술 후 촬영 안내',
+  '수술한 분께 드리는 촬영 안내',
   '<li>의료용 안대·보호대는 그대로 두세요. 사진을 찍으려고 벗기지 마세요.</li><li>눈을 만지거나 억지로 크게 뜨지 마세요.</li><li>촬영이 어려우면 사진을 건너뛰고 다음 단계로 가세요.</li>',
   '사진 없이 다음 단계로',
   '수정체를 건드리지 않은 수술이라 사진 판독을 그대로 적용했습니다. 다만 수술 직후에는 각막이 붓거나 흐려 판독이 달라질 수 있습니다.'],
- en: ['An operated eye is screened differently, so we ask one question before starting.',
-  'Screening matched to your surgery', 'Standard eye screening',
+ en: ['Which screening should you start?', 'If you had eye surgery because of an eye condition, we will match the screening to it. Otherwise, use the standard eye screening.',
+  'I had surgery for an eye condition', 'Screening matched to surgery', 'No surgery for an eye condition', 'Standard eye screening',
   'When was the surgery?',
-  'Taking a photo after surgery',
+  'If you have had eye surgery',
   '<li>Leave any medical patch or shield in place. Never remove it for a photo.</li><li>Do not touch the eye or force it open.</li><li>If a photo is difficult, skip it and continue.</li>',
   'Continue without a photo',
   'This surgery did not replace the lens, so the photo reading still applies. Just after surgery the cornea can be swollen or hazy, which may change the reading.'],
- es: ['Un ojo operado se evalúa de otra forma, así que preguntamos una cosa antes de empezar.',
-  'Cribado adaptado a su cirugía', 'Cribado ocular estándar',
+ es: ['¿Con qué revisión desea comenzar?', 'Si tuvo una cirugía ocular por una enfermedad, adaptaremos la revisión. Si no, usaremos la revisión ocular estándar.',
+  'Me operaron por una enfermedad ocular', 'Revisión adaptada a la cirugía', 'No me operaron por una enfermedad ocular', 'Revisión ocular estándar',
   '¿Cuándo fue la cirugía?',
-  'Tomar la foto después de la cirugía',
+  'Si ha tenido una cirugía ocular',
   '<li>Deje puesto el parche o protector médico. No lo retire para la foto.</li><li>No se toque el ojo ni lo abra a la fuerza.</li><li>Si le cuesta, omita la foto y continúe.</li>',
   'Continuar sin foto',
   'Esta cirugía no sustituyó el cristalino, así que la lectura de la foto sigue siendo válida. Justo después de operar, la córnea puede estar inflamada y alterar el resultado.'],
- fr: ['Un œil opéré se dépiste autrement : une seule question avant de commencer.',
-  'Dépistage adapté à votre opération', 'Dépistage oculaire standard',
+ fr: ['Par quel dépistage souhaitez-vous commencer ?', 'Si vous avez été opéré pour une maladie oculaire, nous adapterons le dépistage. Sinon, nous utiliserons le dépistage standard.',
+  'J’ai été opéré pour une maladie oculaire', 'Dépistage adapté à l’opération', 'Je n’ai pas été opéré pour une maladie oculaire', 'Dépistage oculaire standard',
   'Quand avez-vous été opéré ?',
-  'Photographier après une opération',
+  'Si vous avez été opéré',
   '<li>Laissez en place le pansement ou la coque de protection. Ne l’enlevez jamais pour la photo.</li><li>Ne touchez pas l’œil et ne le forcez pas à s’ouvrir.</li><li>Si la photo est difficile, passez-la et continuez.</li>',
   'Continuer sans photo',
   'Cette opération n’a pas remplacé le cristallin : la lecture de la photo reste valable. Juste après l’opération, la cornée peut être gonflée ou trouble et modifier le résultat.'],
- ja: ['手術した目は検査の進め方が変わるため、始める前に一つだけ確認します。',
-  '手術に合わせた検査に進みます', '通常の目の健康チェック',
+ ja: ['どの検査から始めますか？', '目の病気で手術を受けた場合は手術に合わせた検査を、それ以外は通常の目の健康チェックをご案内します。',
+  '目の病気で手術を受けました', '手術に合わせた検査', '目の病気の手術はありません', '通常の目の健康チェック',
   'いつ手術を受けましたか？',
-  '手術後の撮影について',
+  '手術を受けた方へ',
   '<li>医療用の眼帯・保護具はそのままにしてください。撮影のために外さないでください。</li><li>目に触れたり、無理に大きく開けたりしないでください。</li><li>撮影が難しければ写真を飛ばして次へ進んでください。</li>',
   '写真なしで次へ',
   '水晶体を入れ替えていない手術のため、写真判読をそのまま適用しました。ただし術直後は角膜がむくんだり濁ったりして判読が変わることがあります。'],
- zh: ['手术眼的检查方式不同，开始前先确认一件事。',
-  '按手术情况安排检查', '常规眼部健康检查',
+ zh: ['您想从哪种检查开始？', '如果因眼病做过手术，我们会安排相应检查；否则进行常规眼部健康检查。',
+  '因眼病做过手术', '按手术情况检查', '没有因眼病做过手术', '常规眼部健康检查',
   '什么时候做的手术？',
-  '术后拍照须知',
+  '做过眼部手术的用户请注意',
   '<li>请保留医用眼罩或护罩，不要为拍照而摘下。</li><li>不要触碰眼睛，也不要强行睁大。</li><li>如果拍照困难，可跳过照片继续下一步。</li>',
   '不拍照，继续下一步',
   '本次手术未更换晶状体，因此照片判读仍然适用。但术后初期角膜可能水肿或混浊，判读结果可能受影响。']
 };
 for (const [lang, copy] of Object.entries(surgeryGateCopy)) {
- ['gate_desc','gate_d_yes','gate_d_none','gate_when_q',
+ ['gate_title','gate_desc','gate_d_yes','gate_d_yes_sub','gate_d_none','gate_d_none_sub','gate_when_q',
   'post_photo_title','post_photo_tips','post_skip_photo',
   'photo_lens_intact'].forEach((key,i)=>translations[lang][key]=copy[i]);
+}
+Object.assign(translations.ko, { post_guide_title:'수술한 분을 위한 검사 안내', post_guide_body:'수술 시기와 종류에 따라 사진 검사 방법이 달라질 수 있어요. 다음 문진에서 먼저 확인합니다. 사진이 어렵거나 보호대를 하고 있다면 사진을 찍지 않고 진행할 수 있습니다.', post_photo_continue:'사진으로 진행하기', post_photo_upload_title:'수술 관련 사진 검사', post_camera_btn:'수술 관련 사진 촬영' });
+Object.assign(translations.en, { post_guide_title:'Screening after eye surgery', post_guide_body:'The photo check may differ depending on when and what kind of surgery you had. We will ask first. If taking a photo is difficult or you are wearing a shield, you can continue without one.', post_photo_continue:'Continue with a photo', post_photo_upload_title:'Surgery-related photo check', post_camera_btn:'Take a surgery-related photo' });
+Object.assign(translations.es, { post_guide_title:'Prueba después de una cirugía ocular', post_guide_body:'La prueba con foto puede variar según cuándo y qué cirugía tuvo. Primero se lo preguntaremos. Si es difícil hacer una foto o lleva un protector, puede continuar sin ella.', post_photo_continue:'Continuar con una foto', post_photo_upload_title:'Foto relacionada con la cirugía', post_camera_btn:'Tomar foto relacionada con la cirugía' });
+Object.assign(translations.fr, { post_guide_title:'Dépistage après une opération des yeux', post_guide_body:'L’analyse photo peut changer selon la date et le type d’opération. Nous vous le demanderons d’abord. Si la photo est difficile ou si vous portez une coque, vous pouvez continuer sans photo.', post_photo_continue:'Continuer avec une photo', post_photo_upload_title:'Photo liée à l’opération', post_camera_btn:'Prendre une photo liée à l’opération' });
+Object.assign(translations.ja, { post_guide_title:'手術を受けた方の検査案内', post_guide_body:'写真検査は手術の時期や種類によって変わることがあります。まず問診で確認します。撮影が難しい場合や保護具を付けている場合は、写真なしで続けられます。', post_photo_continue:'写真で進む', post_photo_upload_title:'手術に関する写真検査', post_camera_btn:'手術に関する写真を撮る' });
+Object.assign(translations.zh, { post_guide_title:'做过眼部手术的用户检查指南', post_guide_body:'照片检查方式可能因手术时间和类型而不同。我们会先询问。如果拍照困难或正在佩戴护罩，可以不拍照继续检查。', post_photo_continue:'使用照片继续', post_photo_upload_title:'手术相关照片检查', post_camera_btn:'拍摄手术相关照片' });
+
+// Entry records actual surgery history, not the user's guess about its cause.
+// Both disease-related and other surgery must reach the timing/type questions.
+const surgeryEntryCopy = {
+ ko: ['눈 수술을 받은 적이 있나요?', '백내장 등 질환 수술뿐 아니라 라식·라섹, 다쳐서 받은 눈 수술도 포함해 주세요.', '눈 수술을 받았어요', '눈 수술을 받은 적 없어요', '사진 검사와 격자 검사 뒤 문진에서 수술 시기와 종류를 확인합니다. 그전에는 사진 점수의 해석을 보류합니다. 촬영이 어렵거나 보호대를 착용 중이면 사진 없이 진행할 수 있어요.'],
+ en: ['Have you had eye surgery?', 'Include surgery for eye conditions, LASIK/PRK and eye injuries.', 'I have had eye surgery', 'I have never had eye surgery', 'After the photo and grid checks, the questionnaire asks when and what surgery you had. Photo scores are withheld until then. You can continue without a photo if taking one is difficult or you wear a shield.'],
+ es: ['¿Ha tenido cirugía ocular?', 'Incluya operaciones por enfermedades, LASIK/PRK y lesiones oculares.', 'He tenido cirugía ocular', 'Nunca he tenido cirugía ocular', 'Después de la foto y la cuadrícula, preguntaremos la fecha y el tipo de cirugía. La interpretación de la foto queda pendiente hasta entonces. Puede continuar sin foto si es difícil tomarla o usa un protector.'],
+ fr: ['Avez-vous été opéré des yeux ?', 'Incluez les maladies oculaires, le LASIK/PRK et les blessures aux yeux.', 'J’ai été opéré des yeux', 'Je n’ai jamais été opéré des yeux', 'Après la photo et la grille, le questionnaire précise la date et le type d’opération. Le score photo reste en attente jusque-là. Vous pouvez continuer sans photo si elle est difficile à prendre ou si vous portez une coque.'],
+ ja: ['目の手術を受けたことがありますか？', '目の病気の手術だけでなく、レーシック・PRKやけがによる手術も含めてください。', '目の手術を受けました', '目の手術は受けていません', '写真と格子のチェック後、問診で手術の時期と種類を確認します。それまでは写真スコアの解釈を保留します。撮影が難しい場合や保護具を着けている場合は、写真なしで進めます。'],
+ zh: ['您做过眼部手术吗？', '请包括眼病手术、LASIK/PRK及眼外伤手术。', '做过眼部手术', '从未做过眼部手术', '照片和网格检查后，问诊会确认手术时间和类型。在此之前暂不解释照片分数。拍照困难或佩戴护罩时，可不拍照继续。']
+};
+for (const [lang, copy] of Object.entries(surgeryEntryCopy)) {
+ ['gate_title','gate_desc','gate_d_yes','gate_d_none','post_guide_body'].forEach((key, i) => translations[lang][key] = copy[i]);
 }
 
 /** 첫 화면의 시작 버튼 — 촬영이 아니라 수술 여부 확인으로 간다. */
@@ -388,11 +408,12 @@ function startScreening() {
  showTab('tab-test'); nextStep('step-surgery');
 }
 
-/** 시작 전 단 하나의 질문: 눈 수술을 받은 적이 있는가.
+/** 시작 전 단 하나의 질문: 원인과 무관하게 눈 수술을 받은 적이 있는가.
  *
  *  시기·종류·인공수정체 이력은 여기서 묻지 않고 문진에서 이어 묻는다. 시작 화면에
  *  네 화면을 세워 두면 검사를 시작하기도 전에 취조처럼 느껴진다(팀 피드백). 대신
- *  이 한 답으로 사진을 찍기 '전에' 정해야 하는 것은 다 정해진다:
+ *  외상·시력교정 수술도 이력을 보존하며, 이 한 답으로 사진을 찍기
+ *  '전에' 정해야 하는 것은 다 정해진다:
  *    · 수술 후 촬영 안내(보호대를 벗지 마세요)를 보여줄지
  *    · 안대 때문에 못 찍는 사람에게 '사진 없이 다음 단계로'를 열어줄지
  *    · 판독 적용 여부가 아직 미정이라고 결과 화면에서 밝힐지(surgeryHistoryPending)
@@ -435,6 +456,7 @@ function applyTrack() {
  const surgery = state.hadSurgery === true || hasSurgery();
  document.body.dataset.track = surgery ? 'surgery' : 'general';
  document.querySelectorAll('[data-surgery-only]').forEach(el => { el.hidden = !surgery; });
+ document.querySelectorAll('[data-general-only]').forEach(el => { el.hidden = surgery; });
 }
 
 
