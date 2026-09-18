@@ -22,7 +22,7 @@ const translations = {
         loading_title: "눈 사진을 확인하고 있어요...", ai_res_title: "사진에서 확인한 눈의 특징", next_amsler: "2단계: 선이 휘어 보이는지 확인하기",
         ams_title: "격자무늬로 중심 시야 확인하기", ams_ok: "선이 곧게 보여요", ams_bad: "선이 휘거나 안 보이는 곳이 있어요",
         ams_example_label: "예시 — 선이 휘거나 안 보이는 곳이 있나요?", ams_example_ok: "선이 곧게 보임", ams_example_bad: "선이 휘거나 빈 곳이 보임",
-        chat_yes: "네", chat_no: "아니오", dis_main_title: "4대 주요 안질환 안내", rep_title: "Eye-Catch 눈 건강 리포트",
+        chat_yes: "네", chat_no: "아니오", chat_unknown: "모르겠어요", dis_main_title: "4대 주요 안질환 안내", rep_title: "Eye-Catch 눈 건강 리포트",
         rep_l1: "1. 백내장 AI 결과", rep_l2: "2. 황반변성 결과", rep_l3: "3. 문진 소견", rep_l4: "4. Gemma AI 맞춤 소견", pdf_btn: "PDF 다운로드", map_btn: "내 주변 안과 찾기",
         msg_gen: "리포트를 생성 중입니다...", res_ams_bad: "이상 소견 (검사 요망)", res_ams_ok: "특이사항 없음", res_chat_none: "주요 증상 없음",
         rep_warn: "본 리포트는 AI 자가진단 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.",
@@ -74,7 +74,7 @@ const translations = {
         loading_title: "AI Analyzing...", ai_res_title: "Opacity feature analysis", next_amsler: "Step 2: Macular Test",
         ams_title: "Amsler Grid Test", ams_ok: "Normal (Straight)", ams_bad: "Distorted/Spot",
         ams_example_label: "Example — when is it 'distorted / blind spot'?", ams_example_ok: "Lines look straight → normal", ams_example_bad: "Wavy or a missing area → abnormal",
-        chat_yes: "Yes", chat_no: "No", dis_main_title: "Major Eye Diseases", rep_title: "Eye-Catch Eye Health Report",
+        chat_yes: "Yes", chat_no: "No", chat_unknown: "Not sure", dis_main_title: "Major Eye Diseases", rep_title: "Eye-Catch Eye Health Report",
         rep_l1: "1. Cataract AI", rep_l2: "2. Macular Test", rep_l3: "3. Survey Result", rep_l4: "4. Gemma AI Personalized Opinion", pdf_btn: "Download PDF", map_btn: "Find a Clinic",
         msg_gen: "Generating report...", res_ams_bad: "Distortion detected", res_ams_ok: "Normal", res_chat_none: "No symptoms",
         rep_warn: "This is an AI-assisted tool. Please consult an ophthalmologist for an accurate diagnosis.",
@@ -126,7 +126,7 @@ const translations = {
         loading_title: "IA analizando...", ai_res_title: "Análisis de rasgos de opacidad", next_amsler: "Paso 2: Mácula",
         ams_title: "Prueba de Amsler", ams_ok: "Normal (Recto)", ams_bad: "Distorsionado/Mancha",
         ams_example_label: "Ejemplo: ¿cuándo es «distorsionado / mancha»?", ams_example_ok: "Líneas rectas → normal", ams_example_bad: "Onduladas o con hueco → anormal",
-        chat_yes: "Sí", chat_no: "No", dis_main_title: "Enfermedades Oculares", rep_title: "Informe de salud ocular Eye-Catch",
+        chat_yes: "Sí", chat_no: "No", chat_unknown: "No lo sé", dis_main_title: "Enfermedades Oculares", rep_title: "Informe de salud ocular Eye-Catch",
         rep_l1: "1. IA de Cataratas", rep_l2: "2. Prueba Macular", rep_l3: "3. Encuesta", rep_l4: "4. Opinión de Gemma AI", pdf_btn: "Descargar PDF", map_btn: "Buscar clínica",
         msg_gen: "Generando informe...", res_ams_bad: "Distorsión", res_ams_ok: "Normal", res_chat_none: "Sin síntomas",
         rep_warn: "Herramienta asistida por IA. Consulte a un oftalmólogo para un diagnóstico preciso.",
@@ -178,7 +178,7 @@ const translations = {
         loading_title: "IA en analyse...", ai_res_title: "Analyse des signes d'opacité", next_amsler: "Étape 2: Macula",
         ams_title: "Test de la grille d'Amsler", ams_ok: "Normal (Droit)", ams_bad: "Déformé/Tache",
         ams_example_label: "Exemple : quand parle-t-on de « déformation / tache » ?", ams_example_ok: "Lignes droites → normal", ams_example_bad: "Ondulées ou zone manquante → anormal",
-        chat_yes: "Oui", chat_no: "Non", dis_main_title: "Maladies Oculaires", rep_title: "Rapport de santé oculaire Eye-Catch",
+        chat_yes: "Oui", chat_no: "Non", chat_unknown: "Je ne sais pas", dis_main_title: "Maladies Oculaires", rep_title: "Rapport de santé oculaire Eye-Catch",
         rep_l1: "1. IA Cataracte", rep_l2: "2. Test Maculaire", rep_l3: "3. Sondage", rep_l4: "4. Avis de Gemma AI", pdf_btn: "Télécharger PDF", map_btn: "Trouver une clinique",
         msg_gen: "Génération du rapport...", res_ams_bad: "Distorsion", res_ams_ok: "Normal", res_chat_none: "Aucun symptôme",
         rep_warn: "Outil assisté par IA. Veuillez consulter un ophtalmologiste.",
@@ -230,7 +230,7 @@ const translations = {
         loading_title: "AI分析中...", ai_res_title: "混濁特徴の分析結果", next_amsler: "ステップ2：黄斑変性テスト",
         ams_title: "アムスラーグリッドテスト", ams_ok: "正常（まっすぐ）", ams_bad: "歪み/暗点",
         ams_example_label: "例 — どんなときに「歪み・暗点」なの？", ams_example_ok: "まっすぐに見える → 正常", ams_example_bad: "歪む・欠ける → 異常",
-        chat_yes: "はい", chat_no: "いいえ", dis_main_title: "4大眼疾患について", rep_title: "Eye-Catch 目の健康レポート",
+        chat_yes: "はい", chat_no: "いいえ", chat_unknown: "わからない", dis_main_title: "4大眼疾患について", rep_title: "Eye-Catch 目の健康レポート",
         rep_l1: "1. 白内障AI結果", rep_l2: "2. 黄斑変性結果", rep_l3: "3. 問診結果", rep_l4: "4. Gemma AIカスタム所見", pdf_btn: "PDFダウンロード", map_btn: "病院を探す",
         msg_gen: "レポートを作成中...", res_ams_bad: "異常あり（要検査）", res_ams_ok: "特記事項なし", res_chat_none: "主要な症状なし",
         rep_warn: "本レポートはAIによる補助資料です。正確な診断のため眼科を受診してください。",
@@ -282,7 +282,7 @@ const translations = {
         loading_title: "AI分析中...", ai_res_title: "混浊特征分析结果", next_amsler: "第二步：黄斑变性测试",
         ams_title: "阿姆斯勒方格表", ams_ok: "正常（线条笔直）", ams_bad: "扭曲/黑影",
         ams_example_label: "示例 — 什么情况算“扭曲/缺失”？", ams_example_ok: "线条笔直 → 正常", ams_example_bad: "扭曲或有缺失 → 异常",
-        chat_yes: "是", chat_no: "否", dis_main_title: "四大眼疾介绍", rep_title: "Eye-Catch 眼健康报告",
+        chat_yes: "是", chat_no: "否", chat_unknown: "不清楚", dis_main_title: "四大眼疾介绍", rep_title: "Eye-Catch 眼健康报告",
         rep_l1: "1. 白内障AI结果", rep_l2: "2. 黄斑变性结果", rep_l3: "3. 问卷结果", rep_l4: "4. Gemma AI 个性化意见", pdf_btn: "下载 PDF", map_btn: "寻找医院",
         msg_gen: "正在生成报告...", res_ams_bad: "发现异常", res_ams_ok: "正常", res_chat_none: "无主要症状",
         rep_warn: "本报告为AI辅助参考资料，为了获得准确诊断，请咨询眼科医生。",
@@ -1157,8 +1157,11 @@ Object.assign(translations.ko, {
   find_post_sym: "수술 후 문진에서 보고한 증상: {items}. 이 응답만으로 증상의 원인이나 회복 상태를 판단할 수 없습니다.",
   find_nosym: "문진에서 특별히 확인된 항목은 없었습니다.",
   find_disclaimer: "위 해석은 앱이 검사 결과에 따라 고정된 문장으로 생성한 것이며, 개별 상황을 판단한 것이 아닙니다.",
-  gate_title: "먼저 검사를 완료해 주세요",
-  gate_desc: "AI 검사 탭에서 사진 분석과 문진을 마치면 결과 리포트가 여기에 표시됩니다.",
+  // report_ 접두사를 붙인 이유: 'gate_title'·'gate_desc'는 수술 이력 입구 화면이
+  // 이미 쓰는 이름이고, app-surgery.js가 나중에 로드되며 그 값으로 덮어쓴다.
+  // 같은 이름을 쓰면 리포트 빈 화면에 "눈 수술을 받은 적이 있나요?"가 뜬다(2026-09-17 실측).
+  report_gate_title: "먼저 검사를 완료해 주세요",
+  report_gate_desc: "AI 검사 탭에서 사진 분석과 문진을 마치면 결과 리포트가 여기에 표시됩니다.",
   gate_go: "AI 검사 시작하기"
 });
 Object.assign(translations.en, {
@@ -1175,8 +1178,8 @@ Object.assign(translations.en, {
   find_post_sym: "Symptoms reported in the post-surgery questionnaire: {items}. These answers alone cannot determine the cause of symptoms or the state of recovery.",
   find_nosym: "Nothing in particular was flagged in the questionnaire.",
   find_disclaimer: "This summary is generated by the app from fixed sentences based on your results. It is not an individual clinical judgement.",
-  gate_title: "Please complete a screening first",
-  gate_desc: "Finish the photo analysis and questionnaire in the AI Analysis tab and your report will appear here.",
+  report_gate_title: "Please complete a screening first",
+  report_gate_desc: "Finish the photo analysis and questionnaire in the AI Analysis tab and your report will appear here.",
   gate_go: "Start the screening"
 });
 Object.assign(translations.es, {
@@ -1193,8 +1196,8 @@ Object.assign(translations.es, {
   find_post_sym: "Síntomas comunicados en el cuestionario posoperatorio: {items}. Estas respuestas por sí solas no permiten determinar la causa de los síntomas ni el estado de recuperación.",
   find_nosym: "No se marcó nada especial en el cuestionario.",
   find_disclaimer: "Este resumen lo genera la app con frases fijas según sus resultados; no es un juicio clínico individual.",
-  gate_title: "Complete primero una revisión",
-  gate_desc: "Termine el análisis de foto y el cuestionario en la pestaña de Análisis IA y su informe aparecerá aquí.",
+  report_gate_title: "Complete primero una revisión",
+  report_gate_desc: "Termine el análisis de foto y el cuestionario en la pestaña de Análisis IA y su informe aparecerá aquí.",
   gate_go: "Comenzar la revisión"
 });
 Object.assign(translations.fr, {
@@ -1211,8 +1214,8 @@ Object.assign(translations.fr, {
   find_post_sym: "Symptômes signalés dans le questionnaire postopératoire : {items}. Ces réponses seules ne permettent pas de déterminer la cause des symptômes ni l’état de récupération.",
   find_nosym: "Rien de particulier n'a été relevé au questionnaire.",
   find_disclaimer: "Ce résumé est généré par l'application à partir de phrases fixes selon vos résultats ; ce n'est pas un jugement clinique individuel.",
-  gate_title: "Veuillez d'abord effectuer un dépistage",
-  gate_desc: "Terminez l'analyse photo et le questionnaire dans l'onglet Analyse IA ; votre rapport apparaîtra ici.",
+  report_gate_title: "Veuillez d'abord effectuer un dépistage",
+  report_gate_desc: "Terminez l'analyse photo et le questionnaire dans l'onglet Analyse IA ; votre rapport apparaîtra ici.",
   gate_go: "Commencer le dépistage"
 });
 Object.assign(translations.ja, {
@@ -1229,8 +1232,8 @@ Object.assign(translations.ja, {
   find_post_sym: "術後の問診で報告された症状: {items}。この回答だけでは、症状の原因や回復状態を判断できません。",
   find_nosym: "問診で特に確認された項目はありませんでした。",
   find_disclaimer: "この要約はアプリが検査結果に応じて固定文から生成したもので、個別の臨床判断ではありません。",
-  gate_title: "まず検査を完了してください",
-  gate_desc: "AI検査タブで写真解析と問診を終えると、結果レポートがここに表示されます。",
+  report_gate_title: "まず検査を完了してください",
+  report_gate_desc: "AI検査タブで写真解析と問診を終えると、結果レポートがここに表示されます。",
   gate_go: "検査を始める"
 });
 Object.assign(translations.zh, {
@@ -1247,8 +1250,8 @@ Object.assign(translations.zh, {
   find_post_sym: "术后问诊中报告的症状：{items}。仅凭这些回答无法判断症状的原因或恢复情况。",
   find_nosym: "问诊中没有特别标记的项目。",
   find_disclaimer: "本摘要由应用根据结果以固定语句生成，并非个体临床判断。",
-  gate_title: "请先完成检查",
-  gate_desc: "在AI检查标签完成照片分析与问诊后，结果报告将显示在这里。",
+  report_gate_title: "请先完成检查",
+  report_gate_desc: "在AI检查标签完成照片分析与问诊后，结果报告将显示在这里。",
   gate_go: "开始检查"
 });
 

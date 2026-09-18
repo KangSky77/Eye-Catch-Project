@@ -73,8 +73,14 @@ test('PDF waits only while advice is streaming; failed advice and photo-less ses
  // PDF를 영영 받을 수 없었다. 기다리게 하는 것은 소견을 '만드는 중'일 때뿐이어야 한다.
  const h=setup(),c=h.context,notices=[];let saved=0;
  const tick=()=>new Promise(r=>setImmediate(r));
+ // .save()가 아니라 blob을 받아 <a download>로 내려받는다(팝업 차단·무한 대기 회피).
+ const anchor={click(){},remove(){},set href(v){},set download(v){}};
  Object.assign(c,{showToast:m=>notices.push(m),setButtonBusy:()=>()=>{},hasCompletedScreening:()=>true,
-  buildReportPdf:()=>({save:()=>{saved++;return Promise.resolve();}})});
+  buildReportPdf:()=>({outputPdf:()=>{saved++;return Promise.resolve({});}}),
+  URL:{createObjectURL:()=>'blob:x',revokeObjectURL(){}},
+  setTimeout:(fn,ms)=>(ms>1000?0:setImmediate(fn))});
+ c.document.createElement=()=>anchor;
+ c.document.body={appendChild(){},removeChild(){}};
  c.window.scrollTo=()=>{};
  c.translations.ko.pdf_wait_opinion='Wait';
  c.state.opinionRequest=h.request('x');

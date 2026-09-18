@@ -278,6 +278,8 @@ function updateUI(lang) {
 
     renderStepProgress();   // "5단계 중 2단계" 라벨도 선택 언어로
 
+    openMap();   // '전체 지도' 링크 주소도 언어에 맞춘다(한국어 카카오맵 / 그 외 구글 지도)
+
     // 리포트 페이지 하단 지도 버튼 라벨만 현지화 (스타일은 디자인 유지)
     const mapBtn = document.getElementById('dynamic-map-btn');
     const mapBtnLabel = mapBtn?.querySelector('[data-i18n="map_btn"]');
@@ -297,6 +299,10 @@ function updateUI(lang) {
     if (typeof renderAmslerGrid === 'function' && document.getElementById('amsler-box')) {
         renderAmslerGrid();
     }
+    // 재촬영 안내는 '다음 사진을 고를 때까지' 남는다 — 그 사이 언어를 바꾸면
+    // 배너와 안내창이 이전 언어로 남는다. 둘 다 언어 중립 코드에서 다시 만든다.
+    if (typeof refreshUploadError === 'function') refreshUploadError();
+    if (typeof renderPhotoCheckText === 'function') renderPhotoCheckText();
     // 결과 화면의 사진 캡션
     const rpc = document.getElementById('result-photo-caption');
     if (rpc && translations[lang].result_photo_label) rpc.textContent = translations[lang].result_photo_label;
@@ -325,6 +331,11 @@ function updateUI(lang) {
 // 첫 로드에서 포커스를 본문으로 옮겨버리면 첫 Tab이 '본문으로 건너뛰기'와 상단 네비를
 // 통째로 건너뛴다 — 키보드 사용자가 네비에 닿을 수 없게 된다.
 function showTab(tid, moveFocus = true) {
+    // 떠 있던 모달은 탭을 떠나면 닫는다. 모달은 탭 컨테이너 밖의 최상위 레이어라,
+    // 두지 않으면 다른 탭 위에 그대로 남는다(2026-09-17 지적).
+    // 질환 상세는 배경 스크롤까지 잠그므로(body.modal-open) 남으면 새 탭이 스크롤도 안 된다.
+    if (typeof closePhotoCheck === 'function') closePhotoCheck();
+    if (typeof isDiseaseModalOpen === 'function' && isDiseaseModalOpen()) closeDisease();
     if (tid === 'tab-simulator') showVisionSim();
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const target = document.getElementById(tid);
@@ -468,9 +479,17 @@ function invalidateScreeningReport() {
     if (typeof updateReportGate === 'function') updateReportGate();
 }
 
+// 팝업 차단기는 스크립트가 여는 창(window.open)을 막는다. 예전에는 차단당해도 반환값을
+// 보지 않아 '눌러도 아무 일이 없는 버튼'이 됐다(2026-09-17 지적). 사용자가 직접 누른
+// 링크는 차단되지 않으므로 버튼 대신 <a>를 쓰고, 여기서는 주소만 언어에 맞춘다.
+// (이름을 openMap으로 유지하는 이유: 여러 테스트가 app-core.js를 자를 때 이 줄을
+//  끝 표시로 쓴다 — tests/upload_lifecycle.test.cjs 등)
 function openMap() {
-    if (state.lang === 'ko') window.open('https://map.kakao.com/?q=안과', '_blank');
-    else window.open('https://www.google.com/maps/search/eye+clinic+near+me', '_blank');
+    const link = document.getElementById('map-full-btn');
+    if (!link) return;
+    link.href = state.lang === 'ko'
+        ? 'https://map.kakao.com/?q=안과'
+        : 'https://www.google.com/maps/search/eye+clinic+near+me';
 }
 
 // ------------------------------------------

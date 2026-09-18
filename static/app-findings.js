@@ -252,7 +252,7 @@ function updateReportGate() {
     const title = document.getElementById('report-gate-title');
     const desc = document.getElementById('report-gate-desc');
     const btn = document.getElementById('report-gate-btn');
-    if (title) title.textContent = t.gate_title || '';
-    if (desc) desc.textContent = t.gate_desc || '';
+    if (title) title.textContent = t.report_gate_title || '';
+    if (desc) desc.textContent = t.report_gate_desc || '';
     if (btn) btn.textContent = t.gate_go || '';
 }

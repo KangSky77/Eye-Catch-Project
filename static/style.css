@@ -1433,9 +1433,20 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 640px) {
     /* 선택지가 3×3으로 늘어나는 문진에서는 고정 60dvh 카드가 controls를 밀어
        chat-box를 82px까지 줄인다. 질문 말풍선이 버튼 아래로 가려지지 않게 카드가
-       내용만큼 늘고, 대화 영역은 최신 질문을 읽을 수 있는 높이를 유지한다. */
+       내용만큼 늘고, 대화 영역은 최신 질문을 읽을 수 있는 높이를 유지한다.
+
+       높이를 px로 묶지 않는 이유: 글자 크기를 키우면(A+, 루트 20px) 질문 말풍선이
+       140px를 넘어서, 맨 아래로 스크롤했을 때 '몇 번째 질문'이 위로 잘려 나간다
+       (iPhone XS·최대 글자에서 25px 잘림 실측, 2026-09-17). rem은 글자 크기를
+       따라 늘고, 긴 질문은 dvh 상한까지 칸이 커져 한 화면에 다 들어온다. */
     .chat-shell { height: auto; max-height: none; }
-    .chat-box { height: 140px; flex: none; }
+    .chat-box {
+        flex: none;
+        height: auto;
+        min-height: 8.75rem;    /* 기본 글자 크기에서 140px */
+        max-height: 45vh;
+        max-height: 45dvh;
+    }
     .dm-sim { padding: 13px; }
     .dm-sim-controls { gap: 8px; }
 }

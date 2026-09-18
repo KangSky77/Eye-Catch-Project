@@ -1,6 +1,7 @@
 import json
 import logging
 import asyncio
+import re
 import httpx
 from app.core.config import settings
 from app.services import knowledge
@@ -234,6 +235,8 @@ def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, h
 - 화면에는 '네'와 '아니오' 버튼 두 개뿐입니다. 환자는 그 둘 중 하나로만 답할 수 있습니다.
 - 따라서 반드시 '네' 또는 '아니오'로 답할 수 있는 질문만 만드세요.
 - 서술형 질문은 절대 금지입니다: "설명해 주시겠어요", "어떤가요", "어떻게", "얼마나", "무엇을", "말씀해 주세요" 같은 표현을 쓰지 마세요.
+- 의문사도 금지입니다: "어느", "어떤", "언제", "어디", "무슨", "왜", "몇", "누가" 를 쓰면 예/아니오로 답할 수 없습니다.
+  (나쁜 예: "두 눈 중 어느 눈이 더 뿌옇게 보이나요?" → 좋은 예: "두 눈의 뿌연 정도가 서로 다르신가요?")
 - 진단하거나 질환 이름을 말하지 마세요. 증상·이력·생활만 물으세요.
 - 한 문장, 60자 이내로 쓰세요.
 - 좋은 예: "요즘 밤에는 운전을 되도록 피하게 되셨나요?" / "한쪽 눈만 유독 불편하신가요?"
@@ -476,20 +479,48 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko"):
 
 # 화면에는 '네/아니오' 버튼뿐이라, 서술형 질문이 나오면 사용자가 답할 방법이 없다.
 # 프롬프트로 제약을 걸어도 LLM이 가끔 어기므로 서버에서 한 번 더 거른다.
-# 여기 걸리면 빈 문자열을 반환 → 프론트가 선택 언어의 기본 질문으로 대체한다.
-_OPEN_ENDED_MARKERS = (
-    # 한국어
-    "설명해", "말씀해", "말해 주", "어떤가요", "어떠신가요", "어떻게", "얼마나",
-    "무엇", "어느 정도", "묘사", "알려주세요", "적어주",
-    # 영어 및 기타 언어에서 공통으로 쓰이는 의문사
-    "describe", "explain", "how much", "how long", "how often", "how would",
-    "what ", "which ", "tell me", "décrivez", "expliquez", "comment ",
-    "combien", "describa", "explique", "cómo", "cuánto", "詳しく", "どのように",
-    "どのくらい", "説明", "教えてください", "详细", "如何", "多久", "描述",
+# 걸러진 질문은 버리지 않고 answer_type='text'로 넘겨 자유 입력칸으로 받는다.
+#
+# 판별의 핵심은 '의문사가 들어 있는가'다 — 의문사가 있으면 예/아니오로 답이 성립하지 않는다.
+# 2026-09-17: "두 눈 중 어느 눈이 유독 더 뿌옇게 보이나요?"가 통과해 네/아니오 버튼만 떴다.
+# 굳어진 표현('어느 정도')만 막고 있어서 의문사 '어느' 자체는 그대로 통과했다.
+
+# 라틴 문자권 의문사 — 단어 경계로 찾는다("somewhat"의 what처럼 낱말 속에 묻힌 것은 제외).
+_OPEN_ENDED_WORDS = re.compile(
+    r"\b("
+    r"what|which|when|where|why|who|whose|whom|how|describe|explain|tell me"
+    r"|qué|cuál|cuándo|dónde|quién|cómo|cuánto|describa|explique"
+    r"|quel|quelle|quand|où|pourquoi|comment|combien|décrivez|expliquez"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# 한국어·일본어·중국어 — 띄어쓰기가 낱말 경계가 아니라 부분 문자열로 찾는다.
+_OPEN_ENDED_SUBSTRINGS = (
+    # 한국어 의문사
+    "어느", "어떤", "어떠", "어떻", "무슨", "무엇", "언제", "어디", "왜 ", "누구", "누가",
+    "몇", "며칠",
+    # 한국어 서술형 요구
+    "설명해", "말씀해", "말해 주", "얼마나", "묘사", "알려주세요", "알려 주세요", "적어주",
+    # 일본어
+    "どちら", "いつ", "どこ", "なぜ", "何", "いくつ", "どの", "どれ",
+    "詳しく", "説明", "教えてください",
+    # 중국어
+    "哪", "什么", "为什么", "几", "如何", "多久", "详细", "描述",
     # 선택형 질문은 예/아니오로 어느 쪽인지 전달할 수 없어 자유 입력으로 받는다.
     "one eye or both", "one or both eyes", "한쪽인가요", "한쪽 눈인가요",
     "한쪽 눈 또는 양쪽", "한쪽 눈이나 양쪽", "한쪽 눈과 양쪽",
 )
+
+# 의문사가 '-든/-라도'와 붙으면 '아무거나'라는 뜻이라 예/아니오로 답할 수 있다.
+# (예: "어느 쪽이든 불편하신가요?" / "어떤 증상이라도 있으신가요?")
+_INCLUSIVE_FORM = re.compile(
+    r"(어느|어떤|무슨|무엇|언제|어디|누구|몇)[^?!.]{0,8}?(이든지|이든|든지|든|이라도|라도)"
+)
+
+# '몇'과 '며칠'은 의문사("몇 시간 보시나요")로도, 막연한 수("최근 몇 년 사이", "며칠 전")로도
+# 쓰인다. 아래 형태는 후자가 확실하므로 의문사로 세지 않는다.
+_VAGUE_COUNT = re.compile(r"(최근|지난|근래)\s*(몇|며칠)|며칠\s*(전|째|사이|간)")
 
 
 # 생성된 질문 길이 상한. app/schemas/ai.py의 ChatHistoryItem.q(max_length=500)와 맞춘다 —
@@ -502,7 +533,11 @@ def _is_yes_no_question(q: str) -> bool:
     if not q or not q.strip():
         return False
     low = q.strip().lower()
-    return not any(m in low for m in _OPEN_ENDED_MARKERS)
+    low = _INCLUSIVE_FORM.sub("", low)      # '어느 쪽이든' 같은 허용형을 먼저 지운다
+    low = _VAGUE_COUNT.sub("", low)
+    if _OPEN_ENDED_WORDS.search(low):
+        return False
+    return not any(m in low for m in _OPEN_ENDED_SUBSTRINGS)
 
 async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, chat_history: list) -> tuple[str, str]:
     """(질문, 답변형식) 반환. 답변형식은 "yesno" | "text"."""

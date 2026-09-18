@@ -2,9 +2,9 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
@@ -103,10 +103,13 @@ STATIC_DIR = PROJECT_ROOT / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/")
-async def read_index():
+async def read_index(request: Request):
     # index.html은 항상 재검증 → 정적 파일의 ?v= 버전이 바뀌면 즉시 반영됨
     # (모바일은 하드 새로고침이 어려워 캐시 무효화가 중요)
-    return FileResponse(
-        STATIC_DIR / "index.html",
-        headers={"Cache-Control": "no-cache, must-revalidate"},
-    )
+    #
+    # og:image만 절대 주소로 바꿔서 내보낸다. 메신저 미리보기 스크래퍼는 자바스크립트를
+    # 돌리지 않고 상대 경로도 제대로 못 읽는 것이 많은데, 이 앱은 localhost·LAN·터널로
+    # 호스트가 계속 바뀌어 파일에 주소를 박아둘 수 없다. 요청이 들어온 주소를 그대로 쓴다.
+    html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    html = html.replace('content="/static/og-card.png', f'content="{str(request.base_url).rstrip("/")}/static/og-card.png')
+    return HTMLResponse(html, headers={"Cache-Control": "no-cache, must-revalidate"})

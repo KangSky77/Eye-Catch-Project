@@ -132,12 +132,27 @@ function askRiskQuestion() {
     if (q.type === 'choice') {
         renderChatOptions(q.options.map(o => ({ label: t[o.key] || o.v, value: o.v })));
     } else {
-        renderChatOptions([
-            { label: t.chat_yes, value: true },
-            { label: t.chat_no,  value: false },
-        ]);
+        renderChatOptions(yesNoUnknownOptions());
     }
     state.chatBusy = false;
+}
+
+/** 예/아니오 + '모르겠어요'.
+ *
+ *  왜 세 번째 선택지가 필요한가: 위험요인·과거력에는 본인도 모르는 것이 있다
+ *  ("가족 중 녹내장 진단받은 분", "안압이 높다는 말을 들은 적"). 둘 중 하나를 강요하면
+ *  모르는 사람이 찍어서 답하고, 그 답이 점수와 소견에 그대로 들어간다.
+ *
+ *  점수 처리: '모르겠어요'는 위험요인으로 세지 않는다(computeRiskScore·handleSymptomAnswer가
+ *  === true / === false로 엄격 비교하므로 어느 쪽에도 걸리지 않는다). 다만 답변 문장은
+ *  그대로 기록돼 리포트와 AI 소견이 '확인되지 않았다'는 사실을 볼 수 있다. */
+function yesNoUnknownOptions() {
+    const t = translations[state.lang];
+    return [
+        { label: t.chat_yes, value: true },
+        { label: t.chat_no, value: false },
+        { label: t.chat_unknown, value: 'unknown' },
+    ];
 }
 
 /** 답변 버튼을 질문에 맞게 다시 그린다. 선택지 개수가 달라지므로 매번 재생성.
@@ -328,10 +343,12 @@ function askSymptomQuestion() {
     const t = translations[state.lang];
     const text = symptomQuestionText(q);
     addMsg('bot', text, surveyProgress());
-    renderChatOptions([
-        { label: t.chat_yes, value: true },
-        { label: t.chat_no,  value: false },
-    ]);
+    // 응급 신호(통증·갑작스러운 시력저하·번쩍임 등)에는 '모르겠어요'를 두지 않는다.
+    // 지금 아픈지 아닌지는 본인이 아는 것이고, 여기서 애매한 답을 받으면
+    // 응급 안내를 띄울지 말지가 흐려진다.
+    renderChatOptions(q.redFlag
+        ? [{ label: t.chat_yes, value: true }, { label: t.chat_no, value: false }]
+        : yesNoUnknownOptions());
     state.chatBusy = false;
 }
 
@@ -346,7 +363,7 @@ function handleSymptomAnswer(yes) {
 
     state.chatBusy = true;
     const t = translations[state.lang];
-    const label = yes ? t.chat_yes : t.chat_no;
+    const label = yes === 'unknown' ? t.chat_unknown : yes ? t.chat_yes : t.chat_no;
     addMsg('user', label);
     state.chatHistory.push({ q: symptomQuestionText(q), a: label });
     state.symptomAnswers[q.code] = yes;   // skipIf 판단용(언어 중립)

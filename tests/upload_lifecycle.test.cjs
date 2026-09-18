@@ -130,14 +130,16 @@ test('선택한 사진은 확인창 없이 바로 한 번만 전송된다', asyn
 test('재촬영 판정은 AI가 막은 기준을 사진과 함께 보여준다', async () => {
     const h=setup(),c=h.context;
     const shown=[];
-    c.showPhotoCheckFailure=(file,checks,message)=>shown.push({file,checks,message});
+    // 안내창에는 문장이 아니라 언어 중립 코드를 넘긴다 — 열려 있는 동안 언어를 바꾸면
+    // 그 코드로 현재 언어 문장을 다시 만든다(app-photo-review.js의 renderPhotoCheckText).
+    c.showPhotoCheckFailure=(file,checks,reasonCode)=>shown.push({file,checks,reasonCode});
     c.translations.ko.ai_blurry='흔들렸어요';
     const checks=[{key:'resolution',ok:true},{key:'sharp',ok:false},{key:'eye_open',ok:null}];
     const done=c.runAIAnalysis(h.file);
     await new Promise(r=>setImmediate(r));
     h.resolve(h.ok({result_code:'blurry',checks}));await done;
     assert.equal(shown.length,1,'기준 체크리스트를 보여주지 않았다');
-    assert.equal(shown[0].message,'흔들렸어요');
+    assert.equal(shown[0].reasonCode,'blurry');
     assert.deepEqual(shown[0].checks,checks);
     assert.equal(shown[0].file,h.file,'사용자가 방금 고른 사진이 아니다');
     assert.equal(c.state.aiResultCode,'','재촬영 코드가 판정으로 저장됐다');

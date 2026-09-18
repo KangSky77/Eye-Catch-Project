@@ -105,6 +105,28 @@ def test_서술형_질문은_걸러진다():
         assert not _is_yes_no_question(q), f"서술형인데 통과됨: {q!r}"
 
 
+def test_의문사가_든_질문은_걸러진다():
+    """2026-09-17 실측: "두 눈 중 어느 눈이 유독 더 뿌옇게 보이나요?"가 통과해
+    답할 수 없는 네/아니오 버튼만 떴다. 의문사가 있으면 예/아니오가 성립하지 않는다."""
+    from app.services.llm import _is_yes_no_question
+    의문사형 = [
+        "두 눈 중 어느 눈이 유독 더 뿌옇게 보이나요?",
+        "증상이 언제부터 시작되었나요?",
+        "어디가 가장 불편하신가요?",
+        "무슨 약을 복용 중이신가요?",
+        "왜 병원에 가지 않으셨나요?",
+        "하루에 몇 시간 정도 화면을 보시나요?",
+        "안약은 며칠에 한 번 넣으시나요?",
+        "Which eye looks blurrier?",
+        "What's changed in your vision?",
+        "When did the symptoms start?",
+        "どちらの目がかすんで見えますか？",
+        "哪只眼睛更模糊？",
+    ]
+    for q in 의문사형:
+        assert not _is_yes_no_question(q), f"의문사형인데 통과됨: {q!r}"
+
+
 def test_예아니오_질문은_통과된다():
     from app.services.llm import _is_yes_no_question
     폐쇄형 = [
@@ -112,6 +134,11 @@ def test_예아니오_질문은_통과된다():
         "야간 운전이 예전보다 힘드신가요?",
         "Do bright lights feel glaring to you?",
         "夜間の運転は以前より大変ですか？",
+        # 의문사를 막다가 이런 정상 질문까지 막으면 자유 입력칸이 남발된다.
+        "최근 몇 년 사이 도수를 자주 바꾸셨나요?",   # '몇' = 막연한 수
+        "며칠 전부터 눈이 더 침침해지셨나요?",        # '며칠 전' = 막연한 수
+        "어느 쪽이든 통증이 있으신가요?",             # '-든' = 아무거나
+        "어떤 증상이라도 새로 생기셨나요?",           # '-라도' = 아무거나
     ]
     for q in 폐쇄형:
         assert _is_yes_no_question(q), f"예/아니오 질문인데 거부됨: {q!r}"

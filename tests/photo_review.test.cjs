@@ -51,7 +51,8 @@ test('every criterion is marked pass, fail or not-checked in all six languages',
 
 test('a rejected photo shows the AI reason and sends the user to another photo',()=>{
  const x=setup();
- x.run(`showPhotoCheckFailure({},${JSON.stringify(CHECKS)},'사진이 흔들렸어요')`);
+ x.run("translations.ko.ai_blurry='사진이 흔들렸어요'");
+ x.run(`showPhotoCheckFailure({},${JSON.stringify(CHECKS)},'blurry')`);
  assert.equal(x.nodes['photo-check'].open,true);
  assert.equal(x.nodes['photo-check-body'].textContent,'사진이 흔들렸어요');
  assert.equal(x.nodes['photo-check-list'].children.length,3);
@@ -59,6 +60,31 @@ test('a rejected photo shows the AI reason and sends the user to another photo',
  assert.deepEqual(x.calls,['retake']);
  assert.equal(x.nodes['photo-check'].open,false);
  assert.equal(x.revoked.length,1,'미리보기 blob이 회수되지 않았다');
+});
+
+// 2026-09-17 지적: 안내창이 열린 채 언어를 바꾸면 제목만 바뀌고 본문·기준 목록은
+// 이전 언어로 남았다. 문장을 받아 그대로 넣던 것을 코드로 바꿔 다시 그린다.
+test('언어를 바꾸면 열려 있는 안내창의 본문과 기준 목록도 새 언어로 바뀐다',()=>{
+ const x=setup();
+ x.run("translations.ko.ai_invalid='눈을 확인하지 못했어요'");
+ x.run("translations.ja.ai_invalid='目を確認できませんでした'");
+ x.run("translations.ko.chk_resolution='사진 크기가 충분해요'");
+ x.run("translations.ja.chk_resolution='写真の大きさが十分です'");
+ x.run(`showPhotoCheckFailure({},[{key:'resolution',ok:true}],'invalid')`);
+ assert.equal(x.nodes['photo-check-body'].textContent,'눈을 확인하지 못했어요');
+ x.run("state.lang='ja'; renderPhotoCheckText()");
+ assert.equal(x.nodes['photo-check-body'].textContent,'目を確認できませんでした');
+ assert.equal(x.nodes['photo-check-list'].children[0].children[1].textContent,'写真の大きさが十分です');
+});
+
+test('창이 닫힌 뒤에는 언어를 바꿔도 다시 그리지 않는다',()=>{
+ const x=setup();
+ x.run("translations.ko.ai_invalid='A'");
+ x.run(`showPhotoCheckFailure({},[],'invalid')`);
+ x.nodes['photo-check-retake'].onclick();
+ x.nodes['photo-check-body'].textContent='';
+ x.run("state.lang='ja'; renderPhotoCheckText()");
+ assert.equal(x.nodes['photo-check-body'].textContent,'','닫힌 창을 다시 그렸다');
 });
 
 test('the skip-photo hatch closes the dialog exactly once',()=>{
@@ -74,6 +100,18 @@ test('browsers without <dialog> fall back to the upload banner instead of throwi
  const x=setup({document:{getElementById:()=>({}),createElement:()=>el()}});
  x.run(`showPhotoCheckFailure({},${JSON.stringify(CHECKS)},'x')`);   // 예외 없이 지나가야 한다
  assert.equal(x.revoked.length,0,'열지도 않은 미리보기를 만들었다');
+});
+
+// 2026-09-17 지적: index.html의 '다른 사진 고르기' 버튼이 data-i18n="review_retake"를
+// 참조하는데 정의가 어디에도 없어, 6개 언어 모두 한국어로 굳어 있었다.
+test('안내창 버튼 문구가 여섯 개 언어에 모두 정의되어 있다',()=>{
+ const x=setup();
+ const 한국어=x.run('translations.ko.review_retake');
+ for(const lang of ['ko','en','es','fr','ja','zh']){
+  const v=x.run(`translations.${lang}.review_retake`);
+  assert.ok(v,`${lang}: review_retake가 없다`);
+  if(lang!=='ko') assert.notEqual(v,한국어,`${lang}: 한국어 문구가 그대로다`);
+ }
 });
 
 test('the result screen summary appears only when the server reported checks',()=>{

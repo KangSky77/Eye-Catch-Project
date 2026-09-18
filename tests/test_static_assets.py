@@ -139,10 +139,14 @@ def test_index_html에_외부_CDN_의존이_없다():
     핵심 자원(글꼴·html2pdf·Leaflet)은 static/vendor로 번들했다.
     누군가 다시 CDN 링크를 넣으면 여기서 잡는다.
     (지도 '타일'은 성격상 번들 불가 — app-map.js가 오프라인이면 안내로 대체한다)
+
+    '불러오는 자원'만 본다. <a>로 바깥 사이트에 나가는 것은 사용자가 눌러서 떠나는
+    이동이라 오프라인 렌더링과 무관하다(예: 카카오맵 전체 보기).
     """
     html = (STATIC / "index.html").read_text(encoding="utf-8")
-    external = re.findall(r'(?:src|href)="(https?://[^"]+)"', html)
-    assert not external, f"index.html이 외부 자원을 참조합니다: {external}"
+    loaded = re.findall(r'<(?:script|link|img|iframe|source)\b[^>]*?'
+                        r'(?:src|href)="(https?://[^"]+)"', html)
+    assert not loaded, f"index.html이 외부 자원을 불러옵니다: {loaded}"
 
 
 def test_로컬_번들_자원이_실제로_존재한다():
@@ -666,7 +670,15 @@ def test_외부리뷰_반영_모달_zindex_배너_개인정보_예시위치():
 def test_모바일_문진은_선택지_높이가_질문을_가리지_않는다():
     css = (STATIC / "style.css").read_text(encoding="utf-8")
     assert ".chat-shell { height: auto; max-height: none; }" in css
-    assert ".chat-box { height: 140px; flex: none; }" in css
+    # 대화 칸 높이를 px로 묶으면 글자 크기를 키웠을 때(A+, 루트 20px) 질문 말풍선이
+    # 그 높이를 넘어서 '몇 번째 질문'이 위로 잘려 나간다(iPhone XS 실측, 2026-09-17).
+    # rem으로 두면 글자 크기를 따라 늘고, 상한은 dvh로 둬 대화 로그가 화면을 덮지 않는다.
+    # 640px 미디어쿼리는 여러 개라 '.chat-shell 재정의' 지점을 기준으로 잡는다
+    mobile = css[css.index(".chat-shell { height: auto; max-height: none; }"):]
+    chat_box = mobile[mobile.index(".chat-box"):mobile.index("}", mobile.index(".chat-box"))]
+    assert "rem" in chat_box, "글자 크기를 따라가도록 rem을 써야 한다"
+    assert "dvh" in chat_box, "대화 로그가 화면을 덮지 않도록 상한이 필요하다"
+    assert not re.search(r"height:\s*\d+px", chat_box), "고정 px 높이는 큰 글자에서 질문을 자른다"
     chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
     assert "function scrollChatToLatest()" in chat and "requestAnimationFrame" in chat
     assert chat.index("scrollChatToLatest();", chat.index("function renderChatOptions")) < chat.index("function scrollChatToLatest")

@@ -155,6 +155,18 @@ test('일반 사용자나 수술 여부 미응답자는 사진을 건너뛸 수 
  }
 });
 
+// 2026-09-17 실측: 리포트 빈 화면에 "눈 수술을 받은 적이 있나요?"가 떴다.
+// app-surgery.js가 data.js 뒤에 로드되며 같은 이름의 키를 덮어썼기 때문이다.
+test('리포트 빈 화면 문구가 수술 입구 문구에 덮이지 않는다',()=>{
+ const x=setup();
+ for(const lang of ['ko','en','ja','zh','es','fr']){
+  const t=x.run(`translations.${lang}`);
+  assert.ok(t.report_gate_title,`${lang}: 리포트 빈 화면 제목이 없다`);
+  assert.notEqual(t.report_gate_title,t.gate_title,`${lang}: 수술 입구 제목과 같다`);
+  assert.notEqual(t.report_gate_desc,t.gate_desc,`${lang}: 수술 입구 설명과 같다`);
+ }
+});
+
 test('문진 경로 배너가 일반/수술 후 상태를 구분한다',()=>{
  const x=setup();
  const banner={className:'',textContent:''};

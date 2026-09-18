@@ -595,6 +595,8 @@ function cleanupPdfHost() {
 }
 
 let _pdfBusy = false;
+// 구형 기기에서는 캡처만 십수 초가 걸리기도 한다. 넉넉히 두되, 끝은 반드시 있어야 한다.
+const PDF_TIMEOUT_MS = 60000;
 
 function downloadPDF() {
     if (_pdfBusy) return;   // 생성에 몇 초 걸려 연타하면 PDF가 여러 장 만들어진다
@@ -628,15 +630,33 @@ function downloadPDF() {
         restoreBtn();
         _pdfBusy = false;
     };
-    try {
-        buildReportPdf().save().then(restore, err => {
-            restore();
-            showToast(t.pdf_err || "Could not create the PDF. Please try again.", 'error');
-            console.error(err);
-        });
-    } catch (err) {         // html2pdf 미로딩 등 동기 실패도 버튼이 잠긴 채로 남지 않게
+    const fail = err => {
         restore();
         showToast(t.pdf_err || "Could not create the PDF. Please try again.", 'error');
         console.error(err);
+    };
+    try {
+        // .save() 대신 blob을 직접 받아 <a download>로 내려받는다.
+        // jsPDF의 save()는 환경에 따라 새 창을 열어 팝업 차단에 막히고, 그때 프라미스가
+        // 끝나지 않아 버튼이 'PDF를 만드는 중...'에 영영 갇혔다(iPhone XS 실측, 2026-09-17).
+        // 사용자가 누른 뒤에 만드는 blob이라 <a>로 내려받는 편이 막힐 여지가 적다.
+        const done = buildReportPdf().outputPdf('blob').then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Eye-Catch_Official_Report.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            // 저장 대화상자가 blob을 읽을 시간을 준 뒤 회수한다.
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+            restore();
+        });
+        // 어떤 이유로든 끝나지 않으면 버튼이 잠긴 채 남는다. 기다림에도 끝을 둔다.
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('PDF 생성 시간 초과')), PDF_TIMEOUT_MS));
+        Promise.race([done, timeout]).catch(fail);
+    } catch (err) {         // html2pdf 미로딩 등 동기 실패도 버튼이 잠긴 채로 남지 않게
+        fail(err);
     }
 }

@@ -103,15 +103,28 @@ function uploadWithProgress(url, formData, onProgress, onUploaded, signal) {
 
 // 업로드 카드 상단 고정 오류 배너 — 토스트는 카드 아래쪽에 잠깐 떠서 놓치기 쉬웠다(외부 리뷰).
 // 다음 사진을 고를 때까지 남는다.
-function showUploadError(msg) {
+// 배너는 다음 사진을 고를 때까지 남는다. 그동안 언어를 바꾸면 이전 언어 문장이 그대로
+// 남으므로(2026-09-17 지적), 무엇 때문에 막혔는지를 '언어 중립 코드'로 함께 들고 있다가
+// updateUI()에서 현재 언어로 다시 만든다. 코드가 없는 오류(파일 형식·크기 등)는
+// 문장만 저장해 두고 그대로 보여준다.
+function showUploadError(msg, code) {
     const el = document.getElementById('upload-error');
     if (!el) return;
+    state.uploadErrorCode = code || '';
     el.textContent = msg;
     el.classList.remove('hidden');
 }
 function clearUploadError() {
+    state.uploadErrorCode = '';
     const el = document.getElementById('upload-error');
     if (el) { el.textContent = ''; el.classList.add('hidden'); }
+}
+/** 언어 전환 시 호출 — 남아 있는 배너를 현재 언어로 다시 쓴다. */
+function refreshUploadError() {
+    const el = document.getElementById('upload-error');
+    if (!el || el.classList.contains('hidden') || !state.uploadErrorCode) return;
+    const msg = translations[state.lang]['ai_' + state.uploadErrorCode];
+    if (msg) el.textContent = msg;
 }
 
 // ------------------------------------------------------------------
@@ -274,12 +287,12 @@ async function runAIAnalysis(droppedFile) {
         };
         if (retake[d.result_code]) {
             showToast(retake[d.result_code], 'error', 7000);
-            showUploadError(retake[d.result_code]);
+            showUploadError(retake[d.result_code], d.result_code);
             state.photoChecks = d.checks || [];
             nextStep('step-photo');
             // AI가 어떤 기준에서 막았는지 사진과 함께 보여주고 다른 사진을 고르게 한다.
             if (typeof showPhotoCheckFailure === 'function') {
-                showPhotoCheckFailure(file, d.checks, retake[d.result_code]);
+                showPhotoCheckFailure(file, d.checks, d.result_code);
             }
             return;
         }
