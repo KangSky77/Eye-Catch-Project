@@ -133,3 +133,43 @@ def test_소견서_프롬프트가_해석을_금지함():
     en = llm._build_opinion_prompt("borderline", "normal", [], "en")
     assert "Do NOT interpret" in en
     assert "cannot rule out" in en
+
+
+# ==========================================================================
+# 문진 사실과 모순되는 문장 — 2026-09-18 실기기 리포트에서 나온 것.
+#
+# 문진 소견에 "2년 내 검진 없음"이 적혀 있는데 바로 아래 AI 소견이
+# "2년 전 검진 이력이 있으므로..."라고 썼다. 프롬프트로 막아도 소형 모델은
+# 여덟 번에 한 번꼴로 부정을 뒤집는다. 사용자는 같은 화면에서 모순을 본다.
+# ==========================================================================
+NO_EXAM = ["2년 내 검진 없음"]
+
+
+@pytest.mark.parametrize("sentence", [
+    "2년 전 검진 이력이 있으므로 다음 정기 검진 시 안압 측정을 권합니다.",
+    "2년 동안의 검진 기록을 바탕으로 앞으로의 계획을 상담할 수 있습니다.",
+    "2년 동안의 검진 기록을 토대로 향후 관리 시기를 점검하십시오.",
+    "이전에 검진을 받으셨으므로 이번에는 안저 검사를 권합니다.",
+    "마지막 검진은 2년 전이었습니다.",
+])
+def test_없는_검진이력을_지어내면_차단된다(sentence):
+    assert safety.check_sentence(sentence, NO_EXAM) == "contradicts_facts"
+
+
+@pytest.mark.parametrize("sentence", [
+    "2년 내 검진 이력이 없으므로 정기 검진을 통한 확인이 필요합니다.",
+    "최근 검진 기록이 없는 상황이라면 정기적으로 안과를 방문하세요.",
+    "이전에 검진을 받지 못했으므로 정기적인 안과 검진이 필요합니다.",
+    "2년 동안 검진이 이루어지지 않은 점을 감안해 자외선 차단을 생활화하세요.",
+    "안과 검진 시 세극등 현미경 검사나 안저 검사를 하게 됩니다.",
+])
+def test_검진이_없다는_올바른_문장은_통과한다(sentence):
+    """부정형까지 지우면 정작 해야 할 안내가 사라진다."""
+    assert safety.check_sentence(sentence, NO_EXAM) is None
+
+
+def test_문진에_해당항목이_없으면_건드리지_않는다():
+    """'최근 검진 없음'이 잡히지 않은 회차의 문장까지 검사하면 안 된다."""
+    sentence = "2년 전 검진 이력이 있으므로 권합니다."
+    assert safety.check_sentence(sentence, ["흡연 중"]) is None
+    assert safety.check_sentence(sentence, None) is None

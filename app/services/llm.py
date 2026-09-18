@@ -92,6 +92,11 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 - 숫자나 퍼센트를 쓰지 마세요. '확률'이라는 단어도 쓰지 마세요.
 - 한 문장에서 서로 다른 질환을 연결짓지 마세요. (예: 암슬러 결과로 녹내장을 논하는 것)
 - 진단하지 마세요.
+- 문진 항목의 뜻을 바꾸지 마세요. 특히 '없음'을 '있음'으로 뒤집지 마세요.
+  (예: '2년 내 검진 없음'은 최근 2년간 검진을 받지 않았다는 뜻입니다.
+   '2년 전에 검진을 받으셨으므로'처럼 없는 이력을 지어내면 안 됩니다.)
+- 문진 항목을 '~이 있으므로', '~를 받으셨으므로' 같은 전제 문장으로 다시 쓰지 마세요.
+  항목을 설명하지 말고, 그 항목에 맞는 행동 조언만 쓰세요.
 
 [해야 할 일 — 정확히 3줄 요약]
 먼저 문진에 맞는 생활 관리와 검사 준비를 6~8문장으로 상세히 설명하세요.
@@ -118,6 +123,10 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
   (A screening test cannot rule out disease.)
 - Do NOT use numbers or percentages. Do NOT use the word "probability".
 - Do NOT link two different conditions in one sentence (e.g. drawing a glaucoma conclusion from an Amsler result).
+- Do NOT change what a questionnaire item means, and never flip "no"/"none" into "yes"/"has".
+  ("No exam in 2 years" means they have NOT had an exam; do not invent a past exam.)
+- Do NOT restate an item as a premise ("since you had ...", "because you have ...").
+  Give only the action advice that fits the item.
 - Do NOT diagnose.
 
 [What to do — exactly a 3-line summary]
@@ -333,7 +342,7 @@ async def stream_with_keepalive(prompt: str):
         # 생산자가 정상 종료된 경우에도 gather는 즉시 끝난다.
         await asyncio.gather(task, return_exceptions=True)
 
-async def sanitized_stream(prompt: str):
+async def sanitized_stream(prompt: str, facts: list[str] | None = None):
     """스트림을 문장 단위로 버퍼링해 안전 필터를 통과한 문장만 내보낸다.
 
     왜 문장 단위인가: 토큰을 그대로 흘리면 위험한 문장이 화면에 찍힌 뒤에야 걸러낼 수 있다.
@@ -359,7 +368,7 @@ async def sanitized_stream(prompt: str):
             if not m:
                 break
             sentence, buf = buf[:m.end()], buf[m.end():]
-            why = safety.check_sentence(sentence.strip())
+            why = safety.check_sentence(sentence.strip(), facts)
             if why:
                 dropped.append(why)
                 logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, sentence.strip()[:120])
@@ -462,7 +471,7 @@ each on its own line. The first must preserve urgency when emergency signs are t
 Do not add any fact in the summary. Output nothing else."""
     try:
         # 안전 필터 경유 — 해석·확률·배제·질환 교차 문장은 화면에 닿기 전에 제거된다
-        async for chunk in sanitized_stream(prompt): yield chunk
+        async for chunk in sanitized_stream(prompt, symptoms): yield chunk
     except Exception:
         logger.error("⚠️  소견서 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"

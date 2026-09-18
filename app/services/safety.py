@@ -78,8 +78,45 @@ def _diseases_in(sentence: str) -> set:
     return found
 
 
-def check_sentence(sentence: str) -> str | None:
-    """위반 사유를 반환. 문제없으면 None."""
+# 문진에서 '최근 검진 없음'이 잡혔는데 소견이 있지도 않은 검진 이력을 전제로 쓰는 경우.
+#
+# 왜 필터가 필요한가: 프롬프트로 "'없음'을 '있음'으로 뒤집지 말라"고 못 박아도 소형 모델은
+# 여덟 번에 한 번꼴로 "2년 동안의 검진 기록을 바탕으로"처럼 되돌린다(2026-09-18 실측).
+# 리포트 세 줄 위에 "2년 내 검진 없음"이 그대로 적혀 있어서 사용자는 모순을 바로 본다.
+#
+# 부정형("검진 기록이 없으므로", "검진을 받지 못했")은 맞는 문장이므로 지우면 안 된다.
+# 그래서 '있다고 단정하는 형태'만 좁게 고른다.
+_CLAIMS_PAST_EXAM = [
+    re.compile(r"검진\s*(?:이력|기록)[이은가를을]?\s*(?:있|바탕|토대)"),
+    re.compile(r"(?:전에|년\s*전에?|이전에)\s*(?:받으신|받았던)?\s*검진"),
+    re.compile(r"검진(?:을|를)?\s*받으셨"),
+    re.compile(r"(?:마지막|지난)\s*검진(?:은|이|에서)"),
+]
+# '없다'는 뜻이 같은 문장 안에 있으면 위 표현이 걸려도 올바른 문장이다.
+_EXAM_NEGATED = re.compile(r"없|못\s*했|않[은았으]|미[실시]|안\s*받")
+
+# 문진 항목이 '최근 검진 없음'을 뜻하는지 (6개 언어의 sym_chk_recent 문구)
+_NO_RECENT_EXAM_ITEM = re.compile(
+    r"검진\s*없음|No exam in|Sin revisión|Aucun examen|検診なし|未做过检查", re.I)
+
+
+def contradicts_facts(sentence: str, facts: list[str] | None) -> bool:
+    """문진에서 확인된 사실과 정면으로 어긋나는 문장인가."""
+    if not facts:
+        return False
+    if not any(_NO_RECENT_EXAM_ITEM.search(f or "") for f in facts):
+        return False
+    if _EXAM_NEGATED.search(sentence):
+        return False
+    return any(p.search(sentence) for p in _CLAIMS_PAST_EXAM)
+
+
+def check_sentence(sentence: str, facts: list[str] | None = None) -> str | None:
+    """위반 사유를 반환. 문제없으면 None.
+
+    facts: 문진에서 확인된 항목. 넘기면 그 사실과 어긋나는 문장도 걸러낸다."""
+    if contradicts_facts(sentence, facts):
+        return "contradicts_facts"    # 없는 이력을 지어냄
     if any(p.search(sentence) for p in _PROB):
         return "probability"          # 보정되지 않은 점수를 확률로 말함
     if any(p.search(sentence) for p in _EXCL):
@@ -91,7 +128,7 @@ def check_sentence(sentence: str) -> str | None:
     return None
 
 
-def sanitize(text: str) -> tuple[str, list[str]]:
+def sanitize(text: str, facts: list[str] | None = None) -> tuple[str, list[str]]:
     """위험 문장을 제거한 본문과 제거 사유 목록을 반환.
 
     문장 단위로 버리는 이유: 한 문장이 틀렸다고 전체를 버리면 쓸 만한 생활 조언까지
@@ -102,7 +139,7 @@ def sanitize(text: str) -> tuple[str, list[str]]:
         s = raw.strip()
         if not s:
             continue
-        why = check_sentence(s)
+        why = check_sentence(s, facts)
         if why:
             reasons.append(why)
         else:
