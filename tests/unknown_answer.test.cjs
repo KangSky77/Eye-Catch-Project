@@ -50,6 +50,67 @@ test('응급 신호 문항에는 모르겠어요를 두지 않는다',()=>{
  assert.ok(!/chat_unknown/.test(redFlagBranch),'적신호 문항에 모르겠어요가 들어갔다');
 });
 
+// 버튼이 실제로 부르는 경로(handleAnswer)로 돌린다. 안쪽 비교식만 문자열로 검사하던 동안
+// 호출부가 'unknown'을 false로 바꿔 넘겨, '모르겠어요'가 '아니오'로 기록되고
+// 역문항(최근 2년 내 검진)에서는 '2년 내 검진 없음'이 위험 소견으로 추가됐다.
+function loadChat(){
+ const node=()=>({innerHTML:'',className:'',dataset:{},style:{},children:[],lastChild:null,
+  classList:{add(){},remove(){},toggle(){},contains(){return false;}},
+  appendChild(){},append(){},setAttribute(){},removeAttribute(){},focus(){},querySelectorAll(){return [];}});
+ const msgs=[];
+ const c=vm.createContext({console,__msgs:msgs,setTimeout:()=>0,clearTimeout(){},requestAnimationFrame:()=>0,
+  performance:{now:()=>0},window:{addEventListener(){}},addEventListener(){},
+  history:{pushState(){},replaceState(){}},localStorage:{getItem(){return null;},setItem(){}},navigator:{language:'ko'},
+  document:{getElementById:()=>node(),createElement:()=>node(),createTextNode:()=>({}),querySelectorAll:()=>[],
+   addEventListener(){},body:{dataset:{},classList:{add(){}}},documentElement:{setAttribute(){}}}});
+ for(const f of ['data.js','app-photo-review.js','app-safety-copy.js','app-report-text.js','app-surgery.js','app-core.js','app-chat.js','app-assess.js'])
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
+ vm.runInContext(`addMsg=(who,text)=>__msgs.push(who+':'+text);renderChatOptions=()=>{};clearChatControls=()=>{};finish=()=>{};finishSurvey=()=>{};`,c);
+ return {c,msgs};
+}
+function answerSymptom(code,value,{surgery='none',extra={}}={}){
+ const {c,msgs}=loadChat();
+ c.__setup={surgery,extra,code};
+ vm.runInContext(`
+  state.lang='ko';state.hadSurgery=__setup.surgery!=='none';state.gateAnswers={surgery:__setup.surgery};
+  state.riskAnswers=Object.assign({surgery:__setup.surgery,age:'60s',diabetes:false,hypertension:false,family:false,smoking:false},__setup.extra);
+  state.riskIdx=activeRiskQuestions().length;
+  state.symptomAnswers={};state.chatSymptoms=[];state.symptomCodes=[];state.chatHistory=[];state.redFlags=[];state.symptomScore=0;
+  state.symIdx=activeSymptomQuestions().findIndex(q=>q.code===__setup.code);state.chatBusy=false;`,c);
+ assert.ok(vm.runInContext('state.symIdx',c)>=0,`${code} 문항을 찾지 못했다`);
+ c.__value=value;
+ vm.runInContext(`handleAnswer(__value, __value==='unknown'?translations.ko.chat_unknown:__value?translations.ko.chat_yes:translations.ko.chat_no)`,c);
+ return {c,msgs,
+  answer:vm.runInContext(`state.symptomAnswers[__setup.code]`,c),
+  symptoms:vm.runInContext('state.chatSymptoms.join(",")',c),
+  score:vm.runInContext('state.symptomScore',c)};
+}
+
+test('모르겠어요는 모르겠어요로 기록되고 역문항에서 위험 소견을 만들지 않는다',()=>{
+ const unknown=answerSymptom('chk_recent','unknown');
+ assert.equal(unknown.answer,'unknown','모르겠어요가 다른 답으로 바뀌어 기록됐다');
+ assert.equal(unknown.msgs.at(-1),'user:'+vm.runInContext('translations.ko.chat_unknown',unknown.c),'대화에 다른 답이 찍혔다');
+ assert.equal(unknown.symptoms,'','모르겠어요가 "2년 내 검진 없음"으로 세어졌다');
+ assert.equal(unknown.score,0);
+ // 대조군: 실제 '아니오'는 역문항에서 위험 소견이 된다
+ const no=answerSymptom('chk_recent',false);
+ assert.equal(no.symptoms,'sym_chk_recent');
+ assert.equal(no.score,2);
+});
+
+test('안저검사 역문항도 모르겠어요를 미시행으로 세지 않는다',()=>{
+ const r=answerSymptom('dr_fundus','unknown',{extra:{diabetes:true}});
+ assert.equal(r.answer,'unknown');
+ assert.equal(r.symptoms,'');
+});
+
+test('수술 후 퇴원 안내를 따를 수 있는지 모르면 수술팀 연락으로 안내한다',()=>{
+ const r=answerSymptom('post_followup','unknown',{surgery:'recent',extra:{surgery_type:'laser'}});
+ assert.equal(r.answer,'unknown');
+ const level=vm.runInContext(`computeTriage({cataractCode:'postop',redFlags:[]}).level`,r.c);
+ assert.equal(level,'now','퇴원 안내를 모르는데 경과 관찰로 안내했다');
+});
+
 test('증상 문항에서 모르겠어요는 위험 신호로 세지 않는다',()=>{
  // handleSymptomAnswer의 판정식이 엄격 비교여야 'unknown'이 어느 쪽에도 걸리지 않는다.
  const src=fs.readFileSync(path.join(__dirname,'../static/app-chat.js'),'utf8');

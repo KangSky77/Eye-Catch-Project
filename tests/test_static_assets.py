@@ -201,6 +201,35 @@ def test_기능검사_문구가_단정적이지_않다():
     assert not found, f"과도한 단정 표현이 남아 있습니다: {found}"
 
 
+def _git(*args: str) -> str:
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+
+
+def test_바뀐_정적파일은_캐시_버전도_올라간다():
+    """/static은 캐시 헤더 없이 서빙되므로 ?v=가 그대로면 재방문 브라우저가 옛 JS를 계속 쓴다.
+
+    2026-09-23 발견: app-assess.js(저장 동의 흐름 수정)와 tailwind.css가 ?v=를 올리지 않은 채 바뀌어 있었다.
+    """
+    if _git("rev-parse", "--is-shallow-repository") != "false":
+        pytest.skip("git 이력이 없거나 얕은 클론이라 확인할 수 없다")
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    head_html = _git("show", "HEAD:static/index.html")
+    stale = []
+    for asset, stamp in re.findall(r'/static/([\w./-]+)\?v=([0-9a-z]+)', html):
+        ref = f"{asset}?v={stamp}"
+        if ref not in head_html:
+            continue   # 이번 작업에서 버전을 올렸다
+        if _git("status", "--porcelain", "--", f"static/{asset}"):
+            stale.append(f"{asset}: 커밋되지 않은 수정이 있는데 ?v={stamp} 그대로")
+            continue
+        stamp_commit = _git("log", "-1", "--format=%H", f"-S{ref}", "--", "static/index.html")
+        file_commit = _git("log", "-1", "--format=%H", "--", f"static/{asset}")
+        if stamp_commit and file_commit and subprocess.run(
+                ["git", "merge-base", "--is-ancestor", file_commit, stamp_commit], cwd=ROOT).returncode:
+            stale.append(f"{asset}: {file_commit[:7]}에서 바뀌었는데 ?v={stamp}는 그 전에 정해졌다")
+    assert not stale, "index.html의 ?v=를 올려야 합니다:\n" + "\n".join(stale)
+
+
 def _classify_vision_results(payload: dict) -> dict:
     """브라우저와 같은 JS 판정 함수를 Node에서 직접 실행한다."""
     source_path = json.dumps(str(STATIC / "app-visiontest.js"))

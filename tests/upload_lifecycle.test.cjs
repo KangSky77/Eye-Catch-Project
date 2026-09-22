@@ -145,11 +145,40 @@ test('재촬영 판정은 AI가 막은 기준을 사진과 함께 보여준다',
     assert.equal(c.state.aiResultCode,'','재촬영 코드가 판정으로 저장됐다');
 });
 
-test('underexposure shows a localized retake message without a medical result', async () => {
-    const h=setup(),c=h.context;c.translations.ko.ai_dark='Too dark';
-    const done=c.runAIAnalysis(h.file);await new Promise(r=>setImmediate(r));
-    h.resolve(h.ok({result_code:'dark'}));await done;
-    assert.equal(c.state.aiResultCode,'');assert.equal(h.banners[0],'Too dark');
+// 번역 키를 테스트에서 직접 넣으면 안 된다 — 2026-09-16 ai_dark가 data에서 빠졌는데도
+// 테스트가 키를 스스로 채워 통과했고, 실제 화면에서는 어두운 사진이 판정 결과로 넘어갔다.
+test('every retake code uses a real translation in all six languages', async () => {
+    const dataContext = vm.createContext({});
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../static/data.js'), 'utf8'), dataContext);
+    const translations = vm.runInContext('translations', dataContext);
+    const codes = ['dark', 'low_resolution', 'blurry', 'hold', 'eyes_hidden', 'invalid', 'multiple_faces'];
+    for (const lang of ['ko', 'en', 'es', 'fr', 'ja', 'zh']) {
+        for (const code of codes) {
+            const message = translations[lang]['ai_' + code];
+            assert.ok(message?.length > 10, `${lang}: ai_${code} 번역이 없다`);
+            const h = setup(), c = h.context;
+            c.state.lang = lang;
+            c.translations = translations;
+            const done = c.runAIAnalysis(h.file);
+            await new Promise(r => setImmediate(r));
+            h.resolve(h.ok({ result_code: code }));
+            await done;
+            assert.equal(c.state.aiResultCode, '', `${lang}/${code}: 재촬영 코드가 판정으로 저장됐다`);
+            assert.equal(h.banners[0], message, `${lang}/${code}`);
+            assert.equal(h.steps.at(-1), 'step-photo');
+        }
+    }
+});
+
+test('a retake code without a translation still never becomes a verdict', async () => {
+    const h = setup(), c = h.context;   // translations.ko is empty here
+    const done = c.runAIAnalysis(h.file);
+    await new Promise(r => setImmediate(r));
+    h.resolve(h.ok({ result_code: 'dark', result: '사진이 너무 어둡습니다' }));
+    await done;
+    assert.equal(c.state.aiResultCode, '', '번역이 없으면 재촬영 코드가 판정으로 샌다');
+    assert.equal(h.banners[0], '사진이 너무 어둡습니다', '서버 문구로 대신 안내해야 한다');
+    assert.equal(h.steps.at(-1), 'step-photo');
 });
 
 test('low resolution uses the real translation in all six languages and never becomes a diagnosis', async () => {

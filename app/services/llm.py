@@ -379,7 +379,7 @@ async def sanitized_stream(prompt: str, facts: list[str] | None = None):
     # 마지막 문장(종결부호 없이 끝난 경우)
     tail = buf.strip()
     if tail:
-        why = safety.check_sentence(tail)
+        why = safety.check_sentence(tail, facts)
         if why:
             dropped.append(why)
             logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, tail[:120])

@@ -520,7 +520,8 @@ function postoperativeTriage(ctx, t) {
  const a=state.symptomAnswers || {};
  // 사진 판독은 적용하지 않는다. 일반 검사에서 암슬러를 끝낸 뒤 수술 이력을
  // 답할 수도 있으므로, 이미 보고된 암슬러 이상은 유지한다.
- const contact=a.post_worse===true || a.post_followup===false || ctx.amslerAbnormal===true;
+ // 퇴원 안내를 따를 수 있는지 '모른다'는 것 자체가 수술팀에 확인할 이유다.
+ const contact=a.post_worse===true || a.post_followup===false || a.post_followup==='unknown' || ctx.amslerAbnormal===true;
  const kind=urgent?'urgent':contact?'contact':'follow';
  return {level:urgent?'urgent':contact?'now':'monitor',label:t['post_'+kind],
   why:t['post_'+kind+'_why'],note:t.post_limit,riskScore:0,riskMax:13};

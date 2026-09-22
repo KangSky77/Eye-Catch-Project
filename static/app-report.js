@@ -30,8 +30,11 @@ function buildOpinionSymptoms() {
                     : [translations[state.lang].q_surgery + ': ' + translations[state.lang].surgery_past]) : [],
             formatSymptoms(),
             ...(typeof hasSurgery === 'function' && hasSurgery()
-                ? postoperativeQuestions.filter(q => typeof state.symptomAnswers?.[q.code] === 'boolean')
-                    .map(q => translations[state.lang][q.key] + ': ' + (state.symptomAnswers[q.code] ? translations[state.lang].chat_yes : translations[state.lang].chat_no))
+                ? postoperativeQuestions.filter(q => [true, false, 'unknown'].includes(state.symptomAnswers?.[q.code]))
+                    .map(q => {
+                        const a = state.symptomAnswers[q.code], t = translations[state.lang];
+                        return t[q.key] + ': ' + (a === 'unknown' ? t.chat_unknown : a ? t.chat_yes : t.chat_no);
+                    })
                 : []),
             ...(typeof hasSurgery === 'function' && hasSurgery()
                 ? ['surgery_type','surgery_eye','surgery_sym_eye'].map(key => {

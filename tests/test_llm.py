@@ -61,6 +61,20 @@ async def test_스트림_오류는_마커로_구분(monkeypatch):
 
 
 @pytest.mark.anyio
+async def test_마지막_문장도_문진_사실과_대조한다(monkeypatch):
+    # 3줄 요약의 마지막 줄은 줄바꿈 없이 끝나 'tail'로 따로 검사된다. 그 검사에만 facts를
+    # 넘기지 않아, 같은 문장이 중간 줄이면 걸러지고 마지막 줄이면 통과했다.
+    invented = "지난 검진에서 안압을 확인하셨으니 다음 검진도 받으세요."
+    async def fake(prompt):
+        yield "자외선 차단을 위해 선글라스를 쓰세요.\n<<<SUMMARY>>>\n"
+        yield invented                     # 종결 줄바꿈 없음 → tail 경로
+    monkeypatch.setattr(llm, "stream_with_keepalive", fake)
+    out = "".join([c async for c in llm.sanitized_stream("p", ["2년 내 검진 없음"])])
+    assert "선글라스" in out
+    assert invented not in out
+
+
+@pytest.mark.anyio
 async def test_동적문진_실패시_빈문자열_폴백(monkeypatch):
     # 빈 문자열이면 프론트가 선택 언어의 기본 질문으로 대체 — 한국어 고정 반환하면 안 됨
     async def broken(prompt):

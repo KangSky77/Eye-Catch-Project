@@ -237,7 +237,9 @@ function handleAnswer(value, label) {
         }, 500);
         return;
     }
-    handleSymptomAnswer(value === true);
+    // 'unknown'을 그대로 넘긴다 — 불리언으로 바꾸면 '모르겠어요'가 '아니오'로 기록되고
+    // 역문항(최근 검진 등)에서는 없는 위험 소견이 생긴다.
+    handleSymptomAnswer(value);
 }
 
 // ------------------------------------------------------------------

@@ -285,9 +285,11 @@ async function runAIAnalysis(droppedFile) {
             invalid: translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.",
             multiple_faces: translations[state.lang].ai_multiple_faces || "Multiple faces were detected. Please retake the photo with one person."
         };
-        if (retake[d.result_code]) {
-            showToast(retake[d.result_code], 'error', 7000);
-            showUploadError(retake[d.result_code], d.result_code);
+        // 문구 유무가 아니라 코드로 판단한다 — 번역이 빠져도 재촬영 코드가 판정으로 새지 않게
+        if (Object.prototype.hasOwnProperty.call(retake, d.result_code)) {
+            const retakeMsg = retake[d.result_code] || d.result || translations[state.lang].srv_err || '';
+            showToast(retakeMsg, 'error', 7000);
+            showUploadError(retakeMsg, d.result_code);
             state.photoChecks = d.checks || [];
             nextStep('step-photo');
             // AI가 어떤 기준에서 막았는지 사진과 함께 보여주고 다른 사진을 고르게 한다.
