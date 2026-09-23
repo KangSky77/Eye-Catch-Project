@@ -160,3 +160,42 @@ def test_크롭은_이미지_경계를_넘지_않음(monkeypatch, face_img):
     assert len(crops) == 2
     for c in crops:
         assert c.size[0] >= eye_detector.MIN_CROP_PX and c.size[1] >= eye_detector.MIN_CROP_PX
+
+
+# 2026-09-23: EXIF 없이 옆으로 누운 셀카가 '흔들렸어요'로 거부됐다.
+def test_옆으로_누운_얼굴은_그_방향으로_판독하지_않는다(monkeypatch, face_img):
+    # 두 눈이 위아래로 놓인 얼굴(90° 누움)
+    _fake(monkeypatch, [[200, 60], [200, 240], [150, 150], [100, 110], [100, 190]])
+    assert eye_detector.extract_eye_crops(face_img) == []
+
+
+def test_뒤집힌_얼굴도_판독하지_않는다(monkeypatch, face_img):
+    _fake(monkeypatch, [[100, 200], [300, 200], [200, 150], [150, 80], [250, 80]])   # 입이 눈보다 위
+    assert eye_detector.extract_eye_crops(face_img) == []
+
+
+class _RotationMTCNN:
+    """세로로 선 사진(= 90° 돌린 가로 사진)에서만 똑바로 선 얼굴을 돌려준다."""
+    def __init__(self, face_area_share=0.2):
+        self.share = face_area_share
+
+    def detect(self, img, landmarks=True):
+        w, h = img.size
+        if h <= w:
+            return None, None, None
+        side = (w * h * self.share) ** 0.5
+        box = np.array([[w / 2 - side / 2, h / 2 - side / 2, w / 2 + side / 2, h / 2 + side / 2]], dtype=np.float32)
+        lm = np.array([[[w * .4, h * .45], [w * .6, h * .45], [w * .5, h * .5], [w * .42, h * .58], [w * .58, h * .58]]],
+                      dtype=np.float32)
+        return box, np.array([0.99]), lm
+
+
+def test_옆으로_누운_사진은_똑바로_서는_각도를_찾는다(monkeypatch, face_img):
+    monkeypatch.setattr(eye_detector, "_get_mtcnn", lambda: _RotationMTCNN())
+    assert set(eye_detector.rotation_candidates(face_img)) == {90, 270}
+
+
+def test_회전해서_잡힌_아주_작은_가짜_얼굴은_무시한다(monkeypatch, face_img):
+    # 실측: 클로즈업을 돌렸을 때의 가짜 얼굴은 사진 면적의 0.2% — 클로즈업 경로를 바꾸면 안 된다
+    monkeypatch.setattr(eye_detector, "_get_mtcnn", lambda: _RotationMTCNN(face_area_share=0.002))
+    assert eye_detector.rotation_candidates(face_img) == []

@@ -122,6 +122,54 @@ def is_ready() -> bool:
 
 
 
+# 회전해서 찾은 얼굴로 인정할 최소 면적(사진 대비). 2026-09-23 실측: 테스트 클로즈업 600장을
+# 90°/270° 돌렸을 때 잡힌 가짜 얼굴은 1장·면적 0.2%, 옆으로 누운 실제 셀카의 얼굴은 4.5~16%였다.
+ROTATED_FACE_MIN_AREA = 0.01
+_ROTATION_PROBE_PX = 800
+
+
+def _is_upright(lm) -> bool:
+    """두 눈이 가로로 놓이고 입이 눈보다 아래에 있는가(머리가 위를 향한 얼굴)."""
+    (ex0, ey0), (ex1, ey1) = lm[0], lm[1]
+    mouth_y = (float(lm[3][1]) + float(lm[4][1])) / 2
+    return abs(float(ex1 - ex0)) > abs(float(ey1 - ey0)) and mouth_y > (float(ey0) + float(ey1)) / 2
+
+
+def rotation_candidates(img: Image.Image) -> list[int]:
+    """이 방향으로는 얼굴을 못 찾았을 때, 얼굴이 나오는 회전 각도(90·270·180) 후보를 확신도 순으로.
+
+    EXIF 방향 정보 없이 옆으로 누운 사진(메신저 전달·스크린샷 등)은 얼굴을 못 찾아 클로즈업 경로로
+    가고, 사진 전체의 선명도로 '흔들렸어요'라는 틀린 이유가 나갔다(2026-09-23 실사용 테스트).
+
+    후보가 여럿일 수 있다: MTCNN은 거꾸로 뒤집힌 얼굴도 0.99로 잡고 눈 위치를 똑바른 얼굴처럼
+    돌려준다(실제로는 입가를 가리킨다). 어느 쪽이 맞는지는 호출자가 눈 크롭으로 가린다.
+    없으면 빈 목록 — 호출자는 원래대로 클로즈업 경로를 쓴다.
+    """
+    mtcnn = _get_mtcnn()
+    if mtcnn is None:
+        return []
+    small = img.copy()
+    small.thumbnail((_ROTATION_PROBE_PX, _ROTATION_PROBE_PX))
+    found = []
+    for angle in (90, 270, 180):
+        probe = small.rotate(angle, expand=True)
+        try:
+            boxes, probs, landmarks = mtcnn.detect(probe, landmarks=True)
+        except Exception:
+            logger.warning("회전 얼굴 재검출 실패(%d°)", angle, exc_info=True)
+            return []
+        if boxes is None or landmarks is None:
+            continue
+        area = probe.size[0] * probe.size[1]
+        best = max((float(p) for b, p, lm in zip(boxes, probs, landmarks)
+                    if p >= settings.face_prob_threshold and _is_upright(lm)
+                    and max(0.0, float(b[2] - b[0])) * max(0.0, float(b[3] - b[1])) >= area * ROTATED_FACE_MIN_AREA),
+                   default=None)
+        if best is not None:
+            found.append((best, angle))
+    return [angle for _, angle in sorted(found, reverse=True)]
+
+
 def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
     """얼굴 사진이면 [왼눈, 오른눈] 크롭 반환, 얼굴이 없으면 빈 리스트.
 
@@ -159,6 +207,11 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
         logger.info("얼굴 사진에 여러 얼굴이 감지되어 판독을 보류합니다")
         return None
     best = valid[0]
+    if not _is_upright(landmarks[best]):
+        # 옆으로 눕거나 뒤집힌 얼굴의 눈 크롭은 모델이 본 적 없는 방향이다. 호출자가 사진을
+        # 돌려 다시 찾도록(upright_rotation) '얼굴 없음'으로 돌려준다.
+        logger.info("얼굴이 옆으로 누웠거나 뒤집혀 있어 이 방향으로는 판독하지 않습니다")
+        return []
 
     # 랜드마크 순서: [왼눈, 오른눈, 코, 입왼쪽, 입오른쪽]
     # 단, 순서를 믿지 않고 사진 기준 x좌표로 좌/우를 확정한다 — 얼굴이 기울어진 사진에서

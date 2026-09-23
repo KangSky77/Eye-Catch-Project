@@ -187,6 +187,25 @@ def _sharpness(img: Image.Image) -> float:
 GLARE_SATURATION_LEVEL = 250   # 세 채널 모두 이 값 이상이면 '순백'
 GLARE_MAX_FRACTION = 0.02      # 중앙부의 2%를 넘으면 판독 보류
 
+# 학습 사진의 대표 가로:세로 비율(train 분할 표본의 중앙값 1.29, 세로 사진은 0.6%).
+# 전처리는 비율을 무시하고 224x224로 늘리므로, 모델은 '가로로 눌린 눈'에 익숙하다.
+# 휴대폰을 세워 찍은 세로 클로즈업을 그대로 넣으면 반대 방향으로 눌려 판독이 무너졌다 —
+# 2026-09-23 실측: 같은 뿌연 눈이 정사각 크롭 99.9점, 세로 3:4 크롭 0.2점. 세로로 든 클로즈업을
+# 재현한 test 백내장 268장에서 놓침 38 → 2 (가로·정사각 사진은 결과 변화 없음, FN 0/FP 2 동일).
+TRAINING_ASPECT = 1.29
+PORTRAIT_BELOW = 0.95
+
+
+def _to_training_aspect(img: Image.Image) -> Image.Image:
+    """세로 사진만 폭을 그대로 두고 가운데 띠를 학습 비율로 잘라낸다(가로·정사각은 그대로)."""
+    w, h = img.size
+    if w / h >= PORTRAIT_BELOW:
+        return img
+    band = round(w / TRAINING_ASPECT)
+    top = (h - band) // 2
+    return img.crop((0, top, w, top + band))
+
+
 def _predict_single(img: Image.Image) -> float:
     """이미지 1장의 백내장 확률(%)을 반환.
 
@@ -209,7 +228,7 @@ def _predict_single(img: Image.Image) -> float:
     ※ 과거 주석은 "실사진 변화에 대한 보험"이라 적었으나 측정된 근거가 아니었고,
       '무득실'이라는 수치도 v4 시절 것이라 배포 모델(v5)과 맞지 않았다. 위 표로 교체함.
       백본·데이터를 바꾸면 반드시 재측정할 것(resnet18 v4는 TTA가 FN 7→10으로 해로웠다)."""
-    x = preprocess(img)
+    x = preprocess(_to_training_aspect(img))
     views = [x, torch.flip(x, dims=[2])] if settings.use_tta else [x]   # dims=[2] = W(좌우)축
     batch = torch.stack(views).to(device)
     with torch.no_grad():
@@ -283,7 +302,56 @@ def _empty_result(code: str, message: str, mode: str, eyes_detected: int, **deta
     }
 
 
+def _upright_versions(img: Image.Image) -> list:
+    """얼굴이 똑바로 설 수 있는 회전 사진들을 '가장 그럴듯한 순서'로 돌려준다.
+
+    MTCNN만으로는 방향을 가릴 수 없었다 — 옆으로 누운 얼굴도, 거꾸로 뒤집힌 얼굴도 0.99로 잡고
+    눈 위치를 똑바른 얼굴처럼 돌려준다. 그래서 두 눈 크롭이 모두 눈 게이트를 통과한 방향을 게이트
+    점수 순으로 앞에 두고, 여러 얼굴이 똑바로 보이는 방향(눈 점수 없음)을 그 뒤에 둔다.
+    뒤집힌 방향의 크롭도 게이트를 통과할 수 있어(두 사람 사진 실측 0.80·0.70) 하나만 고르지 않는다."""
+    scored, multi = [], []
+    for angle in eye_detector.rotation_candidates(img):
+        rotated = img.rotate(angle, expand=True)
+        crops = eye_detector.extract_eye_crops(rotated)
+        if crops is None:
+            multi.append(rotated)
+            continue
+        if len(crops) != 2:
+            continue
+        checks = [eye_validator.check_eye(c) for c in crops]
+        if not all(ok for ok, _ in checks):
+            continue
+        scored.append((sum(s for _, s in checks) / len(checks), angle, rotated))
+    return [r for _, _, r in sorted(scored, key=lambda x: (-x[0], x[1]))] + multi
+
+
+# 원래 방향에서 이 판정이 나오면, 방향 정보 없이 옆으로 눕거나 뒤집힌 사진일 수 있어 돌려서 한 번 더 본다.
+# 2026-09-23 실사용 테스트: 옆으로 누운 셀카가 '흔들렸어요'·'눈이 가려졌어요'로 거부됐다
+# (누운 얼굴의 엉뚱한 부위를 눈으로 잘라 봤기 때문). 어둡기·해상도·반사는 방향과 무관해 제외한다.
+_ORIENTATION_RETRY_CODES = {"eyes_hidden", "blurry", "invalid", "incomplete_eyes"}
+
+
 def predict_cataract(img: Image.Image):
+    result = _predict_oriented(img)
+    if result.get("result_code") not in _ORIENTATION_RETRY_CODES:
+        return result
+    try:
+        candidates = _upright_versions(img)
+    except eye_detector.EyeDetectionError:
+        return result
+    # 돌린 사진도 눈 게이트·눈 뜸 판정기를 똑같이 통과해야 판독이 나온다(안전장치는 그대로).
+    for upright in candidates:
+        retried = _predict_oriented(upright)
+        if retried.get("result_code") in PHOTO_VERDICT_CODES or retried.get("result_code") == "multiple_faces":
+            logger.info("방향을 바로잡아 다시 판독함 (%s → %s)", result.get("result_code"), retried.get("result_code"))
+            return retried
+    return result
+
+
+PHOTO_VERDICT_CODES = {"risk", "borderline", "uncertain", "normal"}
+
+
+def _predict_oriented(img: Image.Image):
     # 학습된 가중치 없이 예측하면 무작위 결과가 나가므로 명시적으로 거부
     if not weights_loaded:
         raise _upload_error(

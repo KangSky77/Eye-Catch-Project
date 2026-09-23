@@ -16,7 +16,7 @@ const translations = {
         nav_test: "AI 검사", nav_disease: "질환 소개", nav_report: "건강 리포트", nav_map: "병원 찾기",
         intro_title: "당신의 눈 건강,<br><span class='brand-nowrap'>Eye-Catch</span>가 지켜드립니다", intro_desc: "사진 AI·자가검사·문진으로 눈 건강 위험 신호를 한 번에 확인합니다.", scope_note: "사진 AI는 눈에 보이는 진행성 수정체 혼탁 특징만 확인합니다(초기 백내장은 사진으로 확인이 어렵습니다). 황반변성은 암슬러 격자 자가검사로, 녹내장·당뇨망막병증은 문진으로 위험 신호를 살펴봅니다.",
         flow_photo: "사진 분석", flow_check: "자가진단", flow_report: "맞춤 리포트",
-        start_btn: "Eye-Catch Start!!!", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
+        start_btn: "Eye-Catch 시작하기", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
         guide_title: "정확한 분석 가이드", guide_list: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요.</li>",
         tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "흔들리지 않게 촬영하세요", tip1_d: "팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사는 혼탁으로 잘못 읽힐 수 있어요. 직사광선이나 조명이 눈에 직접 비치지 않는 고른 실내 조명에서 찍어주세요.", tip3_t: "눈을 정면·중앙에 맞춰주세요", tip3_d: "한쪽 눈이 화면 중앙에 오도록 정면을 보고, 초점이 맞는 20~30cm 거리에서 찍어주세요.", tips_btn: "이해했습니다!",
         loading_title: "눈 사진을 확인하고 있어요...", ai_res_title: "사진에서 확인한 눈의 특징", next_amsler: "2단계: 선이 휘어 보이는지 확인하기",
@@ -70,7 +70,7 @@ const translations = {
         nav_test: "AI Analysis", nav_disease: "Diseases", nav_report: "Report", nav_map: "Find Clinic",
         intro_title: "Your Eye Health,<br>Protected by <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "Photo AI, self-tests and a questionnaire check your eyes for risk signals in one go.", scope_note: "The photo AI only checks for visible progressive lens-opacity features (early cataract is hard to see in a photo). Macular degeneration uses the Amsler grid self-test; glaucoma and diabetic retinopathy risk comes from the questionnaire.",
         flow_photo: "Photo analysis", flow_check: "Self-check", flow_report: "Personal report",
-        start_btn: "Eye-Catch Start!!!", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Screening results (verdict text, questionnaire answers, AI summary) are stored only if you consent on the report screen; the photo itself is never stored. Stored results stay in the team's own database.",
+        start_btn: "Start Eye-Catch", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Screening results (verdict text, questionnaire answers, AI summary) are stored only if you consent on the report screen; the photo itself is never stored. Stored results stay in the team's own database.",
         guide_title: "Analysis Guide", guide_list: "<li>Hold the phone steady.</li><li>Turn the flash off.</li><li>Look straight ahead and center one eye at a time.</li>",
         tips_title: "Photo Tips for<br>Accurate Analysis", tip1_t: "Hold the phone steady", tip1_d: "Tuck your elbows in or lean on a wall, and wait for focus before shooting. Blurry photos can't be analyzed.", tip2_t: "Turn the flash off", tip2_d: "Flash reflections can be misread as clouding. Use soft, even room light without direct light reflecting in the eye.", tip3_t: "Look straight ahead and center the eye", tip3_d: "Center one eye in the frame and shoot from 20–30 cm, where the camera can focus.", tips_btn: "Got it!",
         loading_title: "AI Analyzing...", ai_res_title: "Opacity feature analysis", next_amsler: "Step 2: Macular Test",
@@ -124,7 +124,7 @@ const translations = {
         nav_test: "Análisis IA", nav_disease: "Enfermedades", nav_report: "Informe", nav_map: "Clínicas",
         intro_title: "Tu salud ocular,<br>protegida por <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "IA de fotos, autopruebas y cuestionario revisan de una vez las señales de riesgo ocular.", scope_note: "La IA fotográfica solo detecta rasgos visibles de opacidad avanzada del cristalino (la catarata inicial es difícil de ver en una foto). La degeneración macular se revisa con la rejilla de Amsler, y el riesgo de glaucoma y retinopatía diabética mediante el cuestionario.",
         flow_photo: "Análisis de foto", flow_check: "Autoevaluación", flow_report: "Informe personal",
-        start_btn: "Eye-Catch Start!!!", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados (texto del veredicto, respuestas, resumen de IA) se guardan solo si da su consentimiento en la pantalla del informe; la foto nunca se guarda.",
+        start_btn: "Iniciar Eye-Catch", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados (texto del veredicto, respuestas, resumen de IA) se guardan solo si da su consentimiento en la pantalla del informe; la foto nunca se guarda.",
         guide_title: "Guía", guide_list: "<li>Mantenga el teléfono firme.</li><li>Apague el flash.</li><li>Mire al frente y centre un ojo cada vez.</li>",
         tips_title: "Consejos de foto para<br>un análisis preciso", tip1_t: "Mantenga el teléfono firme", tip1_d: "Apoye los codos en el cuerpo o en una pared y espere a que enfoque antes de disparar. Las fotos movidas no se pueden analizar.", tip2_t: "Apague el flash", tip2_d: "Los reflejos pueden confundirse con opacidad. Use una luz interior suave y uniforme, sin reflejos directos en el ojo.", tip3_t: "Mire al frente y centre el ojo", tip3_d: "Centre un ojo en el encuadre y dispare a 20–30 cm, donde la cámara enfoque.", tips_btn: "¡Entendido!",
         loading_title: "IA analizando...", ai_res_title: "Análisis de rasgos de opacidad", next_amsler: "Paso 2: Mácula",
@@ -178,7 +178,7 @@ const translations = {
         nav_test: "Analyse IA", nav_disease: "Maladies", nav_report: "Rapport", nav_map: "Trouver Clinique",
         intro_title: "Votre santé oculaire,<br>protégée par <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "IA photo, auto-tests et questionnaire vérifient d'un coup les signaux de risque oculaire.", scope_note: "L'IA photo ne repère que les signes visibles d'opacité évolutive du cristallin (une cataracte débutante y est difficile à voir). La DMLA est vérifiée avec la grille d'Amsler, le risque de glaucome et de rétinopathie diabétique par le questionnaire.",
         flow_photo: "Analyse photo", flow_check: "Auto-évaluation", flow_report: "Rapport personnel",
-        start_btn: "Eye-Catch Start!!!", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats (verdict, réponses au questionnaire, résumé IA) ne sont enregistrés que si vous y consentez sur l'écran du rapport ; la photo elle-même n'est jamais conservée.",
+        start_btn: "Démarrer Eye-Catch", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats (verdict, réponses au questionnaire, résumé IA) ne sont enregistrés que si vous y consentez sur l'écran du rapport ; la photo elle-même n'est jamais conservée.",
         guide_title: "Guide", guide_list: "<li>Tenez le téléphone bien stable.</li><li>Désactivez le flash.</li><li>Regardez droit devant et centrez un œil à la fois.</li>",
         tips_title: "Conseils photo pour<br>une analyse précise", tip1_t: "Tenez le téléphone bien stable", tip1_d: "Gardez les coudes contre le corps ou appuyez-vous au mur, et attendez la mise au point avant de déclencher. Une photo floue ne peut pas être analysée.", tip2_t: "Désactivez le flash", tip2_d: "Les reflets peuvent être pris pour une opacité. Utilisez un éclairage intérieur doux et uniforme, sans reflet direct dans l'œil.", tip3_t: "Regardez droit devant et centrez l'œil", tip3_d: "Centrez un œil dans l'image et photographiez à 20–30 cm, là où l'appareil fait la mise au point.", tips_btn: "Compris !",
         loading_title: "IA en analyse...", ai_res_title: "Analyse des signes d'opacité", next_amsler: "Étape 2: Macula",
@@ -232,7 +232,7 @@ const translations = {
         nav_test: "AI検査", nav_disease: "眼疾患について", nav_report: "健康レポート", nav_map: "病院検索",
         intro_title: "あなたの目の健康、<br><span class='brand-nowrap'>Eye-Catch</span>がお守りします", intro_desc: "写真AI・自己検査・問診で目のリスクサインをまとめて確認します。", scope_note: "写真AIは目に見える進行性の水晶体混濁の特徴のみを確認します（初期白内障は写真では確認しにくい）。黄斑変性はアムスラーグリッドの自己検査で、緑内障・糖尿病網膜症は問診でリスクを確認します。",
         flow_photo: "写真分析", flow_check: "セルフチェック", flow_report: "個別レポート",
-        start_btn: "Eye-Catch Start!!!", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "検査結果（判定文・問診回答・AI要約）はレポート画面で同意した場合のみ保存され、写真自体は保存されません。",
+        start_btn: "Eye-Catchを始める", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "検査結果（判定文・問診回答・AI要約）はレポート画面で同意した場合のみ保存され、写真自体は保存されません。",
         guide_title: "正確な分析のために", guide_list: "<li>手ブレしないように撮ってください。</li><li>フラッシュはオフにしてください。</li><li>正面を向き、片目ずつ画面中央に合わせてください。</li>",
         tips_title: "正確な分析のための<br>撮影のコツ", tip1_t: "手ブレしないように撮影", tip1_d: "肘を体につけるか壁にもたれ、ピントが合ってから撮ってください。ブレた写真は分析できません。", tip2_t: "フラッシュはオフに", tip2_d: "反射は濁りと誤読されることがあります。目に光が直接映り込まない、均一で柔らかな室内光で撮ってください。", tip3_t: "正面を向き目を中央に", tip3_d: "片目を画面中央に合わせ、ピントが合う20〜30cmで撮ってください。", tips_btn: "わかりました！",
         loading_title: "AI分析中...", ai_res_title: "混濁特徴の分析結果", next_amsler: "ステップ2：黄斑変性テスト",
@@ -286,7 +286,7 @@ const translations = {
         nav_test: "AI检测", nav_disease: "疾病介绍", nav_report: "健康报告", nav_map: "寻找医院",
         intro_title: "您的眼部健康，<br>由<span class='brand-nowrap'>Eye-Catch</span>守护", intro_desc: "照片AI、自测与问卷，一次性检查眼部风险信号。", scope_note: "照片AI仅检测可见的进行性晶状体混浊特征（早期白内障难以通过照片确认）。黄斑变性通过阿姆斯勒方格表自测，青光眼和糖尿病视网膜病变通过问卷评估风险。",
         flow_photo: "照片分析", flow_check: "自我检测", flow_report: "个性化报告",
-        start_btn: "Eye-Catch Start!!!", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "检测结果（判定文字、问卷答案、AI摘要）仅在报告页面同意后才会保存，照片本身不会保存。",
+        start_btn: "开始 Eye-Catch", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "检测结果（判定文字、问卷答案、AI摘要）仅在报告页面同意后才会保存，照片本身不会保存。",
         guide_title: "准确分析指南", guide_list: "<li>请保持手机稳定。</li><li>请关闭闪光灯。</li><li>请直视前方，每次将一只眼睛置于画面中央。</li>",
         tips_title: "拍摄小技巧<br>让分析更准确", tip1_t: "拍摄时请保持稳定", tip1_d: "手肘贴身或靠墙固定，等对焦后再拍。照片模糊将无法分析。", tip2_t: "请关闭闪光灯", tip2_d: "反光可能被误判为混浊。请在柔和、均匀的室内光线下拍摄，避免光线直接反射到眼睛。", tip3_t: "直视前方并将眼睛居中", tip3_d: "将一只眼睛置于画面中央，在相机能对焦的20–30厘米处拍摄。", tips_btn: "明白了！",
         loading_title: "AI分析中...", ai_res_title: "混浊特征分析结果", next_amsler: "第二步：黄斑变性测试",
@@ -338,13 +338,6 @@ const translations = {
     }
 };
 
-// 첫 화면의 행동 문구는 브랜드명보다 사용자의 다음 행동이 먼저 읽히도록 한다.
-translations.ko.start_btn = 'Eye-Catch 시작하기';
-translations.en.start_btn = 'Start Eye-Catch';
-translations.es.start_btn = 'Iniciar Eye-Catch';
-translations.fr.start_btn = 'Démarrer Eye-Catch';
-translations.ja.start_btn = 'Eye-Catchを始める';
-translations.zh.start_btn = '开始 Eye-Catch';
 translations.ko.photo_skipped_note = '사진 분석을 건너뛰었어요. 이제 황반변성 자가검사를 진행합니다.';
 translations.en.photo_skipped_note = 'You skipped the photo check. Next is the Amsler self-test.';
 translations.es.photo_skipped_note = 'Has omitido la foto. Ahora sigue la prueba de Amsler.';

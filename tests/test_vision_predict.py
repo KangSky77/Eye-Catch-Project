@@ -361,3 +361,70 @@ def test_저해상도와_다중얼굴도_기준_목록을_돌려준다(monkeypat
     out = vision.predict_cataract(img)
     assert out["result_code"] == "multiple_faces"
     assert _checks(out)["resolution"] is True and _checks(out)["single_face"] is False
+
+
+def test_세로_클로즈업은_가운데를_학습_비율로_잘라_넣는다():
+    # 2026-09-23: 비율을 무시하고 224x224로 늘리면 세로로 찍은 클로즈업의 눈이 위아래로 눌려,
+    # 같은 뿌연 눈이 정사각 99.9점 → 세로 3:4 0.2점으로 떨어졌다.
+    portrait = Image.new("RGB", (300, 400))
+    out = vision._to_training_aspect(portrait)
+    assert out.size[0] == 300 and abs(out.size[0] / out.size[1] - vision.TRAINING_ASPECT) < 0.02
+    # 가로·정사각(얼굴 모드 크롭 포함)은 손대지 않는다 — 기존 test 결과가 그대로여야 한다
+    for size in [(400, 300), (260, 260), (500, 510)]:
+        assert vision._to_training_aspect(Image.new("RGB", size)).size == size
+
+
+def _oriented_stub(by_size):
+    """사진 크기로 방향을 구분하는 _predict_oriented 대역."""
+    def run(im):
+        return {"result_code": by_size.get(im.size, "normal"), "mode": "face", "size": im.size}
+    return run
+
+
+def test_옆으로_누운_사진은_재촬영_대신_돌려서_다시_판독한다(monkeypatch, img):
+    img = img.crop((0, 0, img.width, img.height // 2))   # 돌리면 크기가 달라지는 가로 사진
+    rotated = img.rotate(90, expand=True)
+    monkeypatch.setattr(vision, "_predict_oriented", _oriented_stub({img.size: "blurry", rotated.size: "normal"}))
+    monkeypatch.setattr(vision, "_upright_versions", lambda im: [rotated])
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "normal" and out["size"] == rotated.size
+
+
+def test_돌려도_재촬영이면_원래_판정을_유지한다(monkeypatch, img):
+    img = img.crop((0, 0, img.width, img.height // 2))   # 돌리면 크기가 달라지는 가로 사진
+    rotated = img.rotate(90, expand=True)
+    monkeypatch.setattr(vision, "_predict_oriented", _oriented_stub({img.size: "eyes_hidden", rotated.size: "blurry"}))
+    monkeypatch.setattr(vision, "_upright_versions", lambda im: [rotated])
+    assert vision.predict_cataract(img)["result_code"] == "eyes_hidden"
+
+
+def test_방향과_무관한_재촬영은_다시_보지_않는다(monkeypatch, img):
+    monkeypatch.setattr(vision, "_predict_oriented", _oriented_stub({img.size: "dark"}))
+    monkeypatch.setattr(vision, "_upright_versions", lambda im: pytest.fail("어두운 사진은 돌려도 어둡다"))
+    assert vision.predict_cataract(img)["result_code"] == "dark"
+
+
+def test_회전_후보가_둘이면_눈_게이트가_높은_방향을_고른다(monkeypatch, img):
+    # MTCNN은 거꾸로 뒤집힌 얼굴도 잡는다. 뒤집힌 쪽 '눈' 크롭(실제로는 입가)은 눈 게이트 점수가 낮다.
+    monkeypatch.setattr(vision.eye_detector, "rotation_candidates", lambda im: [90, 270])
+    seen = []
+    def crops(im):
+        seen.append(im)
+        tag = {1: "upside", 2: "upright"}[len(seen)]   # 후보 순서: 90°(뒤집힘) → 270°(똑바름)
+        a, b = im.crop((0, 0, 64, 64)), im.crop((64, 0, 128, 64))
+        a.info["tag"] = b.info["tag"] = tag
+        return [a, b]
+    monkeypatch.setattr(vision.eye_detector, "extract_eye_crops", crops)
+    monkeypatch.setattr(vision.eye_validator, "check_eye", lambda c: (True, 0.95 if c.info.get("tag") == "upright" else 0.3))
+    assert vision._upright_versions(img)[0] is seen[1]
+
+
+def test_첫_회전_후보가_재촬영이면_다음_후보를_본다(monkeypatch, img):
+    # 두 사람 사진을 돌렸을 때: 뒤집힌 방향(한 사람만 잡힘)이 먼저 오고 '눈 아님'이 나와도,
+    # 여러 얼굴이 똑바로 보이는 다음 방향에서 올바른 이유('여러 얼굴')를 알려야 한다.
+    img = img.crop((0, 0, img.width, img.height // 2))
+    first, second = img.rotate(180), img.rotate(90, expand=True).rotate(90, expand=True).resize((img.width + 2, img.height))
+    monkeypatch.setattr(vision, "_predict_oriented",
+                        _oriented_stub({img.size: "invalid", first.size: "invalid", second.size: "multiple_faces"}))
+    monkeypatch.setattr(vision, "_upright_versions", lambda im: [first, second])
+    assert vision.predict_cataract(img)["result_code"] == "multiple_faces"
