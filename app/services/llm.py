@@ -204,31 +204,31 @@ _COVERED_TOPICS_KO = (
     "급성 눈 통증·두통·무지개 테, 갑작스러운 시력 저하, "
     "빛 번짐·눈부심, 안개처럼 뿌옇게 보임, 안경 도수 변경, "
     "중심 시야의 글자 빠짐, 안압, 고도근시, 주변 시야, "
-    "당뇨 유병 기간, 안저 검사 여부, 비문증, 최근 안과 검진 여부"
+    "당뇨 유병 기간, 안저 검사 여부, 비문증, 최근 안과 검진 여부, 눈 수술 이력"
 )
 _COVERED_TOPICS_EN = (
     "age, diabetes, hypertension, family history, smoking, "
     "acute eye pain with headache/halos, sudden vision loss, "
     "glare/light scatter, foggy or hazy vision, changing glasses prescription, "
     "missing letters in central vision, intraocular pressure, high myopia, peripheral vision, "
-    "diabetes duration, fundus exam history, floaters, recent eye check-up"
+    "diabetes duration, fundus exam history, floaters, recent eye check-up, eye surgery history"
 )
 
 # 고정 문항이 의도적으로 다루지 않는 영역. 여기로 유도해야 새로운 정보가 들어온다.
 _OPEN_AREAS_KO = (
     "- 증상이 언제부터 시작됐는지 / 최근 몇 달 사이 빠르게 나빠졌는지\n"
     "- 한쪽 눈만 그런지, 양쪽 다 그런지 (편측성)\n"
-    "- 일상 활동에 미치는 영향 (밤 운전을 피하게 됐는지, 책이나 휴대폰 글씨를 예전보다 키웠는지, 계단·문턱에서 불안한지)\n"
+    "- 일상 활동에 미치는 영향 — 아래 중 하나만: 밤 운전을 피하게 됐는지 / 휴대폰 글씨를 예전보다 키웠는지 / 계단을 내려갈 때 불안한지\n"
     "- 스테로이드(먹는 약·안약·연고)를 오래 쓴 적이 있는지\n"
-    "- 눈 수술이나 눈을 다친 적이 있는지\n"
+    "- 눈을 다친 적이 있는지\n"
     "- 야외에서 오래 일하거나 자외선에 많이 노출되는지"
 )
 _OPEN_AREAS_EN = (
     "- When the symptoms started / whether they worsened quickly in recent months\n"
     "- Whether it affects one eye only or both (laterality)\n"
-    "- Impact on daily life (avoiding night driving, enlarging text on books or phone, feeling unsure on stairs)\n"
-    "- Long-term steroid use (oral, eye drops, or ointment)\n"
-    "- Past eye surgery or eye injury\n"
+    "- Impact on daily life — pick only one: avoiding night driving / enlarging text on the phone / feeling unsure going down stairs\n"
+    "- Long-term steroid use (tablets, eye drops, ointment)\n"
+    "- Past eye injury\n"
     "- Working outdoors for long hours or heavy UV exposure"
 )
 
@@ -250,18 +250,22 @@ def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, h
 위 주제를 표현만 바꿔서 되묻는 것도 금지입니다.
 (예: '뿌옇게 보이나요'를 이미 물었으므로 '흐릿하게 보이나요', '선명하지 않나요'도 금지)
 [지금까지의 문진 내역]에 이미 나온 질문과 비슷한 것도 금지입니다.
+아래 영역 중 이미 한 번 물은 영역은 다시 고르지 마세요. 예를 들어 밤 운전을 이미 물었다면
+휴대폰 글씨·계단도 같은 '일상 활동' 영역이므로, 시작 시기·한쪽 눈·스테로이드처럼 다른 영역을 고르세요.
 
 [대신 이런 영역에서 고르세요 — 아직 아무도 묻지 않았습니다]
 {_OPEN_AREAS_KO}
 
 [반드시 지켜야 할 제약]
-- 화면에는 '네'와 '아니오' 버튼 두 개뿐입니다. 환자는 그 둘 중 하나로만 답할 수 있습니다.
+- 화면에는 '네', '아니오', '모르겠어요' 버튼뿐입니다. 서술형으로 답할 칸은 없습니다.
 - 따라서 반드시 '네' 또는 '아니오'로 답할 수 있는 질문만 만드세요.
 - 서술형 질문은 절대 금지입니다: "설명해 주시겠어요", "어떤가요", "어떻게", "얼마나", "무엇을", "말씀해 주세요" 같은 표현을 쓰지 마세요.
 - 의문사도 금지입니다: "어느", "어떤", "언제", "어디", "무슨", "왜", "몇", "누가" 를 쓰면 예/아니오로 답할 수 없습니다.
   (나쁜 예: "두 눈 중 어느 눈이 더 뿌옇게 보이나요?" → 좋은 예: "두 눈의 뿌연 정도가 서로 다르신가요?")
 - 진단하거나 질환 이름을 말하지 마세요. 증상·이력·생활만 물으세요.
-- 한 문장, 60자 이내로 쓰세요. 한 질문에는 한 가지만 물으세요('A나 B' 식으로 두 상황을 묶지 마세요).
+- 한 문장, 60자 이내로 쓰세요. 한 질문에는 한 가지 상황만 물으세요.
+  '-이나', '-거나', '또는'으로 두 상황을 묶으면 한쪽만 해당하는 사람은 답할 수 없습니다.
+  (나쁜 예: "밤 운전이나 계단 오르기가 힘드신가요?" → 좋은 예: "요즘 밤에는 운전을 되도록 피하게 되셨나요?")
 - 좋은 예: "요즘 밤에는 운전을 되도록 피하게 되셨나요?" / "한쪽 눈만 유독 불편하신가요?"
 - 나쁜 예: "시력 변화에 대해 자세히 설명해 주시겠어요?" (네/아니오로 답할 수 없음)
 
@@ -282,16 +286,19 @@ Generate exactly one question that gathers information not yet collected.
 {_COVERED_TOPICS_EN}
 Rewording them is also forbidden (e.g. "foggy vision" was asked, so "blurry" or "not sharp" is also banned).
 Anything similar to a question already in the screening history above is forbidden.
+Do not pick an area below that was already asked. For example, if night driving was asked, phone text and
+stairs belong to the same "daily life" area, so choose another area such as onset, one eye, or steroids.
 
 [Choose from these areas instead — nothing has asked about them yet]
 {_OPEN_AREAS_EN}
 
 [HARD CONSTRAINTS]
-- The screen has only two buttons: "Yes" and "No". The patient can answer ONLY with one of those.
+- The screen has only three buttons: "Yes", "No" and "Not sure". There is no text box.
 - Therefore the question MUST be answerable with a plain Yes or No.
 - Open-ended questions are forbidden. Never use "describe", "explain", "how", "how much", "what", "which", "tell me about".
 - Do NOT diagnose or name a disease. Ask only about symptoms, history, or daily life.
-- One sentence, under 100 characters. Ask about exactly one thing (do not combine two situations with "or").
+- One sentence, under 100 characters. Ask about exactly one situation. Never join two situations with "or":
+  someone for whom only one applies cannot answer. (Bad: "Is night driving or climbing stairs harder?" → Good: "Have you started avoiding driving at night?")
 - Good: "Have you started avoiding driving at night?" / "Is only one of your eyes bothering you?"
 - Bad: "Could you describe your vision changes in detail?" (cannot be answered Yes/No)
 
@@ -564,6 +571,22 @@ _VAGUE_COUNT = re.compile(r"(최근|지난|근래)\s*(몇|며칠)|며칠\s*(전|
 MAX_QUESTION_CHARS = 500
 
 
+# 두 상황을 '또는'으로 묶은 질문 — "밤 운전이나 계단 오르기가 힘드신가요?"
+# (2026-09-23 실사용 테스트). 운전을 안 하는 사람은 네/아니오 어느 쪽으로도 답할 수 없다.
+# 프롬프트로 막아도 모델이 가끔 어기므로 한 번 다시 생성하게 한다.
+# 한국어는 '-이나/-거나' 뒤에 띄어쓰기가 올 때만 센다('-나요?' 어미와 구분).
+_COMPOUND_QUESTION = re.compile(
+    r"\S(이나|거나)\s|또는|혹은"
+    r"|\b(or|o|u|ou)\b"
+    r"|または|あるいは|或者|还是",
+    re.IGNORECASE,
+)
+
+
+def _is_compound_question(q: str) -> bool:
+    return bool(_COMPOUND_QUESTION.search(q or ""))
+
+
 def _is_yes_no_question(q: str) -> bool:
     """네/아니오로 답할 수 있는 질문인지 대략 판별한다(보수적: 애매하면 거부)."""
     if not q or not q.strip():
@@ -589,8 +612,18 @@ async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, 
         # 실패/빈 응답이면 빈 문자열 반환 → 프론트(app-chat.js)가 선택 언어의
         # 기본 질문(nextq_fallback)으로 대체한다. 여기서 한국어 문장을 고정 반환하면
         # 영어 등 다른 언어 사용자에게 한국어 질문이 나가므로 폴백은 프론트에 위임.
-        q = await generate_ollama(_build_next_question_prompt(lang, cataract_res, amsler_res, history_text))
-        q = (q or "").strip()
+        prompt = _build_next_question_prompt(lang, cataract_res, amsler_res, history_text)
+        q = (await generate_ollama(prompt) or "").strip()
+        # '한쪽 눈인가요, 양쪽인가요?' 같은 선택형은 이미 자유 입력칸으로 받으므로 묶음으로 보지 않는다.
+        if _is_yes_no_question(q) and _is_compound_question(q):
+            # 한 번만 다시 쓰게 한다 — 그래도 묶여 있으면 검수된 기본 질문(프론트 폴백)이 낫다.
+            logger.info("동적 문진 질문이 두 상황을 묶음 — 재생성: %r", q)
+            retry_note = ("\n\n[다시 쓰기] 방금 쓴 질문은 두 상황을 묶었습니다. 한 가지만 물으세요: "
+                          if lang == "ko" else
+                          "\n\n[REWRITE] Your question combined two situations. Ask about only one: ")
+            q = (await generate_ollama(prompt + retry_note + q) or "").strip()
+            if _is_yes_no_question(q) and _is_compound_question(q):
+                return "", "yesno"
         if not q:
             return "", "yesno"
         # 맞춤 질문이 2회차부터는 chat_history로 되돌아오는데, ChatHistoryItem.q의 상한이

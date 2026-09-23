@@ -509,10 +509,7 @@ function refreshChatLanguage() {
             question = state.dynamicQuestion.text;
             setChatAnswerMode(state.dynamicQuestion.answerType);
             if (state.dynamicQuestion.answerType === 'yesno') {
-                renderChatOptions(
-                    [{ label: t.chat_yes, value: true }, { label: t.chat_no, value: false }],
-                    v => handleChatAnswer(v === true)
-                );
+                renderChatOptions(yesNoUnknownOptions(), v => handleChatAnswer(v));
             }
         }
     }
@@ -686,27 +683,28 @@ async function fetchNextQuestion() {
         if (answerType !== 'text') {
             // 맞춤형 질문 전용 버튼을 새로 그린다(문진 핸들러가 아니라 handleChatAnswer로).
             const tt = translations[state.lang];
-            renderChatOptions(
-                [{ label: tt.chat_yes, value: true }, { label: tt.chat_no, value: false }],
-                v => handleChatAnswer(v === true)
-            );
+            // AI 질문도 '모르겠어요'를 둔다 — 운전을 안 하는 사람에게 '밤 운전이 힘든가요?'처럼
+            // 해당이 없는 질문이 나올 수 있고, 버튼이 두 개뿐이면 아무 쪽이나 찍게 된다.
+            renderChatOptions(yesNoUnknownOptions(), v => handleChatAnswer(v));
         }
         state.chatBusy = false;   // 새 질문 표시 완료 → 답변 잠금 해제
     }
 }
 
+/** yes: true / false / 'unknown'('모르겠어요'). 'unknown'은 증상으로 세지 않는다. */
 async function handleChatAnswer(yes) {
     if (state.chatBusy) return;          // 처리 중 중복 클릭 무시 (질문/답변 어긋남·중복 호출 방지)
     state.chatBusy = true;               // 다음 질문이 표시될 때까지 잠금
     const generation = state.sessionGeneration;
 
-    const answerText = yes ? translations[state.lang].chat_yes : translations[state.lang].chat_no;
+    const tl = translations[state.lang];
+    const answerText = yes === 'unknown' ? tl.chat_unknown : yes ? tl.chat_yes : tl.chat_no;
     addMsg('user', answerText);
 
     // [1단계] 고정 질문 구간
     if (state.stepIdx < questions[state.lang].length) {
         const currentQ = questions[state.lang][state.stepIdx];
-        if (yes) { state.chatSymptoms.push('sym_' + currentQ.code); state.symptomCodes.push(currentQ.code); }
+        if (yes === true) { state.chatSymptoms.push('sym_' + currentQ.code); state.symptomCodes.push(currentQ.code); }
 
         state.chatHistory.push({ q: currentQ.t, a: answerText });
         state.stepIdx++;
@@ -738,9 +736,9 @@ async function handleChatAnswer(yes) {
         // computeTriage 주석이 명시하듯 진료 시점은 '사람이 검수한 문항'만으로 정해야 한다.
         // 자유 입력 경로(handleChatFreeAnswer)는 원래부터 symptomCodes를 건드리지 않았으므로,
         // 답변 수단(버튼/입력칸)에 따라 판정이 달라지던 불일치도 함께 사라진다.
-        // 맞춤 질문마다 같은 문구를 넣으면 리포트에 '기타 의심 증상 추가 발견'이 두 번 찍힌다
+        // 맞춤 질문마다 같은 문구를 넣으면 리포트에 같은 항목(symptom_extra)이 두 번 찍힌다
         // (maxDynamic을 1->2로 올린 뒤 발생). 어차피 같은 뜻이므로 한 번만 남긴다.
-        if (yes && !state.chatSymptoms.includes('symptom_extra')) state.chatSymptoms.push('symptom_extra');
+        if (yes === true && !state.chatSymptoms.includes('symptom_extra')) state.chatSymptoms.push('symptom_extra');
 
         state.dynamicQuestion = null;
         state.dynamicCount++;

@@ -72,14 +72,13 @@ const VISION_SIMS = [
         filter: t => `blur(${(2.4 * t).toFixed(2)}px) saturate(${(1 - 0.45 * t).toFixed(2)}) `
                    + `sepia(${(0.5 * t).toFixed(2)}) contrast(${(1 - 0.3 * t).toFixed(2)}) `
                    + `brightness(${(1 + 0.14 * t).toFixed(2)})`,
-        overlay: t => `radial-gradient(circle at 82% 19%, rgba(255,246,214,${(0.6 * t).toFixed(2)}) 0%, rgba(255,246,214,0) 46%)`
+        // 빛 번짐: 해가 있는 쪽이 하얗게 번진다
+        spots: [{ x: 82, y: 19, w: 60, h: 70, color: 'rgb(255,246,214)', alpha: 0.6, blur: 26 }]
     },
     {   // 황반변성 — 중심 암점: 정면으로 보는 대상이 일그러지고 가려진다
         key: 'amd',
         filter: t => `contrast(${(1 - 0.06 * t).toFixed(2)})`,
-        overlay: t => `radial-gradient(ellipse 26% 30% at 50% 44%, `
-                    + `rgba(66,58,52,${(0.92 * t).toFixed(2)}) 0%, `
-                    + `rgba(90,80,72,${(0.55 * t).toFixed(2)}) 55%, rgba(0,0,0,0) 78%)`
+        spots: [{ x: 50, y: 44, w: 44, h: 52, color: 'rgb(58,50,45)', alpha: 0.92, blur: 14 }]
     },
     {   // 녹내장 — 주변 시야 결손: 가운데는 멀쩡한데 바깥부터 사라진다(터널 시야)
         key: 'glaucoma',
@@ -91,15 +90,18 @@ const VISION_SIMS = [
     {   // 당뇨망막병증 — 출혈·부유물: 시야 곳곳이 얼룩덜룩 가려지고 흐려진다
         key: 'dr',
         filter: t => `blur(${(1.1 * t).toFixed(2)}px) contrast(${(1 - 0.16 * t).toFixed(2)})`,
-        overlay: t => [
-            `radial-gradient(circle at 32% 38%, rgba(24,14,10,${(0.85 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 15%)`,
-            `radial-gradient(circle at 63% 30%, rgba(24,14,10,${(0.7 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 11%)`,
-            `radial-gradient(circle at 48% 66%, rgba(24,14,10,${(0.8 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 17%)`,
-            `radial-gradient(circle at 74% 71%, rgba(24,14,10,${(0.6 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 10%)`,
-            `radial-gradient(circle at 20% 72%, rgba(24,14,10,${(0.55 * t).toFixed(2)}) 0%, rgba(24,14,10,0) 9%)`
-        ].join(', ')
+        spots: [
+            { x: 32, y: 38, w: 18, h: 28, color: 'rgb(24,14,10)', alpha: 0.85, blur: 8 },
+            { x: 63, y: 30, w: 13, h: 20, color: 'rgb(24,14,10)', alpha: 0.7, blur: 7 },
+            { x: 48, y: 66, w: 20, h: 32, color: 'rgb(24,14,10)', alpha: 0.8, blur: 9 },
+            { x: 74, y: 71, w: 12, h: 19, color: 'rgb(24,14,10)', alpha: 0.6, blur: 6 },
+            { x: 20, y: 72, w: 11, h: 17, color: 'rgb(24,14,10)', alpha: 0.55, blur: 6 }
+        ]
     }
 ];
+// 암점·얼룩·빛 번짐은 '흐리게 만든 단색 원'으로 그린다. 반투명으로 시작하는 radial-gradient를 사진 위
+// 덮개에 쓰면 휴대폰(2026-09-23 실기기 캡처)과 데스크톱 모두에서 아무것도 그려지지 않아, 황반변성·
+// 당뇨망막병증 체험이 슬라이더를 끝까지 올려도 원본 사진 그대로였다. 녹내장(투명→불투명 gradient)은 정상.
 
 /** 질환 모달 하단에 시야 체험 카드를 만들어 붙인다. */
 function buildVisionSim(idx, labels) {
@@ -150,10 +152,20 @@ function buildVisionSim(idx, labels) {
 
     wrap.append(stage, controls, disclaimer);
 
+    const spotEls = (sim.spots || []).map(s => {
+        const el = document.createElement('span');
+        el.className = 'dm-sim-spot';
+        Object.assign(el.style, { left: s.x + '%', top: s.y + '%', width: s.w + '%', height: s.h + '%',
+            background: s.color, filter: `blur(${s.blur}px)`, opacity: '0' });
+        veil.appendChild(el);
+        return el;
+    });
+
     const apply = () => {
         const t = Number(range.value) / 100;
         img.style.filter = sim.filter(t);
-        veil.style.background = t > 0 ? sim.overlay(t) : 'none';
+        veil.style.background = t > 0 && sim.overlay ? sim.overlay(t) : 'none';
+        spotEls.forEach((el, i) => { el.style.opacity = (sim.spots[i].alpha * t).toFixed(2); });
         range.setAttribute('aria-valuetext',
             t === 0 ? (labels.sim_normal || 'Normal vision')
                     : `${labels.sim_strength || 'Severity'} ${Math.round(t * 100)}%`);

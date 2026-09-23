@@ -174,7 +174,8 @@ test('AI 맞춤 질문 표시 중 언어 전환은 현재 질문과 버튼을 �
  assert.equal(c.__text.nodeValue,fallback);
  assert.equal(vm.runInContext('state.chatHistory.at(-1).q',c),fallback);
  assert.deepEqual(Array.from(c.__opts.at(-1)),[
-  vm.runInContext('translations.en.chat_yes',c),vm.runInContext('translations.en.chat_no',c)]);
+  vm.runInContext('translations.en.chat_yes',c),vm.runInContext('translations.en.chat_no',c),
+  vm.runInContext('translations.en.chat_unknown',c)]);
  assert.equal(c.__modes.at(-1),'yesno');
 });
 

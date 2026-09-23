@@ -18,7 +18,7 @@ const translations = {
         flow_photo: "사진 분석", flow_check: "자가진단", flow_report: "맞춤 리포트",
         start_btn: "Eye-Catch 시작하기", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
         guide_title: "정확한 분석 가이드", guide_list: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요.</li>",
-        tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "흔들리지 않게 촬영하세요", tip1_d: "팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사는 혼탁으로 잘못 읽힐 수 있어요. 직사광선이나 조명이 눈에 직접 비치지 않는 고른 실내 조명에서 찍어주세요.", tip3_t: "눈을 정면·중앙에 맞춰주세요", tip3_d: "한쪽 눈이 화면 중앙에 오도록 정면을 보고, 초점이 맞는 20~30cm 거리에서 찍어주세요.", tips_btn: "이해했습니다!",
+        tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "흔들리지 않게 촬영하세요", tip1_d: "팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사는 혼탁으로 잘못 읽힐 수 있어요. 직사광선이나 조명이 눈에 직접 비치지 않는 고른 실내 조명에서 찍어주세요.", tip3_t: "정면을 보고 눈을 크게 떠 주세요", tip3_d: "얼굴 전체를 정면으로 찍어도 되고, 한쪽 눈을 20~30cm에서 가까이 찍으면 더 정확해요.", tips_btn: "이해했습니다!",
         loading_title: "눈 사진을 확인하고 있어요...", ai_res_title: "사진에서 확인한 눈의 특징", next_amsler: "2단계: 선이 휘어 보이는지 확인하기",
         ams_title: "격자무늬로 중심 시야 확인하기", ams_ok: "선이 곧게 보여요", ams_bad: "선이 휘거나 안 보이는 곳이 있어요",
         ams_example_label: "예시 — 선이 휘거나 안 보이는 곳이 있나요?", ams_example_ok: "선이 곧게 보임", ams_example_bad: "선이 휘거나 빈 곳이 보임",
@@ -43,12 +43,12 @@ const translations = {
         ai_dark: "사진이 너무 어두워 판독할 수 없어요. 밝은 실내 조명에서 다시 찍어주세요(플래시는 끄세요).",
         face_mode_note: "얼굴 사진에서 눈 {n}곳을 찾아 분석했어요.",
         eye_breakdown_title: "눈별 분석 (사진 기준)", eye_left: "왼쪽 눈", eye_right: "오른쪽 눈", eye_unilateral: "편측 의심 — 한쪽 눈만 위험 신호", eye_ref_note: "※ 얼굴 사진의 눈별 수치는 참고용이며, 정확도는 눈 클로즈업 촬영이 더 높습니다.",
-        loading_elapsed: "{s}초 경과", font_size: "글자 크기", ex_title: "이렇게 찍어주세요 — 예시", ex_good: "좋은 예: 정면에서 찍어 눈이 또렷하게 보여요", ex_bad_blur: "흔들린 예: 눈을 읽을 수 없어 다시 찍어야 해요", ex_hint: "예시는 퍼블릭 도메인(CC0) 사진을 가공한 것입니다.",
+        loading_elapsed: "{s}초 경과", font_size: "글자 크기", ex_title: "이렇게 찍어주세요 — 예시", ex_good: "좋은 예: 얼굴 정면 — 두 눈이 또렷하게 보여요", ex_bad_blur: "흔들린 예: 눈을 읽을 수 없어 다시 찍어야 해요", ex_hint: "예시는 퍼블릭 도메인(CC0) 사진을 가공한 것입니다.",
         loading_uploading: "사진 업로드 중", loading_analyzing: "AI가 분석 중", loading_slow_hint: "네트워크가 느리면 조금 더 걸릴 수 있어요.",
         chat_free_label: "자유롭게 답해 주세요", chat_free_ph: "답변을 입력해 주세요", chat_free_send: "보내기", chat_free_skip: "건너뛰기",
         gemma_idle: "먼저 'AI 검사'를 진행하면 맞춤 소견이 여기에 표시됩니다.", rep_followup_title: "AI에게 더 궁금한 점 물어보기", rep_followup_ph: "예: 관리 방법 알려줘",
         srv_err: "서버와 연결할 수 없습니다.", nextq_fallback: "추가적으로 눈이 불편하신 곳이 있나요?",
-        survey_done: "기본 문진이 완료되었습니다. 맞춤형 추가 질문을 생성 중입니다... ⏳", next_q_generating: "다음 맞춤형 질문을 생성 중입니다... ⏳", symptom_extra: "기타 의심 증상 추가 발견",
+        survey_done: "기본 문진이 완료되었습니다. 맞춤형 추가 질문을 생성 중입니다... ⏳", next_q_generating: "다음 맞춤형 질문을 생성 중입니다... ⏳", symptom_extra: "AI 추가 질문에 '네'로 답한 항목 있음",
         opinion_writing: "AI가 소견서를 작성 중입니다...\n\n", opinion_error: "로컬 AI 서버와 연결이 끊어졌습니다.",
         opinion_retry_hint: "AI 서버가 잠시 응답하지 않았어요. 검사 결과는 그대로 있으니 다시 시도해 보세요.", opinion_retry: "소견서 다시 생성",
         notif_title: "Eye-Catch 검사 완료", notif_body: "AI 맞춤형 소견서 작성이 완료되었습니다! 결과를 확인해보세요.", followup_thinking: "답변을 생각하고 있습니다...\n\n",
@@ -72,7 +72,7 @@ const translations = {
         flow_photo: "Photo analysis", flow_check: "Self-check", flow_report: "Personal report",
         start_btn: "Start Eye-Catch", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Screening results (verdict text, questionnaire answers, AI summary) are stored only if you consent on the report screen; the photo itself is never stored. Stored results stay in the team's own database.",
         guide_title: "Analysis Guide", guide_list: "<li>Hold the phone steady.</li><li>Turn the flash off.</li><li>Look straight ahead and center one eye at a time.</li>",
-        tips_title: "Photo Tips for<br>Accurate Analysis", tip1_t: "Hold the phone steady", tip1_d: "Tuck your elbows in or lean on a wall, and wait for focus before shooting. Blurry photos can't be analyzed.", tip2_t: "Turn the flash off", tip2_d: "Flash reflections can be misread as clouding. Use soft, even room light without direct light reflecting in the eye.", tip3_t: "Look straight ahead and center the eye", tip3_d: "Center one eye in the frame and shoot from 20–30 cm, where the camera can focus.", tips_btn: "Got it!",
+        tips_title: "Photo Tips for<br>Accurate Analysis", tip1_t: "Hold the phone steady", tip1_d: "Tuck your elbows in or lean on a wall, and wait for focus before shooting. Blurry photos can't be analyzed.", tip2_t: "Turn the flash off", tip2_d: "Flash reflections can be misread as clouding. Use soft, even room light without direct light reflecting in the eye.", tip3_t: "Face the camera with eyes wide open", tip3_d: "A straight-on face photo works; a close-up of one eye from 20–30 cm is even more accurate.", tips_btn: "Got it!",
         loading_title: "AI Analyzing...", ai_res_title: "Opacity feature analysis", next_amsler: "Step 2: Macular Test",
         ams_title: "Amsler Grid Test", ams_ok: "Normal (Straight)", ams_bad: "Distorted/Spot",
         ams_example_label: "Example — when is it 'distorted / blind spot'?", ams_example_ok: "Lines look straight → normal", ams_example_bad: "Wavy or a missing area → abnormal",
@@ -97,12 +97,12 @@ const translations = {
         ai_dark: "The photo is too dark to read. Retake it under bright indoor light (keep the flash off).",
         face_mode_note: "Detected {n} eye(s) in the face photo and analyzed them.",
         eye_breakdown_title: "Per-eye analysis (as in photo)", eye_left: "Left eye", eye_right: "Right eye", eye_unilateral: "Possible one-sided (unilateral) — only one eye flagged", eye_ref_note: "※ Per-eye values from a face photo are for reference; a close-up of the eye is more accurate.",
-        loading_elapsed: "{s}s elapsed", font_size: "Text size", ex_title: "How to shoot — examples", ex_good: "Good: face-on, eyes are sharp and clear", ex_bad_blur: "Shaken: the eyes can't be read, so you'd be asked to retake", ex_hint: "Examples are edited from a public-domain (CC0) photo.",
+        loading_elapsed: "{s}s elapsed", font_size: "Text size", ex_title: "How to shoot — examples", ex_good: "Good: face-on — both eyes sharp and clear", ex_bad_blur: "Shaken: the eyes can't be read, so you'd be asked to retake", ex_hint: "Examples are edited from a public-domain (CC0) photo.",
         loading_uploading: "Uploading photo", loading_analyzing: "AI is analyzing", loading_slow_hint: "This can take longer on a slow network.",
         chat_free_label: "Answer in your own words", chat_free_ph: "Type your answer", chat_free_send: "Send", chat_free_skip: "Skip",
         gemma_idle: "Complete the AI analysis first to see your personalized opinion here.", rep_followup_title: "Ask the AI more questions", rep_followup_ph: "e.g. How should I care for my eyes?",
         srv_err: "Unable to connect to the server.", nextq_fallback: "Is there anything else bothering your eyes?",
-        survey_done: "Basic survey complete. Generating a personalized follow-up question... ⏳", next_q_generating: "Generating the next personalized question... ⏳", symptom_extra: "Additional suspected symptom found",
+        survey_done: "Basic survey complete. Generating a personalized follow-up question... ⏳", next_q_generating: "Generating the next personalized question... ⏳", symptom_extra: "Answered 'Yes' to an AI follow-up question",
         opinion_writing: "The AI is writing your opinion...\n\n", opinion_error: "Connection to the local AI server was lost.",
         opinion_retry_hint: "The AI server did not respond. Your test results are kept — try again.", opinion_retry: "Retry opinion",
         notif_title: "Eye-Catch screening complete", notif_body: "Your personalized AI opinion is ready! Check your results.", followup_thinking: "Thinking of an answer...\n\n",
@@ -126,7 +126,7 @@ const translations = {
         flow_photo: "Análisis de foto", flow_check: "Autoevaluación", flow_report: "Informe personal",
         start_btn: "Iniciar Eye-Catch", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados (texto del veredicto, respuestas, resumen de IA) se guardan solo si da su consentimiento en la pantalla del informe; la foto nunca se guarda.",
         guide_title: "Guía", guide_list: "<li>Mantenga el teléfono firme.</li><li>Apague el flash.</li><li>Mire al frente y centre un ojo cada vez.</li>",
-        tips_title: "Consejos de foto para<br>un análisis preciso", tip1_t: "Mantenga el teléfono firme", tip1_d: "Apoye los codos en el cuerpo o en una pared y espere a que enfoque antes de disparar. Las fotos movidas no se pueden analizar.", tip2_t: "Apague el flash", tip2_d: "Los reflejos pueden confundirse con opacidad. Use una luz interior suave y uniforme, sin reflejos directos en el ojo.", tip3_t: "Mire al frente y centre el ojo", tip3_d: "Centre un ojo en el encuadre y dispare a 20–30 cm, donde la cámara enfoque.", tips_btn: "¡Entendido!",
+        tips_title: "Consejos de foto para<br>un análisis preciso", tip1_t: "Mantenga el teléfono firme", tip1_d: "Apoye los codos en el cuerpo o en una pared y espere a que enfoque antes de disparar. Las fotos movidas no se pueden analizar.", tip2_t: "Apague el flash", tip2_d: "Los reflejos pueden confundirse con opacidad. Use una luz interior suave y uniforme, sin reflejos directos en el ojo.", tip3_t: "Mire a la cámara con los ojos bien abiertos", tip3_d: "Sirve una foto de frente de la cara; un primer plano de un ojo a 20–30 cm es aún más preciso.", tips_btn: "¡Entendido!",
         loading_title: "IA analizando...", ai_res_title: "Análisis de rasgos de opacidad", next_amsler: "Paso 2: Mácula",
         ams_title: "Prueba de Amsler", ams_ok: "Normal (Recto)", ams_bad: "Distorsionado/Mancha",
         ams_example_label: "Ejemplo: ¿cuándo es «distorsionado / mancha»?", ams_example_ok: "Líneas rectas → normal", ams_example_bad: "Onduladas o con hueco → anormal",
@@ -151,12 +151,12 @@ const translations = {
         ai_dark: "La foto está demasiado oscura. Repítala con buena luz interior (sin flash).",
         face_mode_note: "Se detectaron {n} ojo(s) en la foto del rostro y se analizaron.",
         eye_breakdown_title: "Análisis por ojo (según la foto)", eye_left: "Ojo izquierdo", eye_right: "Ojo derecho", eye_unilateral: "Posible unilateral — solo un ojo con señal de riesgo", eye_ref_note: "※ Los valores por ojo de una foto del rostro son orientativos; un primer plano del ojo es más preciso.",
-        loading_elapsed: "{s} s transcurridos", font_size: "Tamaño del texto", ex_title: "Así debe verse — ejemplos", ex_good: "Bien: de frente, los ojos se ven nítidos", ex_bad_blur: "Movida: no se pueden leer los ojos, habría que repetirla", ex_hint: "Los ejemplos se editaron a partir de una foto de dominio público (CC0).",
+        loading_elapsed: "{s} s transcurridos", font_size: "Tamaño del texto", ex_title: "Así debe verse — ejemplos", ex_good: "Bien: cara de frente, ambos ojos nítidos", ex_bad_blur: "Movida: no se pueden leer los ojos, habría que repetirla", ex_hint: "Los ejemplos se editaron a partir de una foto de dominio público (CC0).",
         loading_uploading: "Subiendo la foto", loading_analyzing: "La IA está analizando", loading_slow_hint: "Puede tardar más si la red es lenta.",
         chat_free_label: "Responda con sus palabras", chat_free_ph: "Escriba su respuesta", chat_free_send: "Enviar", chat_free_skip: "Omitir",
         gemma_idle: "Completa primero el análisis de IA para ver aquí tu opinión personalizada.", rep_followup_title: "Haz más preguntas a la IA", rep_followup_ph: "ej. ¿Cómo cuido mis ojos?",
         srv_err: "No se puede conectar con el servidor.", nextq_fallback: "¿Hay algo más que le moleste en los ojos?",
-        survey_done: "Encuesta básica completada. Generando una pregunta personalizada... ⏳", next_q_generating: "Generando la siguiente pregunta personalizada... ⏳", symptom_extra: "Síntoma sospechoso adicional encontrado",
+        survey_done: "Encuesta básica completada. Generando una pregunta personalizada... ⏳", next_q_generating: "Generando la siguiente pregunta personalizada... ⏳", symptom_extra: "Respondió «Sí» a una pregunta adicional de la IA",
         opinion_writing: "La IA está redactando su informe...\n\n", opinion_error: "Se perdió la conexión con el servidor de IA local.",
         opinion_retry_hint: "El servidor de IA no respondió. Sus resultados se conservan: inténtelo de nuevo.", opinion_retry: "Reintentar informe",
         notif_title: "Revisión Eye-Catch completada", notif_body: "¡Su informe de IA personalizado está listo! Revise sus resultados.", followup_thinking: "Pensando una respuesta...\n\n",
@@ -180,7 +180,7 @@ const translations = {
         flow_photo: "Analyse photo", flow_check: "Auto-évaluation", flow_report: "Rapport personnel",
         start_btn: "Démarrer Eye-Catch", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats (verdict, réponses au questionnaire, résumé IA) ne sont enregistrés que si vous y consentez sur l'écran du rapport ; la photo elle-même n'est jamais conservée.",
         guide_title: "Guide", guide_list: "<li>Tenez le téléphone bien stable.</li><li>Désactivez le flash.</li><li>Regardez droit devant et centrez un œil à la fois.</li>",
-        tips_title: "Conseils photo pour<br>une analyse précise", tip1_t: "Tenez le téléphone bien stable", tip1_d: "Gardez les coudes contre le corps ou appuyez-vous au mur, et attendez la mise au point avant de déclencher. Une photo floue ne peut pas être analysée.", tip2_t: "Désactivez le flash", tip2_d: "Les reflets peuvent être pris pour une opacité. Utilisez un éclairage intérieur doux et uniforme, sans reflet direct dans l'œil.", tip3_t: "Regardez droit devant et centrez l'œil", tip3_d: "Centrez un œil dans l'image et photographiez à 20–30 cm, là où l'appareil fait la mise au point.", tips_btn: "Compris !",
+        tips_title: "Conseils photo pour<br>une analyse précise", tip1_t: "Tenez le téléphone bien stable", tip1_d: "Gardez les coudes contre le corps ou appuyez-vous au mur, et attendez la mise au point avant de déclencher. Une photo floue ne peut pas être analysée.", tip2_t: "Désactivez le flash", tip2_d: "Les reflets peuvent être pris pour une opacité. Utilisez un éclairage intérieur doux et uniforme, sans reflet direct dans l'œil.", tip3_t: "Regardez l'objectif, les yeux grands ouverts", tip3_d: "Une photo du visage de face convient ; un gros plan d'un œil à 20–30 cm est encore plus précis.", tips_btn: "Compris !",
         loading_title: "IA en analyse...", ai_res_title: "Analyse des signes d'opacité", next_amsler: "Étape 2: Macula",
         ams_title: "Test de la grille d'Amsler", ams_ok: "Normal (Droit)", ams_bad: "Déformé/Tache",
         ams_example_label: "Exemple : quand parle-t-on de « déformation / tache » ?", ams_example_ok: "Lignes droites → normal", ams_example_bad: "Ondulées ou zone manquante → anormal",
@@ -205,12 +205,12 @@ const translations = {
         ai_dark: "La photo est trop sombre. Reprenez-la sous un bon éclairage intérieur (sans flash).",
         face_mode_note: "{n} œil/yeux détecté(s) sur la photo du visage et analysé(s).",
         eye_breakdown_title: "Analyse par œil (selon la photo)", eye_left: "Œil gauche", eye_right: "Œil droit", eye_unilateral: "Possiblement unilatéral — un seul œil signalé", eye_ref_note: "※ Les valeurs par œil issues d'une photo du visage sont indicatives ; un gros plan de l'œil est plus précis.",
-        loading_elapsed: "{s} s écoulées", font_size: "Taille du texte", ex_title: "À quoi doit ressembler la photo — exemples", ex_good: "Bien : de face, les yeux sont nets", ex_bad_blur: "Bougée : les yeux sont illisibles, il faudrait reprendre la photo", ex_hint: "Les exemples sont retouchés à partir d'une photo du domaine public (CC0).",
+        loading_elapsed: "{s} s écoulées", font_size: "Taille du texte", ex_title: "À quoi doit ressembler la photo — exemples", ex_good: "Bien : visage de face, les deux yeux nets", ex_bad_blur: "Bougée : les yeux sont illisibles, il faudrait reprendre la photo", ex_hint: "Les exemples sont retouchés à partir d'une photo du domaine public (CC0).",
         loading_uploading: "Envoi de la photo", loading_analyzing: "L'IA analyse", loading_slow_hint: "Cela peut être plus long si le réseau est lent.",
         chat_free_label: "Répondez avec vos mots", chat_free_ph: "Saisissez votre réponse", chat_free_send: "Envoyer", chat_free_skip: "Passer",
         gemma_idle: "Effectuez d'abord l'analyse IA pour voir votre avis personnalisé ici.", rep_followup_title: "Posez plus de questions à l'IA", rep_followup_ph: "ex. Comment prendre soin de mes yeux ?",
         srv_err: "Impossible de se connecter au serveur.", nextq_fallback: "Y a-t-il autre chose qui vous gêne aux yeux ?",
-        survey_done: "Questionnaire de base terminé. Génération d'une question personnalisée... ⏳", next_q_generating: "Génération de la prochaine question personnalisée... ⏳", symptom_extra: "Symptôme suspect supplémentaire détecté",
+        survey_done: "Questionnaire de base terminé. Génération d'une question personnalisée... ⏳", next_q_generating: "Génération de la prochaine question personnalisée... ⏳", symptom_extra: "A répondu « Oui » à une question complémentaire de l'IA",
         opinion_writing: "L'IA rédige votre avis...\n\n", opinion_error: "La connexion au serveur IA local a été perdue.",
         opinion_retry_hint: "Le serveur IA n'a pas répondu. Vos résultats sont conservés — réessayez.", opinion_retry: "Réessayer l'avis",
         notif_title: "Dépistage Eye-Catch terminé", notif_body: "Votre avis IA personnalisé est prêt ! Consultez vos résultats.", followup_thinking: "Réflexion à une réponse...\n\n",
@@ -234,7 +234,7 @@ const translations = {
         flow_photo: "写真分析", flow_check: "セルフチェック", flow_report: "個別レポート",
         start_btn: "Eye-Catchを始める", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "検査結果（判定文・問診回答・AI要約）はレポート画面で同意した場合のみ保存され、写真自体は保存されません。",
         guide_title: "正確な分析のために", guide_list: "<li>手ブレしないように撮ってください。</li><li>フラッシュはオフにしてください。</li><li>正面を向き、片目ずつ画面中央に合わせてください。</li>",
-        tips_title: "正確な分析のための<br>撮影のコツ", tip1_t: "手ブレしないように撮影", tip1_d: "肘を体につけるか壁にもたれ、ピントが合ってから撮ってください。ブレた写真は分析できません。", tip2_t: "フラッシュはオフに", tip2_d: "反射は濁りと誤読されることがあります。目に光が直接映り込まない、均一で柔らかな室内光で撮ってください。", tip3_t: "正面を向き目を中央に", tip3_d: "片目を画面中央に合わせ、ピントが合う20〜30cmで撮ってください。", tips_btn: "わかりました！",
+        tips_title: "正確な分析のための<br>撮影のコツ", tip1_t: "手ブレしないように撮影", tip1_d: "肘を体につけるか壁にもたれ、ピントが合ってから撮ってください。ブレた写真は分析できません。", tip2_t: "フラッシュはオフに", tip2_d: "反射は濁りと誤読されることがあります。目に光が直接映り込まない、均一で柔らかな室内光で撮ってください。", tip3_t: "正面を向いて目を大きく開けて", tip3_d: "顔全体を正面から撮っても大丈夫です。片目を20〜30cmで近くから撮るとさらに正確です。", tips_btn: "わかりました！",
         loading_title: "AI分析中...", ai_res_title: "混濁特徴の分析結果", next_amsler: "ステップ2：黄斑変性テスト",
         ams_title: "アムスラーグリッドテスト", ams_ok: "正常（まっすぐ）", ams_bad: "歪み/暗点",
         ams_example_label: "例 — どんなときに「歪み・暗点」なの？", ams_example_ok: "まっすぐに見える → 正常", ams_example_bad: "歪む・欠ける → 異常",
@@ -259,12 +259,12 @@ const translations = {
         ai_dark: "写真が暗すぎて判読できません。明るい室内照明の下で撮り直してください（フラッシュはオフ）。",
         face_mode_note: "顔写真から目を{n}箇所検出して分析しました。",
         eye_breakdown_title: "目ごとの分析（写真基準）", eye_left: "左目", eye_right: "右目", eye_unilateral: "片側の疑い — 片方の目だけ危険信号", eye_ref_note: "※ 顔写真の目ごとの数値は参考用で、目のクローズアップ撮影の方が精度が高いです。",
-        loading_elapsed: "{s}秒経過", font_size: "文字サイズ", ex_title: "こう撮ってください — 例", ex_good: "良い例：正面から撮り、目がはっきり見える", ex_bad_blur: "ブレた例：目が読み取れず撮り直しになる", ex_hint: "例はパブリックドメイン(CC0)写真を加工したものです。",
+        loading_elapsed: "{s}秒経過", font_size: "文字サイズ", ex_title: "こう撮ってください — 例", ex_good: "良い例：顔を正面から撮り、両目がはっきり見える", ex_bad_blur: "ブレた例：目が読み取れず撮り直しになる", ex_hint: "例はパブリックドメイン(CC0)写真を加工したものです。",
         loading_uploading: "写真をアップロード中", loading_analyzing: "AIが分析中", loading_slow_hint: "通信が遅いと時間がかかることがあります。",
         chat_free_label: "自由にお答えください", chat_free_ph: "回答を入力してください", chat_free_send: "送信", chat_free_skip: "スキップ",
         gemma_idle: "先にAI検査を完了すると、ここにカスタム所見が表示されます。", rep_followup_title: "AIにもっと質問する", rep_followup_ph: "例：ケア方法を教えて",
         srv_err: "サーバーに接続できません。", nextq_fallback: "他に目で気になるところはありますか？",
-        survey_done: "基本問診が完了しました。カスタム追加質問を生成中です... ⏳", next_q_generating: "次のカスタム質問を生成中です... ⏳", symptom_extra: "その他の疑わしい症状を追加検出",
+        survey_done: "基本問診が完了しました。カスタム追加質問を生成中です... ⏳", next_q_generating: "次のカスタム質問を生成中です... ⏳", symptom_extra: "AIの追加質問に「はい」と回答した項目あり",
         opinion_writing: "AIが所見を作成中です...\n\n", opinion_error: "ローカルAIサーバーとの接続が切れました。",
         opinion_retry_hint: "AIサーバーが応答しませんでした。検査結果はそのままです。もう一度お試しください。", opinion_retry: "所見を再生成",
         notif_title: "Eye-Catch 検査完了", notif_body: "AIによるカスタム所見が完成しました！結果をご確認ください。", followup_thinking: "回答を考えています...\n\n",
@@ -288,7 +288,7 @@ const translations = {
         flow_photo: "照片分析", flow_check: "自我检测", flow_report: "个性化报告",
         start_btn: "开始 Eye-Catch", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "检测结果（判定文字、问卷答案、AI摘要）仅在报告页面同意后才会保存，照片本身不会保存。",
         guide_title: "准确分析指南", guide_list: "<li>请保持手机稳定。</li><li>请关闭闪光灯。</li><li>请直视前方，每次将一只眼睛置于画面中央。</li>",
-        tips_title: "拍摄小技巧<br>让分析更准确", tip1_t: "拍摄时请保持稳定", tip1_d: "手肘贴身或靠墙固定，等对焦后再拍。照片模糊将无法分析。", tip2_t: "请关闭闪光灯", tip2_d: "反光可能被误判为混浊。请在柔和、均匀的室内光线下拍摄，避免光线直接反射到眼睛。", tip3_t: "直视前方并将眼睛居中", tip3_d: "将一只眼睛置于画面中央，在相机能对焦的20–30厘米处拍摄。", tips_btn: "明白了！",
+        tips_title: "拍摄小技巧<br>让分析更准确", tip1_t: "拍摄时请保持稳定", tip1_d: "手肘贴身或靠墙固定，等对焦后再拍。照片模糊将无法分析。", tip2_t: "请关闭闪光灯", tip2_d: "反光可能被误判为混浊。请在柔和、均匀的室内光线下拍摄，避免光线直接反射到眼睛。", tip3_t: "正对镜头，睁大眼睛", tip3_d: "可以正面拍整张脸；在20–30厘米处近拍一只眼睛会更准确。", tips_btn: "明白了！",
         loading_title: "AI分析中...", ai_res_title: "混浊特征分析结果", next_amsler: "第二步：黄斑变性测试",
         ams_title: "阿姆斯勒方格表", ams_ok: "正常（线条笔直）", ams_bad: "扭曲/黑影",
         ams_example_label: "示例 — 什么情况算“扭曲/缺失”？", ams_example_ok: "线条笔直 → 正常", ams_example_bad: "扭曲或有缺失 → 异常",
@@ -313,12 +313,12 @@ const translations = {
         ai_dark: "照片太暗，无法判读。请在明亮的室内光线下重新拍摄（关闭闪光灯）。",
         face_mode_note: "已从面部照片中检测到{n}处眼睛并进行分析。",
         eye_breakdown_title: "逐眼分析（以照片为准）", eye_left: "左眼", eye_right: "右眼", eye_unilateral: "疑似单侧 — 仅一只眼出现风险信号", eye_ref_note: "※ 面部照片的逐眼数值仅供参考，眼部特写拍摄的准确度更高。",
-        loading_elapsed: "已用时 {s} 秒", font_size: "字体大小", ex_title: "请这样拍 — 示例", ex_good: "好的示例：正面拍摄，眼睛清晰可见", ex_bad_blur: "抖动示例：看不清眼睛，需要重拍", ex_hint: "示例由公共领域(CC0)照片加工而成。",
+        loading_elapsed: "已用时 {s} 秒", font_size: "字体大小", ex_title: "请这样拍 — 示例", ex_good: "好的示例：正面拍脸，双眼清晰可见", ex_bad_blur: "抖动示例：看不清眼睛，需要重拍", ex_hint: "示例由公共领域(CC0)照片加工而成。",
         loading_uploading: "正在上传照片", loading_analyzing: "AI 正在分析", loading_slow_hint: "网络较慢时可能需要更长时间。",
         chat_free_label: "请用自己的话回答", chat_free_ph: "请输入回答", chat_free_send: "发送", chat_free_skip: "跳过",
         gemma_idle: "请先完成 AI 检测，个性化意见将显示在这里。", rep_followup_title: "向 AI 提出更多问题", rep_followup_ph: "例：如何护理眼睛？",
         srv_err: "无法连接到服务器。", nextq_fallback: "您的眼睛还有其他不适吗？",
-        survey_done: "基础问诊已完成。正在生成个性化追加问题... ⏳", next_q_generating: "正在生成下一个个性化问题... ⏳", symptom_extra: "发现其他可疑症状",
+        survey_done: "基础问诊已完成。正在生成个性化追加问题... ⏳", next_q_generating: "正在生成下一个个性化问题... ⏳", symptom_extra: "对AI追加问题回答了“是”",
         opinion_writing: "AI正在撰写意见书...\n\n", opinion_error: "与本地AI服务器的连接已断开。",
         opinion_retry_hint: "AI 服务器暂时没有响应。检查结果已保留，请重试。", opinion_retry: "重新生成意见",
         notif_title: "Eye-Catch 检测完成", notif_body: "AI个性化意见书已完成！请查看您的结果。", followup_thinking: "正在思考答案...\n\n",
@@ -506,9 +506,9 @@ const extraStrings = {
     tri_now_why: "사진 분석 또는 암슬러 검사에서 확인이 필요한 소견이 있었습니다.",
     tri_weeks_why: "경계 소견 또는 확인이 필요한 증상이 있었습니다.",
     tri_monitor_why: "이번 선별검사에서 빠른 확인을 권할 신호는 없었습니다. 정기 검진을 대신하지는 않습니다.",
-    ams_which_left: "왼쪽 눈 검사 — 오른쪽 눈을 가리고 중앙 점을 보세요",
-    ams_which_right: "오른쪽 눈 검사 — 왼쪽 눈을 가리고 중앙 점을 보세요",
-    ams_result_partial: "검사 미완료 (한쪽 눈만 응답)", ams_result_both: "양쪽 정상", ams_result_left: "왼쪽 눈 이상", ams_result_right: "오른쪽 눈 이상", ams_result_bad: "양쪽 이상",
+    ams_which_left: "1/2 · 왼쪽 눈 검사 — 오른쪽 눈을 가리고 중앙 점을 보세요",
+    ams_which_right: "2/2 · 이제 오른쪽 눈 — 왼쪽 눈을 가리고 중앙 점을 보세요",
+    ams_result_partial: "검사 미완료 (한쪽 눈만 응답)", ams_result_both: "양쪽 모두 이상 응답 없음", ams_result_left: "왼쪽 눈 이상", ams_result_right: "오른쪽 눈 이상", ams_result_bad: "양쪽 이상",
     consent_title: "결과 저장 동의", consent_agree: "동의하고 저장", consent_skip: "저장하지 않기",
     consent_text: "검사 결과와 AI 참고 정보를 서버에 저장합니다. 건강정보는 민감정보이므로 동의하신 경우에만 저장하며, 사진은 저장하지 않습니다.",
     rep_info_title: "AI 소견", info_writing: "AI가 참고 정보를 정리하고 있습니다"
@@ -543,9 +543,9 @@ const extraStrings = {
     tri_now_why: "The photo analysis or Amsler test showed a finding that should be checked.",
     tri_weeks_why: "A borderline finding or a symptom that should be checked was reported.",
     tri_monitor_why: "This screening did not show a signal requiring prompt review. It does not replace routine eye exams.",
-    ams_which_left: "Left eye — cover your right eye and look at the center dot",
-    ams_which_right: "Right eye — cover your left eye and look at the center dot",
-    ams_result_partial: "Incomplete (only one eye answered)", ams_result_both: "Both normal", ams_result_left: "Left eye abnormal", ams_result_right: "Right eye abnormal", ams_result_bad: "Both abnormal",
+    ams_which_left: "1/2 · Left eye — cover your right eye and look at the center dot",
+    ams_which_right: "2/2 · Now the right eye — cover your left eye and look at the center dot",
+    ams_result_partial: "Incomplete (only one eye answered)", ams_result_both: "No distortion reported in either eye", ams_result_left: "Left eye abnormal", ams_result_right: "Right eye abnormal", ams_result_bad: "Both abnormal",
     consent_title: "Consent to save results", consent_agree: "Agree and save", consent_skip: "Do not save",
     consent_text: "Your results and the AI reference notes will be stored on the server. Health data is sensitive, so we store it only with your consent. Photos are never stored.",
     rep_info_title: "AI opinion", info_writing: "The AI is preparing reference notes"
@@ -580,9 +580,9 @@ const extraStrings = {
     tri_now_why: "El análisis fotográfico o la prueba de Amsler mostró un hallazgo que conviene revisar.",
     tri_weeks_why: "Se registró un hallazgo límite o un síntoma que conviene revisar.",
     tri_monitor_why: "Este cribado no mostró señales que requieran revisión pronta. No sustituye los controles oculares habituales.",
-    ams_which_left: "Ojo izquierdo — cúbrase el derecho y mire el punto central",
-    ams_which_right: "Ojo derecho — cúbrase el izquierdo y mire el punto central",
-    ams_result_partial: "Incompleto (solo un ojo respondido)", ams_result_both: "Ambos normales", ams_result_left: "Ojo izquierdo anormal", ams_result_right: "Ojo derecho anormal", ams_result_bad: "Ambos anormales",
+    ams_which_left: "1/2 · Ojo izquierdo — cúbrase el derecho y mire el punto central",
+    ams_which_right: "2/2 · Ahora el ojo derecho — cúbrase el izquierdo y mire el punto central",
+    ams_result_partial: "Incompleto (solo un ojo respondido)", ams_result_both: "Sin alteraciones indicadas en ningún ojo", ams_result_left: "Ojo izquierdo anormal", ams_result_right: "Ojo derecho anormal", ams_result_bad: "Ambos anormales",
     consent_title: "Consentimiento para guardar", consent_agree: "Aceptar y guardar", consent_skip: "No guardar",
     consent_text: "Sus resultados y las notas de referencia de la IA se guardarán en el servidor. Los datos de salud son sensibles, así que solo se guardan con su consentimiento. Las fotos nunca se guardan.",
     rep_info_title: "Informe de la IA", info_writing: "La IA está preparando las notas"
@@ -617,9 +617,9 @@ const extraStrings = {
     tri_now_why: "L'analyse photo ou le test d'Amsler a montré un résultat qui doit être contrôlé.",
     tri_weeks_why: "Un résultat limite ou un symptôme à contrôler a été signalé.",
     tri_monitor_why: "Ce dépistage n'a pas montré de signal nécessitant un contrôle rapide. Il ne remplace pas les examens réguliers.",
-    ams_which_left: "Œil gauche — couvrez le droit et fixez le point central",
-    ams_which_right: "Œil droit — couvrez le gauche et fixez le point central",
-    ams_result_partial: "Incomplet (un seul œil répondu)", ams_result_both: "Les deux normaux", ams_result_left: "Œil gauche anormal", ams_result_right: "Œil droit anormal", ams_result_bad: "Les deux anormaux",
+    ams_which_left: "1/2 · Œil gauche — couvrez le droit et fixez le point central",
+    ams_which_right: "2/2 · Maintenant l'œil droit — couvrez le gauche et fixez le point central",
+    ams_result_partial: "Incomplet (un seul œil répondu)", ams_result_both: "Aucune anomalie signalée pour les deux yeux", ams_result_left: "Œil gauche anormal", ams_result_right: "Œil droit anormal", ams_result_bad: "Les deux anormaux",
     consent_title: "Consentement à l'enregistrement", consent_agree: "Accepter et enregistrer", consent_skip: "Ne pas enregistrer",
     consent_text: "Vos résultats et les notes de référence de l'IA seront enregistrés sur le serveur. Les données de santé étant sensibles, l'enregistrement n'a lieu qu'avec votre consentement. Les photos ne sont jamais enregistrées.",
     rep_info_title: "Avis de l'IA", info_writing: "L'IA prépare les notes de référence"
@@ -654,9 +654,9 @@ const extraStrings = {
     tri_now_why: "写真解析またはアムスラー検査で確認が必要な所見がありました。",
     tri_weeks_why: "境界所見または確認が必要な症状が報告されました。",
     tri_monitor_why: "今回のスクリーニングで早期確認を要する信号は見られませんでした。定期検診の代わりにはなりません。",
-    ams_which_left: "左目の検査 — 右目を覆って中央の点を見てください",
-    ams_which_right: "右目の検査 — 左目を覆って中央の点を見てください",
-    ams_result_partial: "未完了（片目のみ回答）", ams_result_both: "両眼正常", ams_result_left: "左目に異常", ams_result_right: "右目に異常", ams_result_bad: "両眼に異常",
+    ams_which_left: "1/2 · 左目の検査 — 右目を覆って中央の点を見てください",
+    ams_which_right: "2/2 · 次は右目 — 左目を覆って中央の点を見てください",
+    ams_result_partial: "未完了（片目のみ回答）", ams_result_both: "両眼とも異常の回答なし", ams_result_left: "左目に異常", ams_result_right: "右目に異常", ams_result_bad: "両眼に異常",
     consent_title: "結果保存の同意", consent_agree: "同意して保存", consent_skip: "保存しない",
     consent_text: "検査結果とAI参考情報をサーバーに保存します。健康情報は機微情報のため、同意いただいた場合のみ保存し、写真は保存しません。",
     rep_info_title: "AIの所見", info_writing: "AIが参考情報をまとめています"
@@ -691,9 +691,9 @@ const extraStrings = {
     tri_now_why: "照片分析或阿姆斯勒检查显示了需要确认的结果。",
     tri_weeks_why: "出现了临界结果或需要确认的症状。",
     tri_monitor_why: "本次筛查未显示需要尽快确认的信号，但不能替代定期眼科检查。",
-    ams_which_left: "左眼检查 — 遮住右眼并注视中心点",
-    ams_which_right: "右眼检查 — 遮住左眼并注视中心点",
-    ams_result_partial: "未完成（仅回答了一只眼）", ams_result_both: "双眼正常", ams_result_left: "左眼异常", ams_result_right: "右眼异常", ams_result_bad: "双眼异常",
+    ams_which_left: "1/2 · 左眼检查 — 遮住右眼并注视中心点",
+    ams_which_right: "2/2 · 现在检查右眼 — 遮住左眼并注视中心点",
+    ams_result_partial: "未完成（仅回答了一只眼）", ams_result_both: "双眼均未报告异常", ams_result_left: "左眼异常", ams_result_right: "右眼异常", ams_result_bad: "双眼异常",
     consent_title: "保存结果的同意", consent_agree: "同意并保存", consent_skip: "不保存",
     consent_text: "检查结果与AI参考信息将保存到服务器。健康信息属于敏感信息，仅在您同意时保存，照片不会被保存。",
     rep_info_title: "AI 意见", info_writing: "AI正在整理参考信息"
@@ -708,11 +708,12 @@ for (const lang of Object.keys(translations)) {
 
 // 위험도 층화 문진 — 기존 증상 질문(녹내장·당뇨망막병증) 앞에 붙는다.
 // 나이·기저질환은 증상 질문보다 예측력이 크면서 비용이 거의 없다.
-Object.assign(translations.ko, {"age_under10":"10세 미만","age_10s":"10대 (10–19세)","age_20s":"20대 (20–29세)","age_30s":"30대 (30–39세)"});
-Object.assign(translations.en, {"age_under10":"Under 10","age_10s":"10–19 years","age_20s":"20–29 years","age_30s":"30–39 years"});
-Object.assign(translations.es, {"age_under10":"Menos de 10 años","age_10s":"10–19 años","age_20s":"20–29 años","age_30s":"30–39 años"});
-Object.assign(translations.fr, {"age_under10":"Moins de 10 ans","age_10s":"10–19 ans","age_20s":"20–29 ans","age_30s":"30–39 ans"});
-Object.assign(translations.ja, {"age_under10":"10歳未満","age_10s":"10〜19歳","age_20s":"20〜29歳","age_30s":"30〜39歳"});
+// 표기는 40대 이상 버튼(age_40s 등)과 같은 "40–49세" 꼴로 맞춘다 — 섞여 있으면 다른 종류의 답처럼 보인다.
+Object.assign(translations.ko, {"age_under10":"10세 미만","age_10s":"10–19세","age_20s":"20–29세","age_30s":"30–39세"});
+Object.assign(translations.en, {"age_under10":"Under 10","age_10s":"10–19","age_20s":"20–29","age_30s":"30–39"});
+Object.assign(translations.es, {"age_under10":"Menos de 10","age_10s":"10–19","age_20s":"20–29","age_30s":"30–39"});
+Object.assign(translations.fr, {"age_under10":"Moins de 10","age_10s":"10–19","age_20s":"20–29","age_30s":"30–39"});
+Object.assign(translations.ja, {"age_under10":"10歳未満","age_10s":"10–19歳","age_20s":"20–29歳","age_30s":"30–39歳"});
 Object.assign(translations.zh, {"age_under10":"10岁以下","age_10s":"10–19岁","age_20s":"20–29岁","age_30s":"30–39岁"});
 const riskQuestions = [
   // 선택지에 '오늘'을 두지 않는다 — '오늘'과 '최근 4주 이내'는 서로 배타적이지 않아
@@ -1419,3 +1420,67 @@ Object.assign(translations.zh, {
   opinion_regen: "用当前语言重新生成",
   sym_glaucoma: "疑似青光眼", sym_retinopathy: "疑似糖尿病视网膜病变"
 });
+
+// 2026-09-23 첫 사용 체험에서 헷갈렸던 곳.
+// result_plain_* : 결과 화면 맨 위의 쉬운 말 한 줄(app-vision.js). 판정 문구(ai_*)와 뜻이 같아야 한다 —
+//                  '정상'·'백내장 아님'처럼 판정보다 센 말을 쓰지 않는다.
+// consent_why    : 저장이 무엇을 위한 것인지, 저장하지 않아도 되는지(app-assess.js).
+// report_issued_on : 리포트 날짜 — 예전엔 'ISSUED'만 영어로 남았다(app-report.js).
+// ams_switch_toast : 암슬러에서 반대쪽 눈으로 넘어갈 때(app-vision.js).
+const clarityCopy = {
+ ko: {
+  result_plain_normal: "사진에서는 백내장으로 보이는 뿌연 부분이 보이지 않았어요.",
+  result_plain_borderline: "사진에서 뿌연 부분이 조금 보였어요. 다시 찍어 보거나 안과에서 확인해 보세요.",
+  result_plain_uncertain: "이 사진만으로는 판단하기 어려워요. 한쪽 눈씩 가까이 다시 찍어 주세요.",
+  result_plain_risk: "사진에서 뿌옇게 흐린 부분이 뚜렷하게 보였어요. 안과에서 검사를 받아 보세요.",
+  consent_why: "저장은 선택이에요. 저장하지 않아도 이 리포트와 PDF는 그대로 쓸 수 있어요. 저장한 기록은 계정과 연결되지 않아 나중에 앱에서 다시 불러올 수 없고, 서비스 개선을 위한 기록으로만 쓰여요.",
+  report_issued_on: "{date} 발행",
+  ams_switch_toast: "왼쪽 눈 끝! 이제 오른쪽 눈 차례예요 — 왼쪽 눈을 가려 주세요.",
+ },
+ en: {
+  result_plain_normal: "The photo showed no cloudy areas that look like cataract.",
+  result_plain_borderline: "The photo showed some cloudiness. Try another photo or have it checked by an eye doctor.",
+  result_plain_uncertain: "This photo is hard to judge. Please retake a close-up of one eye at a time.",
+  result_plain_risk: "The photo showed clear cloudy areas. Please get an eye examination.",
+  consent_why: "Saving is optional. This report and the PDF work the same without saving. Saved records are not linked to an account, so you can't reopen them in the app later; they are used only to improve the service.",
+  report_issued_on: "Issued {date}",
+  ams_switch_toast: "Left eye done! Now the right eye — please cover your left eye.",
+ },
+ es: {
+  result_plain_normal: "En la foto no se vieron zonas turbias que parezcan catarata.",
+  result_plain_borderline: "En la foto se vio algo de turbidez. Pruebe con otra foto o consúltelo con un oftalmólogo.",
+  result_plain_uncertain: "Con esta foto es difícil valorar. Repita un primer plano de cada ojo por separado.",
+  result_plain_risk: "En la foto se vieron zonas turbias claras. Hágase una revisión oftalmológica.",
+  consent_why: "Guardar es opcional. Este informe y el PDF funcionan igual sin guardar. Los registros guardados no están vinculados a una cuenta, así que no podrá volver a abrirlos en la app; solo se usan para mejorar el servicio.",
+  report_issued_on: "Emitido el {date}",
+  ams_switch_toast: "¡Ojo izquierdo listo! Ahora el derecho: tápese el ojo izquierdo.",
+ },
+ fr: {
+  result_plain_normal: "La photo ne montre pas de zone trouble évoquant une cataracte.",
+  result_plain_borderline: "La photo montre un léger voile. Reprenez une photo ou faites vérifier par un ophtalmologiste.",
+  result_plain_uncertain: "Cette photo est difficile à évaluer. Reprenez un gros plan de chaque œil séparément.",
+  result_plain_risk: "La photo montre des zones troubles nettes. Faites un examen chez un ophtalmologiste.",
+  consent_why: "L'enregistrement est facultatif. Ce rapport et le PDF fonctionnent de la même façon sans enregistrement. Les données enregistrées ne sont liées à aucun compte : vous ne pourrez pas les rouvrir dans l'app ; elles servent uniquement à améliorer le service.",
+  report_issued_on: "Émis le {date}",
+  ams_switch_toast: "Œil gauche terminé ! Au tour de l'œil droit : couvrez l'œil gauche.",
+ },
+ ja: {
+  result_plain_normal: "写真では、白内障のような白い濁りは見られませんでした。",
+  result_plain_borderline: "写真で少し濁りが見られました。撮り直すか、眼科で確認してください。",
+  result_plain_uncertain: "この写真だけでは判断が難しいです。片目ずつ近くで撮り直してください。",
+  result_plain_risk: "写真ではっきりした濁りが見られました。眼科で検査を受けてください。",
+  consent_why: "保存は任意です。保存しなくても、このレポートとPDFはそのまま使えます。保存した記録はアカウントと結びつかないため、後でアプリから開き直すことはできず、サービス改善のための記録としてのみ使われます。",
+  report_issued_on: "{date} 発行",
+  ams_switch_toast: "左目は完了！次は右目です — 左目を覆ってください。",
+ },
+ zh: {
+  result_plain_normal: "照片中没有看到像白内障那样的混浊区域。",
+  result_plain_borderline: "照片中看到少许混浊。请重新拍摄，或到眼科检查确认。",
+  result_plain_uncertain: "仅凭这张照片难以判断。请分别近距离重拍每只眼睛。",
+  result_plain_risk: "照片中看到明显的混浊区域。请到眼科接受检查。",
+  consent_why: "保存是可选的。不保存也能照常使用本报告和PDF。保存的记录不与账户关联，之后无法在应用中重新打开，仅用于改进服务。",
+  report_issued_on: "{date} 生成",
+  ams_switch_toast: "左眼完成！现在检查右眼 — 请遮住左眼。",
+ },
+};
+for (const [lang, copy] of Object.entries(clarityCopy)) Object.assign(translations[lang], copy);

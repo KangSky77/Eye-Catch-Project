@@ -330,10 +330,18 @@ async function runAIAnalysis(droppedFile) {
         pProb.className = `text-xs font-black mb-1 ${probColor[d.result_code] || probColor.normal}`;
         pProb.dataset.role = 'score';
         pProb.textContent = `${t.score_label || 'AI 특징 점수'} ${d.probability}/100`;
+        // 판정 문구("진행성 혼탁 특징…")는 정확하지만 처음 보는 사람은 좋은 소식인지 모른다.
+        // 같은 판정을 쉬운 말 한 줄로 먼저 보여준다(판정 자체는 바꾸지 않는다).
+        const pPlain = document.createElement('p');
+        pPlain.className = 'text-lg font-black text-slate-900 mb-2 leading-snug';
+        pPlain.dataset.role = 'plain-verdict';
+        pPlain.textContent = t['result_plain_' + d.result_code] || '';
+        pPlain.hidden = !pPlain.textContent;
         const pRes = document.createElement('p');
-        pRes.className = 'text-xl font-bold';
+        pRes.className = 'text-base font-bold';
         pRes.dataset.role = 'verdict';
         pRes.textContent = resultText;
+        disp.appendChild(pPlain);
         disp.appendChild(pProb);
         disp.appendChild(pRes);
         const pNote = document.createElement('p');
@@ -512,6 +520,7 @@ function refreshAiResultDisplay() {
 
     set('score', `${t.score_label || 'AI feature score'} ${r.probability}/100`);
     set('verdict', t['ai_' + r.code] || r.code);
+    set('plain-verdict', t['result_plain_' + r.code] || '');
     set('score-note', t.score_note || '');
     set('surgery-photo-note', t.surgery_photo_note || '');
 
@@ -579,6 +588,8 @@ function updateAmslerPrompt() {
         // 키가 눈에 따라 달라지므로 매번 다시 지정한다.
         el.setAttribute('data-i18n', 'ams_which_' + state.amslerEye);
         el.textContent = t['ams_which_' + state.amslerEye] || '';
+        // 두 번째 눈은 색을 바꿔 첫 번째 눈과 다른 화면처럼 보이게 한다
+        el.classList.toggle('is-second', state.amslerEye === 'right');
     }
     renderAmslerGrid();
 }
@@ -702,6 +713,14 @@ function recordAmsler(bad) {
         // 즉 완전히 보이지 않는다. 여기서 스크롤을 되돌리지 않으면 눈이 바뀐 사실을
         // 볼 방법이 없어, 같은 눈으로 두 번 답하고도 좌우를 비교했다고 기록된다.
         scrollAmslerPromptIntoView();
+        const prompt = document.getElementById('amsler-eye-instruction');
+        if (prompt) {
+            prompt.classList.remove('just-switched');
+            void prompt.offsetWidth;          // 애니메이션을 처음부터 다시 돌린다
+            prompt.classList.add('just-switched');
+        }
+        const tt = translations[state.lang];
+        if (typeof showToast === 'function' && tt.ams_switch_toast) showToast(tt.ams_switch_toast, 'info', 3500);
         return;                       // 아직 반대쪽 눈이 남았다
     }
 

@@ -223,9 +223,18 @@ function refreshSaveConsent() {
     title.className = 'text-[10px] font-black text-slate-500 mb-1';
     title.textContent = t.consent_title || '결과 저장 동의';
 
-    const body = document.createElement('p');
-    body.className = 'text-[11px] text-slate-500 leading-relaxed mb-3';
-    body.textContent = t.consent_text || '';
+    // 본문 = [저장이 무엇을 위한 것인지·안 해도 되는지] + [무엇을 저장하는지].
+    // 계정이 없어 다시 불러올 수 없으니, 앞 문장이 없으면 사용자는 저장할 이유를 모른 채
+    // 동의를 요구받는다(2026-09-23 첫 사용 체험).
+    const body = document.createElement('div');
+    body.className = 'text-[11px] leading-relaxed mb-3';
+    const why = document.createElement('p');
+    why.className = 'font-bold text-slate-600 mb-1';
+    why.textContent = t.consent_why || '';
+    const what = document.createElement('p');
+    what.className = 'text-slate-500';
+    what.textContent = t.consent_text || '';
+    body.appendChild(why); body.appendChild(what);
 
     const row = document.createElement('div');
     row.className = 'flex gap-2';

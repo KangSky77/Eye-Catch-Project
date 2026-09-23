@@ -130,7 +130,7 @@ function formatAmslerResult() {
     return (L && R) ? (t.ams_result_bad || '양쪽 이상')
          : L ? (t.ams_result_left || '왼쪽 눈 이상')
          : R ? (t.ams_result_right || '오른쪽 눈 이상')
-             : (t.ams_result_both || '양쪽 정상');
+             : (t.ams_result_both || '양쪽 모두 이상 응답 없음');
 }
 
 /** 문진 소견을 현재 언어 문자열 배열로. state.chatSymptoms에는 i18n 키가 들어 있다. */

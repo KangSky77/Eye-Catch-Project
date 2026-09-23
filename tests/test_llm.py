@@ -190,6 +190,35 @@ def test_generate_next_question은_질문과_답변형식을_함께_돌려준다
     assert q == "" and t == "yesno"
 
 
+def test_두_상황을_묶은_질문을_알아본다():
+    # 2026-09-23 실사용 테스트: 운전을 안 하는 사람은 답할 수 없었다
+    묶음 = ["밤 운전이나 계단 오르기가 예전보다 힘드신가요?", "글씨가 번지거나 겹쳐 보이시나요?",
+          "Is night driving or reading harder than before?", "夜の運転または階段が怖いですか？"]
+    for q in 묶음:
+        assert llm._is_compound_question(q), q
+    단일 = ["요즘 밤에는 운전을 되도록 피하게 되셨나요?", "한쪽 눈만 유독 불편하신가요?",
+          "Have you started avoiding driving at night?", "스테로이드 안약을 오래 쓰신 적이 있나요?"]
+    for q in 단일:
+        assert not llm._is_compound_question(q), q
+
+
+@pytest.mark.anyio
+async def test_묶은_질문은_한_번_다시_쓰게_하고_그래도_묶이면_폴백(monkeypatch):
+    replies = iter(["밤 운전이나 계단이 힘드신가요?", "요즘 밤 운전을 피하게 되셨나요?"])
+    prompts = []
+    async def fake(prompt):
+        prompts.append(prompt)
+        return next(replies)
+    monkeypatch.setattr(llm, "generate_ollama", fake)
+    assert await llm.generate_next_question("ko", "정상", "정상", []) == ("요즘 밤 운전을 피하게 되셨나요?", "yesno")
+    assert "[다시 쓰기]" in prompts[1] and "밤 운전이나 계단" in prompts[1]
+
+    async def always_compound(prompt):
+        return "Is driving or reading harder?"
+    monkeypatch.setattr(llm, "generate_ollama", always_compound)
+    assert await llm.generate_next_question("en", "normal", "normal", []) == ("", "yesno")
+
+
 def test_소견서_프롬프트는_3줄_요약을_요구한다():
     """팀 결정(2026-09-02): 리포트의 AI 소견은 3줄 요약. 6개 언어 모두 같은 구조."""
     ko = llm._build_opinion_prompt("판독", "정상", ["눈부심"], "ko")

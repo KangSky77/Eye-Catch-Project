@@ -339,7 +339,14 @@ def test_맞춤형질문_답변버튼은_문진핸들러가_아니라_전용핸�
     assert "b.onclick = () => pick(o.value, o.label);" in chat
 
     # 맞춤형 질문 구간은 handleChatAnswer로 연결돼야 한다
-    assert "v => handleChatAnswer(v === true)" in chat
+    assert "renderChatOptions(yesNoUnknownOptions(), v => handleChatAnswer(v))" in chat
+
+
+def test_맞춤형질문_모르겠어요는_증상으로_세지_않는다():
+    """AI 질문에도 '모르겠어요'가 있다. 'unknown'은 truthy라 if (yes)로 비교하면 증상으로 새어 든다."""
+    chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
+    assert "yes === true && !state.chatSymptoms.includes('symptom_extra')" in chat
+    assert "yes === 'unknown' ? tl.chat_unknown" in chat
 
 
 def test_증상핸들러는_범위밖_문항에서_잠금을_걸지_않는다():

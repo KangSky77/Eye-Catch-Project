@@ -429,7 +429,16 @@ body {
 .amsler-distorted { filter: url(#wavy) blur(1px); }
 
 /* ── 암슬러 왜곡 '예시' — 검사와 분리된 참고 그림 ───────────────── */
-.amsler-example { margin-top: 22px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+.amsler-example { margin: 4px 0 16px; padding: 12px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+.amsler-glasses-note { margin: 0 auto 12px; max-width: 320px; font-size: 12px; font-weight: 600; color: #92400e; line-height: 1.55; }
+/* 격자 바로 위에 남은 유일한 상자 — 지금 어느 눈을 보는지 */
+.amsler-eye-instruction { margin-bottom: 12px; padding: 10px 12px; border-radius: 14px; background: #eff6ff; border: 2px solid #bfdbfe; color: #1d4ed8; font-size: 14px; font-weight: 800; line-height: 1.45; word-break: keep-all; }
+/* 반대쪽 눈으로 넘어갈 때 — 색이 바뀌고 한 번 크게 깜빡여야 '같은 눈으로 또 답하는' 실수를 막는다 */
+.amsler-eye-instruction.is-second { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+.amsler-eye-instruction.just-switched { animation: amsler-switch 0.9s ease-out 2; }
+@keyframes amsler-switch { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgb(245 158 11 / 55%); } 40% { transform: scale(1.04); box-shadow: 0 0 0 10px rgb(245 158 11 / 0%); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .amsler-eye-instruction.just-switched { animation: none; } }
+.amsler-early-warning { margin-top: 16px; font-size: 12px; color: #be123c; line-height: 1.55; word-break: keep-all; }
 .amsler-example-label { font-size: 11px; font-weight: 800; color: #94a3b8; margin-bottom: 10px; }
 .amsler-example-row { display: flex; justify-content: center; gap: 28px; }
 .amsler-example-item { margin: 0; }
@@ -675,6 +684,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
 .hero-description {
     position: relative;
     z-index: 1;
+    /* 한국어 어절 중간에서 줄이 바뀌어 '확인합 / 니다'처럼 끝 두 글자만 넘어갔다 */
+    word-break: keep-all;
+    overflow-wrap: break-word;
     max-width: 600px;
     margin: 1.25rem auto 0;
     color: var(--ec-muted);
@@ -1423,6 +1435,11 @@ body.modal-open { overflow: hidden; }
     inset: 0;
     pointer-events: none;
 }
+.dm-sim-spot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+}
 .dm-sim-controls { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
 .dm-sim-label { flex-shrink: 0; font-size: .72rem; font-weight: 800; color: var(--ec-muted); }
 .dm-sim-range {
@@ -1551,9 +1568,11 @@ body.modal-open { overflow: hidden; }
 
 .map-embed.is-example #leaflet-map { filter: grayscale(.55) opacity(.75); }
 .map-example-badge {
-    position: absolute; left: 12px; right: 12px; top: 12px; z-index: 900;
+    /* 왼쪽 위 확대/축소(+/-) 버튼(폭 34px, left 10px)을 덮지 않게 그 오른쪽에서 시작한다 */
+    position: absolute; left: 54px; right: 10px; top: 10px; z-index: 900;
     padding: 8px 12px; border-radius: 12px; text-align: center;
     background: rgba(11, 31, 58, .82); color: #fff; font-size: .74rem; font-weight: 800; line-height: 1.4;
+    word-break: keep-all;
     pointer-events: none;
 }
 

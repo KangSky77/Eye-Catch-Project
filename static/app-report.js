@@ -60,8 +60,9 @@ function buildOpinionSymptoms() {
 
 async function finish() {
     // 리포트 진입은 알림 신청이 아니다. 권한 창이 진료 안내를 가리지 않게 한다.
+    // 날짜만 저장하고 문구는 refreshReportResults가 현재 언어로 붙인다(예전엔 'ISSUED'만 영어로 남았다)
     const d = new Date();
-    document.getElementById('report-date').innerText = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ISSUED`;
+    state.reportDate = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
 
     refreshReportResults();
     const cataractRes = formatCataractResult();
@@ -142,6 +143,7 @@ function refreshReportResults() {
         const el = document.getElementById(id);
         if (el) el.innerText = text;
     };
+    if (state.reportDate) set('report-date', (t.report_issued_on || '{date}').replace('{date}', state.reportDate));
     set('pdf-ai-result', formatCataractResult());
     set('pdf-amsler-result', formatAmslerResult());
     const symptoms = formatSymptoms();
