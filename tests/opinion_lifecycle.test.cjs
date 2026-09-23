@@ -10,7 +10,7 @@ function setup() {
         if (!elements.has(id)) {
             const classes = new Set();
             elements.set(id, { innerText: '', textContent: '', innerHTML: '',
-                appendChild() {}, querySelector() { return null; },
+                appendChild() {}, querySelector() { return null; }, removeAttribute() {}, setAttribute() {},
                 classList: { add: c => classes.add(c), remove: c => classes.delete(c),
                     contains: c => classes.has(c), toggle(c, force) {
                         if (force) classes.add(c); else classes.delete(c);
@@ -78,7 +78,7 @@ test('PDF waits only while advice is streaming; failed advice and photo-less ses
  Object.assign(c,{showToast:m=>notices.push(m),setButtonBusy:()=>()=>{},hasCompletedScreening:()=>true,
   buildReportPdf:()=>({outputPdf:()=>{saved++;return Promise.resolve({});}}),
   URL:{createObjectURL:()=>'blob:x',revokeObjectURL(){}},
-  setTimeout:(fn,ms)=>(ms>1000?0:setImmediate(fn))});
+  setTimeout:(fn,ms)=>(ms>1000?0:setImmediate(fn)),clearTimeout() {}});
  c.document.createElement=()=>anchor;
  c.document.body={appendChild(){},removeChild(){}};
  c.window.scrollTo=()=>{};
@@ -154,4 +154,35 @@ test('failed response offers retry without consent; retry succeeds', async () =>
     h.calls[1].resolve({ ok: true, text: 'recovered' }); await retry;
     assert.equal(h.saves.length, 1);
     assert.equal(h.element('opinion-retry').classList.contains('hidden'), true);
+});
+
+test('restarting while follow-up streams frees the new session and ignores old text', async () => {
+ const h=setup(),c=h.context;
+ c.state.sessionGeneration=0;c.state.opinionFullText='old context';
+ h.element('user-followup-input').value='old question';
+ const old=c.askGemmaMore();
+ assert.equal(h.calls.length,1);
+ c.resetScreeningState();
+ assert.equal(h.calls[0].options.signal.aborted,true);
+ c.state.opinionFullText='new context';
+ h.element('user-followup-input').value='new question';
+ const next=c.askGemmaMore();
+ assert.equal(h.calls.length,2,'old request kept the new question blocked');
+ h.calls[1].resolve({ok:true,text:'new answer'});await next;
+ h.calls[0].resolve({ok:true,text:'old answer'});await old;
+ assert.match(h.element('followup-response').innerText,/new answer/);
+ assert.doesNotMatch(h.element('followup-response').innerText,/old answer/);
+});
+
+test('PDF completion after timeout does not download a late file', async () => {
+ const h=setup(),c=h.context,timers=[],downloads=[];let release;
+ c.hasCompletedScreening=()=>true;c.showToast=()=>{};c.setButtonBusy=()=>()=>{};
+ c.window.scrollTo=()=>{};c.window.scrollX=0;c.window.scrollY=0;
+ c.buildReportPdf=()=>({outputPdf:()=>new Promise(resolve=>{release=resolve})});
+ c.setTimeout=(fn,ms)=>{if(ms===60000)timers.push(fn);return 1};c.clearTimeout=()=>{};
+ c.URL={createObjectURL:()=>{downloads.push('url');return 'blob:x'},revokeObjectURL(){}};
+ c.document.body={appendChild(){}};
+ c.downloadPDF();assert.equal(timers.length,1);
+ timers[0]();release({});await new Promise(r=>setImmediate(r));
+ assert.equal(downloads.length,0,'timed-out PDF downloaded after the error');
 });

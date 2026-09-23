@@ -11,6 +11,16 @@ function setup(surgery='none',lang='ko'){
  return c;
 }
 
+test('negative hypertension and diabetes answers reach the opinion in every language',()=>{
+ for(const lang of ['ko','en','es','fr','ja','zh']){
+  const c=setup('none',lang);
+  Object.assign(c.state.riskAnswers,{hypertension:false,diabetes:false});
+  const facts=vm.runInContext('buildOpinionSymptoms()',c);
+  assert.ok(facts.includes('Hypertension: no'),lang);
+  assert.ok(facts.includes('Diabetes: no'),lang);
+ }
+});
+
 test('recent surgery report titles follow actual photo applicability in every language',()=>{
  for(const lang of ['ko','en','es','fr','ja','zh']) {
   const c=setup('recent',lang);

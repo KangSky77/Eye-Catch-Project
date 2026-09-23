@@ -34,6 +34,20 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EYE_CROP_RATIO = 0.45
 # 크롭이 이보다 작으면 해상도가 부족해 분석 불가로 간주
 MIN_CROP_PX = 32
+# 가장 큰 얼굴 면적의 이 비율 미만인 얼굴은 배경(벽의 가족사진, 멀리 있는 사람)으로 본다.
+# 2026-09-23 실사용 테스트: 혼자 찍은 셀카 8장 중 2장이 '여러 얼굴'로 막혔다 —
+# 배경 얼굴은 본인 얼굴의 0.13~0.43%, 함께 찍은 두 번째 사람은 68%였다.
+BACKGROUND_FACE_AREA_RATIO = 0.10
+
+
+def _drop_background_faces(boxes, indices):
+    """판독 대상이 될 수 없을 만큼 작은 얼굴을 후보에서 뺀다. 비슷한 크기의 두 번째 얼굴은 남긴다."""
+    areas = {i: max(0.0, float(boxes[i][2] - boxes[i][0])) * max(0.0, float(boxes[i][3] - boxes[i][1]))
+             for i in indices}
+    largest = max(areas.values(), default=0.0)
+    if largest <= 0:
+        return list(indices)
+    return [i for i in indices if areas[i] >= largest * BACKGROUND_FACE_AREA_RATIO]
 
 _mtcnn = None
 
@@ -140,6 +154,7 @@ def extract_eye_crops(img: Image.Image) -> list[Image.Image] | None:
             # 전체 얼굴·가림 사진을 모두 차단한다는 보장은 아니다.
             return []
         valid = list(range(len(boxes)))
+    valid = _drop_background_faces(boxes, valid)
     if len(valid) > 1:
         logger.info("얼굴 사진에 여러 얼굴이 감지되어 판독을 보류합니다")
         return None

@@ -97,6 +97,7 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
    '2년 전에 검진을 받으셨으므로'처럼 없는 이력을 지어내면 안 됩니다.)
 - 문진 항목을 '~이 있으므로', '~를 받으셨으므로' 같은 전제 문장으로 다시 쓰지 마세요.
   항목을 설명하지 말고, 그 항목에 맞는 행동 조언만 쓰세요.
+- 'Hypertension: no' 또는 'Diabetes: no'가 있으면 그 질환을 가진 사람에게 하는 혈압·혈당 관리 조언을 넣지 마세요.
 
 [해야 할 일 — 정확히 3줄 요약]
 먼저 문진에 맞는 생활 관리와 검사 준비를 6~8문장으로 상세히 설명하세요.
@@ -108,6 +109,7 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
 2줄째: 문진에서 확인된 항목과 직접 관련된 생활 관리 조언 한 가지.
        (자외선 차단, 금연, 혈당·혈압 관리, 눈 휴식 등 참고 정보에 있는 것)
 3줄째: 또 다른 생활 관리 조언 한 가지, 또는 정기 검진 권유.
+- 선글라스는 낮 야외 활동에만 권하세요. 밤·야간 운전·어두운 곳에서는 선글라스나 색 렌즈를 권하지 마세요.
 - "눈은 소중합니다" 같은 뻔한 일반론은 쓰지 마세요. 각 줄은 이 환자의 문진 항목과 연결돼야 합니다.""".strip()
     else:
         return f"""{urgent_block}You help someone prepare for an eye clinic visit with practical lifestyle advice.
@@ -127,6 +129,7 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
   ("No exam in 2 years" means they have NOT had an exam; do not invent a past exam.)
 - Do NOT restate an item as a premise ("since you had ...", "because you have ...").
   Give only the action advice that fits the item.
+- If the facts say 'Hypertension: no' or 'Diabetes: no', do not give blood pressure or blood sugar management advice as though the person has that condition.
 - Do NOT diagnose.
 
 [What to do — exactly a 3-line summary]
@@ -139,6 +142,7 @@ Line 1: Based on the [Reference Medical Information], name 1-2 exams they may re
 Line 2: One concrete lifestyle tip directly related to the flagged questionnaire items
         (UV protection, smoking cessation, blood sugar/pressure control, eye rest — from the reference).
 Line 3: One more lifestyle tip, or a reminder to get regular check-ups.
+- Recommend sunglasses only for daytime outdoor activity. Never recommend sunglasses or tinted lenses at night, for night driving, or in the dark.
 - Avoid generic filler like "eyes are precious". Every line must connect to this patient's flagged items.""".strip()
 
 
@@ -153,7 +157,12 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
 {reference_block}[응답 지침]
 - 위 [참고 의학 정보]가 있으면 그 내용에 근거해 정확히 답하고, 없는 사실은 지어내지 마세요.
 - 환자의 질문에 친절하고 구체적으로 답변하세요. "안내해 드릴 수 없다"는 식의 회피성 답변은 절대 하지 마세요.
-- 일반적인 눈 건강 관리 수칙은 적극적으로 알려주세요. (예: 자외선 차단 선글라스, 금연, 혈당·혈압 관리, 눈 휴식, 어두운 곳 독서 피하기, 정기 검진 등 질문과 관련된 것)
+- 일반적인 눈 건강 관리 수칙은 적극적으로 알려주세요. (예: 낮 야외 활동 때 자외선 차단 선글라스, 금연, 혈당·혈압 관리, 눈 휴식, 어두운 곳 독서 피하기, 정기 검진 등 질문과 관련된 것)
+- 밤·야간 운전·어두운 곳에서는 선글라스나 색이 들어간 렌즈를 절대 권하지 마세요. 시야가 더 어두워져 위험합니다.
+- 운전 중에 눈을 감거나 쉬라는 조언은 하지 마세요. 운전 중 눈이 불편하면 안전한 곳에 차를 세운 뒤 쉬라고 안내하세요.
+- 야간 운전 질문에는 운전 중 눈을 '자주 감기' 같은 휴식법이나 전조등·상향등을 항상 최대로 켜라는 조언을 하지 마세요. 상향등은 다른 차량을 눈부시게 할 수 있습니다.
+- 야간 운전 질문에 혈당·혈압 관리처럼 질문과 무관한 일반 조언을 넣지 마세요.
+- 질문한 상황(예: 운전)에 맞지 않는 일반 조언을 끼워 넣지 마세요.
 - 단, 확정 진단·약 처방은 하지 마세요.
 - 어떤 질환의 가능성이 '낮다'거나 '안심해도 된다'고 말하지 마세요. 선별검사는 질환을 배제할 수 없습니다.
 - 숫자·퍼센트·'확률'이라는 표현을 쓰지 마세요.
@@ -170,7 +179,12 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
 {reference_block}[Response Guidelines]
 - If [Reference Medical Information] is provided, base your answer strictly on those facts. Do not make up any facts or details that are not in the reference information.
 - Answer the patient's question kindly, professionally, and directly. Do not use evasive phrases like "I cannot help with this."
-- Actively share general eye health care tips related to the question (e.g., UV sunglasses, smoking cessation, blood sugar/pressure management, resting eyes, avoiding reading in the dark, regular eye checks).
+- Actively share general eye health care tips related to the question (e.g., UV sunglasses for daytime outdoor activity, smoking cessation, blood sugar/pressure management, resting eyes, avoiding reading in the dark, regular eye checks).
+- Never recommend sunglasses or tinted lenses at night, for night driving, or in the dark — they reduce vision and are dangerous.
+- Never advise closing or resting the eyes while driving. If the eyes are uncomfortable while driving, tell them to pull over somewhere safe first.
+- For night-driving questions, never suggest frequently closing the eyes or always using maximum/high-beam headlights; high beams can dazzle other drivers.
+- For night-driving questions, omit unrelated general tips such as blood sugar or blood pressure management.
+- Do not insert generic tips that do not fit the situation asked about (e.g. driving).
 - Do not provide a final medical diagnosis or prescribe medications.
 - Never say a condition is unlikely or that there is no need to worry — a screening test cannot rule out disease.
 - Do not use numbers, percentages, or the word "probability".
@@ -247,7 +261,7 @@ def _build_next_question_prompt(lang: str, cataract_res: str, amsler_res: str, h
 - 의문사도 금지입니다: "어느", "어떤", "언제", "어디", "무슨", "왜", "몇", "누가" 를 쓰면 예/아니오로 답할 수 없습니다.
   (나쁜 예: "두 눈 중 어느 눈이 더 뿌옇게 보이나요?" → 좋은 예: "두 눈의 뿌연 정도가 서로 다르신가요?")
 - 진단하거나 질환 이름을 말하지 마세요. 증상·이력·생활만 물으세요.
-- 한 문장, 60자 이내로 쓰세요.
+- 한 문장, 60자 이내로 쓰세요. 한 질문에는 한 가지만 물으세요('A나 B' 식으로 두 상황을 묶지 마세요).
 - 좋은 예: "요즘 밤에는 운전을 되도록 피하게 되셨나요?" / "한쪽 눈만 유독 불편하신가요?"
 - 나쁜 예: "시력 변화에 대해 자세히 설명해 주시겠어요?" (네/아니오로 답할 수 없음)
 
@@ -277,7 +291,7 @@ Anything similar to a question already in the screening history above is forbidd
 - Therefore the question MUST be answerable with a plain Yes or No.
 - Open-ended questions are forbidden. Never use "describe", "explain", "how", "how much", "what", "which", "tell me about".
 - Do NOT diagnose or name a disease. Ask only about symptoms, history, or daily life.
-- One sentence, under 100 characters.
+- One sentence, under 100 characters. Ask about exactly one thing (do not combine two situations with "or").
 - Good: "Have you started avoiding driving at night?" / "Is only one of your eyes bothering you?"
 - Bad: "Could you describe your vision changes in detail?" (cannot be answered Yes/No)
 
@@ -342,7 +356,8 @@ async def stream_with_keepalive(prompt: str):
         # 생산자가 정상 종료된 경우에도 gather는 즉시 끝난다.
         await asyncio.gather(task, return_exceptions=True)
 
-async def sanitized_stream(prompt: str, facts: list[str] | None = None):
+async def sanitized_stream(prompt: str, facts: list[str] | None = None, night_context: bool = False,
+                           driving_context: bool = False):
     """스트림을 문장 단위로 버퍼링해 안전 필터를 통과한 문장만 내보낸다.
 
     왜 문장 단위인가: 토큰을 그대로 흘리면 위험한 문장이 화면에 찍힌 뒤에야 걸러낼 수 있다.
@@ -368,7 +383,7 @@ async def sanitized_stream(prompt: str, facts: list[str] | None = None):
             if not m:
                 break
             sentence, buf = buf[:m.end()], buf[m.end():]
-            why = safety.check_sentence(sentence.strip(), facts)
+            why = safety.check_sentence(sentence.strip(), facts, night_context, driving_context)
             if why:
                 dropped.append(why)
                 logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, sentence.strip()[:120])
@@ -379,7 +394,7 @@ async def sanitized_stream(prompt: str, facts: list[str] | None = None):
     # 마지막 문장(종결부호 없이 끝난 경우)
     tail = buf.strip()
     if tail:
-        why = safety.check_sentence(tail, facts)
+        why = safety.check_sentence(tail, facts, night_context, driving_context)
         if why:
             dropped.append(why)
             logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, tail[:120])
@@ -434,7 +449,9 @@ async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[st
         # 권장 조치는 앱이 이미 정했다(computeTriage). LLM이 스스로 판단하게 두면
         # 카드는 '예정된 진료를 따르세요'인데 소견 3줄은 전부 '지금 수술팀에 연락하세요'가
         # 되어 같은 화면에서 두 안내가 충돌한다 — 실사용 점검에서 그대로 재현됐다.
-        level = triage_level or ("urgent" if red_flags else "monitor")
+        # An API caller can provide a stale or contradictory triage_level. A reported
+        # emergency sign must always win, regardless of the browser's card state.
+        level = "urgent" if red_flags else (triage_level or "monitor")
         action = {
             "urgent": (
                 "Begin by telling them to contact the surgical team or emergency eye service NOW. "
@@ -444,6 +461,12 @@ async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[st
             "now": (
                 "Tell them to contact the surgical team about the reported symptoms and to ask "
                 "whether they can wait until the scheduled review."
+            ),
+            "confirm": (
+                "They reported NO warning symptoms, but they are unsure about, or cannot follow, their "
+                "discharge and aftercare instructions. Tell them to contact the surgical team to re-confirm "
+                "how to care for the eye and when the next review is. Do NOT say they reported symptoms, "
+                "and do NOT tell them to seek emergency care."
             ),
         }.get(level, (
             "Tell them to follow their discharge instructions and the review already scheduled. "
@@ -471,7 +494,9 @@ each on its own line. The first must preserve urgency when emergency signs are t
 Do not add any fact in the summary. Output nothing else."""
     try:
         # 안전 필터 경유 — 해석·확률·배제·질환 교차 문장은 화면에 닿기 전에 제거된다
-        async for chunk in sanitized_stream(prompt, symptoms): yield chunk
+        async for chunk in sanitized_stream(
+            prompt, symptoms, driving_context=any(safety.mentions_driving(item) for item in symptoms)
+        ): yield chunk
     except Exception:
         logger.error("⚠️  소견서 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"
@@ -481,7 +506,9 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko"):
     reference = knowledge.format_reference(knowledge.retrieve_for_chat(user_msg))
     try:
         # 자유 질문은 소견서보다 더 자유롭게 흘러가므로 필터가 더 중요하다
-        async for chunk in sanitized_stream(_build_chat_prompt(user_msg, context, lang, reference)): yield chunk
+        async for chunk in sanitized_stream(_build_chat_prompt(user_msg, context, lang, reference),
+                                            night_context=safety.mentions_night(user_msg),
+                                            driving_context=safety.mentions_driving(user_msg)): yield chunk
     except Exception:
         logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"

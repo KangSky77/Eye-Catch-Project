@@ -18,6 +18,7 @@ test('language changes during and after save cannot create a second request',asy
   assert.equal(x.agree().disabled,true);await x.agree().onclick();await stale.onclick();
  }
  assert.equal(x.pending.length,1);
+ assert.equal(JSON.parse(x.pending[0].options.body).consent_to_store,true);
  x.pending[0].resolve({ok:true,json:async()=>({status:'saved'})});await done;
  x.run("state.lang='en'; refreshSaveConsent()");
  assert.equal(x.agree().disabled,true);await x.agree().onclick();assert.equal(x.pending.length,1);

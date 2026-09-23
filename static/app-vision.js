@@ -283,7 +283,8 @@ async function runAIAnalysis(droppedFile) {
             hold: translations[state.lang].ai_hold || "플래시 반사가 강해 판독할 수 없어요. 플래시를 끄고 다시 찍어주세요.",
             eyes_hidden: translations[state.lang].ai_eyes_hidden || "눈이 감겨 있거나 가려진 것 같아요. 눈을 크게 뜨고 안경·선글라스를 벗은 뒤 다시 찍어주세요.",
             invalid: translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.",
-            multiple_faces: translations[state.lang].ai_multiple_faces || "Multiple faces were detected. Please retake the photo with one person."
+            multiple_faces: translations[state.lang].ai_multiple_faces || "Multiple faces were detected. Please retake the photo with one person.",
+            incomplete_eyes: translations[state.lang].ai_incomplete_eyes || "Only one eye was found in the face photo. Retake it with both eyes visible."
         };
         // 문구 유무가 아니라 코드로 판단한다 — 번역이 빠져도 재촬영 코드가 판정으로 새지 않게
         if (Object.prototype.hasOwnProperty.call(retake, d.result_code)) {

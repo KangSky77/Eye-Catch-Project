@@ -10,6 +10,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.api.routes import router
 from app.core.config import PROJECT_ROOT, settings
+from app.core.upload_limit import PhotoUploadBodyLimit
 from app.services import eye_validator, eye_detector
 from app.services.database import init_db_pool, close_db_pool
 from app.services.llm import warmup_ollama
@@ -76,6 +77,7 @@ async def lifespan(app: FastAPI):
         await close_db_pool()
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(PhotoUploadBodyLimit, max_file_bytes=settings.max_upload_size_bytes)
 
 # CORS 설정 — 화이트리스트 방식(기본은 아예 미적용)
 # 프론트가 같은 서버(/static)에서 서빙되므로 평소에는 same-origin이고, ngrok으로

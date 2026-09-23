@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -59,6 +59,10 @@ class QuestionGenRequest(BaseModel):
     chat_history: list[ChatHistoryItem] = Field(default_factory=list, max_length=50)
 
 class SaveDiagnosisRequest(BaseModel):
+    # The save API requires an explicit consent declaration, supplied only when
+    # the user presses the consent button. A public, unauthenticated API cannot
+    # independently verify who pressed it, but an omitted/false value never saves.
+    consent_to_store: Literal[True]
     cataract_result: str = Field(..., max_length=200)
     amsler_result: str = Field(..., max_length=100)
     chat_symptoms: list[SymptomText] = Field(default_factory=list, max_length=30)

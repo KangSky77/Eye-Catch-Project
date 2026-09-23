@@ -218,6 +218,16 @@ Object.assign(surgeryCopy, {
   }
 });
 Object.keys(translations).forEach(lang => Object.assign(translations[lang], surgeryCopy[lang]));
+// 위험 신호 없이 퇴원 안내만 불확실한 경우(postoperativeTriage의 'confirm')
+const postConfirmCopy = {
+ ko:['수술 병원에 퇴원 안내를 다시 확인하세요','이번 문진에서 위험 신호는 보고하지 않았지만, 퇴원 후 관리 방법이나 다음 진료 일정을 확실히 모르는 상태입니다. 수술 병원에 연락해 관리 방법과 예약을 다시 확인하세요. 새로운 증상이 생기면 바로 문의하세요.'],
+ en:['Re-confirm your aftercare instructions with the surgical team','No warning signs were reported, but you are unsure about your aftercare or next appointment. Contact the surgical team to re-confirm how to care for the eye and when your review is. Contact them right away if new symptoms appear.'],
+ es:['Confirme de nuevo las indicaciones posoperatorias con el equipo quirúrgico','No indicó signos de alarma, pero no está seguro/a de los cuidados o de la próxima cita. Llame al equipo quirúrgico para volver a confirmar los cuidados y la fecha de revisión. Consulte de inmediato si aparecen síntomas nuevos.'],
+ fr:['Revérifiez les consignes post-opératoires auprès de l’équipe chirurgicale','Aucun signe d’alerte n’a été signalé, mais vous n’êtes pas sûr(e) des soins ou du prochain rendez-vous. Contactez l’équipe chirurgicale pour reconfirmer les soins et la date du contrôle. Consultez immédiatement si de nouveaux symptômes apparaissent.'],
+ ja:['手術を受けた医療機関に術後の注意事項をもう一度確認してください','警告症状の報告はありませんでしたが、術後のケアや次回の受診予定がはっきりしない状態です。手術を受けた医療機関に連絡し、ケア方法と予約を確認してください。新しい症状が出たらすぐに相談してください。'],
+ zh:['请向手术医疗团队再次确认术后护理说明','本次未报告警示症状，但您不确定术后护理方法或下次复诊时间。请联系手术医疗团队再次确认护理方法和复诊安排。如出现新症状，请立即联系。']
+};
+for (const [lang,[label,why]] of Object.entries(postConfirmCopy)) Object.assign(translations[lang], {post_confirm:label, post_confirm_why:why});
 // 술후 전용 문진으로 갈아타는 조건 — 수술 4주 이내만이다.
 //
 // 'past'(4주 초과)까지 넣으면 10년 전 라식 한 번으로 나이·당뇨·고혈압·가족력·흡연
@@ -520,9 +530,11 @@ function postoperativeTriage(ctx, t) {
  const a=state.symptomAnswers || {};
  // 사진 판독은 적용하지 않는다. 일반 검사에서 암슬러를 끝낸 뒤 수술 이력을
  // 답할 수도 있으므로, 이미 보고된 암슬러 이상은 유지한다.
- // 퇴원 안내를 따를 수 있는지 '모른다'는 것 자체가 수술팀에 확인할 이유다.
- const contact=a.post_worse===true || a.post_followup===false || a.post_followup==='unknown' || ctx.amslerAbnormal===true;
- const kind=urgent?'urgent':contact?'contact':'follow';
- return {level:urgent?'urgent':contact?'now':'monitor',label:t['post_'+kind],
+ const symptomContact=a.post_worse===true || ctx.amslerAbnormal===true;
+ // 퇴원 안내를 따를 수 없거나 모르는 것은 '증상'이 아니다. 그래도 수술팀에 확인할 이유이므로
+ // 긴급도는 같게 두고, "증상을 문의하세요" 대신 안내를 다시 확인하라고 말한다(2026-09-23 재테스트).
+ const confirm=!symptomContact && (a.post_followup===false || a.post_followup==='unknown');
+ const kind=urgent?'urgent':symptomContact?'contact':confirm?'confirm':'follow';
+ return {level:urgent?'urgent':(symptomContact||confirm)?'now':'monitor',kind,label:t['post_'+kind],
   why:t['post_'+kind+'_why'],note:t.post_limit,riskScore:0,riskMax:13};
 }

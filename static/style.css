@@ -666,7 +666,12 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
     font-weight: 800;
     line-height: 1.18;
     letter-spacing: -0.055em;
+    /* 한국어를 어절 단위로 줄바꿈한다("지켜드립 / 니다"처럼 단어 중간에서 끊기지 않게) */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
 }
+/* 브랜드명이 하이픈에서 "Eye- / Catch"로 쪼개지지 않게 (en·fr·es·ja 375px에서 실측) */
+.brand-nowrap { white-space: nowrap; }
 .hero-description {
     position: relative;
     z-index: 1;
@@ -826,7 +831,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
 #report-content { border-radius: var(--ec-radius-lg); }
 #report-body > div { border-radius: 12px !important; }
 #report-body > div > p:first-child { font-size: .69rem !important; letter-spacing: .01em; }
-#report-body > div > p:last-child { font-size: .9rem; }
+/* 결과 값 칸(백내장·암슬러·문진)만. 검사 요약 해석 상자의 마지막 줄(면책 문구)까지 커지면 안 된다. */
+#report-body > div:not(#findings-box):not(#triage-box) > p:last-child { font-size: .9rem; }
 .button-icon { width: 19px; height: 19px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icon-button { width: 44px; min-height: 44px; display: grid; place-items: center; box-shadow: none; }
 .icon-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -957,7 +963,7 @@ html[data-font="2"] { font-size: 20px; }
     .site-header .font-ctl { padding: 1px; }
     .site-header .font-ctl button { min-width: 30px; height: 32px; padding: 0 6px; font-size: 12px; }
     .site-header .font-ctl button + button { font-size: 15px; }
-    .site-header .language-select { width: 112px; max-width: 112px; min-height: 34px; padding-left: 8px; font-size: 11px; }
+    .site-header .language-select { width: 112px; max-width: 112px; min-height: 34px; padding: 0 20px 0 8px; font-size: 11px; }
     .brand-mark { width: 34px; height: 34px; border-radius: 9px; }
     .brand-mark svg { width: 22px; height: 22px; }
     .brand-name { font-size: 1.05rem; }
@@ -1483,7 +1489,7 @@ body.modal-open { overflow: hidden; }
     .site-header .brand-name { font-size: 15px; }
     .site-header .gap-5 { gap: 6px; }
     .site-header .font-ctl button { min-width: 26px; padding: 0 4px; }
-    .site-header .language-select { width: 94px; max-width: 94px; padding: 0 22px 0 6px; background-position: right 6px center; }
+    .site-header .language-select { width: 112px; max-width: 112px; padding: 0 20px 0 8px; background-position: right 6px center; }
 }
 
 /* 와이드 폴더블 펼침(갤럭시 Z 폴드 ≈ 730~800px)·소형 태블릿.

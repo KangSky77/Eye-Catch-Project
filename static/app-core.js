@@ -27,6 +27,7 @@ const state = {
     chatHistory: [],         // 젬마에게 넘길 전체 대화 기록
     freeAnswers: [],         // 맞춤 질문에 자유 입력으로 답한 문장만 (소견서 개인화용)
     dynamicAnswers: [],      // 맞춤 질문과 답변 쌍 (소견서 개인화용)
+    dynamicQuestion: null,   // 현재 표시 중인 맞춤 질문의 언어·답변 형식
     sessionGeneration: 0,    // 회차가 바뀌면 이전 fetch/타이머 결과를 무시한다
     // 히스토리 항목의 유효성 기준. sessionGeneration과 일부러 분리했다 —
     // sessionGeneration은 사진을 새로 올릴 때마다(resetScreeningState) 올라가는데,
@@ -445,6 +446,7 @@ function resetScreeningState() {
     state.stepIdx = 0; state.dynamicCount = 0; state.chatHistory = [];
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
     state.dynamicAnswers = []; state.chatBusy = false;
+    state.dynamicQuestion = null;
     // 수술 여부는 회차 시작 화면(step-surgery)에서 이미 받았다. 사진을 올릴 때마다
     // 이 초기화가 도는데 여기서 비워버리면, 문진에 닿기도 전에 '수술한 눈'이라는 사실이
     // 사라져 사진 판독이 그대로 적용된다(formatCataractResult·photoAssessmentExcluded).
@@ -461,6 +463,7 @@ function resetScreeningState() {
 function invalidateScreeningReport() {
     if (typeof resetPlainFindings === 'function') resetPlainFindings();
     cancelAiOpinion();
+    if (typeof cancelFollowup === 'function') cancelFollowup();
     if (typeof cancelSaveConsent === 'function') cancelSaveConsent();
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
     const opinion = document.getElementById('gemma-opinion-text');

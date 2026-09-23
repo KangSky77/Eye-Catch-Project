@@ -214,3 +214,45 @@ async def test_문진내역_라벨은_언어를_따른다(monkeypatch):
     assert "의사" not in seen["prompt"]
     await llm.generate_next_question("ko", "정상", "정상", [])
     assert "아직 진행된 문진 대화가 없습니다." in seen["prompt"]
+
+
+@pytest.mark.anyio
+async def test_밤_운전_질문에는_선글라스_권유가_나가지_않는다(monkeypatch):
+    # 2026-09-23 실사용 테스트에서 실제로 나온 답. 문장 자체엔 '밤'이 없고 질문에 있었다.
+    bad = "이럴 때는 자외선 노출을 줄이기 위해 선글라스를 착용하시는 것이 도움이 됩니다."
+    async def fake(prompt):
+        yield "눈이 피로하면 잠시 쉬어 주세요.\n" + bad + "\n"
+    monkeypatch.setattr(llm, "stream_with_keepalive", fake)
+    out = "".join([c async for c in llm.chat_with_gemma_stream("밤에 운전할 때 눈부심을 줄이는 방법이 있나요?", "", "ko")])
+    assert "쉬어" in out
+    assert "선글라스" not in out
+    # 낮 야외 활동 질문에는 같은 조언이 정상적으로 나간다
+    out_day = "".join([c async for c in llm.chat_with_gemma_stream("등산할 때 눈 보호는 어떻게 하나요?", "", "ko")])
+    assert "선글라스" in out_day
+
+
+@pytest.mark.anyio
+async def test_퇴원안내만_불확실하면_증상을_지어내지_않게_지시한다(monkeypatch):
+    seen = {}
+    async def fake(prompt, facts=None, night_context=False, driving_context=False):
+        seen["prompt"] = prompt
+        yield "ok"
+    monkeypatch.setattr(llm, "sanitized_stream", fake)
+    _ = [c async for c in llm.get_gemma_opinion_stream(
+        "-", "-", ["Eye surgery: recent / 최근 4주 이내"], "ko", cataract_code="postop", triage_level="confirm")]
+    assert "NO warning symptoms" in seen["prompt"]
+    assert "about the reported symptoms" not in seen["prompt"]
+
+
+@pytest.mark.anyio
+async def test_수술후_응급신호는_클라이언트의_monitor보다_우선한다(monkeypatch):
+    seen = {}
+    async def fake(prompt, facts=None, **kwargs):
+        seen["prompt"] = prompt
+        yield "ok"
+    monkeypatch.setattr(llm, "sanitized_stream", fake)
+    _ = [part async for part in llm.get_gemma_opinion_stream(
+        "-", "-", ["Eye surgery: recent"], "en", cataract_code="postop",
+        red_flags=["post_pain"], triage_level="monitor")]
+    assert "contact the surgical team or emergency eye service NOW" in seen["prompt"]
+    assert "Do NOT tell them to contact the team right now" not in seen["prompt"]

@@ -67,6 +67,32 @@ def test_여러_얼굴은_임의의_한_사람을_고르지_않는다(monkeypatc
     assert eye_detector.extract_eye_crops(face_img) is None
 
 
+def test_배경의_작은_얼굴은_여러_얼굴로_세지_않는다(monkeypatch, face_img):
+    # 2026-09-23: 벽의 가족사진·사무실 동료 얼굴 때문에 혼자 찍은 셀카가 '여러 얼굴'로 막혔다.
+    boxes = np.array([[20, 0, 380, 300], [385, 5, 395, 15]], dtype=np.float32)   # 두 번째는 면적 0.09%
+    probs = np.array([0.99, 0.99])
+    landmarks = np.array([
+        [[100, 150], [300, 150], [200, 200], [150, 250], [250, 250]],
+        [[388, 9], [392, 9], [390, 11], [388, 13], [392, 13]],
+    ], dtype=np.float32)
+    monkeypatch.setattr(eye_detector, "_get_mtcnn", lambda: _FakeMTCNN(boxes, probs, landmarks))
+    crops = eye_detector.extract_eye_crops(face_img)
+    assert crops is not None and len(crops) == 2, "배경 얼굴 때문에 본인 셀카를 거부했다"
+    assert crops[0].getpixel((5, 5)) == (255, 0, 0)   # 큰 얼굴의 눈을 잘랐다
+
+
+def test_비슷한_크기의_두번째_얼굴은_여전히_보류(monkeypatch, face_img):
+    # 함께 찍은 사람(실측 68% 크기)은 누구의 눈인지 정할 수 없으므로 계속 막는다.
+    boxes = np.array([[0, 0, 200, 300], [220, 60, 380, 300]], dtype=np.float32)   # 64%
+    probs = np.array([0.99, 0.99])
+    landmarks = np.array([
+        [[70, 120], [130, 120], [100, 160], [70, 200], [130, 200]],
+        [[270, 150], [330, 150], [300, 190], [270, 230], [330, 230]],
+    ], dtype=np.float32)
+    monkeypatch.setattr(eye_detector, "_get_mtcnn", lambda: _FakeMTCNN(boxes, probs, landmarks))
+    assert eye_detector.extract_eye_crops(face_img) is None
+
+
 def test_얼굴_없으면_빈_리스트(monkeypatch, face_img):
     monkeypatch.setattr(eye_detector, "_get_mtcnn",
                         lambda: _FakeMTCNN(None, None, None))

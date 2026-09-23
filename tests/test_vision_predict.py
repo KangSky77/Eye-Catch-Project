@@ -113,6 +113,15 @@ def test_얼굴모드도_크롭마다_눈게이트를_거친다(monkeypatch, loa
     assert out["mode"] == "face" and len(calls) == 2
 
 
+def test_얼굴에서_한쪽눈만_잡히면_판독을_보류한다(monkeypatch, loaded, img):
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda _: [img])
+    monkeypatch.setattr(vision, "_predict_single", lambda _: pytest.fail("한 눈만으로 판정하면 안 됨"))
+    out = vision.predict_cataract(img)
+    assert out["result_code"] == "incomplete_eyes"
+    assert out["mode"] == "face" and out["eyes_detected"] == 1
+    assert out["eyes"] == [] and out["eye_probs"] == []
+
+
 def test_얼굴모드_한쪽눈이라도_가려지면_eyes_hidden(monkeypatch, loaded, img):
     scores = iter([(True, 0.97), (False, 0.01)])
     monkeypatch.setattr(eye_validator, "check_eye", lambda i: next(scores))

@@ -107,8 +107,46 @@ test('안저검사 역문항도 모르겠어요를 미시행으로 세지 않는
 test('수술 후 퇴원 안내를 따를 수 있는지 모르면 수술팀 연락으로 안내한다',()=>{
  const r=answerSymptom('post_followup','unknown',{surgery:'recent',extra:{surgery_type:'laser'}});
  assert.equal(r.answer,'unknown');
- const level=vm.runInContext(`computeTriage({cataractCode:'postop',redFlags:[]}).level`,r.c);
- assert.equal(level,'now','퇴원 안내를 모르는데 경과 관찰로 안내했다');
+ const tri=vm.runInContext(`computeTriage({cataractCode:'postop',redFlags:[]})`,r.c);
+ assert.equal(tri.level,'now','퇴원 안내를 모르는데 경과 관찰로 안내했다');
+ // 증상이 없으므로 '증상을 문의하세요'가 아니라 안내를 다시 확인하라고 말해야 한다
+ assert.equal(tri.kind,'confirm');
+ assert.equal(tri.label,vm.runInContext('translations.ko.post_confirm',r.c));
+ // 실제 증상 악화가 함께 있으면 증상 문의가 우선이다
+ vm.runInContext(`state.symptomAnswers.post_worse=true`,r.c);
+ assert.equal(vm.runInContext(`computeTriage({cataractCode:'postop',redFlags:[]}).kind`,r.c),'contact');
+});
+
+test('문진 중 언어를 바꿔도 모르겠어요 버튼과 수술 시기 문구가 유지된다',()=>{
+ const {c}=loadChat();
+ c.__opts=[];
+ vm.runInContext(`
+  renderChatOptions=o=>__opts.push(o.map(x=>x.label));
+  const realGet=document.getElementById;
+  document.getElementById=id=>id==='step-chat'?{classList:{contains:()=>true}}
+   :id==='chat-box'?{querySelectorAll:()=>[]}:realGet(id);
+  state.chatBusy=false;state.symptomAnswers={};state.chatHistory=[];`,c);
+ const ask=(setup,lang)=>{c.__setup=setup;c.__lang=lang;c.__opts.length=0;
+  vm.runInContext(`Object.assign(state,__setup);state.lang=__lang;refreshChatLanguage();`,c);
+  return c.__opts[0]||[];};
+ // 위험요인(예/아니오형): 당뇨
+ let opts=ask({hadSurgery:false,gateAnswers:{surgery:'none'},riskAnswers:{surgery:'none',age:'60s'},riskIdx:1},'en');
+ assert.ok(opts.includes(vm.runInContext('translations.en.chat_unknown',c)),`언어 전환 후 모르겠어요가 사라졌다: ${opts}`);
+ // 증상(비응급): 빛 번짐
+ opts=ask({riskAnswers:{surgery:'none',age:'60s',diabetes:false,hypertension:false,family:false,smoking:false},
+  riskIdx:99,symIdx:vm.runInContext(`activeSymptomQuestions().findIndex(q=>q.code==='cat_glare')`,c)},'ja');
+ assert.equal(opts.length,3,`비응급 증상 문항의 선택지가 줄었다: ${opts}`);
+ // 응급 문항에는 여전히 모르겠어요가 없다
+ opts=ask({symIdx:0},'fr');
+ assert.equal(opts.length,2,'응급 문항에 모르겠어요가 생겼다');
+ // 수술 시기 질문: 화면에 떠 있는 질문 말풍선이 어떤 문장으로 바뀌는지 본다
+ c.__text={nodeType:3,nodeValue:'언제 수술을 받으셨나요?'};
+ vm.runInContext(`Node={TEXT_NODE:3};
+  const prevGet=document.getElementById;
+  document.getElementById=id=>id==='chat-box'
+   ?{querySelectorAll:sel=>sel.includes('chat-bot')?[{firstElementChild:{lastChild:__text}}]:[]}:prevGet(id);`,c);
+ ask({hadSurgery:true,gateAnswers:{},riskAnswers:{},riskIdx:0,symIdx:0},'en');
+ assert.equal(c.__text.nodeValue,vm.runInContext('translations.en.gate_when_q',c),'수술 시기 질문이 수술 여부 질문으로 되돌아갔다');
 });
 
 test('증상 문항에서 모르겠어요는 위험 신호로 세지 않는다',()=>{
@@ -117,4 +155,45 @@ test('증상 문항에서 모르겠어요는 위험 신호로 세지 않는다',
  const fn=src.slice(src.indexOf('function handleSymptomAnswer'));
  assert.match(fn,/q\.invert \? \(yes === false\) : \(yes === true\)/,
   '느슨한 비교로 바뀌면 모른다가 위험 신호로 세어진다');
+});
+
+test('AI 맞춤 질문 표시 중 언어 전환은 현재 질문과 버튼을 새 언어로 바꾼다',()=>{
+ const {c}=loadChat();c.__opts=[];c.__modes=[];c.__text={nodeType:3,nodeValue:'한국어 맞춤 질문'};
+ vm.runInContext(`
+  Node={TEXT_NODE:3};
+  renderChatOptions=o=>__opts.push(o.map(x=>x.label));
+  setChatAnswerMode=mode=>__modes.push(mode);
+  document.getElementById=id=>id==='step-chat'?{classList:{contains:()=>true}}
+   :id==='chat-box'?{querySelectorAll:sel=>sel.includes('chat-bot')?[{firstElementChild:{lastChild:__text}}]:[]}
+   :null;
+  state.lang='en';state.chatBusy=false;state.riskAnswers={surgery:'none'};state.symptomAnswers={};
+  state.riskIdx=99;state.symIdx=99;state.chatHistory=[{q:'한국어 맞춤 질문',a:''}];
+  state.dynamicQuestion={text:'한국어 맞춤 질문',lang:'ko',answerType:'text'};
+  refreshChatLanguage();`,c);
+ const fallback=vm.runInContext('translations.en.nextq_fallback',c);
+ assert.equal(c.__text.nodeValue,fallback);
+ assert.equal(vm.runInContext('state.chatHistory.at(-1).q',c),fallback);
+ assert.deepEqual(Array.from(c.__opts.at(-1)),[
+  vm.runInContext('translations.en.chat_yes',c),vm.runInContext('translations.en.chat_no',c)]);
+ assert.equal(c.__modes.at(-1),'yesno');
+});
+
+test('맞춤 질문 생성 중 바뀐 언어의 응답만 화면에 표시한다',async()=>{
+ const {c}=loadChat();c.__msgs=[];c.__opts=[];let resolveFetch;
+ c.fetch=()=>new Promise(resolve=>{resolveFetch=resolve});
+ vm.runInContext(`
+  addMsg=(who,text)=>__msgs.push(text);
+  renderChatOptions=o=>__opts.push(o.map(x=>x.label));
+  removeLoadingMsg=()=>{};setChatAnswerMode=()=>{};
+  state.lang='ko';state.sessionGeneration=1;state.chatHistory=[];
+  state.riskAnswers={surgery:'none'};
+  state.riskIdx=99;state.symIdx=99;
+ `,c);
+ const pending=vm.runInContext('fetchNextQuestion()',c);
+ vm.runInContext("state.lang='en'",c);
+ resolveFetch({json:async()=>({question:'한국어로 만든 질문인가요?',answer_type:'text'})});
+ await pending;
+ assert.equal(c.__msgs.at(-1),vm.runInContext('translations.en.nextq_fallback',c));
+ assert.equal(vm.runInContext('state.dynamicQuestion.lang',c),'en');
+ assert.equal(c.__opts.at(-1)[0],vm.runInContext('translations.en.chat_yes',c));
 });

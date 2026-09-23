@@ -320,6 +320,14 @@ def predict_cataract(img: Image.Image):
             "face", 0, checks=_checklist(passed),
         )
     passed["single_face"] = True
+    # A face photo needs both eyes. One valid crop can otherwise produce a normal
+    # result that later appears to describe the entire face in the report/PDF.
+    if len(eye_crops) == 1:
+        passed["eye_visible"] = False
+        return _empty_result(
+            "incomplete_eyes", "얼굴 사진에서 한쪽 눈만 확인됐습니다 (두 눈이 보이게 다시 촬영해 주세요)",
+            "face", 1, checks=_checklist(passed),
+        )
     mode = "face" if eye_crops else "eye"
 
     targets = eye_crops if eye_crops else [img]

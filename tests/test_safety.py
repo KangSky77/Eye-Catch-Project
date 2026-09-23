@@ -173,3 +173,116 @@ def test_문진에_해당항목이_없으면_건드리지_않는다():
     sentence = "2년 전 검진 이력이 있으므로 권합니다."
     assert safety.check_sentence(sentence, ["흡연 중"]) is None
     assert safety.check_sentence(sentence, None) is None
+
+
+# 2026-09-23 실사용 테스트: 영어 소견이 '2년 내 검진 없음'인 사람에게 이런 문장을 썼다.
+@pytest.mark.parametrize("sentence, facts", [
+    ("Continue with regular eye check-ups and keep detailed records of your symptoms.", ["No exam in 2 years"]),
+    ("Bring the results of your last eye exam to the clinic.", ["No exam in 2 years"]),
+    ("검진을 계속 받으시면서 시력 변화를 관찰하세요.", ["2년 내 검진 없음"]),
+])
+def test_다른_언어로_없는_검진이력을_지어내도_차단된다(sentence, facts):
+    assert safety.check_sentence(sentence, facts) == "contradicts_facts"
+
+
+@pytest.mark.parametrize("sentence", [
+    "Get a regular eye check-up, since you have not had one in the last 2 years.",
+    "Schedule an eye exam soon; slit-lamp and fundus exams are common.",
+])
+def test_영어의_올바른_검진_권유는_통과한다(sentence):
+    assert safety.check_sentence(sentence, ["No exam in 2 years"]) is None
+
+
+@pytest.mark.parametrize("sentence", [
+    "혈압 관리를 꾸준히 하세요.",
+    "Keep your blood pressure under control.",
+    "Manage your blood pressure to protect your eyes.",
+    "血圧を管理してください。",
+    "控制血压有助于保护眼睛。",
+])
+def test_고혈압이_없는데_개인_혈압관리_조언을_하지_않는다(sentence):
+    assert safety.check_sentence(sentence, ["Hypertension: no"]) == "contradicts_facts"
+
+
+def test_고혈압이_없어도_일반적인_검사_권유는_유지한다():
+    assert safety.check_sentence("Have your blood pressure checked at your appointment.",
+                                 ["Hypertension: no"]) is None
+    assert safety.check_sentence("Manage your blood sugar carefully.", ["Diabetes: no"]) == "contradicts_facts"
+
+
+# 2026-09-23 실사용 테스트: "밤 운전 눈부심을 줄이는 방법"에 선글라스 착용을 권했다(야간엔 시야가 더 어두워진다).
+@pytest.mark.parametrize("sentence, night", [
+    ("이럴 때는 자외선 노출을 줄이기 위해 선글라스를 착용하시는 것이 도움이 됩니다.", True),   # 실제 문장 — 질문이 밤 운전
+    ("밤에 운전할 때는 옅은 색 선글라스를 쓰면 눈부심이 줄어듭니다.", False),
+    ("Wearing tinted glasses when driving at night can reduce glare.", False),
+])
+def test_야간_선글라스_권유는_차단된다(sentence, night):
+    assert safety.check_sentence(sentence, night_context=night) == "night_tint"
+
+
+@pytest.mark.parametrize("sentence, night", [
+    ("밤에는 선글라스를 쓰지 마세요.", True),
+    ("Never wear sunglasses when driving at night.", True),
+    ("밤이나 어두운 곳에서는 시야 확보를 위해 색이 들어간 렌즈나 선글라스를 사용하는 것은 오히려 시야를 더 어둡게 만들어 위험할 수 있으니 절대 권하지 않습니다.", True),
+    ("밤에 안전을 위해 색이 들어간 렌즈나 선글라스를 착용하는 것은 시야를 더 어둡게 하여 위험할 수 있으니 권장하지 않습니다.", True),
+    ("낮에 야외 활동을 할 때는 자외선 차단 선글라스를 쓰세요.", False),   # 밤 질문이 아니면 정상 조언
+])
+def test_올바른_선글라스_안내는_통과한다(sentence, night):
+    assert safety.check_sentence(sentence, night_context=night) is None
+
+
+def test_다른_대상을_피하라는_문장으로_선글라스_권유가_빠져나가지_않는다():
+    assert safety.check_sentence("Avoid glare by wearing sunglasses.", night_context=True) == "night_tint"
+    assert safety.check_sentence("위험을 줄이려면 선글라스를 쓰세요.", night_context=True) == "night_tint"
+
+
+def test_밤_질문을_알아본다():
+    assert safety.mentions_night("밤에 운전할 때 눈부심을 줄이는 방법이 있나요?")
+    assert safety.mentions_night("How can I reduce glare when driving at night?")
+    assert safety.mentions_night("晚上开车时如何减轻眩光？")
+    assert not safety.mentions_night("눈이 건조할 때 어떻게 하나요?")
+
+
+@pytest.mark.parametrize("sentence, expected", [
+    ("You have cataracts.", "diagnosis"),
+    ("You probably have early glaucoma.", "diagnosis"),
+    ("If you have sudden pain or vision loss, seek urgent care.", None),
+    ("Tell the clinic which symptoms you have noticed.", None),
+])
+def test_영어_진단_표현은_좁게_잡는다(sentence, expected):
+    assert safety.check_sentence(sentence) == expected
+
+
+# 2026-09-23 재테스트: '밤 운전 눈부심' 질문에 운전 중 눈을 감으라는 문장이 나왔다.
+@pytest.mark.parametrize("sentence, expected", [
+    ("안전 운전을 위해 운전 환경의 조명을 확인하고 주기적으로 눈을 감거나 깜박여 눈에 휴식을 주는 것이 도움이 됩니다.",
+     "driving_eyes_closed"),
+    ("While driving, close your eyes for a few seconds to rest them.", "driving_eyes_closed"),
+    ("운전 중에는 절대 눈을 감지 마세요. 불편하면 안전한 곳에 차를 세우세요.", None),
+    ("눈이 피로하면 잠시 눈을 감고 쉬세요.", None),   # 운전과 무관한 휴식 조언은 정상
+])
+def test_운전_중_눈_감기_조언은_차단된다(sentence, expected):
+    assert safety.check_sentence(sentence) == expected
+
+
+def test_운전_문맥과_색렌즈_다른표현도_차단한다():
+    assert safety.mentions_driving("How can I reduce glare while driving at night?")
+    assert safety.check_sentence("Close your eyes for a few seconds to rest.", driving_context=True) == "driving_eyes_closed"
+    assert safety.check_sentence("눈에 피로가 쌓이지 않도록 눈을 자주 감거나 휴식을 취하는 것이 도움이 됩니다.",
+                                 driving_context=True) == "driving_eyes_closed"
+    assert safety.check_sentence("Wear yellow lenses to reduce glare.", night_context=True) == "night_tint"
+    assert safety.check_sentence("Do not wear yellow lenses at night.", night_context=True) is None
+    assert safety.check_sentence("Do not close your eyes while driving.", driving_context=True) is None
+
+
+def test_야간_운전에서_전조등을_무조건_최대로_쓰라는_조언은_차단한다():
+    assert safety.check_sentence("야간 운전 시 차량의 전조등을 최대로 사용하여 주변 시야를 확보하세요.",
+                                 driving_context=True) == "driving_max_headlights"
+    assert safety.check_sentence("Always use high beams at night.", driving_context=True) == "driving_max_headlights"
+    assert safety.check_sentence("다른 차가 보이면 상향등을 내리세요.", driving_context=True) is None
+
+
+def test_이전_절의_검진_부정은_다음_절의_허위이력을_허용하지_않는다():
+    assert safety.check_sentence(
+        "No recent eye exam; continue with regular eye check-ups.", ["No exam in 2 years"]
+    ) == "contradicts_facts"

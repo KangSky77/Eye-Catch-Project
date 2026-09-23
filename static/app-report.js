@@ -28,6 +28,9 @@ function buildOpinionSymptoms() {
                 ? (typeof remoteSurgeryLabels === 'function'
                     ? remoteSurgeryLabels().map(item => 'Reported remote surgery: ' + item)
                     : [translations[state.lang].q_surgery + ': ' + translations[state.lang].surgery_past]) : [],
+            // 부정 답변은 목록이 길어도 잘리지 않도록 앞에 둔다.
+            ...(state.riskAnswers?.hypertension === false ? ['Hypertension: no'] : []),
+            ...(state.riskAnswers?.diabetes === false ? ['Diabetes: no'] : []),
             formatSymptoms(),
             ...(typeof hasSurgery === 'function' && hasSurgery()
                 ? postoperativeQuestions.filter(q => [true, false, 'unknown'].includes(state.symptomAnswers?.[q.code]))
@@ -106,7 +109,8 @@ async function finish() {
         // 권장 조치는 앱이 결정론적으로 정한다(computeTriage). LLM에게 알려주지 않으면
         // 제 나름의 판단을 해서 같은 화면 안에서 두 안내가 어긋난다 — 실제로 카드는
         // '예정된 진료를 따르세요'인데 AI 소견 3줄이 전부 '지금 수술팀에 연락하세요'였다.
-        triage_level: (state.triage && state.triage.level) || ''
+        // 수술 후 '퇴원 안내만 불확실'은 긴급도는 now지만 증상이 없다 — LLM이 증상을 지어내지 않게 따로 알린다.
+        triage_level: (state.triage && (state.triage.kind === 'confirm' ? 'confirm' : state.triage.level)) || ''
     };
     await runAiOpinion();
 }
@@ -350,6 +354,19 @@ function notifyOpinionDone() {
 }
 
 let _followupBusy = false;
+let _activeFollowup = null;
+
+function cancelFollowup() {
+    const active = _activeFollowup;
+    _activeFollowup = null;
+    _followupBusy = false;
+    if (active) {
+        active.controller.abort();
+        active.loader.stop();
+    }
+    const sendBtn = document.getElementById('followup-send-btn');
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.removeAttribute('aria-busy'); }
+}
 
 async function askGemmaMore() {
     if (_followupBusy) return;   // 답변 스트리밍 중 재전송 금지 (응답이 뒤섞이는 것 방지)
@@ -367,7 +384,9 @@ async function askGemmaMore() {
     // 스트리밍 도중 새 검사가 시작되면(로고 클릭 등) 이 답변은 새 리포트의 것이 아니다.
     // 세대 번호를 찍어 두고 도착한 조각마다 같은 세션인지 확인한다.
     const generation = state.sessionGeneration;
-    const isCurrent = () => state.sessionGeneration === generation;
+    const active = { controller: new AbortController(), loader: null };
+    _activeFollowup = active;
+    const isCurrent = () => _activeFollowup === active && state.sessionGeneration === generation;
 
     _followupBusy = true;
     if (sendBtn) { sendBtn.disabled = true; sendBtn.setAttribute('aria-busy', 'true'); }
@@ -375,6 +394,7 @@ async function askGemmaMore() {
     responseEl.classList.remove('hidden');
     responseEl.innerText = '';
     const loader = createAiLoader(translations[state.lang].followup_thinking || "답변을 생각하고 있습니다");
+    active.loader = loader;
     responseEl.appendChild(loader.el);
     let firstChunk = true;
 
@@ -382,7 +402,8 @@ async function askGemmaMore() {
         const response = await fetch('/api/chat-with-gemma', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context })
+            body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context }),
+            signal: active.controller.signal
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -413,8 +434,7 @@ async function askGemmaMore() {
         if (!isCurrent()) return;
         responseEl.innerText = translations[state.lang].srv_err || "서버와 연결할 수 없습니다.";
     } finally {
-        _followupBusy = false;
-        if (sendBtn) { sendBtn.disabled = false; sendBtn.removeAttribute('aria-busy'); }
+        if (_activeFollowup === active) cancelFollowup();
     }
 }
 
@@ -633,8 +653,17 @@ function downloadPDF() {
         restoreBtn();
         _pdfBusy = false;
     };
-    const fail = err => {
+    let settled = false;
+    let timeoutId = null;
+    const complete = () => {
+        if (settled) return false;
+        settled = true;
+        if (timeoutId !== null) clearTimeout(timeoutId);
         restore();
+        return true;
+    };
+    const fail = err => {
+        if (!complete()) return;
         showToast(t.pdf_err || "Could not create the PDF. Please try again.", 'error');
         console.error(err);
     };
@@ -643,7 +672,12 @@ function downloadPDF() {
         // jsPDF의 save()는 환경에 따라 새 창을 열어 팝업 차단에 막히고, 그때 프라미스가
         // 끝나지 않아 버튼이 'PDF를 만드는 중...'에 영영 갇혔다(iPhone XS 실측, 2026-09-17).
         // 사용자가 누른 뒤에 만드는 blob이라 <a>로 내려받는 편이 막힐 여지가 적다.
-        const done = buildReportPdf().outputPdf('blob').then(blob => {
+        const done = buildReportPdf().outputPdf('blob');
+        timeoutId = setTimeout(() => fail(new Error('PDF 생성 시간 초과')), PDF_TIMEOUT_MS);
+        Promise.resolve(done).then(blob => {
+            // html2pdf has no cancellation API. Ignore a blob that arrives after
+            // timeout instead of downloading it after an error or a new attempt.
+            if (settled) return;
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -653,12 +687,8 @@ function downloadPDF() {
             a.remove();
             // 저장 대화상자가 blob을 읽을 시간을 준 뒤 회수한다.
             setTimeout(() => URL.revokeObjectURL(url), 60000);
-            restore();
-        });
-        // 어떤 이유로든 끝나지 않으면 버튼이 잠긴 채 남는다. 기다림에도 끝을 둔다.
-        const timeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('PDF 생성 시간 초과')), PDF_TIMEOUT_MS));
-        Promise.race([done, timeout]).catch(fail);
+            complete();
+        }).catch(fail);
     } catch (err) {         // html2pdf 미로딩 등 동기 실패도 버튼이 잠긴 채로 남지 않게
         fail(err);
     }

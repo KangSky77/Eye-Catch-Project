@@ -83,7 +83,7 @@ def test_save_diagnosis_DB실패는_soft_fail(client, monkeypatch):
     async def broken(*a, **kw):
         raise RuntimeError("db down: host=secret-internal-host")
     monkeypatch.setattr(routes, "save_diagnosis", broken)
-    r = client.post("/api/save-diagnosis", json={"cataract_result": "정상", "amsler_result": "정상"})
+    r = client.post("/api/save-diagnosis", json={"cataract_result": "정상", "amsler_result": "정상", "consent_to_store": True})
     assert r.status_code == 200
     assert r.json() == {"status": "skipped"}
     assert "secret-internal-host" not in r.text   # 내부 정보 비노출
@@ -93,8 +93,19 @@ def test_save_diagnosis_성공(client, monkeypatch):
     async def ok(*a, **kw):
         return 7
     monkeypatch.setattr(routes, "save_diagnosis", ok)
-    r = client.post("/api/save-diagnosis", json={"cataract_result": "정상", "amsler_result": "정상"})
+    r = client.post("/api/save-diagnosis", json={"cataract_result": "정상", "amsler_result": "정상", "consent_to_store": True})
     assert r.json() == {"status": "saved", "id": 7}
+
+
+@pytest.mark.parametrize("consent", [None, False])
+def test_save_diagnosis_명시적_동의_없이는_저장하지_않는다(client, monkeypatch, consent):
+    async def should_not_save(*args, **kwargs):
+        pytest.fail("동의 없이 DB 저장이 호출됨")
+    monkeypatch.setattr(routes, "save_diagnosis", should_not_save)
+    payload = {"cataract_result": "정상", "amsler_result": "정상"}
+    if consent is not None:
+        payload["consent_to_store"] = consent
+    assert client.post("/api/save-diagnosis", json=payload).status_code == 422
 
 
 def test_get_ai_opinion_스트리밍(client, monkeypatch):

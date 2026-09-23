@@ -251,7 +251,7 @@ function refreshSaveConsent() {
             const res = await fetch('/api/save-diagnosis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(flow.payload)
+                body: JSON.stringify({ ...flow.payload, consent_to_store: true })
             });
             const data = await res.json().catch(() => ({}));
             if (_saveConsent !== flow) return;

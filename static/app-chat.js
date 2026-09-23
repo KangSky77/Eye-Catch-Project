@@ -59,6 +59,7 @@ function startChat() {
     state.chatHistory = [];
     state.freeAnswers = [];
     state.dynamicAnswers = [];
+    state.dynamicQuestion = null;
     state.chatBusy = false;
     // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
     state.riskIdx = 0;
@@ -462,16 +463,57 @@ function refreshChatLanguage() {
     // 또 추가해 1/20과 2/20에 동일한 문장이 두 번 나온다(2026-09-07 재현).
     // 전환이 끝나면 askRiskQuestion/askSymptomQuestion이 chatBusy를 풀어준다.
     if (state.chatBusy) return;
+    // 질문을 처음 물을 때와 같은 문구·선택지 함수를 쓴다(askRiskQuestion/askSymptomQuestion).
+    // 따로 만들던 동안 언어를 바꾸면 '모르겠어요'가 사라지고, 수술 시기 질문이
+    // '수술 받은 적이 있나요?'로 되돌아갔다(2026-09-23 실사용 테스트).
     let question = null;
+    const t = translations[state.lang];
     if (state.riskIdx < activeRiskQuestions().length) {
         const q = activeRiskQuestions()[state.riskIdx];
-        question = translations[state.lang][q.key] || q.key;
-        renderChatOptions(q.type === 'choice' ? q.options.map(o => ({ label: translations[state.lang][o.key] || o.v, value: o.v })) : [{ label: translations[state.lang].chat_yes, value: true }, { label: translations[state.lang].chat_no, value: false }]);
+        question = riskQuestionText(q);
+        renderChatOptions(q.type === 'choice'
+            ? q.options.map(o => ({ label: t[o.key] || o.v, value: o.v }))
+            : yesNoUnknownOptions());
     } else {
         const q = activeSymptomQuestions()[state.symIdx];
         if (q) {
             question = symptomQuestionText(q);
-            renderChatOptions([{ label: translations[state.lang].chat_yes, value: true }, { label: translations[state.lang].chat_no, value: false }]);
+            renderChatOptions(q.redFlag
+                ? [{ label: t.chat_yes, value: true }, { label: t.chat_no, value: false }]
+                : yesNoUnknownOptions());
+        } else if (state.dynamicQuestion) {
+            // A generated question has no translated catalog entry. Replace only
+            // the pending question with the new language's reviewed fallback.
+            // Earlier answered questions remain part of the conversation history.
+            const current = state.dynamicQuestion;
+            if (current.lang !== state.lang) {
+                const fallback = t.nextq_fallback || '';
+                const previous = state.chatHistory[state.chatHistory.length - 1];
+                if (previous && previous.a === '') state.chatHistory.pop();
+                state.dynamicQuestion = null;
+                if (!fallback || isDuplicateQuestion(fallback)) {
+                    // The unanswered old-language bubble is no longer part of
+                    // chatHistory; remove it while a fresh question is generated.
+                    const oldBots = box.querySelectorAll('[data-chat-bot="1"]');
+                    const oldBot = oldBots[oldBots.length - 1];
+                    if (oldBot && typeof oldBot.remove === 'function') oldBot.remove();
+                    state.chatBusy = true;
+                    clearChatControls();
+                    addLoadingMsg(t.next_q_generating || '');
+                    fetchNextQuestion();
+                    return;
+                }
+                state.chatHistory.push({ q: fallback, a: '' });
+                state.dynamicQuestion = { text: fallback, lang: state.lang, answerType: 'yesno' };
+            }
+            question = state.dynamicQuestion.text;
+            setChatAnswerMode(state.dynamicQuestion.answerType);
+            if (state.dynamicQuestion.answerType === 'yesno') {
+                renderChatOptions(
+                    [{ label: t.chat_yes, value: true }, { label: t.chat_no, value: false }],
+                    v => handleChatAnswer(v === true)
+                );
+            }
         }
     }
     if (!question) return;
@@ -579,6 +621,7 @@ const NEXT_QUESTION_DEADLINE_MS = 30000;
 
 async function fetchNextQuestion() {
     const generation = state.sessionGeneration;
+    const requestLang = state.lang;
     const cataractRes = formatCataractResult();
     // finish()와 동일하게 선택 언어로 전달 (LLM 프롬프트 컨텍스트 언어 일관성)
     const amslerRes = formatAmslerResult();
@@ -621,6 +664,12 @@ async function fetchNextQuestion() {
     } finally {
         clearTimeout(deadline);
         if (state.sessionGeneration !== generation) return;
+        // The response belongs to the language selected when the request began.
+        // If it changed during generation, use the current language's fallback.
+        if (state.lang !== requestLang) {
+            q = translations[state.lang].nextq_fallback || '';
+            answerType = 'yesno';
+        }
         removeLoadingMsg(); // "생성 중..." 메시지 제거
         // Fallbacks must pass the same check as AI questions. End optional questions
         // when no fresh question is available instead of repeating an answered one.
@@ -632,6 +681,7 @@ async function fetchNextQuestion() {
         }
         addMsg('bot', q, dynamicProgress());
         state.chatHistory.push({ q: q, a: "" });
+        state.dynamicQuestion = { text: q, lang: state.lang, answerType };
         setChatAnswerMode(answerType);
         if (answerType !== 'text') {
             // 맞춤형 질문 전용 버튼을 새로 그린다(문진 핸들러가 아니라 handleChatAnswer로).
@@ -692,6 +742,7 @@ async function handleChatAnswer(yes) {
         // (maxDynamic을 1->2로 올린 뒤 발생). 어차피 같은 뜻이므로 한 번만 남긴다.
         if (yes && !state.chatSymptoms.includes('symptom_extra')) state.chatSymptoms.push('symptom_extra');
 
+        state.dynamicQuestion = null;
         state.dynamicCount++;
         advanceAfterDynamicAnswer();
     }
@@ -741,6 +792,7 @@ function handleChatFreeAnswer(skip) {
     // 버튼 답변까지 자유 답변으로 오인했다 — 수집 시점에 구분하는 편이 확실하다.
     if (text) state.freeAnswers.push(text);
 
+    state.dynamicQuestion = null;
     state.dynamicCount++;
     advanceAfterDynamicAnswer();
 }
