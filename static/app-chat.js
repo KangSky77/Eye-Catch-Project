@@ -84,8 +84,13 @@ function updateSurveyModeBanner() {
     if (!el) return;
     const t = translations[state.lang] || {};
     const postoperative = typeof hasSurgery === 'function' && hasSurgery();
+    // 첫 화면에서 '수술 받았어요'를 골랐지만 아직 수술 시기를 답하지 않은 동안에는 어느 문진인지 정해지지 않았다.
+    // 이때 '일반 눈 건강 문진'을 띄우면 "언제 수술을 받으셨나요?"를 묻는 화면과 어긋난다(2026-09-27 실기기).
+    const checkingSurgery = !postoperative && state.hadSurgery && state.riskAnswers?.surgery === undefined;
     el.className = 'survey-mode-banner ' + (postoperative ? 'survey-mode-postop' : 'survey-mode-general');
-    el.textContent = postoperative ? (t.survey_mode_postop || '') : (t.survey_mode_general || '');
+    el.textContent = postoperative ? (t.survey_mode_postop || '')
+        : checkingSurgery ? (t.survey_mode_surgery_check || t.survey_mode_general || '')
+        : (t.survey_mode_general || '');
 }
 
 /** 시작 화면에서 받은 답을 문진 대화에 먼저 적고, 그 다음 문항부터 묻게 한다.
@@ -189,6 +194,7 @@ function symptomQuestionText(q) {
     if (state.riskAnswers?.age === 'under10' && ['cat_glare', 'cat_glasses'].includes(q.code))
         return t['q_child_' + q.code];
     if (q.code === 'rf_pain' && state.riskAnswers?.surgery === 'past') return t.q_remote_pain;
+    if (q.code === 'gla_myopia' && state.riskAnswers?.surgery_type === 'laser') return t.q_gla_myopia_prelaser || t[q.key];
     return t[q.key] || q.key;
 }
 

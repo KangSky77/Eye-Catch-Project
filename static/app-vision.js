@@ -338,7 +338,9 @@ async function runAIAnalysis(droppedFile) {
         pPlain.textContent = t['result_plain_' + d.result_code] || '';
         pPlain.hidden = !pPlain.textContent;
         const pRes = document.createElement('p');
-        pRes.className = 'text-base font-bold';
+        // 바로 위 쉬운 말 한 줄과 뜻이 같다. 같은 굵기로 두면 같은 말을 두 번 크게 읽게 된다(2026-09-27 첫 사용 점검).
+        // 공식 판정 문구는 지우지 않고 보충 설명처럼 한 단계 작게 둔다.
+        pRes.className = 'text-sm font-bold text-slate-600';
         pRes.dataset.role = 'verdict';
         pRes.textContent = resultText;
         disp.appendChild(pPlain);

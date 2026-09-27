@@ -34,7 +34,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260923h">
+    <link rel="stylesheet" href="/static/style.css?v=20260927b">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -59,7 +59,7 @@
                 <div class="hidden md:flex items-center gap-1 font-bold text-[15px]">
                     <button type="button" onclick="showTab('tab-test')" data-tab="tab-test" data-i18n="nav_test" class="nav-pill">AI 검사</button>
                     <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" data-i18n="sim_title" class="nav-pill">안구 질환 체험</button>
-                    <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 소개</button>
+                    <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" data-i18n="nav_disease" class="nav-pill">질환 안내</button>
                     <button type="button" onclick="showTab('tab-report')" data-tab="tab-report" data-i18n="nav_report" class="nav-pill">진단 리포트</button>
                     <button type="button" onclick="showTab('tab-map')" data-tab="tab-map" data-i18n="nav_map" class="nav-pill">병원 찾기</button>
                 </div>
@@ -224,10 +224,13 @@
                 <div class="upload-icon mx-auto mb-6" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
                 <h2 class="text-2xl font-black mb-2">
                     <span data-general-only data-i18n="upload_title">일반 사진 검사</span>
-                    <span data-surgery-only hidden data-i18n="post_photo_upload_title">수술 관련 사진 검사</span>
+                    <span data-surgery-only hidden data-i18n="post_photo_upload_title">눈 사진 검사</span>
                 </h2>
                 <div id="upload-error" class="upload-error hidden" role="alert" aria-live="assertive"></div>
-                <div id="upload-guide" class="mt-4 mb-8 text-left bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm" data-general-only>
+                <!-- 수술 경로에도 보인다(2026-09-27): 흔들림·플래시 안내는 수술한 분에게도 똑같이 필요하다.
+                     '눈을 크게 떠 주세요'가 든 촬영 팁 화면(tip3)은 수술 안내("억지로 크게 뜨지 마세요")와
+                     부딪혀 계속 일반 경로에만 둔다. -->
+                <div id="upload-guide" class="mt-4 mb-8 text-left bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm">
                     <p class="text-amber-800 font-bold text-sm mb-1" data-i18n="guide_title">정확한 분석 가이드</p>
                     <ul class="text-[11px] text-amber-700 space-y-1 list-disc list-inside" data-i18n="guide_list">
                         <li>정면에서 촬영하세요.</li>
@@ -249,7 +252,7 @@
                 <!-- 모바일: 카메라 앱을 바로 연다(capture). 값 없는 capture는 기기 기본 카메라이며 카메라 앱에서 전·후면을 바꿀 수 있다.
                      데스크톱에서는 CSS로 숨긴다(터치 없는 기기에선 파일 선택창과 다를 게 없다). -->
                 <input type="file" id="cataract-camera" class="sr-only" accept="image/*" capture onchange="runAIAnalysis(this.files[0]); this.value='';" aria-describedby="upload-guide">
-                <label for="cataract-camera" class="camera-btn btn-pop"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg><span data-general-only data-i18n="camera_btn">카메라로 바로 찍기</span><span data-surgery-only hidden data-i18n="post_camera_btn">수술 관련 사진 촬영</span></label>
+                <label for="cataract-camera" class="camera-btn btn-pop"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg><span data-general-only data-i18n="camera_btn">카메라로 바로 찍기</span><span data-surgery-only hidden data-i18n="post_camera_btn">눈 사진 촬영</span></label>
                 <input type="file" id="cataract-file" class="sr-only" accept="image/*" onchange="runAIAnalysis()" aria-describedby="upload-guide">
                 <label for="cataract-file" class="upload-pick block w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-xl btn-pop cursor-pointer" data-i18n="upload_btn">사진 선택 및 전송</label>
                 <p class="dropzone-hint" data-i18n="upload_drop_hint">여기로 사진을 끌어다 놓아도 됩니다.</p>
@@ -532,7 +535,7 @@
         </button>
         <button type="button" onclick="showTab('tab-simulator')" data-tab="tab-simulator" class="bnav-item"><span class="bnav-ico" aria-hidden="true">◉</span><span class="text-[10px] font-bold" data-i18n="sim_title">안구 질환 체험</span></button>
         <button type="button" onclick="showTab('tab-disease')" data-tab="tab-disease" class="bnav-item">
-            <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5ZM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 소개</span>
+            <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5ZM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_disease">질환 안내</span>
         </button>
         <button type="button" onclick="showTab('tab-report')" data-tab="tab-report" class="bnav-item">
             <span class="bnav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v5h4M9 12h6M9 16h6"/></svg></span><span class="text-[10px] font-bold" data-i18n="nav_report">리포트</span>
@@ -564,19 +567,19 @@
             <button type="button" id="photo-check-retake" data-i18n="review_retake">다른 사진 고르기</button>
         </div>
     </dialog>
-    <script src="/static/data.js?v=20260923d"></script>
+    <script src="/static/data.js?v=20260927b"></script>
     <script src="/static/app-photo-review.js?v=20260917a"></script>
     <script src="/static/app-safety-copy.js?v=20260916f"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-report-text.js?v=20260916a"></script>
-    <script src="/static/app-surgery.js?v=20260923b"></script>
-    <script src="/static/app-core.js?v=20260923c"></script>
-    <script src="/static/app-vision.js?v=20260923c"></script>
-    <script src="/static/app-chat.js?v=20260923d"></script>
-    <script src="/static/app-report.js?v=20260923d"></script>
-    <script src="/static/app-disease.js?v=20260923a"></script>
+    <script src="/static/app-surgery.js?v=20260927b"></script>
+    <script src="/static/app-core.js?v=20260927a"></script>
+    <script src="/static/app-vision.js?v=20260927a"></script>
+    <script src="/static/app-chat.js?v=20260927b"></script>
+    <script src="/static/app-report.js?v=20260927a"></script>
+    <script src="/static/app-disease.js?v=20260927a"></script>
     <script src="/static/app-assess.js?v=20260923c"></script>
     <script src="/static/app-findings.js?v=20260917a"></script>
-    <script src="/static/app-map.js?v=20260923a"></script>
+    <script src="/static/app-map.js?v=20260927a"></script>
 </body>
 </html>

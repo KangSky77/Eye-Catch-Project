@@ -202,7 +202,9 @@ def test_기능검사_문구가_단정적이지_않다():
 
 
 def _git(*args: str) -> str:
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    # encoding 없이 text=True면 윈도우에서 cp949로 읽다가 한국어 커밋·HTML에서 깨진다(2026-09-27 로컬 실측).
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True,
+                          encoding="utf-8").stdout.strip()
 
 
 def test_바뀐_정적파일은_캐시_버전도_올라간다():

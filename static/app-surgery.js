@@ -388,12 +388,21 @@ for (const [lang, copy] of Object.entries(surgeryGateCopy)) {
   'post_photo_title','post_photo_tips','post_skip_photo',
   'photo_lens_intact'].forEach((key,i)=>translations[lang][key]=copy[i]);
 }
-Object.assign(translations.ko, { post_guide_title:'수술한 분을 위한 검사 안내', post_guide_body:'수술 시기와 종류에 따라 사진 검사 방법이 달라질 수 있어요. 다음 문진에서 먼저 확인합니다. 사진이 어렵거나 보호대를 하고 있다면 사진을 찍지 않고 진행할 수 있습니다.', post_photo_continue:'사진으로 진행하기', post_photo_upload_title:'수술 관련 사진 검사', post_camera_btn:'수술 관련 사진 촬영' });
-Object.assign(translations.en, { post_guide_title:'Screening after eye surgery', post_guide_body:'The photo check may differ depending on when and what kind of surgery you had. We will ask first. If taking a photo is difficult or you are wearing a shield, you can continue without one.', post_photo_continue:'Continue with a photo', post_photo_upload_title:'Surgery-related photo check', post_camera_btn:'Take a surgery-related photo' });
-Object.assign(translations.es, { post_guide_title:'Prueba después de una cirugía ocular', post_guide_body:'La prueba con foto puede variar según cuándo y qué cirugía tuvo. Primero se lo preguntaremos. Si es difícil hacer una foto o lleva un protector, puede continuar sin ella.', post_photo_continue:'Continuar con una foto', post_photo_upload_title:'Foto relacionada con la cirugía', post_camera_btn:'Tomar foto relacionada con la cirugía' });
-Object.assign(translations.fr, { post_guide_title:'Dépistage après une opération des yeux', post_guide_body:'L’analyse photo peut changer selon la date et le type d’opération. Nous vous le demanderons d’abord. Si la photo est difficile ou si vous portez une coque, vous pouvez continuer sans photo.', post_photo_continue:'Continuer avec une photo', post_photo_upload_title:'Photo liée à l’opération', post_camera_btn:'Prendre une photo liée à l’opération' });
-Object.assign(translations.ja, { post_guide_title:'手術を受けた方の検査案内', post_guide_body:'写真検査は手術の時期や種類によって変わることがあります。まず問診で確認します。撮影が難しい場合や保護具を付けている場合は、写真なしで続けられます。', post_photo_continue:'写真で進む', post_photo_upload_title:'手術に関する写真検査', post_camera_btn:'手術に関する写真を撮る' });
-Object.assign(translations.zh, { post_guide_title:'做过眼部手术的用户检查指南', post_guide_body:'照片检查方式可能因手术时间和类型而不同。我们会先询问。如果拍照困难或正在佩戴护罩，可以不拍照继续检查。', post_photo_continue:'使用照片继续', post_photo_upload_title:'手术相关照片检查', post_camera_btn:'拍摄手术相关照片' });
+// 시력교정(라식·라섹) 이력이 있으면 '지금' 고도근시냐고 물으면 안 된다 — 수술로 교정됐으니 대부분 '아니오'가 되고,
+// 교수님 시연(2026-09-23 회의)에서 "수술했는데 왜 고도근시가 나오지?"라는 반응이 나왔다. 녹내장 위험요인은
+// 교정 전 근시(안구 길이)라 문항은 남기고 '수술 전'을 묻는다(app-chat.js symptomQuestionText).
+Object.assign(translations.ko, { q_gla_myopia_prelaser: "시력교정 수술 전에 고도근시였나요? (수술 전 안경 도수 -6.00 이상)" });
+Object.assign(translations.en, { q_gla_myopia_prelaser: "Were you highly myopic before your vision correction surgery? (Glasses stronger than -6.00 before surgery)" });
+Object.assign(translations.es, { q_gla_myopia_prelaser: "¿Tenía miopía alta antes de la cirugía de corrección visual? (Graduación superior a -6,00 antes de operarse)" });
+Object.assign(translations.fr, { q_gla_myopia_prelaser: "Étiez-vous fortement myope avant votre chirurgie réfractive ? (Correction au-delà de -6,00 avant l’opération)" });
+Object.assign(translations.ja, { q_gla_myopia_prelaser: "視力矯正手術の前は強度近視でしたか？（手術前の度数 -6.00 以上）" });
+Object.assign(translations.zh, { q_gla_myopia_prelaser: "做视力矫正手术前是高度近视吗？（术前度数超过 -6.00）" });
+Object.assign(translations.ko, { post_guide_title:'수술한 분을 위한 검사 안내', post_guide_body:'수술 시기와 종류에 따라 사진 검사 방법이 달라질 수 있어요. 다음 문진에서 먼저 확인합니다. 사진이 어렵거나 보호대를 하고 있다면 사진을 찍지 않고 진행할 수 있습니다.', post_photo_continue:'사진으로 진행하기', post_photo_upload_title:'눈 사진 검사', post_camera_btn:'눈 사진 촬영' });
+Object.assign(translations.en, { post_guide_title:'Screening after eye surgery', post_guide_body:'The photo check may differ depending on when and what kind of surgery you had. We will ask first. If taking a photo is difficult or you are wearing a shield, you can continue without one.', post_photo_continue:'Continue with a photo', post_photo_upload_title:'Eye photo check', post_camera_btn:'Take an eye photo' });
+Object.assign(translations.es, { post_guide_title:'Prueba después de una cirugía ocular', post_guide_body:'La prueba con foto puede variar según cuándo y qué cirugía tuvo. Primero se lo preguntaremos. Si es difícil hacer una foto o lleva un protector, puede continuar sin ella.', post_photo_continue:'Continuar con una foto', post_photo_upload_title:'Foto del ojo', post_camera_btn:'Tomar foto del ojo' });
+Object.assign(translations.fr, { post_guide_title:'Dépistage après une opération des yeux', post_guide_body:'L’analyse photo peut changer selon la date et le type d’opération. Nous vous le demanderons d’abord. Si la photo est difficile ou si vous portez une coque, vous pouvez continuer sans photo.', post_photo_continue:'Continuer avec une photo', post_photo_upload_title:'Photo de l’œil', post_camera_btn:'Prendre une photo de l’œil' });
+Object.assign(translations.ja, { post_guide_title:'手術を受けた方の検査案内', post_guide_body:'写真検査は手術の時期や種類によって変わることがあります。まず問診で確認します。撮影が難しい場合や保護具を付けている場合は、写真なしで続けられます。', post_photo_continue:'写真で進む', post_photo_upload_title:'目の写真検査', post_camera_btn:'目の写真を撮る' });
+Object.assign(translations.zh, { post_guide_title:'做过眼部手术的用户检查指南', post_guide_body:'照片检查方式可能因手术时间和类型而不同。我们会先询问。如果拍照困难或正在佩戴护罩，可以不拍照继续检查。', post_photo_continue:'使用照片继续', post_photo_upload_title:'眼部照片检查', post_camera_btn:'拍摄眼部照片' });
 
 // Entry records actual surgery history, not the user's guess about its cause.
 // Both disease-related and other surgery must reach the timing/type questions.
@@ -536,5 +545,7 @@ function postoperativeTriage(ctx, t) {
  const confirm=!symptomContact && (a.post_followup===false || a.post_followup==='unknown');
  const kind=urgent?'urgent':symptomContact?'contact':confirm?'confirm':'follow';
  return {level:urgent?'urgent':(symptomContact||confirm)?'now':'monitor',kind,label:t['post_'+kind],
-  why:t['post_'+kind+'_why'],note:t.post_limit,riskScore:0,riskMax:13};
+  // note는 비운다 — 같은 post_limit 문장을 검사 요약 해석(buildFindings) 첫 줄이 이미 말한다.
+  // 둘 다 넣던 동안 리포트에 똑같은 문장이 연달아 두 번 찍혔다(2026-09-27 실기기).
+  why:t['post_'+kind+'_why'],note:'',riskScore:0,riskMax:13};
 }
