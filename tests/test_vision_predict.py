@@ -35,6 +35,9 @@ def loaded(monkeypatch):
     # 돌리면 분기 테스트가 모델 품질에 좌우된다.
     monkeypatch.setattr(eye_validator, "open_gate_available", lambda: True)
     monkeypatch.setattr(eye_validator, "check_eye_open", lambda i, closeup=False: (True, 0.95))
+    # These branch tests stub all learned-model checks. Probe disagreement has
+    # independent tests below, including a real tensor batch and both eye paths.
+    monkeypatch.setattr(vision, "_predictions_unstable", lambda targets, bases, source=None: False)
 
 
 def test_가중치_미로드시_503(monkeypatch, img):
@@ -319,6 +322,70 @@ def _checks(out):
     return {c["key"]: c["ok"] for c in out["checks"]}
 
 
+@pytest.mark.parametrize("base,probes,unstable", [
+    (99.1, [30.7, 99.6], True), (15.9, [0.0, 76.0], True),
+    (0.0, [0.1, 30.0], True), (1.0, [2.0, 1.0], False),
+    (49.0, [51.0, 47.0], False), (95.0, [91.0, 99.0], False),
+])
+def test_large_disagreement_only_requests_retake(base, probes, unstable):
+    assert vision._unstable_prediction(base, probes) is unstable
+
+
+@pytest.mark.parametrize("face", [False, True])
+def test_unstable_response_has_no_score_or_eye_verdict(monkeypatch, loaded, img, face):
+    monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda _: [img, img] if face else [])
+    monkeypatch.setattr(vision, "_predict_single", lambda _: 99.1)
+    monkeypatch.setattr(vision, "_predictions_unstable", lambda targets, bases, source=None: True)
+    out = vision.predict_cataract(img)
+    assert out['result_code'] == 'unstable'
+    assert out['probability'] == 0 and out['eyes'] == [] and out['eye_probs'] == []
+    assert out['asymmetric'] is False and _checks(out)['stable'] is False
+    assert _checks(out)['no_glare'] is True
+
+
+def test_heavy_jpeg_never_reaches_the_detector(monkeypatch, loaded, img):
+    img.info['heavy_jpeg_compression'] = True
+    monkeypatch.setattr(eye_detector, 'extract_eye_crops', lambda _: pytest.fail('degraded input'))
+    out = vision.predict_cataract(img)
+    assert out['result_code'] == 'compressed' and out['eyes'] == []
+    assert _checks(out)['compression'] is False and _checks(out)['single_face'] is None
+
+
+def test_one_unstable_eye_blocks_the_whole_face(monkeypatch, img):
+    monkeypatch.setattr(vision, '_stability_scores', lambda ts: [[99, 95], [0, 76]])
+    assert vision._predictions_unstable([img, img], [99.1, 15.9]) is True
+
+
+def test_mirrored_face_probes_keep_the_same_physical_eye(monkeypatch, img):
+    left = img.copy(); right = img.copy()
+    detections = iter([[right, left], [left, right]])
+    monkeypatch.setattr(eye_detector, 'extract_eye_crops', lambda _: next(detections))
+    monkeypatch.setattr(vision, '_predict_single', lambda eye: 90 if eye is left else 1)
+    assert vision._face_stability_scores(img) == [[90, 90], [1, 1]]
+
+
+def test_face_crop_disagreement_is_checked_even_when_crop_probes_agree(monkeypatch, img):
+    monkeypatch.setattr(vision, '_stability_scores', lambda _: [[99, 99], [15, 15]])
+    monkeypatch.setattr(vision, '_face_stability_scores', lambda _: [[99, 99], [0, 76]])
+    assert vision._predictions_unstable([img, img], [99, 15.9], img)
+    monkeypatch.setattr(vision, '_face_stability_scores', lambda _: None)
+    assert vision._predictions_unstable([img, img], [99, 15.9], img)
+
+
+@pytest.mark.parametrize('tta,expected_batch', [(False, 4), (True, 8)])
+def test_stability_probes_batch_both_eyes_and_keep_probability_order(monkeypatch, img, tta, expected_batch):
+    import torch
+    monkeypatch.setattr(settings, 'use_tta', tta)
+    def fake_model(batch):
+        assert batch.shape == (expected_batch, 3, 224, 224)
+        pairs = torch.tensor([[4., 0.], [0., 4.], [3., 0.], [0., 3.]], device=batch.device)
+        return pairs.repeat_interleave(2, dim=0) if tta else pairs
+    monkeypatch.setattr(vision, 'model', fake_model)
+    scores = vision._stability_scores([img, img])
+    assert len(scores) == 2 and scores[0][0] < 2 and scores[0][1] > 98
+    assert scores[1][0] < 5 and scores[1][1] > 95
+
+
 def test_판독_성공하면_모든_인식_기준이_통과로_보고된다(monkeypatch, loaded, img):
     """화면 체크리스트의 입력. 순서와 항목이 고정돼야 '무엇을 보고 판독했는지'를 말할 수 있다."""
     monkeypatch.setattr(eye_detector, "extract_eye_crops", lambda i: [])
@@ -336,8 +403,8 @@ def test_막힌_기준만_X이고_그_뒤는_확인_못_함으로_남는다(monk
     out = vision.predict_cataract(img)
     assert out["result_code"] == "blurry"
     assert _checks(out) == {
-        "resolution": True, "single_face": True, "sharp": False,
-        "bright": None, "eye_visible": None, "eye_open": None, "no_glare": None,
+        "resolution": True, "compression": True, "single_face": True, "sharp": False,
+        "bright": None, "eye_visible": None, "eye_open": None, "no_glare": None, "stable": None,
     }
 
 
@@ -396,6 +463,13 @@ def test_돌려도_재촬영이면_원래_판정을_유지한다(monkeypatch, im
     monkeypatch.setattr(vision, "_predict_oriented", _oriented_stub({img.size: "eyes_hidden", rotated.size: "blurry"}))
     monkeypatch.setattr(vision, "_upright_versions", lambda im: [rotated])
     assert vision.predict_cataract(img)["result_code"] == "eyes_hidden"
+
+
+def test_upright_but_unstable_uses_the_actual_reason(monkeypatch, img):
+    rotated = img.crop((0, 0, 224, 112))
+    monkeypatch.setattr(vision, '_predict_oriented', _oriented_stub({img.size:'invalid', rotated.size:'unstable'}))
+    monkeypatch.setattr(vision, '_upright_versions', lambda _: [rotated])
+    assert vision.predict_cataract(img)['result_code'] == 'unstable'
 
 
 def test_방향과_무관한_재촬영은_다시_보지_않는다(monkeypatch, img):

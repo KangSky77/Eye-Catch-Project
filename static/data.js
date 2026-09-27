@@ -1486,3 +1486,14 @@ const clarityCopy = {
  },
 };
 for (const [lang, copy] of Object.entries(clarityCopy)) Object.assign(translations[lang], copy);
+
+// Failed input/consistency checks request another photo, never a score.
+const reliabilityCopy = {
+ ko: {ai_compressed:'사진이 많이 압축되어 눈의 세부 특징을 확인하기 어려워요. 메신저로 압축된 사진 대신 카메라 원본을 선택해 주세요.', ai_unstable:'사진의 작은 변화에 분석 결과가 크게 달라져 결과를 표시할 수 없어요. 두 눈을 정면에서 가까이 또렷하게 다시 찍어 주세요.', chk_compression:'과도하게 압축되지 않았어요', chk_stable:'작은 사진 변화에도 분석이 일관돼요'},
+ en: {ai_compressed:'This photo is heavily compressed and eye details may be lost. Choose the original camera photo instead of a compressed copy.', ai_unstable:'Small image changes cause large differences in the analysis, so no result can be shown. Retake a sharp, close frontal photo with both eyes visible.', chk_compression:'Not heavily compressed', chk_stable:'Analysis agrees across small image changes'},
+ es: {ai_compressed:'La foto está muy comprimida y puede haber perdido detalles del ojo. Elige el original de la cámara en lugar de una copia comprimida.', ai_unstable:'Pequeños cambios en la imagen alteran mucho el análisis. No se puede mostrar un resultado. Repite una foto frontal, cercana y nítida con ambos ojos visibles.', chk_compression:'Sin compresión excesiva', chk_stable:'Análisis coherente ante pequeños cambios'},
+ fr: {ai_compressed:'Cette photo est très compressée et peut avoir perdu des détails de l’œil. Choisissez la photo originale de l’appareil plutôt qu’une copie compressée.', ai_unstable:'De petits changements de l’image modifient fortement l’analyse. Aucun résultat ne peut être affiché. Reprenez une photo nette, de face et de près, avec les deux yeux visibles.', chk_compression:'Sans compression excessive', chk_stable:'Analyse cohérente malgré de petits changements'},
+ ja: {ai_compressed:'写真が強く圧縮され、目の細部を確認できない可能性があります。圧縮されたコピーではなく、カメラの元の写真を選んでください。', ai_unstable:'写真の小さな変化で分析結果が大きく変わるため、結果を表示できません。両目が見えるように、正面から近くで鮮明に撮り直してください。', chk_compression:'過度に圧縮されていません', chk_stable:'小さな画像変化でも分析が一貫しています'},
+ zh: {ai_compressed:'照片压缩过多，可能丢失了眼部细节。请选择相机原图，而不是压缩后的副本。', ai_unstable:'图片的微小变化导致分析结果大幅改变，因此无法显示结果。请正面近距离重新拍摄清晰照片，确保双眼可见。', chk_compression:'没有过度压缩', chk_stable:'图片微小变化下分析保持一致'}
+};
+for (const [lang, copy] of Object.entries(reliabilityCopy)) Object.assign(translations[lang], copy);

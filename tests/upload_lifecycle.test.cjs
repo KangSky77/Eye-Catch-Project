@@ -151,7 +151,7 @@ test('every retake code uses a real translation in all six languages', async () 
     const dataContext = vm.createContext({});
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../static/data.js'), 'utf8'), dataContext);
     const translations = vm.runInContext('translations', dataContext);
-    const codes = ['dark', 'low_resolution', 'blurry', 'hold', 'eyes_hidden', 'invalid', 'multiple_faces'];
+    const codes = ['dark', 'low_resolution', 'blurry', 'hold', 'eyes_hidden', 'invalid', 'multiple_faces', 'incomplete_eyes', 'compressed', 'unstable'];
     for (const lang of ['ko', 'en', 'es', 'fr', 'ja', 'zh']) {
         for (const code of codes) {
             const message = translations[lang]['ai_' + code];
@@ -167,6 +167,39 @@ test('every retake code uses a real translation in all six languages', async () 
             assert.equal(h.banners[0], message, `${lang}/${code}`);
             assert.equal(h.steps.at(-1), 'step-photo');
         }
+    }
+});
+
+function quantizedJpeg(quant, precision = 0) {
+    const table = Array.from({length:64}, () => precision ? [quant >> 8, quant & 255] : [quant]).flat();
+    const length = table.length + 3;
+    return Uint8Array.from([255,216,255,224,0,4,0,0,255,219,length >> 8,length & 255,precision << 4,...table,255,218,0,2]);
+}
+
+test('original JPEG quantization survives browser resizing and tightens the server gate', async () => {
+    const h = setup(), c = h.context, appended = [];
+    const bytes = quantizedJpeg(46);
+    const original = {...h.file, slice:(start,end) => {
+        assert.equal(start,0); assert.equal(end,262144);
+        return {arrayBuffer:async () => bytes.buffer};
+    }};
+    const resized = {...h.file, name:'resized-q92.jpg'};
+    c.shrinkForUpload = async () => resized;
+    c.FormData = class {append(key,value) { appended.push([key,value]); }};
+    const done = c.runAIAnalysis(original);
+    await new Promise(r => setImmediate(r));
+    h.resolve(h.ok({result_code:'compressed',result:'Choose original'}));
+    await done;
+    assert.equal(appended.find(([key])=>key==='file')[1],resized);
+    assert.equal(appended.find(([key])=>key==='source_compressed')[1],'true');
+    assert.equal(c.state.aiResultCode,'');
+});
+
+test('JPEG header parser supports 8/16-bit tables and ignores PNG or truncated data', async () => {
+    const c = setup().context;
+    for (const [bytes,expected] of [[quantizedJpeg(29),false],[quantizedJpeg(46),true],
+        [quantizedJpeg(300,1),true],[Uint8Array.from([137,80,78,71]),false],[quantizedJpeg(46).slice(0,20),false]]) {
+        assert.equal(await c.hasHeavyJpegCompression({slice:()=>({arrayBuffer:async()=>bytes.buffer})}),expected);
     }
 });
 
@@ -235,6 +268,7 @@ test('사진 준비 중 초기화하면 완료된 축소 작업도 업로드하�
     let release;
     c.shrinkForUpload = file => new Promise(resolve => { release = () => resolve(file); });
     const done = c.runAIAnalysis(h.file);
+    await new Promise(r => setImmediate(r)); // Wait until original-header checking reaches resize.
     c.resetScreeningState();
     release();
     await new Promise(r => setImmediate(r));
@@ -249,7 +283,9 @@ test('두 사진의 준비 순서가 역전돼도 마지막 선택만 분석한�
     const h = setup(), c = h.context, releases = [];
     c.shrinkForUpload = file => new Promise(resolve => releases.push(() => resolve(file)));
     const old = c.runAIAnalysis(h.file);
+    await new Promise(r => setImmediate(r));
     const current = c.runAIAnalysis(h.file);
+    await new Promise(r => setImmediate(r));
     releases[1]();
     await new Promise(r => setImmediate(r));
     h.resolve(h.ok({ result_code: 'risk', probability: 90 }));
@@ -261,6 +297,16 @@ test('두 사진의 준비 순서가 역전돼도 마지막 선택만 분석한�
     await old;
     assert.equal(count, 1);
     assert.equal(c.state.aiResultCode, 'risk');
+});
+
+test('reset during original-header reading prevents resizing and uploading', async () => {
+    const h = setup(), c = h.context;
+    let release;
+    c.hasHeavyJpegCompression = () => new Promise(resolve => {release = resolve;});
+    c.shrinkForUpload = () => assert.fail('stale preparation must not resize');
+    const done = c.runAIAnalysis(h.file);
+    c.resetScreeningState(); release(true); await done;
+    assert.equal(h.uploadCount(),0); assert.equal(c.state.aiResultCode,'');
 });
 
 function chatSetup() {

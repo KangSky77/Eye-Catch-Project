@@ -30,6 +30,49 @@ LANG_NAMES = {
 def _lang_name(lang: str) -> str:
     return LANG_NAMES.get(lang, "English")
 
+# Emergency action must not depend on an LLM following its prompt. A real
+# rf_acute session returned rest/sunglasses advice despite the urgent card.
+# Sources: https://www.nhs.uk/symptoms/eye-pain/
+# https://www.nhs.uk/symptoms/floaters-and-flashes-in-the-eyes/
+_URGENT_ADVICE = {
+    "ko": (
+        "지금 바로 안과 진료를 받으세요.",
+        "지금 바로 수술한 병원이나 응급 안과에 연락하고, 연락이 되지 않으면 응급실에서 진료를 받으세요.",
+        "앱의 나머지 검사나 AI 답변을 기다리며 진료를 미루지 마세요.",
+        "이 앱으로 증상의 원인을 진단하거나 질환을 배제할 수 없습니다.",
+    ),
+    "en": (
+        "Seek urgent eye care now.",
+        "Contact the hospital that performed your surgery or an emergency eye service now; if unavailable, go to an emergency department.",
+        "Do not delay care while waiting for more app tests or AI replies.",
+        "This app cannot diagnose the cause of your symptoms or rule out disease.",
+    ),
+    "es": (
+        "Acuda a un servicio de atención oftalmológica urgente ahora.",
+        "Contacte ahora al hospital que le operó o a un servicio de urgencias oftalmológicas; si no puede contactar, acuda a urgencias.",
+        "No retrase la atención esperando más pruebas de la aplicación o respuestas de la IA.",
+        "Esta aplicación no puede diagnosticar la causa de sus síntomas ni descartar enfermedades.",
+    ),
+    "fr": (
+        "Consultez un service d'urgence ophtalmologique maintenant.",
+        "Contactez maintenant l'hôpital qui vous a opéré ou les urgences ophtalmologiques ; s'ils sont injoignables, allez aux urgences.",
+        "Ne retardez pas les soins en attendant d'autres tests de l'application ou des réponses de l'IA.",
+        "Cette application ne peut ni diagnostiquer la cause de vos symptômes ni exclure une maladie.",
+    ),
+    "ja": (
+        "今すぐ眼科を受診してください。",
+        "今すぐ手術を受けた病院または救急の眼科に連絡し、連絡がつかなければ救急外来を受診してください。",
+        "アプリの残りの検査やAIの回答を待って受診を遅らせないでください。",
+        "このアプリでは症状の原因を診断したり、病気を否定したりすることはできません。",
+    ),
+    "zh": (
+        "请立即就诊眼科。",
+        "请立即联系为您手术的医院或眼科急诊；如无法联系，请前往急诊。",
+        "不要因等待应用的其他检查或AI回复而延误就医。",
+        "本应用不能诊断症状的原因，也不能排除疾病。",
+    ),
+}
+
 # 응급 신호가 잡힌 회차에 프롬프트 맨 앞에 붙이는 블록.
 # 없으면 화면은 "지금 바로 안과 진료를 받으세요 / 야간·주말이면 응급실로"라고 하는데
 # 바로 밑 AI 요약은 "안압 측정을 받으실 수 있습니다"처럼 예약을 잡는 말투로 나온다(2026-09-06 실측 재현).
@@ -450,6 +493,13 @@ async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[st
                                    cataract_code: str = "", amsler_abnormal: bool = False,
                                    symptom_codes: list[str] | None = None, eye_asymmetric: bool = False,
                                    red_flags: list[str] | None = None, triage_level: str = ""):
+    if red_flags or triage_level == "urgent":
+        copy = _URGENT_ADVICE.get(lang, _URGENT_ADVICE["en"])
+        postoperative = cataract_code == "postop" or any("Eye surgery:" in item for item in symptoms)
+        # Use the same summary protocol as ordinary advice; no model call or
+        # lifestyle suggestion may weaken the app's emergency action.
+        yield "<<<SUMMARY>>>\n" + "\n".join((copy[1] if postoperative else copy[0], copy[2], copy[3]))
+        return
     # RAG: 환자 결과에 맞는 안과 참고지식을 검색해 프롬프트에 주입
     reference = knowledge.format_reference(
         knowledge.retrieve_for_opinion(cataract_code, amsler_abnormal, symptom_codes)

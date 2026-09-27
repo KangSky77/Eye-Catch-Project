@@ -1,5 +1,7 @@
 """업로드 이미지 검증(validate_and_read_image) — 보안 가드가 실제로 막는지 확인."""
+import io
 import pytest
+from PIL import Image
 from fastapi import HTTPException
 
 from app.services import vision
@@ -45,6 +47,17 @@ async def test_정상이미지_RGB로_반환():
     img = await vision.validate_and_read_image(up)
     assert img.mode == "RGB"
     assert img.size == (48, 32)
+
+
+@pytest.mark.parametrize('quality,compressed', [(35, True), (60, True), (75, False), (92, False)])
+def test_jpeg_quantization_survives_rgb_and_exif_decode(quality, compressed):
+    buf = io.BytesIO()
+    image = Image.new('RGB', (48, 32), (120, 80, 60))
+    exif = Image.Exif(); exif[274] = 6
+    image.save(buf, format='JPEG', quality=quality, exif=exif)
+    decoded = vision._decode_image_contents(buf.getvalue())
+    assert decoded.mode == 'RGB' and decoded.size == (32, 48)
+    assert decoded.info['heavy_jpeg_compression'] is compressed
 
 
 async def test_EXIF_회전정보_반영():

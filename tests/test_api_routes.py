@@ -78,6 +78,26 @@ def test_analyze_eye_텍스트파일_400(client):
     assert r.status_code == 400
 
 
+def test_original_compression_flag_cannot_be_lost_or_cleared(client, monkeypatch):
+    seen = []
+    def predict(image):
+        seen.append(image.info.get('heavy_jpeg_compression'))
+        return {'result_code':'compressed' if seen[-1] else 'normal', 'probability':0, 'result':'test'}
+    monkeypatch.setattr(routes, 'predict_cataract', predict)
+    # A resized PNG carries the original JPEG's compression warning.
+    r = client.post('/api/analyze-eye', data={'source_compressed':'true'},
+                    files={'file':('resized.png',make_image_bytes(), 'image/png')})
+    assert r.status_code == 200 and r.json()['result_code'] == 'compressed'
+    # A false client flag can never override server-detected JPEG compression.
+    import io
+    from PIL import Image
+    buf=io.BytesIO(); Image.new('RGB',(48,48)).save(buf,format='JPEG',quality=35)
+    r = client.post('/api/analyze-eye', data={'source_compressed':'false'},
+                    files={'file':('original.jpg',buf.getvalue(), 'image/jpeg')})
+    assert r.status_code == 200 and r.json()['result_code'] == 'compressed'
+    assert seen == [True, True]
+
+
 def test_save_diagnosis_DB실패는_soft_fail(client, monkeypatch):
     # DB가 죽어도 200 + skipped — 앱 전체가 죽거나 내부 에러가 노출되면 안 됨
     async def broken(*a, **kw):
@@ -138,6 +158,19 @@ def test_generate_next_question(client, monkeypatch):
     monkeypatch.setattr(routes, "generate_next_question", fake)
     r = client.post("/api/generate-next-question", json={"cataract_res": "정상", "amsler_res": "정상"})
     assert r.json() == {"question": "야간 운전 시 빛 번짐이 있나요?", "answer_type": "yesno"}
+
+
+@pytest.mark.parametrize("signals", [{"red_flags": ["rf_acute"]}, {"triage_level": "urgent"}])
+def test_응급_고정안내는_LLM_대기열을_우회한다(client, monkeypatch, signals):
+    def blocked(*args, **kwargs):
+        pytest.fail("Emergency advice must not acquire an LLM slot")
+    monkeypatch.setattr(routes, "_limited_stream", blocked)
+    r = client.post("/api/get-ai-opinion", json={
+        "cataract_res": "normal", "amsler_res": "normal", "lang": "ko", **signals,
+    })
+    assert r.status_code == 200
+    assert r.text.startswith("<<<SUMMARY>>>\n지금 바로 안과 진료를 받으세요.")
+    assert len(r.text.split("<<<SUMMARY>>>\n")[1].splitlines()) == 3
 
 
 def test_generate_next_question_서술형이면_answer_type이_text(client, monkeypatch):

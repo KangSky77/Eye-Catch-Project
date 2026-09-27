@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, File, Form, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from app.core.config import settings
@@ -67,9 +67,14 @@ async def nearby_clinics(
     return await search_eye_clinics(lat, lng)
 
 @router.post("/api/analyze-eye")
-async def analyze_eye(file: UploadFile = File(...)):
+async def analyze_eye(file: UploadFile = File(...), source_compressed: bool = Form(False)):
     async with _inference_slots:
         img = await validate_and_read_image(file)
+        # The browser may have resized/re-encoded a large JPEG. A reported
+        # degraded original can only tighten the gate; false never clears the
+        # server's independently decoded quantization flag.
+        if source_compressed:
+            img.info['heavy_jpeg_compression'] = True
         # 무거운 추론(MTCNN+ResNet)은 스레드풀에서 실행 → 이벤트루프(다른 요청/스트림)를 막지 않음
         result = await run_in_threadpool(predict_cataract, img)
     return {
@@ -85,16 +90,19 @@ async def analyze_eye(file: UploadFile = File(...)):
 
 @router.post("/api/get-ai-opinion")
 async def get_ai_opinion(req: GemmaRequest):
+    stream = get_gemma_opinion_stream(
+        req.cataract_res, req.amsler_res, req.chat_symptoms, req.lang,
+        cataract_code=req.cataract_code,
+        amsler_abnormal=req.amsler_abnormal,
+        symptom_codes=req.symptom_codes,
+        eye_asymmetric=req.eye_asymmetric,
+        red_flags=req.red_flags,
+        triage_level=req.triage_level,
+    )
+    # Fixed emergency advice needs no model resources and must not queue
+    # behind slow ordinary generations.
     return StreamingResponse(
-        _limited_stream(get_gemma_opinion_stream(
-            req.cataract_res, req.amsler_res, req.chat_symptoms, req.lang,
-            cataract_code=req.cataract_code,
-            amsler_abnormal=req.amsler_abnormal,
-            symptom_codes=req.symptom_codes,
-            eye_asymmetric=req.eye_asymmetric,
-            red_flags=req.red_flags,
-            triage_level=req.triage_level,
-        )),
+        stream if req.red_flags or req.triage_level == "urgent" else _limited_stream(stream),
         media_type="text/plain"
     )
 

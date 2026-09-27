@@ -167,8 +167,7 @@ function refreshReportResults() {
     }
 
     // 응급 회차에서는 AI 조언 위에 고정 문장을 띄운다.
-    // 서버 프롬프트(_URGENT_BLOCK_*)로 한가한 말투를 막지만 LLM은 지시를 어길 수 있다.
-    // 이 문장은 코드가 만들어 넣으므로 모델이 무슨 말을 하든 긴급도가 흐려지지 않는다.
+    // 서버도 응급 회차에는 모델을 호출하지 않고 고정 안내만 반환한다.
     const surgeryNote = document.getElementById('report-surgery-note');
     if (surgeryNote) surgeryNote.classList.toggle('hidden', !state.riskAnswers?.surgery || state.riskAnswers.surgery === 'none');
     // 술후 경로는 사진 판독을 쓰지 않는다(formatCataractResult가 post_limit을 돌려준다).
@@ -186,8 +185,12 @@ function refreshReportResults() {
         l1.textContent = photoSectionLabel(t, t.rep_l1 || l1.textContent);
     }
     const urgentNote = document.getElementById('opinion-urgent-note');
+    const isUrgent = state.triage?.level === 'urgent';
+    set('opinion-section-title', isUrgent ? t.report_urgent_title : t.rep_info_title);
+    // Do not invite someone to keep chatting instead of acting on urgent advice.
+    const followupBox = document.getElementById('followup-box');
+    if (followupBox) followupBox.classList.toggle('hidden', isUrgent);
     if (urgentNote) {
-        const isUrgent = !!(state.triage && state.triage.level === 'urgent');
         urgentNote.textContent = t.opinion_urgent_note || '';
         urgentNote.classList.toggle('hidden', !isUrgent);
     }
@@ -376,6 +379,7 @@ function cancelFollowup() {
 }
 
 async function askGemmaMore() {
+    if (state.triage?.level === 'urgent') return;
     if (_followupBusy) return;   // 답변 스트리밍 중 재전송 금지 (응답이 뒤섞이는 것 방지)
 
     const inputEl = document.getElementById('user-followup-input');
@@ -514,7 +518,8 @@ function buildReportPdf() {
         s1:      photoSectionLabel(t, t.pdf_s1 || "1. 백내장 AI 분석 결과"),
         s2:      t.pdf_s2        || "2. 황반변성 자가진단 (Amsler Grid)",
         s3:      t.pdf_s3        || "3. AI 문진 주요 소견",
-        s4:      t.pdf_s4        || "4. 종합 AI 소견서 (Powered by Gemma)",
+        s4:      triage?.level === 'urgent' ? ('4. ' + t.report_urgent_title)
+                    : (t.pdf_s4 || "4. 종합 AI 소견서 (Powered by Gemma)"),
         triage:  t.tri_title     || "권장 조치",
         finds:   t.find_title    || "검사 요약 해석",
         findNote: t.find_disclaimer || "",

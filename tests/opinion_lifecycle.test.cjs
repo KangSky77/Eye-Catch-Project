@@ -42,6 +42,23 @@ function setup() {
     return { context, calls, saves, loaders, element, request };
 }
 
+test('urgent reports do not invite or send further AI questions and normal reports restore the form', async () => {
+    const h = setup(), c = h.context;
+    c.translations.ko.report_urgent_title = 'Urgent guidance';
+    c.translations.ko.rep_info_title = 'AI advice';
+    c.state.triage = { level: 'urgent' };
+    c.refreshReportResults();
+    assert.equal(h.element('opinion-section-title').innerText, 'Urgent guidance');
+    assert.equal(h.element('followup-box').classList.contains('hidden'), true);
+    h.element('user-followup-input').value = 'Can I wait until tomorrow?';
+    await c.askGemmaMore();
+    assert.equal(h.calls.length, 0);
+    c.state.triage = { level: 'monitor' };
+    c.refreshReportResults();
+    assert.equal(h.element('opinion-section-title').innerText, 'AI advice');
+    assert.equal(h.element('followup-box').classList.contains('hidden'), false);
+});
+
 test('detail is collapsed, summary is displayed, and full advice is saved', async () => {
     const h = setup(), c = h.context;
     c.state.opinionRequest = h.request('surgery');

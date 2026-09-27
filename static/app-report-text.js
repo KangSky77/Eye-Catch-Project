@@ -15,3 +15,15 @@ const plainFindingsCopy = {
  zh: {plain_btn: "用简单的话查看", plain_original_btn: "查看原文", plain_loading: "正在改写为简单表述...", plain_note: "这里显示预先准备的简单表述。检查结果和判断相同。", plain_kept: "{n} 行尚未准备简单表述，仍显示原文。", plain_failed: "无法改写，已显示原文。"},
 };
 for (const [lang, values] of Object.entries(plainFindingsCopy)) Object.assign(translations[lang], values);
+
+// Emergency sessions use fixed action guidance, not a generated AI opinion.
+const urgentReportCopy = {
+ ko: ['긴급 진료 안내', '응급 신호가 보고되었습니다. 아래 안내대로 지금 바로 진료를 받으세요.'],
+ en: ['Urgent care guidance', 'An emergency warning sign was reported. Seek care now as described below.'],
+ es: ['Orientación de atención urgente', 'Se ha comunicado una señal de alarma. Busque atención ahora siguiendo las indicaciones de abajo.'],
+ fr: ['Consignes de soins urgents', 'Un signe d’alerte a été signalé. Consultez maintenant selon les consignes ci-dessous.'],
+ ja: ['緊急受診の案内', '緊急の兆候が報告されています。以下の案内に従って今すぐ受診してください。'],
+ zh: ['紧急就医指导', '您报告了紧急警示信号。请按照下方指引立即就医。'],
+};
+for (const [lang, [title, note]] of Object.entries(urgentReportCopy))
+ Object.assign(translations[lang], {report_urgent_title: title, opinion_urgent_note: note});

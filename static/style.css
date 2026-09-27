@@ -686,8 +686,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
     z-index: 1;
     /* 한국어 어절 중간에서 줄이 바뀌어 '확인합 / 니다'처럼 끝 두 글자만 넘어갔다 */
     word-break: keep-all;
-    overflow-wrap: break-word;
-    max-width: 600px;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: min(600px, 100%);
     margin: 1.25rem auto 0;
     color: var(--ec-muted);
     font-size: 0.98rem;
@@ -933,7 +934,7 @@ html[data-font="2"] { font-size: 20px; }
 
 /* 3줄 요약 본문 — 리포트에서 가장 중요한 글이므로 기본 글씨(12px)보다 키우고 root 크기를 따라가게 한다.
    (실기기 피드백: A+를 눌러도 요약 글씨가 작게 느껴짐 → .9rem이면 기본 14.4px, 최대 단계 18px) */
-#gemma-opinion-text { font-size: .9rem; line-height: 1.75; font-style: normal; white-space: pre-line; }
+#gemma-opinion-text { font-size: .9rem; line-height: 1.75; font-style: normal; white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
 #followup-response { font-size: .85rem; line-height: 1.7; }
 
 /* ==========================================
@@ -986,7 +987,7 @@ html[data-font="2"] { font-size: 20px; }
     .hero-eye { width: 70px; height: 70px; margin-bottom: 1.35rem; }
     .hero-eye svg { width: 43px; height: 43px; }
     .hero-title { font-size: clamp(2rem, 10vw, 2.65rem); line-height: 1.18; }
-    .hero-description { max-width: 340px; margin-top: 1rem; font-size: .88rem; line-height: 1.65; }
+    .hero-description { max-width: min(340px, 100%); margin-top: 1rem; font-size: .88rem; line-height: 1.65; }
     .screening-flow { width: min(100%, 340px); margin: 1.7rem auto 1.6rem; }
     .flow-item { flex-basis: 70px; font-size: .67rem; }
     .flow-icon { width: 41px; height: 41px; }

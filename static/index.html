@@ -34,7 +34,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260927b">
+    <link rel="stylesheet" href="/static/style.css?v=20260927d">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -426,7 +426,7 @@
                 </div>
 
                 <div class="bg-gradient-to-tr from-indigo-50 to-blue-50 p-5 rounded-2xl border border-blue-100 mt-4">
-                    <p class="text-[10px] font-black text-indigo-400 mb-2" data-i18n="rep_info_title">AI 참고 정보</p>
+                    <p id="opinion-section-title" class="text-[10px] font-black text-indigo-400 mb-2" data-i18n="rep_info_title">AI 참고 정보</p>
 
                     <div id="gemma-loading-container" class="mt-2" aria-live="polite">
                         <p id="gemma-loading-text" class="text-xs font-medium text-slate-400 leading-relaxed" data-i18n="gemma_idle">먼저 'AI 검사'를 진행하면 맞춤 소견이 여기에 표시됩니다.</p>
@@ -465,7 +465,7 @@
             </div>
 
             <div id="consent-box" class="mt-5 hidden"></div>
-            <div class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div id="followup-box" class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <p class="text-xs font-bold text-slate-500 mb-2" id="followup-label" data-i18n="rep_followup_title">AI에게 더 궁금한 점 물어보기</p>
                 <div class="flex gap-2">
                     <input type="text" id="user-followup-input" maxlength="1000" class="flex-1 min-w-0 bg-slate-50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="예: 관리 방법 알려줘" data-i18n-ph="rep_followup_ph" aria-labelledby="followup-label" enterkeyhint="send">
@@ -567,16 +567,16 @@
             <button type="button" id="photo-check-retake" data-i18n="review_retake">다른 사진 고르기</button>
         </div>
     </dialog>
-    <script src="/static/data.js?v=20260927b"></script>
-    <script src="/static/app-photo-review.js?v=20260917a"></script>
+    <script src="/static/data.js?v=20260927c"></script>
+    <script src="/static/app-photo-review.js?v=20260927a"></script>
     <script src="/static/app-safety-copy.js?v=20260916f"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
-    <script src="/static/app-report-text.js?v=20260916a"></script>
+    <script src="/static/app-report-text.js?v=20260927a"></script>
     <script src="/static/app-surgery.js?v=20260927b"></script>
     <script src="/static/app-core.js?v=20260927a"></script>
-    <script src="/static/app-vision.js?v=20260927a"></script>
+    <script src="/static/app-vision.js?v=20260927c"></script>
     <script src="/static/app-chat.js?v=20260927b"></script>
-    <script src="/static/app-report.js?v=20260927a"></script>
+    <script src="/static/app-report.js?v=20260927b"></script>
     <script src="/static/app-disease.js?v=20260927a"></script>
     <script src="/static/app-assess.js?v=20260923c"></script>
     <script src="/static/app-findings.js?v=20260917a"></script>

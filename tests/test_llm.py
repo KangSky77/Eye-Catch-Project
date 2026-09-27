@@ -275,13 +275,41 @@ async def test_퇴원안내만_불확실하면_증상을_지어내지_않게_지
 
 @pytest.mark.anyio
 async def test_수술후_응급신호는_클라이언트의_monitor보다_우선한다(monkeypatch):
-    seen = {}
     async def fake(prompt, facts=None, **kwargs):
-        seen["prompt"] = prompt
+        pytest.fail("Emergency advice must not call the LLM")
         yield "ok"
     monkeypatch.setattr(llm, "sanitized_stream", fake)
-    _ = [part async for part in llm.get_gemma_opinion_stream(
+    out = "".join([part async for part in llm.get_gemma_opinion_stream(
         "-", "-", ["Eye surgery: recent"], "en", cataract_code="postop",
-        red_flags=["post_pain"], triage_level="monitor")]
-    assert "contact the surgical team or emergency eye service NOW" in seen["prompt"]
-    assert "Do NOT tell them to contact the team right now" not in seen["prompt"]
+        red_flags=["post_pain"], triage_level="monitor")])
+    assert "Contact the hospital that performed your surgery" in out
+    assert "now" in out and "go to an emergency department" in out
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("lang", ["ko", "en", "es", "fr", "ja", "zh"])
+@pytest.mark.parametrize("postoperative", [False, True])
+async def test_응급_조언은_모델과_무관하게_세줄_고정안내를_반환한다(monkeypatch, lang, postoperative):
+    async def broken(*args, **kwargs):
+        pytest.fail("Do not wait for Ollama in an emergency")
+        yield "휴식과 선글라스를 권합니다."
+    monkeypatch.setattr(llm, "sanitized_stream", broken)
+    out = "".join([part async for part in llm.get_gemma_opinion_stream(
+        "normal", "normal", ["Eye surgery: recent"] if postoperative else [], lang,
+        red_flags=["rf_acute"], triage_level="monitor")])
+    detail, summary = out.split("<<<SUMMARY>>>\n")
+    assert detail == ""
+    lines = summary.splitlines()
+    copy = llm._URGENT_ADVICE[lang]
+    assert lines == [copy[1] if postoperative else copy[0], copy[2], copy[3]]
+
+
+@pytest.mark.anyio
+async def test_응급_triage만_전달돼도_모델을_호출하지_않는다(monkeypatch):
+    async def broken(*args, **kwargs):
+        pytest.fail("Urgent triage is sufficient to choose emergency advice")
+        yield "ok"
+    monkeypatch.setattr(llm, "sanitized_stream", broken)
+    out = "".join([part async for part in llm.get_gemma_opinion_stream(
+        "normal", "normal", [], "ko", triage_level="urgent")])
+    assert out.startswith("<<<SUMMARY>>>\n지금 바로 안과 진료를 받으세요.")

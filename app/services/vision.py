@@ -100,7 +100,13 @@ def _decode_image_contents(contents: bytes) -> Image.Image:
             f"이미지 해상도가 너무 큽니다. ({w}x{h}) 더 작은 사진을 올려주세요."
         )
     try:
-        return ImageOps.exif_transpose(img.convert("RGB"))
+        # RGB conversion drops JPEG quantization tables. Keep only the derived
+        # quality flag so a degraded JPEG cannot become a confident 0-point result.
+        quant = getattr(img, "quantization", {}).get(0)
+        compressed = bool(quant and sum(quant) / len(quant) > JPEG_MAX_QUANT_MEAN)
+        decoded = ImageOps.exif_transpose(img.convert("RGB"))
+        decoded.info["heavy_jpeg_compression"] = compressed
+        return decoded
     except Image.DecompressionBombError:
         raise _upload_error(413, "IMAGE_RESOLUTION", "이미지 해상도가 너무 큽니다. 더 작은 사진을 올려주세요.")
     except Exception:
@@ -256,6 +262,79 @@ def _glare_fraction(img: Image.Image) -> float:
     a = np.asarray(crop.resize((96, 96)), dtype=np.uint8)
     return float((a.min(axis=2) >= GLARE_SATURATION_LEVEL).mean())
 
+
+# Standard JPEG quality 75 has mean luminance quantization 29; quality 60 is 46.
+# This detects encoded compression only, not degradation previously saved as PNG.
+# Sep 27 stress tests: quality 35 changed a synthetic bilateral-opacity input
+# from 99.1 to 0.0 despite passing sharpness. Request the original, never infer
+# disease from quantization. Existing dataset robustness sample: 0/600 rejected.
+JPEG_MAX_QUANT_MEAN = 30
+
+
+def _stability_scores(targets: list[Image.Image]) -> list[list[float]]:
+    """Mirror and high-quality JPEG probes, batched once; do not average scores.
+
+    These probes can detect a large disagreement, not certify accuracy. Sep 27:
+    600 distinct dataset groups had no large disagreement; synthetic face crops
+    were sensitive to mirroring/compression. No weights or verdict thresholds change.
+    """
+    views = []
+    for target in targets:
+        image = _to_training_aspect(target)
+        buf = io.BytesIO()
+        image.save(buf, format="JPEG", quality=92)
+        jpeg = Image.open(io.BytesIO(buf.getvalue())).convert("RGB")
+        for probe in (ImageOps.mirror(image), jpeg):
+            x = preprocess(probe)
+            views.append(x)
+            if settings.use_tta:
+                views.append(torch.flip(x, dims=[2]))
+    with torch.no_grad():
+        scores = torch.softmax(model(torch.stack(views).to(device)), dim=1)[:, 1]
+    if settings.use_tta:
+        scores = scores.reshape(-1, 2).mean(dim=1)
+    return (scores.reshape(len(targets), 2) * 100).cpu().tolist()
+
+
+def _unstable_prediction(base: float, probes: list[float]) -> bool:
+    scores = [base, *probes]
+    return max(scores) - min(scores) >= 50 or (
+        min(scores) < settings.uncertain_threshold and max(scores) >= settings.borderline_threshold
+    )
+
+
+def _face_stability_scores(source: Image.Image) -> list[list[float]] | None:
+    """Include detection/crop changes, aligning a mirror's eyes back to source x.
+
+    Crop-only probes miss changes in MTCNN's eye coordinates. Re-encoding the
+    whole face changed a synthetic eye from 15.9 to 76.0 on Sep 27.
+    """
+    buf = io.BytesIO()
+    source.save(buf, format="JPEG", quality=92)
+    variants = [ImageOps.mirror(source), Image.open(io.BytesIO(buf.getvalue())).convert("RGB")]
+    scores = []
+    for index, variant in enumerate(variants):
+        try:
+            crops = eye_detector.extract_eye_crops(variant)
+        except eye_detector.EyeDetectionError as exc:
+            raise _upload_error(503, "VALIDATOR_UNAVAILABLE", "사진 검증기를 사용할 수 없습니다.") from exc
+        if crops is None or len(crops) != 2:
+            return None
+        if index == 0:
+            crops = list(reversed(crops))
+        scores.append([_predict_single(crop) for crop in crops])
+    return [list(values) for values in zip(*scores)]
+
+
+def _predictions_unstable(targets: list[Image.Image], bases: list[float], source: Image.Image | None = None) -> bool:
+    probes = _stability_scores(targets)
+    if source is not None:
+        face_probes = _face_stability_scores(source)
+        if face_probes is None:
+            return True
+        probes = [crop + face for crop, face in zip(probes, face_probes)]
+    return any(_unstable_prediction(base, other) for base, other in zip(bases, probes))
+
 def _classify(prob: float):
     """확률(%) → (언어중립 코드, 한국어 기본 문구). 임계값 일관 적용.
 
@@ -279,7 +358,7 @@ def _classify(prob: float):
 # 순서는 아래 게이트가 실제로 도는 순서다. 앞 기준이 무너지면 뒤 기준은 재 봐야 의미가 없어
 # None(아직 확인 못 함)으로 남긴다: 흔들린 사진의 눈 크롭은 눈 게이트에서 0.106점이 나와
 # '눈이 가려졌다'고 잘못 말한다(2026-09-02 실측). 사용자에게는 무너진 첫 기준만 X로 보여준다.
-PHOTO_CHECKS = ("resolution", "single_face", "sharp", "bright", "eye_visible", "eye_open", "no_glare")
+PHOTO_CHECKS = ("resolution", "compression", "single_face", "sharp", "bright", "eye_visible", "eye_open", "no_glare", "stable")
 
 
 def _checklist(passed: dict) -> list:
@@ -342,7 +421,7 @@ def predict_cataract(img: Image.Image):
     # 돌린 사진도 눈 게이트·눈 뜸 판정기를 똑같이 통과해야 판독이 나온다(안전장치는 그대로).
     for upright in candidates:
         retried = _predict_oriented(upright)
-        if retried.get("result_code") in PHOTO_VERDICT_CODES or retried.get("result_code") == "multiple_faces":
+        if retried.get("result_code") in PHOTO_VERDICT_CODES | {"multiple_faces", "unstable"}:
             logger.info("방향을 바로잡아 다시 판독함 (%s → %s)", result.get("result_code"), retried.get("result_code"))
             return retried
     return result
@@ -371,6 +450,14 @@ def _predict_oriented(img: Image.Image):
             "eye", 0, checks=_checklist(passed),
         )
     passed["resolution"] = True
+
+    if img.info.get("heavy_jpeg_compression"):
+        passed["compression"] = False
+        return _empty_result(
+            "compressed", "사진이 많이 압축되어 세부 특징을 확인하기 어렵습니다 (압축하지 않은 원본을 선택해 주세요)",
+            "eye", 0, checks=_checklist(passed),
+        )
+    passed["compression"] = True
 
     # 얼굴 사진이면 눈 부위만 크롭해서 분석 (모델이 눈 클로즈업으로 학습됐기 때문)
     # 얼굴이 안 잡히면 원본을 눈 클로즈업으로 간주하되, 아래의 눈 뜸 검증도 반드시 거친다.
@@ -530,6 +617,14 @@ def _predict_oriented(img: Image.Image):
             glare=round(glare, 4), checks=_checklist(passed),
         )
     passed["no_glare"] = True
+
+    if _predictions_unstable(targets, eye_probs, img if mode == "face" else None):
+        passed["stable"] = False
+        return _empty_result(
+            "unstable", "사진의 작은 변화에 분석 결과가 크게 달라집니다 (두 눈을 정면에서 가까이 또렷하게 다시 촬영해 주세요)",
+            mode, len(eye_crops), checks=_checklist(passed),
+        )
+    passed["stable"] = True
 
     # result_code: 프론트엔드에서 언어별로 번역할 수 있도록 언어 중립적 코드 제공
     # 참고: 과거 'cat_p>=99 → 조명 반사 보류' 규칙은 약한 모델의 오탐을 막으려던

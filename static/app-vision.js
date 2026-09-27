@@ -172,6 +172,41 @@ function uploadErrorMessage(detail) {
 const UPLOAD_MAX_EDGE = 2000;      // 긴 변 상한(px)
 const UPLOAD_JPEG_QUALITY = 0.92;  // 혼탁 판독은 미세한 질감을 보므로 높게 유지
 
+async function hasHeavyJpegCompression(file) {
+    // Canvas resizing replaces JPEG tables. Read the original header first;
+    // never read the whole high-resolution file merely to inspect compression.
+    if (typeof file.slice !== 'function') return false;
+    try {
+        const bytes = new Uint8Array(await file.slice(0, 262144).arrayBuffer());
+        if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return false;
+        let pos = 2;
+        while (pos + 4 <= bytes.length) {
+            if (bytes[pos++] !== 0xff) return false;
+            while (bytes[pos] === 0xff) pos++;
+            const marker = bytes[pos++];
+            if (marker === 0xda || marker === 0xd9) return false;
+            const size = (bytes[pos] << 8) | bytes[pos + 1];
+            if (size < 2 || pos + size > bytes.length) return false;
+            const end = pos + size;
+            if (marker === 0xdb) {
+                let cursor = pos + 2;
+                while (cursor < end) {
+                    const table = bytes[cursor++], precision = table >> 4;
+                    if (precision > 1 || cursor + 64 * (precision + 1) > end) return false;
+                    let sum = 0;
+                    for (let i = 0; i < 64; i++) {
+                        sum += precision ? (bytes[cursor] << 8) | bytes[cursor + 1] : bytes[cursor];
+                        cursor += precision + 1;
+                    }
+                    if ((table & 15) === 0) return sum / 64 > 30;
+                }
+            }
+            pos = end;
+        }
+    } catch (_) { /* Server still checks the uploaded file's actual tables. */ }
+    return false;
+}
+
 async function shrinkForUpload(file) {
     if (!file.type || !file.type.startsWith('image/')) return file;
     let bmp;
@@ -223,6 +258,8 @@ async function runAIAnalysis(droppedFile) {
         return;
     }
     // 서버 상한 검사보다 먼저 줄인다 — 200MP 원본은 축소 전에 이미 10MB를 넘는다
+    const sourceCompressed = await hasHeavyJpegCompression(file);
+    if (preparationId !== _analysisRequestId) return;
     file = await shrinkForUpload(file);
     // Home or a newer selection can invalidate this work while image decoding runs.
     if (preparationId !== _analysisRequestId) return;
@@ -254,6 +291,7 @@ async function runAIAnalysis(droppedFile) {
 
     const fd = new FormData();
     fd.append('file', file);
+    if (sourceCompressed) fd.append('source_compressed', 'true');
 
     const progress = startLoadingProgress();
     const controller = new AbortController();
@@ -284,7 +322,9 @@ async function runAIAnalysis(droppedFile) {
             eyes_hidden: translations[state.lang].ai_eyes_hidden || "눈이 감겨 있거나 가려진 것 같아요. 눈을 크게 뜨고 안경·선글라스를 벗은 뒤 다시 찍어주세요.",
             invalid: translations[state.lang].ai_invalid || "눈 사진이 아닌 것 같아요. 눈을 가까이서 촬영한 사진을 올려주세요.",
             multiple_faces: translations[state.lang].ai_multiple_faces || "Multiple faces were detected. Please retake the photo with one person.",
-            incomplete_eyes: translations[state.lang].ai_incomplete_eyes || "Only one eye was found in the face photo. Retake it with both eyes visible."
+            incomplete_eyes: translations[state.lang].ai_incomplete_eyes || "Only one eye was found in the face photo. Retake it with both eyes visible.",
+            compressed: translations[state.lang].ai_compressed,
+            unstable: translations[state.lang].ai_unstable
         };
         // 문구 유무가 아니라 코드로 판단한다 — 번역이 빠져도 재촬영 코드가 판정으로 새지 않게
         if (Object.prototype.hasOwnProperty.call(retake, d.result_code)) {
