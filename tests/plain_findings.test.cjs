@@ -69,6 +69,26 @@ function pendingRequests(h) {
     return pending;
 }
 
+test('stalled plain-language response restores the original findings and retry button', async () => {
+    const h = setup([]), timers = new Map();
+    let id = 0;
+    h.context.setTimeout = fn => { timers.set(++id, fn); return id; };
+    h.context.clearTimeout = key => timers.delete(key);
+    const pending = pendingRequests(h);
+    const done = h.context.togglePlainFindings();
+    assert.equal(timers.size, 1, 'plain-language loading needs a deadline');
+    for (const fn of [...timers.values()]) fn();
+    await done;
+    assert.equal(pending[0].signal.aborted, true);
+    assert.equal(h.shown(), h.fixed());
+    const button = h.box.children.find(el => el.id === 'plain-findings-btn');
+    assert.equal(button.disabled, false);
+    assert.equal(h.context.toasts.length, 1);
+    pending[0].resolve(); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.shown(), h.fixed());
+    assert.equal(timers.size, 0);
+});
+
 test('new screening discards both cached findings and pending responses', async () => {
     for (const completeFirst of [false, true]) {
         const h = setup([]), c = h.context, pending = pendingRequests(h);

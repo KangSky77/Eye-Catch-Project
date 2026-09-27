@@ -5,10 +5,12 @@ const fs=require('node:fs');
 const path=require('node:path');
 function setup(){
  function el(){return {children:[],textContent:'',disabled:false,classList:{add(){},remove(){},toggle(){}},set innerHTML(v){this.children=[]},appendChild(n){this.children.push(n)},setAttribute(){}}}
- const box=el(), pending=[];
- const c=vm.createContext({state:{lang:'ko'},document:{getElementById:()=>box,createElement:el},fetch:(url,options)=>new Promise(resolve=>pending.push({resolve,options}))});
+ const box=el(), pending=[], timers=new Map(); let timerId=0;
+ const c=vm.createContext({state:{lang:'ko'},AbortController,
+  setTimeout:fn=>{timers.set(++timerId,fn);return timerId},clearTimeout:id=>timers.delete(id),
+  document:{getElementById:()=>box,createElement:el},fetch:(url,options)=>new Promise(resolve=>pending.push({resolve,options}))});
  for(const f of ['data.js','app-safety-copy.js','app-assess.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
- return {c,box,pending,run:s=>vm.runInContext(s,c),agree:()=>box.children[0].children[2].children[0]};
+ return {c,box,pending,timers,run:s=>vm.runInContext(s,c),agree:()=>box.children[0].children[2].children[0]};
 }
 test('language changes during and after save cannot create a second request',async()=>{
  const x=setup();x.run('requestSaveConsent({risk:1})');
@@ -22,6 +24,19 @@ test('language changes during and after save cannot create a second request',asy
  x.pending[0].resolve({ok:true,json:async()=>({status:'saved'})});await done;
  x.run("state.lang='en'; refreshSaveConsent()");
  assert.equal(x.agree().disabled,true);await x.agree().onclick();assert.equal(x.pending.length,1);
+});
+
+for (const bodyStalled of [false,true]) test(`save timeout unlocks controls (body stalled: ${bodyStalled})`,async()=>{
+ const x=setup();x.run('requestSaveConsent({risk:1})');const done=x.agree().onclick();
+ if(bodyStalled){x.pending[0].resolve({ok:true,json:()=>new Promise(()=>{})});await Promise.resolve();}
+ assert.equal(x.timers.size,1,'saving needs a deadline even when the server never replies');
+ for(const fn of [...x.timers.values()])fn();await done;
+ assert.equal(x.pending[0].options.signal.aborted,true);
+ assert.equal(x.agree().disabled,false);
+ assert.equal(x.run('_saveConsent.phase'),'failed');
+ assert.equal(x.timers.size,0);
+ x.box.children[0].children[2].children[1].onclick();
+ assert.equal(x.run('_saveConsent.phase'),'declined_unknown');
 });
 
 test('declining never posts and cannot be reversed by stale buttons or language changes',async()=>{

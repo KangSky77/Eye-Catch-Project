@@ -195,6 +195,7 @@ function renderTriage(container, triage, factors) {
 // 동의 전에는 어떤 결과도 서버로 보내지 않는다. 사진은 애초에 저장하지 않는다.
 // ------------------------------------------------------------------
 let _saveConsent = null;
+const SAVE_TIMEOUT_MS = 30000;
 
 function cancelSaveConsent() {
     _saveConsent = null;
@@ -256,13 +257,25 @@ function refreshSaveConsent() {
         if (_saveConsent !== flow || !['idle', 'failed'].includes(flow.phase)) return;
         flow.phase = 'saving';
         refreshSaveConsent();
+        const controller = new AbortController();
+        let deadline;
         try {
-            const res = await fetch('/api/save-diagnosis', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...flow.payload, consent_to_store: true })
-            });
-            const data = await res.json().catch(() => ({}));
+            const request = (async () => {
+                const res = await fetch('/api/save-diagnosis', {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...flow.payload, consent_to_store: true })
+                });
+                const data = await res.json().catch(() => ({}));
+                return {res, data};
+            })();
+            const {res, data} = await Promise.race([request, new Promise((_, reject) => {
+                deadline = setTimeout(() => {
+                    controller.abort();
+                    reject(new Error('save response timeout'));
+                }, SAVE_TIMEOUT_MS);
+            })]);
             if (_saveConsent !== flow) return;
             if (res.ok && data.status === 'saved') {
                 flow.phase = 'saved';
@@ -272,6 +285,8 @@ function refreshSaveConsent() {
         } catch (e) {
             if (_saveConsent !== flow) return;
             flow.phase = 'failed';
+        } finally {
+            clearTimeout(deadline);
         }
         if (_saveConsent === flow) refreshSaveConsent();
     };

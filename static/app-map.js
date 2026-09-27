@@ -98,6 +98,10 @@ function findNearbyClinics() {
         status.innerText = t.map_offline_short || "지도 오프라인";
         return;
     }
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+        status.innerText = t.map_status_insecure || "현재 접속 주소에서는 위치를 사용할 수 없어요. 보안 연결(HTTPS)로 접속하거나 전체 지도에서 검색해 주세요.";
+        return;
+    }
     if (!navigator.geolocation) {
         status.innerText = t.map_status_unsupported || "이 브라우저는 위치 기능을 지원하지 않아요.";
         return;
@@ -120,7 +124,7 @@ function findNearbyClinics() {
             map.setView([lat, lng], 15);
             if (_userMarker) _userMarker.remove();
             _userMarker = L.marker([lat, lng]).addTo(map)
-                .bindPopup(t.map_you || "내 위치");
+                .bindPopup(translations[state.lang].map_you || "내 위치");
             fetchClinics(lat, lng);
         },
         error => {
@@ -146,18 +150,38 @@ function findNearbyClinics() {
     request(10000);
 }
 
+let _clinicRequestId = 0, _clinicController = null;
+const CLINIC_SEARCH_TIMEOUT_MS = 45000;
+
 async function fetchClinics(lat, lng) {
+    const requestId = ++_clinicRequestId;
+    if (_clinicController) _clinicController.abort();
+    const controller = new AbortController();
+    _clinicController = controller;
+    let deadline;
     const status = document.getElementById('map-status');
     const t = translations[state.lang];
     status.innerText = t.map_searching || "주변 안과를 찾는 중...";
+    // Once a new location is requested, old pins/list entries are no longer current.
+    if (_clinicLayer) _clinicLayer.clearLayers();
+    const list = document.getElementById('clinic-list');
+    if (list) list.innerHTML = '';
     try {
         // 우리 백엔드가 카카오 로컬 API로 검색 (키 없으면 빈 목록 → 폴백)
-        const res = await fetch(`/api/nearby-clinics?lat=${lat}&lng=${lng}`);
-        // 응답 코드를 반드시 확인한다 — 422(좌표 범위 밖)·500이면 본문이 {"detail": ...}라
-        // data.clinics가 undefined가 되고, '검색 실패'가 아니라 '주변에 안과가 없다'는
-        // 엉뚱한 안내가 나간다. 앱의 다른 fetch(app-report/app-vision)는 이미 ok를 본다.
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const request = (async () => {
+            const res = await fetch(`/api/nearby-clinics?lat=${lat}&lng=${lng}`, {signal: controller.signal});
+            // Failed HTTP responses must not look like an empty clinic search.
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        })();
+        // Bound body reading as well as connection establishment.
+        const data = await Promise.race([request, new Promise((_, reject) => {
+            deadline = setTimeout(() => {
+                controller.abort();
+                reject(new Error('clinic search timeout'));
+            }, CLINIC_SEARCH_TIMEOUT_MS);
+        })]);
+        if (requestId !== _clinicRequestId) return;
         let items = (data.clinics || []).map(c => ({
             name: c.name, type: c.type || 'eye_clinic', lat: c.lat, lng: c.lng,
             dist: c.dist || haversine(lat, lng, c.lat, c.lng),
@@ -165,12 +189,17 @@ async function fetchClinics(lat, lng) {
         }));
         items.sort((a, b) => a.dist - b.dist);
         renderClinics(items, lat, lng);
+        const currentT = translations[state.lang];
         status.innerText = items.length
-            ? (t.map_found || "주변 안과 {n}곳을 찾았어요.").replace('{n}', items.length)
-            : (t.map_none || "주변에서 안과를 찾지 못했어요. 전체 지도에서 검색해 주세요.");
+            ? (currentT.map_found || "주변 안과 {n}곳을 찾았어요.").replace('{n}', items.length)
+            : (currentT.map_none || "주변에서 안과를 찾지 못했어요. 전체 지도에서 검색해 주세요.");
     } catch (e) {
-        status.innerText = t.map_search_err || "안과 검색에 실패했어요. 전체 지도에서 검색해 주세요.";
+        if (requestId !== _clinicRequestId) return;
+        status.innerText = translations[state.lang].map_search_err || "안과 검색에 실패했어요. 전체 지도에서 검색해 주세요.";
         renderFallbackLinks(lat, lng);
+    } finally {
+        clearTimeout(deadline);
+        if (requestId === _clinicRequestId) _clinicController = null;
     }
 }
 

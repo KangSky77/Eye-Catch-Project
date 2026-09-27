@@ -128,6 +128,8 @@ function plainFindingsLines(fixed) {
 }
 
 /** '쉬운 말로 보기' ↔ '원래 문장 보기'. 처음 누를 때만 서버에 요청한다. */
+const PLAIN_FINDINGS_TIMEOUT_MS = 15000;
+
 async function togglePlainFindings() {
     const box = document.getElementById('findings-box');
     const t = translations[state.lang];
@@ -148,13 +150,22 @@ async function togglePlainFindings() {
     _plainFindings = request;
     const isCurrent = () => _plainFindings === request && plainFindingsMatch(request, buildFindings());
     renderFindings(box);
+    let deadline;
     try {
-        const res = await fetch('/api/plain-findings', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lang: request.lang, findings: fixed }),
-            signal: request.controller ? request.controller.signal : undefined,
-        });
-        const data = await res.json();
+        const response = (async () => {
+            const res = await fetch('/api/plain-findings', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lang: request.lang, findings: fixed }),
+                signal: request.controller ? request.controller.signal : undefined,
+            });
+            return {res, data: await res.json()};
+        })();
+        const {res, data} = await Promise.race([response, new Promise((_, reject) => {
+            deadline = setTimeout(() => {
+                if (request.controller) request.controller.abort();
+                reject(new Error('plain findings timeout'));
+            }, PLAIN_FINDINGS_TIMEOUT_MS);
+        })]);
         if (!isCurrent()) return;
         if (!res.ok || !Array.isArray(data.lines) || data.lines.length !== fixed.length
             || !data.lines.every(line => line && typeof line.text === 'string' && line.text.trim()
@@ -164,6 +175,8 @@ async function togglePlainFindings() {
         if (!isCurrent()) return;
         resetPlainFindings();
         if (typeof showToast === 'function') showToast(t.plain_failed || '', 'info');
+    } finally {
+        clearTimeout(deadline);
     }
     renderFindings(box);
 }
