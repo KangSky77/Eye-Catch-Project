@@ -203,8 +203,18 @@ function cancelSaveConsent() {
     if (box) { box.innerHTML = ''; box.classList.add('hidden'); }
 }
 
+// 저장 동의 한 번에 하나. 응답이 늦어 '실패'가 뜬 뒤 다시 눌러도 서버가 같은 키를 알아보고
+// 한 번만 저장한다(app/services/database.py save_diagnosis). randomUUID는 보안 연결(HTTPS·localhost)
+// 에서만 있으므로 학교망 IP 주소(HTTP) 접속에서도 동작하도록 대체 키를 둔다.
+function newSaveKey() {
+    try {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    } catch (_) { /* 대체 키로 */ }
+    return 's' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+}
+
 function requestSaveConsent(payload) {
-    _saveConsent = { payload: JSON.parse(JSON.stringify(payload)), phase: 'idle' };
+    _saveConsent = { payload: JSON.parse(JSON.stringify(payload)), phase: 'idle', saveKey: newSaveKey() };
     refreshSaveConsent();
 }
 
@@ -265,7 +275,7 @@ function refreshSaveConsent() {
                     method: 'POST',
                     signal: controller.signal,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...flow.payload, consent_to_store: true })
+                    body: JSON.stringify({ ...flow.payload, consent_to_store: true, save_key: flow.saveKey })
                 });
                 const data = await res.json().catch(() => ({}));
                 return {res, data};

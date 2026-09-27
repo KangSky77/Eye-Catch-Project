@@ -35,6 +35,9 @@ class GemmaRequest(BaseModel):
     # 이걸 안 주면 LLM이 스스로 판단해 화면의 권장 조치와 어긋나는 조언을 쓴다.
     # (프론트가 안 보내도 동작 — 하위 호환)
     triage_level: str = Field(default="", max_length=20)
+    # 문진 항목·위험요인의 언어 중립 코드(sym_chk_recent, risk_diabetes, age_60s …).
+    # AI 소견 '고르기' 방식이 이 사람에게 해당하는 조언만 선택지로 추리는 데 쓴다(app/services/advice.py).
+    flag_codes: list[SymptomCode] = Field(default_factory=list, max_length=40)
 
 # 화면의 해석 문장 한 줄. 가장 긴 고정 문장(암슬러 미측정 안내)이 200자 안팎이라 넉넉히 잡는다.
 FindingText = Annotated[str, Field(max_length=400)]
@@ -67,3 +70,6 @@ class SaveDiagnosisRequest(BaseModel):
     amsler_result: str = Field(..., max_length=100)
     chat_symptoms: list[SymptomText] = Field(default_factory=list, max_length=30)
     gemma_opinion: str = Field(default="", max_length=5000)
+    # 저장 동의 한 번마다 프론트가 만드는 고유 키 — 응답이 늦어 다시 눌러도 한 번만 저장된다.
+    # 키 없이 오는 예전 프론트도 그대로 저장된다(NULL은 고유 인덱스에서 서로 겹치지 않는다).
+    save_key: str | None = Field(default=None, pattern=r"^[A-Za-z0-9-]{8,64}$")

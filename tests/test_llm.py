@@ -267,6 +267,8 @@ async def test_퇴원안내만_불확실하면_증상을_지어내지_않게_지
         seen["prompt"] = prompt
         yield "ok"
     monkeypatch.setattr(llm, "sanitized_stream", fake)
+    # 예전 자유 작문 방식의 프롬프트를 검사한다(opinion_mode='free'). 기본값 'choice'는 test_advice.py.
+    monkeypatch.setattr(llm.settings, "opinion_mode", "free")
     _ = [c async for c in llm.get_gemma_opinion_stream(
         "-", "-", ["Eye surgery: recent / 최근 4주 이내"], "ko", cataract_code="postop", triage_level="confirm")]
     assert "NO warning symptoms" in seen["prompt"]

@@ -70,3 +70,20 @@ test('failed save retries immutable payload and stale completion cannot affect n
  assert.equal(x.agree().disabled,false);
  x.run('cancelSaveConsent();refreshSaveConsent()');assert.equal(x.box.children.length,0);
 });
+
+test('a retry after a timed-out save sends the same save key; a new consent gets a new key', async()=>{
+ // 응답이 늦어 '실패'가 뜬 뒤 다시 눌러도 서버가 같은 키로 알아보고 한 번만 저장한다(2026-09-28).
+ const x=setup();x.run('requestSaveConsent({risk:1})');
+ const first=x.agree().onclick();
+ for(const fn of [...x.timers.values()])fn();await first;
+ assert.equal(x.run('_saveConsent.phase'),'failed');
+ const retry=x.agree().onclick();
+ x.pending[1].resolve({ok:true,json:async()=>({status:'saved'})});await retry;
+ const keys=x.pending.map(p=>JSON.parse(p.options.body).save_key);
+ assert.match(keys[0],/^[A-Za-z0-9-]{8,64}$/);
+ assert.equal(keys[1],keys[0]);
+ x.run('cancelSaveConsent();requestSaveConsent({risk:2})');
+ const next=x.agree().onclick();
+ x.pending[2].resolve({ok:true,json:async()=>({status:'saved'})});await next;
+ assert.notEqual(JSON.parse(x.pending[2].options.body).save_key,keys[0]);
+});

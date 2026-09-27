@@ -621,7 +621,7 @@ def _predict_oriented(img: Image.Image):
     if _predictions_unstable(targets, eye_probs, img if mode == "face" else None):
         passed["stable"] = False
         return _empty_result(
-            "unstable", "사진의 작은 변화에 분석 결과가 크게 달라집니다 (두 눈을 정면에서 가까이 또렷하게 다시 촬영해 주세요)",
+            "unstable", "사진의 작은 변화에 분석 결과가 크게 달라집니다 (밝은 곳에서 흔들림 없이 다시 촬영해 주세요 — 한쪽 눈씩 가까이 찍으면 가장 정확합니다)",
             mode, len(eye_crops), checks=_checklist(passed),
         )
     passed["stable"] = True

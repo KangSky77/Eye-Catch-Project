@@ -98,6 +98,7 @@ async def get_ai_opinion(req: GemmaRequest):
         eye_asymmetric=req.eye_asymmetric,
         red_flags=req.red_flags,
         triage_level=req.triage_level,
+        flag_codes=req.flag_codes,
     )
     # Fixed emergency advice needs no model resources and must not queue
     # behind slow ordinary generations.
@@ -140,6 +141,7 @@ async def save_diagnosis_endpoint(req: SaveDiagnosisRequest):
             req.amsler_result,
             req.chat_symptoms,
             req.gemma_opinion,
+            save_key=req.save_key,
         )
         return {"status": "saved", "id": record_id}
     except Exception:

@@ -6,6 +6,7 @@ import httpx
 from app.core.config import settings
 from app.services import knowledge
 from app.services import safety
+from app.services import advice
 
 logger = logging.getLogger(__name__)
 
@@ -355,9 +356,14 @@ def _ollama_timeout() -> httpx.Timeout:
     return httpx.Timeout(connect=10.0, read=settings.ollama_timeout_seconds, write=30.0, pool=10.0)
 
 
-def _ollama_payload(prompt: str, stream: bool) -> dict:
+def _ollama_payload(prompt: str, stream: bool, fmt: dict | None = None) -> dict:
     # keep_alive=-1: 모델을 VRAM에 영구 상주시켜 콜드스타트(최초 로딩 ~45초) 제거
-    return {"model": settings.ollama_model, "prompt": prompt, "stream": stream, "keep_alive": -1}
+    # options를 비워 두면 모델 파일 기본값(Gemma: temperature 1.0)이 쓰인다 — 명시적으로 낮춘다.
+    payload = {"model": settings.ollama_model, "prompt": prompt, "stream": stream, "keep_alive": -1,
+               "options": {"temperature": settings.ollama_temperature}}
+    if fmt is not None:
+        payload["format"] = fmt   # JSON 스키마 — 모델이 스키마 밖의 값을 낼 수 없게 제약한다
+    return payload
 
 
 async def stream_ollama(prompt: str):
@@ -478,6 +484,50 @@ async def generate_ollama(prompt: str) -> str:
         return response.json().get("response", "").strip()
 
 
+async def generate_json(prompt: str, schema: dict):
+    """JSON 스키마로 출력을 제약한 한 번짜리 호출. 파싱 실패는 None(호출부가 재시도·대체)."""
+    async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
+        response = await client.post(settings.ollama_url, json=_ollama_payload(prompt, stream=False, fmt=schema))
+        response.raise_for_status()
+        text = response.json().get("response", "")
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+async def pick_advice(facts: "advice.Facts", opts: dict) -> tuple[dict, str]:
+    """AI가 선택지 중에서 고른다. 형식이 틀리면 한 번 더, 그래도 틀리면 규칙 기반 선택.
+    Ollama 자체에 연결할 수 없으면 예외를 그대로 올린다 — AI가 없는데 'AI 소견'이라고 내보내지 않는다."""
+    prompt, schema = advice.selection_prompt(facts, opts), advice.schema_for(facts, opts)
+    for attempt in range(2):
+        choice = advice.validate_choice(await generate_json(prompt, schema), facts, opts)
+        if choice:
+            return choice, "ai" if attempt == 0 else "ai_retry"
+    return advice.fallback_choice(facts, opts), "fallback"
+
+
+async def _choice_opinion_stream(facts: "advice.Facts", lang: str):
+    opts = advice.options_for(facts)
+    task = asyncio.create_task(pick_advice(facts, opts))
+    try:
+        while not task.done():
+            # 모델이 고르는 동안에도 연결을 유지한다(ngrok·모바일) — 자유 작문 경로의 하트비트와 같은 역할
+            done, _ = await asyncio.wait({task}, timeout=KEEPALIVE_INTERVAL)
+            if not done:
+                yield KEEPALIVE
+        choice, source = task.result()
+    except Exception:
+        logger.error("⚠️  AI 조언 선택 오류", exc_info=True)
+        yield ERROR_MARKER + "AI_SERVER_ERROR"
+        return
+    finally:
+        if not task.done():
+            task.cancel()
+    logger.info("AI 조언 선택 %s (%s)", choice, source)
+    yield advice.compose(choice, facts, lang)
+
+
 async def warmup_ollama():
     """서버 시작 시 Gemma 모델을 미리 VRAM에 올려둔다(콜드스타트 제거).
     Ollama가 꺼져 있어도 서버는 정상 기동하도록 실패는 조용히 무시."""
@@ -492,13 +542,21 @@ async def warmup_ollama():
 async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[str], lang: str = "ko",
                                    cataract_code: str = "", amsler_abnormal: bool = False,
                                    symptom_codes: list[str] | None = None, eye_asymmetric: bool = False,
-                                   red_flags: list[str] | None = None, triage_level: str = ""):
+                                   red_flags: list[str] | None = None, triage_level: str = "",
+                                   flag_codes: list[str] | None = None):
     if red_flags or triage_level == "urgent":
         copy = _URGENT_ADVICE.get(lang, _URGENT_ADVICE["en"])
         postoperative = cataract_code == "postop" or any("Eye surgery:" in item for item in symptoms)
         # Use the same summary protocol as ordinary advice; no model call or
         # lifestyle suggestion may weaken the app's emergency action.
         yield "<<<SUMMARY>>>\n" + "\n".join((copy[1] if postoperative else copy[0], copy[2], copy[3]))
+        return
+    if settings.opinion_mode == "choice":
+        # AI는 검수된 조언 목록에서 고르기만 한다(app/services/advice.py). 문진 사실을 문장으로
+        # 다시 쓰게 하면 작은 모델·큰 모델 모두 20번 중 3번꼴로 사실을 잘못 옮겼다(2026-09-27 측정).
+        facts = advice.facts_from(symptoms, flag_codes, symptom_codes, cataract_code, amsler_abnormal, triage_level)
+        async for chunk in _choice_opinion_stream(facts, lang):
+            yield chunk
         return
     # RAG: 환자 결과에 맞는 안과 참고지식을 검색해 프롬프트에 주입
     reference = knowledge.format_reference(

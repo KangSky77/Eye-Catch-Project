@@ -117,6 +117,17 @@ def test_save_diagnosis_성공(client, monkeypatch):
     assert r.json() == {"status": "saved", "id": 7}
 
 
+def test_save_diagnosis_저장키를_DB로_넘기고_형식이_틀리면_거부한다(client, monkeypatch):
+    seen = {}
+    async def ok(*a, **kw):
+        seen.update(kw); return 9
+    monkeypatch.setattr(routes, "save_diagnosis", ok)
+    body = {"cataract_result": "정상", "amsler_result": "정상", "consent_to_store": True}
+    assert client.post("/api/save-diagnosis", json={**body, "save_key": "abc-12345678"}).json() == {"status": "saved", "id": 9}
+    assert seen["save_key"] == "abc-12345678"
+    assert client.post("/api/save-diagnosis", json={**body, "save_key": "x; DROP TABLE"}).status_code == 422
+
+
 @pytest.mark.parametrize("consent", [None, False])
 def test_save_diagnosis_명시적_동의_없이는_저장하지_않는다(client, monkeypatch, consent):
     async def should_not_save(*args, **kwargs):
