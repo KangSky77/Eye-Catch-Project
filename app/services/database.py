@@ -124,6 +124,13 @@ async def init_db_pool() -> None:
                 )
                 """
             )
+            # 중복 저장 방지 키(2026-09-28). 필수 컬럼(REQUIRED_COLUMNS)에 넣지 않고 '추가만' 한다 —
+            # 넣으면 이 컬럼이 없는 기존 DB가 구 스키마로 판정돼 테이블 이름이 바뀐다.
+            # 고유 인덱스는 NULL을 여러 개 허용하므로, 키 없이 저장된 예전 기록과도 공존한다.
+            await conn.execute("ALTER TABLE diagnoses ADD COLUMN IF NOT EXISTS save_key TEXT")
+            await conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS diagnoses_save_key_uniq ON diagnoses (save_key)"
+            )
             # CREATE ... IF NOT EXISTS는 '이름'만 본다 — 실제 컬럼이 맞는지 여기서 확인한다.
             await _verify_schema(conn)
     except Exception:
@@ -157,21 +164,29 @@ async def save_diagnosis(
     amsler_result: str,
     symptoms: list[str],
     gemma_opinion: str,
+    save_key: str | None = None,
 ) -> int:
-    """진단 결과를 DB에 저장하고 생성된 id를 반환합니다."""
+    """진단 결과를 DB에 저장하고 생성된 id를 반환합니다.
+
+    save_key: 저장 동의 한 번에 프론트가 만드는 고유 키. 응답이 늦어 화면이 '실패'를 띄운 뒤
+    사용자가 다시 눌러도, 같은 키면 새 행을 만들지 않고 이미 저장된 행의 id를 돌려준다.
+    (ON CONFLICT ... DO UPDATE는 아무것도 바꾸지 않지만 RETURNING으로 기존 id를 받기 위한 형태다.)
+    """
     if _pool is None:
         raise RuntimeError("DB 풀이 초기화되지 않았습니다.")
 
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO diagnoses (cataract_result, amsler_result, symptoms, gemma_opinion)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO diagnoses (cataract_result, amsler_result, symptoms, gemma_opinion, save_key)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (save_key) DO UPDATE SET save_key = EXCLUDED.save_key
             RETURNING id
             """,
             cataract_result,
             amsler_result,
             ", ".join(symptoms),
             gemma_opinion,
+            save_key,
         )
         return row["id"]

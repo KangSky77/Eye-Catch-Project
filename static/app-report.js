@@ -63,6 +63,16 @@ function buildOpinionSymptoms() {
         .slice(0, OPINION_LIST_MAX);
 }
 
+/** 문진 항목·위험요인의 언어 중립 코드. 서버가 '이 사람에게 해당하는 조언'만 선택지로 추린다(app/services/advice.py). */
+function opinionFlagCodes() {
+    return [
+        ...(state.chatSymptoms || []).filter(k => /^sym_[a-z0-9_]+$/.test(k)),
+        ...['diabetes', 'hypertension', 'smoking', 'family']
+            .filter(k => state.riskAnswers?.[k] === true).map(k => 'risk_' + k),
+        ...(state.riskAnswers?.age ? ['age_' + state.riskAnswers.age] : []),
+    ].slice(0, 40);
+}
+
 async function finish() {
     // 리포트 진입은 알림 신청이 아니다. 권한 창이 진료 안내를 가리지 않게 한다.
     // 날짜만 저장하고 문구는 refreshReportResults가 현재 언어로 붙인다(예전엔 'ISSUED'만 영어로 남았다)
@@ -116,7 +126,10 @@ async function finish() {
         // 제 나름의 판단을 해서 같은 화면 안에서 두 안내가 어긋난다 — 실제로 카드는
         // '예정된 진료를 따르세요'인데 AI 소견 3줄이 전부 '지금 수술팀에 연락하세요'였다.
         // 수술 후 '퇴원 안내만 불확실'은 긴급도는 now지만 증상이 없다 — LLM이 증상을 지어내지 않게 따로 알린다.
-        triage_level: (state.triage && (state.triage.kind === 'confirm' ? 'confirm' : state.triage.level)) || ''
+        triage_level: (state.triage && (state.triage.kind === 'confirm' ? 'confirm' : state.triage.level)) || '',
+        // 언어 중립 코드 — 서버가 '이 사람에게 해당하는 조언'만 선택지로 추린다(app/services/advice.py).
+        // 번역된 문장(chat_symptoms)으로는 언어마다 판별 규칙을 따로 둬야 해서 코드를 따로 보낸다.
+        flag_codes: opinionFlagCodes()
     };
     await runAiOpinion();
 }
@@ -308,7 +321,14 @@ async function runAiOpinion() {
         // 마커가 오면 앞이 상세, 뒤가 요약이다. 모델이 마커를 빠뜨리는 일이 실제로 있는데,
         // 그때 전문을 양쪽에 다 넣으면 같은 글이 요약칸과 상세칸에 두 번 보인다.
         // 마커가 없으면 앞 3줄을 요약으로 쓰고 나머지를 상세로 돌린다.
-        const markedSummary = parts.length > 1 ? lines(parts.slice(1).join('\n')) : [];
+        let markedSummary = parts.length > 1 ? lines(parts.slice(1).join('\n')) : [];
+        // 큰 모델(e4b)은 요약 3문장을 줄바꿈 없이 한 줄로 이어 쓰는 일이 잦았다(2026-09-27 측정 30번 중 8번).
+        // 그대로 두면 '3줄 요약'이 한 문단 덩어리로 보인다 — 한 줄이면 문장 단위로 나눈다.
+        if (markedSummary.length === 1) {
+            // 일본어·중국어는 마침표 뒤에 공백이 없다
+            const sentences = markedSummary[0].split(/(?<=[.!?])\s+|(?<=[。！？])/).map(x => x.trim()).filter(Boolean);
+            if (sentences.length > 1) markedSummary = sentences;
+        }
         const summary = markedSummary.length ? markedSummary : lines(parts[0]).slice(0, 3);
         if (!summary.length) { showFailure(); return; }
         const detail = parts.length > 1 ? parts[0].trim() : lines(clean).slice(3).join('\n');

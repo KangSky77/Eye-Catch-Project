@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     # VRAM이 넉넉한 실습실 PC에서는 .env의 OLLAMA_MODEL로 e4b를 지정하면 된다.
     ollama_model: str = "gemma4:e2b-it-qat"
     ollama_timeout_seconds: float = 120.0
+    # 샘플링 온도. 지정하지 않으면 Gemma 모델 파일의 기본값(temperature 1.0, 창작용)이 쓰였다 —
+    # 문진 사실을 그대로 옮겨야 하는 조언·챗봇에는 너무 높다(2026-09-27 확인). 낮출수록 답이 일정해진다.
+    ollama_temperature: float = 0.2
+    # AI 소견 3줄을 만드는 방식.
+    #   choice — AI는 검수된 조언 목록에서 '고르기'만 하고 문장은 서버가 조립한다(app/services/advice.py).
+    #            문진 사실을 문장으로 다시 쓰지 않으므로 사실을 뒤집을 수 없다. (기본)
+    #   free   — 예전 방식. AI가 조언 문장을 직접 쓰고 안전 필터가 걸러낸다(비교 측정용으로 남김).
+    opinion_mode: str = "choice"
     kakao_rest_key: str = ""   # 카카오 로컬 REST API 키(.env의 KAKAO_REST_KEY) — 안과 검색용
     max_upload_size_bytes: int = 10 * 1024 * 1024  # .env의 MAX_UPLOAD_SIZE_BYTES로 덮어쓰기 가능
     # 무거운 추론/LLM 작업이 동시에 몰릴 때 CPU·VRAM이 고갈되지 않도록 제한한다.

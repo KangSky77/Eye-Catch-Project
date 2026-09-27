@@ -139,3 +139,12 @@ test('수술 경로의 촬영 버튼은 "수술 관련 사진"이라고 부르�
  }
  assert.equal(vm.runInContext('translations.ko.nav_disease',c),'질환 안내');
 });
+
+test('AI 소견 요청에 문진 항목·위험요인 코드가 언어와 무관하게 실린다', () => {
+ const c=vm.createContext({state:{lang:'en',riskAnswers:{diabetes:true,hypertension:false,smoking:true,age:'60s'},
+  chatSymptoms:['sym_chk_recent','sym_dr_fundus','번역된 문장']},window:{addEventListener(){}},console});
+ const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ vm.runInContext(src.slice(src.indexOf('function opinionFlagCodes'),src.indexOf('async function finish')),c);
+ assert.deepEqual(Array.from(vm.runInContext('opinionFlagCodes()',c)),
+  ['sym_chk_recent','sym_dr_fundus','risk_diabetes','risk_smoking','age_60s']);
+});

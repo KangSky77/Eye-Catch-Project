@@ -69,3 +69,38 @@ async def test_백업이름이_이미_있으면_다음_번호를_쓴다():
     name = await database._rename_incompatible_schema(conn, {"diag_id"})
     assert name == "diagnoses_legacy_2"
     assert 'RENAME TO "diagnoses_legacy_2"' in conn.executed[0]
+
+
+def test_중복저장_방지_키는_필수컬럼이_아니다():
+    """save_key를 필수 컬럼에 넣으면 이 컬럼이 없는 기존 DB가 '구 스키마'로 판정돼 테이블 이름이 바뀐다.
+    기동 때 ADD COLUMN IF NOT EXISTS로 추가만 해야 한다."""
+    assert "save_key" not in database.REQUIRED_COLUMNS
+
+
+class _SaveConn:
+    def __init__(self): self.calls = []
+    async def fetchrow(self, query, *args):
+        self.calls.append((query, args)); return {"id": 42}
+
+
+class _Pool:
+    def __init__(self, conn): self.conn = conn
+    def acquire(self):
+        pool = self
+        class _Ctx:
+            async def __aenter__(self): return pool.conn
+            async def __aexit__(self, *exc): return False
+        return _Ctx()
+
+
+@pytest.mark.anyio
+async def test_같은_저장키는_기존_행_id를_돌려받는_형태로_저장한다(monkeypatch):
+    conn = _SaveConn()
+    monkeypatch.setattr(database, "_pool", _Pool(conn))
+    assert await database.save_diagnosis("정상", "정상", ["a"], "소견", save_key="k-12345678") == 42
+    query, args = conn.calls[0]
+    assert "ON CONFLICT (save_key)" in query and "RETURNING id" in query
+    assert args[-1] == "k-12345678"
+    # 키 없이 오는 예전 프론트도 저장된다(NULL은 고유 인덱스에서 겹치지 않는다)
+    await database.save_diagnosis("정상", "정상", [], "")
+    assert conn.calls[1][1][-1] is None
