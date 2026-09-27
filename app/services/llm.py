@@ -108,6 +108,8 @@ def _build_opinion_prompt(cataract: str, amsler: str, symptoms: list[str], lang:
        (예: 세극등 현미경 검사, 안저 검사, 안압 측정, OCT)
 2줄째: 문진에서 확인된 항목과 직접 관련된 생활 관리 조언 한 가지.
        (자외선 차단, 금연, 혈당·혈압 관리, 눈 휴식 등 참고 정보에 있는 것)
+       'Diabetes: yes'가 있으면 2줄째는 반드시 혈당 관리 조언이어야 합니다('Smoking: yes'는 금연, 'Hypertension: yes'는 혈압 관리).
+       '규칙적인 생활 습관'처럼 어느 항목과도 이어지지 않는 조언은 쓰지 마세요.
 3줄째: 또 다른 생활 관리 조언 한 가지, 또는 정기 검진 권유.
 - 선글라스는 낮 야외 활동에만 권하세요. 밤·야간 운전·어두운 곳에서는 선글라스나 색 렌즈를 권하지 마세요.
 - "눈은 소중합니다" 같은 뻔한 일반론은 쓰지 마세요. 각 줄은 이 환자의 문진 항목과 연결돼야 합니다.""".strip()
@@ -141,6 +143,8 @@ Line 1: Based on the [Reference Medical Information], name 1-2 exams they may re
         (e.g. slit-lamp exam, fundus exam, intraocular pressure measurement, OCT) so they know what to expect.
 Line 2: One concrete lifestyle tip directly related to the flagged questionnaire items
         (UV protection, smoking cessation, blood sugar/pressure control, eye rest — from the reference).
+        If the facts say 'Diabetes: yes', line 2 MUST be blood sugar control ('Smoking: yes' → quitting, 'Hypertension: yes' → blood pressure control).
+        Never write a tip like "keep a regular routine" that is not tied to any flagged item.
 Line 3: One more lifestyle tip, or a reminder to get regular check-ups.
 - Recommend sunglasses only for daytime outdoor activity. Never recommend sunglasses or tinted lenses at night, for night driving, or in the dark.
 - Avoid generic filler like "eyes are precious". Every line must connect to this patient's flagged items.""".strip()
@@ -495,6 +499,9 @@ Do not recommend changing prescribed treatment or invent a recovery duration.
 Explain in 6 short sentences: the appropriate next action, what reported symptoms to tell
 the team, limitations of this questionnaire, and the importance of the team's aftercare.
 Do not repeat the same advice. No headings or numbered lists.
+Call the surgical team "the hospital or clinic that performed the surgery" in the reader's language
+(Korean: "수술한 병원"); never write the bare word "team". Keep one polite tone throughout
+(Korean: end every sentence with -세요 or -습니다, not -하십시오).
 Then put <<<SUMMARY>>> on a separate line.
 Copy exactly THREE important sentences VERBATIM from your detailed explanation,
 each on its own line. The first must preserve urgency when emergency signs are true.

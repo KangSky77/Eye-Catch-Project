@@ -108,7 +108,11 @@ function findNearbyClinics() {
     const restoreBtn = setButtonBusy(document.getElementById('map-locate-btn'), t.map_status_loading || "");
     const done = () => { _locating = false; restoreBtn(); };
 
-    navigator.geolocation.getCurrentPosition(
+    // 첫 위치 측정(콜드 스타트)은 10초를 넘기기도 한다 — 갤럭시 S25 Ultra 실내에서 권한 허용 직후
+    // 첫 요청이 시간 초과, 바로 다음 요청은 3ms(2026-09-27). 처음 쓰는 사람은 항상 첫 요청이라
+    // 시간 초과 안내부터 보게 됐다. 시간 초과면 한 번만 더 길게 기다린다.
+    let retried = false;
+    const request = (timeout) => navigator.geolocation.getCurrentPosition(
         pos => {
             done();
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -120,6 +124,12 @@ function findNearbyClinics() {
             fetchClinics(lat, lng);
         },
         error => {
+            // 재시도는 done()보다 먼저 — 버튼은 계속 '조회 중'으로, 잠금(_locating)도 유지한다
+            if (error.code === 3 && !retried) {
+                retried = true;
+                request(20000);
+                return;
+            }
             done();
             const currentT = translations[state.lang];
             if (error.code === 1) {
@@ -131,8 +141,9 @@ function findNearbyClinics() {
             }
         },
         // timeout이 없으면 권한 대화상자를 무시했을 때 버튼이 영영 '조회 중'으로 남는다
-        { timeout: 10000, maximumAge: 60000 }
+        { timeout, maximumAge: 60000 }
     );
+    request(10000);
 }
 
 async function fetchClinics(lat, lng) {

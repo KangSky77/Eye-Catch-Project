@@ -879,7 +879,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, [role="button"]
     border-radius: 1rem; background: var(--ec-blue); color: #fff; font-weight: 800; text-align: center;
     box-shadow: 0 10px 20px -12px rgba(21, 94, 239, .8); cursor: pointer;
 }
-.camera-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; margin-right: 6px; }
+.camera-btn svg { display: inline-block; width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; margin-right: 6px; }
 /* 터치 기기 판별은 app-vision.js가 body.touch-device 로 한다.
    CSS 미디어쿼리 (hover: none) and (pointer: coarse) 를 썼더니 S펜이 있는 갤럭시 Ultra(S25 Ultra 실기기)는
    크롬이 hover: hover 로 보고해 버튼이 숨겨졌다. */
@@ -1702,3 +1702,7 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 /* 재촬영 안내 본문 — 기준 목록 아래의 보조 설명이므로 작게 */
 .photo-review .pc-reason { font-size: .75rem; line-height: 1.6; color: #475569; margin-top: 10px; }
 .photo-review img { max-height: 22dvh; }
+
+/* 수술 경로에서는 일반 촬영 가이드 바로 아래에 수술 안내가 붙는다 — 두 상자 사이를 좁힌다 */
+#upload-guide:has(+ .surgery-note:not([hidden])) { margin-bottom: .75rem; }
+#upload-guide + .surgery-note { margin-top: 0; }

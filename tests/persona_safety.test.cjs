@@ -447,3 +447,14 @@ test('12960 combinations preserve urgency, postoperative limits and remote laser
  }
  assert.equal(count,12960);
 });
+
+test('positive diabetes, hypertension and smoking answers reach the opinion as explicit facts', () => {
+ // 번역된 '당뇨' 한 단어만 가던 때에는 소형 모델이 당뇨 환자에게도 일반론만 썼다(2026-09-27 실측).
+ for(const lang of ['ko','en','es','fr','ja','zh']){
+  const c=setup('none',lang);
+  Object.assign(c.state.riskAnswers,{hypertension:true,diabetes:true,smoking:true});
+  const facts=vm.runInContext('buildOpinionSymptoms()',c);
+  for (const f of ['Diabetes: yes','Hypertension: yes','Smoking: yes']) assert.ok(facts.includes(f),lang+' '+f);
+  assert.ok(!facts.includes('Diabetes: no'),lang);
+ }
+});

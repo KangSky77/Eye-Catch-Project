@@ -78,7 +78,9 @@ const VISION_SIMS = [
     {   // 황반변성 — 중심 암점: 정면으로 보는 대상이 일그러지고 가려진다
         key: 'amd',
         filter: t => `contrast(${(1 - 0.06 * t).toFixed(2)})`,
-        spots: [{ x: 50, y: 44, w: 44, h: 52, color: 'rgb(58,50,45)', alpha: 0.92, blur: 14 }]
+        // 밝은 사진 위의 반투명 갈색은 '그림자'로만 읽혔다(2026-09-27 실기기 80%에서 가운데 건물이 그대로 보임).
+        // 더 어둡게, 그리고 ramp로 슬라이더 70% 부근에서 거의 가려지게 해 '가운데가 안 보인다'가 전달되게 한다.
+        spots: [{ x: 50, y: 44, w: 46, h: 56, color: 'rgb(30,27,25)', alpha: 0.97, blur: 16, ramp: 1.45 }]
     },
     {   // 녹내장 — 주변 시야 결손: 가운데는 멀쩡한데 바깥부터 사라진다(터널 시야)
         key: 'glaucoma',
@@ -165,7 +167,10 @@ function buildVisionSim(idx, labels) {
         const t = Number(range.value) / 100;
         img.style.filter = sim.filter(t);
         veil.style.background = t > 0 && sim.overlay ? sim.overlay(t) : 'none';
-        spotEls.forEach((el, i) => { el.style.opacity = (sim.spots[i].alpha * t).toFixed(2); });
+        spotEls.forEach((el, i) => {
+            const s = sim.spots[i];
+            el.style.opacity = (s.alpha * Math.min(1, t * (s.ramp || 1))).toFixed(2);
+        });
         range.setAttribute('aria-valuetext',
             t === 0 ? (labels.sim_normal || 'Normal vision')
                     : `${labels.sim_strength || 'Severity'} ${Math.round(t * 100)}%`);

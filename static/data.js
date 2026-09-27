@@ -13,11 +13,11 @@
 // ==========================================
 const translations = {
     ko: {
-        nav_test: "AI 검사", nav_disease: "질환 소개", nav_report: "건강 리포트", nav_map: "병원 찾기",
+        nav_test: "AI 검사", nav_disease: "질환 안내", nav_report: "건강 리포트", nav_map: "병원 찾기",
         intro_title: "당신의 눈 건강,<br><span class='brand-nowrap'>Eye-Catch</span>가 지켜드립니다", intro_desc: "사진 AI·자가검사·문진으로 눈 건강 위험 신호를 한 번에 확인합니다.", scope_note: "사진 AI는 눈에 보이는 진행성 수정체 혼탁 특징만 확인합니다(초기 백내장은 사진으로 확인이 어렵습니다). 황반변성은 암슬러 격자 자가검사로, 녹내장·당뇨망막병증은 문진으로 위험 신호를 살펴봅니다.",
         flow_photo: "사진 분석", flow_check: "자가진단", flow_report: "맞춤 리포트",
         start_btn: "Eye-Catch 시작하기", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
-        guide_title: "정확한 분석 가이드", guide_list: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요.</li>",
+        guide_title: "정확한 분석 가이드", guide_list: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요. 얼굴 정면 사진도 분석할 수 있어요.</li>",
         tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "흔들리지 않게 촬영하세요", tip1_d: "팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사는 혼탁으로 잘못 읽힐 수 있어요. 직사광선이나 조명이 눈에 직접 비치지 않는 고른 실내 조명에서 찍어주세요.", tip3_t: "정면을 보고 눈을 크게 떠 주세요", tip3_d: "얼굴 전체를 정면으로 찍어도 되고, 한쪽 눈을 20~30cm에서 가까이 찍으면 더 정확해요.", tips_btn: "이해했습니다!",
         loading_title: "눈 사진을 확인하고 있어요...", ai_res_title: "사진에서 확인한 눈의 특징", next_amsler: "2단계: 선이 휘어 보이는지 확인하기",
         ams_title: "격자무늬로 중심 시야 확인하기", ams_ok: "선이 곧게 보여요", ams_bad: "선이 휘거나 안 보이는 곳이 있어요",
@@ -71,7 +71,7 @@ const translations = {
         intro_title: "Your Eye Health,<br>Protected by <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "Photo AI, self-tests and a questionnaire check your eyes for risk signals in one go.", scope_note: "The photo AI only checks for visible progressive lens-opacity features (early cataract is hard to see in a photo). Macular degeneration uses the Amsler grid self-test; glaucoma and diabetic retinopathy risk comes from the questionnaire.",
         flow_photo: "Photo analysis", flow_check: "Self-check", flow_report: "Personal report",
         start_btn: "Start Eye-Catch", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Screening results (verdict text, questionnaire answers, AI summary) are stored only if you consent on the report screen; the photo itself is never stored. Stored results stay in the team's own database.",
-        guide_title: "Analysis Guide", guide_list: "<li>Hold the phone steady.</li><li>Turn the flash off.</li><li>Look straight ahead and center one eye at a time.</li>",
+        guide_title: "Analysis Guide", guide_list: "<li>Hold the phone steady.</li><li>Turn the flash off.</li><li>Look straight ahead and center one eye at a time. A front-facing face photo also works.</li>",
         tips_title: "Photo Tips for<br>Accurate Analysis", tip1_t: "Hold the phone steady", tip1_d: "Tuck your elbows in or lean on a wall, and wait for focus before shooting. Blurry photos can't be analyzed.", tip2_t: "Turn the flash off", tip2_d: "Flash reflections can be misread as clouding. Use soft, even room light without direct light reflecting in the eye.", tip3_t: "Face the camera with eyes wide open", tip3_d: "A straight-on face photo works; a close-up of one eye from 20–30 cm is even more accurate.", tips_btn: "Got it!",
         loading_title: "AI Analyzing...", ai_res_title: "Opacity feature analysis", next_amsler: "Step 2: Macular Test",
         ams_title: "Amsler Grid Test", ams_ok: "Normal (Straight)", ams_bad: "Distorted/Spot",
@@ -125,7 +125,7 @@ const translations = {
         intro_title: "Tu salud ocular,<br>protegida por <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "IA de fotos, autopruebas y cuestionario revisan de una vez las señales de riesgo ocular.", scope_note: "La IA fotográfica solo detecta rasgos visibles de opacidad avanzada del cristalino (la catarata inicial es difícil de ver en una foto). La degeneración macular se revisa con la rejilla de Amsler, y el riesgo de glaucoma y retinopatía diabética mediante el cuestionario.",
         flow_photo: "Análisis de foto", flow_check: "Autoevaluación", flow_report: "Informe personal",
         start_btn: "Iniciar Eye-Catch", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados (texto del veredicto, respuestas, resumen de IA) se guardan solo si da su consentimiento en la pantalla del informe; la foto nunca se guarda.",
-        guide_title: "Guía", guide_list: "<li>Mantenga el teléfono firme.</li><li>Apague el flash.</li><li>Mire al frente y centre un ojo cada vez.</li>",
+        guide_title: "Guía", guide_list: "<li>Mantenga el teléfono firme.</li><li>Apague el flash.</li><li>Mire al frente y centre un ojo cada vez. También sirve una foto de frente de la cara.</li>",
         tips_title: "Consejos de foto para<br>un análisis preciso", tip1_t: "Mantenga el teléfono firme", tip1_d: "Apoye los codos en el cuerpo o en una pared y espere a que enfoque antes de disparar. Las fotos movidas no se pueden analizar.", tip2_t: "Apague el flash", tip2_d: "Los reflejos pueden confundirse con opacidad. Use una luz interior suave y uniforme, sin reflejos directos en el ojo.", tip3_t: "Mire a la cámara con los ojos bien abiertos", tip3_d: "Sirve una foto de frente de la cara; un primer plano de un ojo a 20–30 cm es aún más preciso.", tips_btn: "¡Entendido!",
         loading_title: "IA analizando...", ai_res_title: "Análisis de rasgos de opacidad", next_amsler: "Paso 2: Mácula",
         ams_title: "Prueba de Amsler", ams_ok: "Normal (Recto)", ams_bad: "Distorsionado/Mancha",
@@ -179,7 +179,7 @@ const translations = {
         intro_title: "Votre santé oculaire,<br>protégée par <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "IA photo, auto-tests et questionnaire vérifient d'un coup les signaux de risque oculaire.", scope_note: "L'IA photo ne repère que les signes visibles d'opacité évolutive du cristallin (une cataracte débutante y est difficile à voir). La DMLA est vérifiée avec la grille d'Amsler, le risque de glaucome et de rétinopathie diabétique par le questionnaire.",
         flow_photo: "Analyse photo", flow_check: "Auto-évaluation", flow_report: "Rapport personnel",
         start_btn: "Démarrer Eye-Catch", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats (verdict, réponses au questionnaire, résumé IA) ne sont enregistrés que si vous y consentez sur l'écran du rapport ; la photo elle-même n'est jamais conservée.",
-        guide_title: "Guide", guide_list: "<li>Tenez le téléphone bien stable.</li><li>Désactivez le flash.</li><li>Regardez droit devant et centrez un œil à la fois.</li>",
+        guide_title: "Guide", guide_list: "<li>Tenez le téléphone bien stable.</li><li>Désactivez le flash.</li><li>Regardez droit devant et centrez un œil à la fois. Une photo du visage de face convient aussi.</li>",
         tips_title: "Conseils photo pour<br>une analyse précise", tip1_t: "Tenez le téléphone bien stable", tip1_d: "Gardez les coudes contre le corps ou appuyez-vous au mur, et attendez la mise au point avant de déclencher. Une photo floue ne peut pas être analysée.", tip2_t: "Désactivez le flash", tip2_d: "Les reflets peuvent être pris pour une opacité. Utilisez un éclairage intérieur doux et uniforme, sans reflet direct dans l'œil.", tip3_t: "Regardez l'objectif, les yeux grands ouverts", tip3_d: "Une photo du visage de face convient ; un gros plan d'un œil à 20–30 cm est encore plus précis.", tips_btn: "Compris !",
         loading_title: "IA en analyse...", ai_res_title: "Analyse des signes d'opacité", next_amsler: "Étape 2: Macula",
         ams_title: "Test de la grille d'Amsler", ams_ok: "Normal (Droit)", ams_bad: "Déformé/Tache",
@@ -233,7 +233,7 @@ const translations = {
         intro_title: "あなたの目の健康、<br><span class='brand-nowrap'>Eye-Catch</span>がお守りします", intro_desc: "写真AI・自己検査・問診で目のリスクサインをまとめて確認します。", scope_note: "写真AIは目に見える進行性の水晶体混濁の特徴のみを確認します（初期白内障は写真では確認しにくい）。黄斑変性はアムスラーグリッドの自己検査で、緑内障・糖尿病網膜症は問診でリスクを確認します。",
         flow_photo: "写真分析", flow_check: "セルフチェック", flow_report: "個別レポート",
         start_btn: "Eye-Catchを始める", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "検査結果（判定文・問診回答・AI要約）はレポート画面で同意した場合のみ保存され、写真自体は保存されません。",
-        guide_title: "正確な分析のために", guide_list: "<li>手ブレしないように撮ってください。</li><li>フラッシュはオフにしてください。</li><li>正面を向き、片目ずつ画面中央に合わせてください。</li>",
+        guide_title: "正確な分析のために", guide_list: "<li>手ブレしないように撮ってください。</li><li>フラッシュはオフにしてください。</li><li>正面を向き、片目ずつ画面中央に合わせてください。顔の正面写真でも分析できます。</li>",
         tips_title: "正確な分析のための<br>撮影のコツ", tip1_t: "手ブレしないように撮影", tip1_d: "肘を体につけるか壁にもたれ、ピントが合ってから撮ってください。ブレた写真は分析できません。", tip2_t: "フラッシュはオフに", tip2_d: "反射は濁りと誤読されることがあります。目に光が直接映り込まない、均一で柔らかな室内光で撮ってください。", tip3_t: "正面を向いて目を大きく開けて", tip3_d: "顔全体を正面から撮っても大丈夫です。片目を20〜30cmで近くから撮るとさらに正確です。", tips_btn: "わかりました！",
         loading_title: "AI分析中...", ai_res_title: "混濁特徴の分析結果", next_amsler: "ステップ2：黄斑変性テスト",
         ams_title: "アムスラーグリッドテスト", ams_ok: "正常（まっすぐ）", ams_bad: "歪み/暗点",
@@ -283,11 +283,11 @@ const translations = {
         skip_to_content: "本文へスキップ", upload_drop_hint: "ここに写真をドラッグ＆ドロップすることもできます。", retry_photo: "← 別の写真で再分析"
     },
     zh: {
-        nav_test: "AI检测", nav_disease: "疾病介绍", nav_report: "健康报告", nav_map: "寻找医院",
+        nav_test: "AI检测", nav_disease: "疾病指南", nav_report: "健康报告", nav_map: "寻找医院",
         intro_title: "您的眼部健康，<br>由<span class='brand-nowrap'>Eye-Catch</span>守护", intro_desc: "照片AI、自测与问卷，一次性检查眼部风险信号。", scope_note: "照片AI仅检测可见的进行性晶状体混浊特征（早期白内障难以通过照片确认）。黄斑变性通过阿姆斯勒方格表自测，青光眼和糖尿病视网膜病变通过问卷评估风险。",
         flow_photo: "照片分析", flow_check: "自我检测", flow_report: "个性化报告",
         start_btn: "开始 Eye-Catch", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "检测结果（判定文字、问卷答案、AI摘要）仅在报告页面同意后才会保存，照片本身不会保存。",
-        guide_title: "准确分析指南", guide_list: "<li>请保持手机稳定。</li><li>请关闭闪光灯。</li><li>请直视前方，每次将一只眼睛置于画面中央。</li>",
+        guide_title: "准确分析指南", guide_list: "<li>请保持手机稳定。</li><li>请关闭闪光灯。</li><li>请直视前方，每次将一只眼睛置于画面中央。正面脸部照片也可以分析。</li>",
         tips_title: "拍摄小技巧<br>让分析更准确", tip1_t: "拍摄时请保持稳定", tip1_d: "手肘贴身或靠墙固定，等对焦后再拍。照片模糊将无法分析。", tip2_t: "请关闭闪光灯", tip2_d: "反光可能被误判为混浊。请在柔和、均匀的室内光线下拍摄，避免光线直接反射到眼睛。", tip3_t: "正对镜头，睁大眼睛", tip3_d: "可以正面拍整张脸；在20–30厘米处近拍一只眼睛会更准确。", tips_btn: "明白了！",
         loading_title: "AI分析中...", ai_res_title: "混浊特征分析结果", next_amsler: "第二步：黄斑变性测试",
         ams_title: "阿姆斯勒方格表", ams_ok: "正常（线条笔直）", ams_bad: "扭曲/黑影",
@@ -504,7 +504,7 @@ const extraStrings = {
     tri_title: "권장 조치", tri_now: "빠른 시일 내 안과 진료를 권합니다",
     tri_weeks: "수 주 내 안과 검진을 권합니다", tri_monitor: "정기 검진으로 경과를 관찰하세요",
     tri_now_why: "사진 분석 또는 암슬러 검사에서 확인이 필요한 소견이 있었습니다.",
-    tri_weeks_why: "경계 소견 또는 확인이 필요한 증상이 있었습니다.",
+    tri_weeks_why: "경계 소견, 확인이 필요한 증상, 또는 미뤄진 검진(안저검사·정기 검진)이 있었습니다.",
     tri_monitor_why: "이번 선별검사에서 빠른 확인을 권할 신호는 없었습니다. 정기 검진을 대신하지는 않습니다.",
     ams_which_left: "1/2 · 왼쪽 눈 검사 — 오른쪽 눈을 가리고 중앙 점을 보세요",
     ams_which_right: "2/2 · 이제 오른쪽 눈 — 왼쪽 눈을 가리고 중앙 점을 보세요",
@@ -541,7 +541,7 @@ const extraStrings = {
     tri_title: "Recommended action", tri_now: "See an ophthalmologist soon",
     tri_weeks: "Schedule an eye exam within a few weeks", tri_monitor: "Monitor with routine check-ups",
     tri_now_why: "The photo analysis or Amsler test showed a finding that should be checked.",
-    tri_weeks_why: "A borderline finding or a symptom that should be checked was reported.",
+    tri_weeks_why: "A borderline finding, a symptom that should be checked, or an overdue eye exam (retina check or routine exam) was reported.",
     tri_monitor_why: "This screening did not show a signal requiring prompt review. It does not replace routine eye exams.",
     ams_which_left: "1/2 · Left eye — cover your right eye and look at the center dot",
     ams_which_right: "2/2 · Now the right eye — cover your left eye and look at the center dot",
@@ -578,7 +578,7 @@ const extraStrings = {
     tri_title: "Acción recomendada", tri_now: "Consulte a un oftalmólogo pronto",
     tri_weeks: "Programe un examen ocular en unas semanas", tri_monitor: "Controle con revisiones periódicas",
     tri_now_why: "El análisis fotográfico o la prueba de Amsler mostró un hallazgo que conviene revisar.",
-    tri_weeks_why: "Se registró un hallazgo límite o un síntoma que conviene revisar.",
+    tri_weeks_why: "Se registró un hallazgo límite, un síntoma que conviene revisar o una revisión ocular pendiente (fondo de ojo o control periódico).",
     tri_monitor_why: "Este cribado no mostró señales que requieran revisión pronta. No sustituye los controles oculares habituales.",
     ams_which_left: "1/2 · Ojo izquierdo — cúbrase el derecho y mire el punto central",
     ams_which_right: "2/2 · Ahora el ojo derecho — cúbrase el izquierdo y mire el punto central",
@@ -615,7 +615,7 @@ const extraStrings = {
     tri_title: "Action recommandée", tri_now: "Consultez un ophtalmologiste rapidement",
     tri_weeks: "Planifiez un examen dans quelques semaines", tri_monitor: "Surveillez lors des contrôles réguliers",
     tri_now_why: "L'analyse photo ou le test d'Amsler a montré un résultat qui doit être contrôlé.",
-    tri_weeks_why: "Un résultat limite ou un symptôme à contrôler a été signalé.",
+    tri_weeks_why: "Un résultat limite, un symptôme à contrôler ou un examen des yeux en retard (fond d’œil ou contrôle régulier) a été signalé.",
     tri_monitor_why: "Ce dépistage n'a pas montré de signal nécessitant un contrôle rapide. Il ne remplace pas les examens réguliers.",
     ams_which_left: "1/2 · Œil gauche — couvrez le droit et fixez le point central",
     ams_which_right: "2/2 · Maintenant l'œil droit — couvrez le gauche et fixez le point central",
@@ -652,7 +652,7 @@ const extraStrings = {
     tri_title: "推奨される対応", tri_now: "早めに眼科を受診してください",
     tri_weeks: "数週間以内に眼科検診を受けてください", tri_monitor: "定期検診で経過を観察してください",
     tri_now_why: "写真解析またはアムスラー検査で確認が必要な所見がありました。",
-    tri_weeks_why: "境界所見または確認が必要な症状が報告されました。",
+    tri_weeks_why: "境界所見、確認が必要な症状、または受けていない目の検査（眼底検査・定期検診）が報告されました。",
     tri_monitor_why: "今回のスクリーニングで早期確認を要する信号は見られませんでした。定期検診の代わりにはなりません。",
     ams_which_left: "1/2 · 左目の検査 — 右目を覆って中央の点を見てください",
     ams_which_right: "2/2 · 次は右目 — 左目を覆って中央の点を見てください",
@@ -689,7 +689,7 @@ const extraStrings = {
     tri_title: "建议措施", tri_now: "建议尽快就诊眼科",
     tri_weeks: "建议数周内进行眼科检查", tri_monitor: "通过定期检查观察",
     tri_now_why: "照片分析或阿姆斯勒检查显示了需要确认的结果。",
-    tri_weeks_why: "出现了临界结果或需要确认的症状。",
+    tri_weeks_why: "出现了临界结果、需要确认的症状，或尚未进行的眼部检查（眼底检查或定期检查）。",
     tri_monitor_why: "本次筛查未显示需要尽快确认的信号，但不能替代定期眼科检查。",
     ams_which_left: "1/2 · 左眼检查 — 遮住右眼并注视中心点",
     ams_which_right: "2/2 · 现在检查右眼 — 遮住左眼并注视中心点",
@@ -784,12 +784,12 @@ Object.assign(translations.zh, {
 });
 
 // 문진 경로를 질문 시작 전에 명확히 알린다. 수술 여부에 따라 실제 질문 목록도 달라진다.
-Object.assign(translations.ko, { survey_mode_general: "일반 눈 건강 문진 · 나이와 질환 위험 요인을 확인합니다.", survey_mode_postop: "수술 후 전용 문진 · 회복 상태와 수술 후 경고 신호를 확인합니다." });
-Object.assign(translations.en, { survey_mode_general: "General eye health questions · We check age and eye disease risk factors.", survey_mode_postop: "Post-surgery questions · We check recovery and warning signs after surgery." });
-Object.assign(translations.es, { survey_mode_general: "Cuestionario general · Comprobamos la edad y factores de riesgo ocular.", survey_mode_postop: "Cuestionario posoperatorio · Comprobamos la recuperación y señales de alerta." });
-Object.assign(translations.fr, { survey_mode_general: "Questionnaire général · Nous vérifions l’âge et les facteurs de risque oculaire.", survey_mode_postop: "Questionnaire postopératoire · Nous vérifions la récupération et les signes d’alerte." });
-Object.assign(translations.ja, { survey_mode_general: "通常の目の健康問診 · 年齢と目の病気のリスク要因を確認します。", survey_mode_postop: "術後専用問診 · 回復状態と術後の警告症状を確認します。" });
-Object.assign(translations.zh, { survey_mode_general: "常规眼部健康问诊 · 确认年龄和眼病风险因素。", survey_mode_postop: "术后专用问诊 · 确认恢复情况和术后警示症状。" });
+Object.assign(translations.ko, { survey_mode_surgery_check: "수술 이력 확인 · 수술 시기와 종류를 먼저 확인한 뒤 알맞은 문진으로 이어갑니다.", survey_mode_general: "일반 눈 건강 문진 · 나이와 질환 위험 요인을 확인합니다.", survey_mode_postop: "수술 후 전용 문진 · 회복 상태와 수술 후 경고 신호를 확인합니다." });
+Object.assign(translations.en, { survey_mode_surgery_check: "Surgery history · We first check when and what surgery you had, then continue with the right questions.", survey_mode_general: "General eye health questions · We check age and eye disease risk factors.", survey_mode_postop: "Post-surgery questions · We check recovery and warning signs after surgery." });
+Object.assign(translations.es, { survey_mode_surgery_check: "Historial quirúrgico · Primero comprobamos cuándo y qué cirugía tuvo, y luego seguimos con las preguntas adecuadas.", survey_mode_general: "Cuestionario general · Comprobamos la edad y factores de riesgo ocular.", survey_mode_postop: "Cuestionario posoperatorio · Comprobamos la recuperación y señales de alerta." });
+Object.assign(translations.fr, { survey_mode_surgery_check: "Antécédents d’opération · Nous vérifions d’abord la date et le type d’opération, puis poursuivons avec les bonnes questions.", survey_mode_general: "Questionnaire général · Nous vérifions l’âge et les facteurs de risque oculaire.", survey_mode_postop: "Questionnaire postopératoire · Nous vérifions la récupération et les signes d’alerte." });
+Object.assign(translations.ja, { survey_mode_surgery_check: "手術歴の確認 · 手術の時期と種類を先に確認してから、合った問診に進みます。", survey_mode_general: "通常の目の健康問診 · 年齢と目の病気のリスク要因を確認します。", survey_mode_postop: "術後専用問診 · 回復状態と術後の警告症状を確認します。" });
+Object.assign(translations.zh, { survey_mode_surgery_check: "手术史确认 · 先确认手术时间和类型，再继续相应的问诊。", survey_mode_general: "常规眼部健康问诊 · 确认年龄和眼病风险因素。", survey_mode_postop: "术后专用问诊 · 确认恢复情况和术后警示症状。" });
 
 // 카드 방향 안내 — 폰은 카드를 세워야 폭 54mm·높이 85.6mm가 모두 화면에 들어간다.
 Object.assign(translations.ko, {
@@ -936,7 +936,9 @@ const symptomQuestions = [
   // ── 당뇨망막병증: 당뇨가 있을 때만 묻는다 ──────────────
   { code: 'dr_duration', key: 'q_dr_duration', disease: 'retinopathy', weight: 3, showIf: 'diabetes' },
   { code: 'dr_fundus',   key: 'q_dr_fundus',   disease: 'retinopathy', weight: 2, showIf: 'diabetes', invert: true },
-  { code: 'dr_floaters', key: 'q_dr_floaters', disease: 'retinopathy', weight: 2, showIf: 'diabetes' },
+  // dr_floaters(비문증 급증)는 뺐다(2026-09-27): 모든 사람에게 먼저 묻는 적신호 rf_flashes가 '날파리 같은 점이
+  // 갑자기 늘었나요'를 이미 묻고, 거기서 '예'면 바로 응급 안내로 끝난다. 뒤에서 다시 물으면 같은 질문을 두 번 하는 셈이고,
+  // 앞에서 '아니오'라 답한 사람이 여기서 '예'를 고르면 응급 신호가 가중치 2짜리 증상으로만 남았다.
 
   // ── 공통: 검진 공백 ────────────────────────────────────
   // skipIf: 이미 답이 정해진 질문은 묻지 않는다.
@@ -1160,7 +1162,7 @@ Object.assign(translations.ko, {
   find_ams_normal: "암슬러 격자 자가검사에서 좌우 모두 뚜렷한 왜곡·암점 응답이 없었습니다. 이 검사는 황반(중심시야)만 확인하므로, 다른 부위나 다른 질환은 평가하지 않습니다.",
   find_ams_abnormal: "암슬러 격자에서 이상 응답이 있었습니다({eye}). 황반(중심시야) 확인이 필요하며, 안저 검사나 OCT로 확인합니다.",
   find_sym: "문진에서 확인된 항목: {items}. 각 항목은 해당 질환의 위험을 높이는 요소이며, 그 자체로 질환을 뜻하지는 않습니다.",
-  find_post_sym: "수술 후 문진에서 보고한 증상: {items}. 이 응답만으로 증상의 원인이나 회복 상태를 판단할 수 없습니다.",
+  find_post_sym: "수술 후 문진에서 확인된 항목: {items}. 이 응답만으로 증상의 원인이나 회복 상태를 판단할 수 없습니다.",
   find_nosym: "문진에서 특별히 확인된 항목은 없었습니다.",
   find_disclaimer: "위 해석은 앱이 검사 결과에 따라 고정된 문장으로 생성한 것이며, 개별 상황을 판단한 것이 아닙니다.",
   // report_ 접두사를 붙인 이유: 'gate_title'·'gate_desc'는 수술 이력 입구 화면이
@@ -1181,7 +1183,7 @@ Object.assign(translations.en, {
   find_ams_normal: "The Amsler self-test showed no clear distortion or blind-spot response in either eye. This test only checks the macula (central vision); it does not assess other areas or other conditions.",
   find_ams_abnormal: "The Amsler grid showed an abnormal response ({eye}). The macula needs checking, typically with a fundus exam or OCT.",
   find_sym: "Flagged in the questionnaire: {items}. Each item raises the risk of the related condition but does not by itself mean you have it.",
-  find_post_sym: "Symptoms reported in the post-surgery questionnaire: {items}. These answers alone cannot determine the cause of symptoms or the state of recovery.",
+  find_post_sym: "Flagged in the post-surgery questionnaire: {items}. These answers alone cannot determine the cause of symptoms or the state of recovery.",
   find_nosym: "Nothing in particular was flagged in the questionnaire.",
   find_disclaimer: "This summary is generated by the app from fixed sentences based on your results. It is not an individual clinical judgement.",
   report_gate_title: "Please complete a screening first",
@@ -1199,7 +1201,7 @@ Object.assign(translations.es, {
   find_ams_normal: "La autoprueba de Amsler no mostró distorsión ni escotoma claros en ninguno de los ojos. Esta prueba solo evalúa la mácula (visión central).",
   find_ams_abnormal: "La rejilla de Amsler mostró una respuesta anormal ({eye}). Conviene revisar la mácula con fondo de ojo u OCT.",
   find_sym: "Marcado en el cuestionario: {items}. Cada elemento aumenta el riesgo, pero por sí solo no significa que tenga la enfermedad.",
-  find_post_sym: "Síntomas comunicados en el cuestionario posoperatorio: {items}. Estas respuestas por sí solas no permiten determinar la causa de los síntomas ni el estado de recuperación.",
+  find_post_sym: "Marcado en el cuestionario posoperatorio: {items}. Estas respuestas por sí solas no permiten determinar la causa de los síntomas ni el estado de recuperación.",
   find_nosym: "No se marcó nada especial en el cuestionario.",
   find_disclaimer: "Este resumen lo genera la app con frases fijas según sus resultados; no es un juicio clínico individual.",
   report_gate_title: "Complete primero una revisión",
@@ -1217,7 +1219,7 @@ Object.assign(translations.fr, {
   find_ams_normal: "L'auto-test d'Amsler n'a montré ni déformation ni scotome net des deux côtés. Ce test n'évalue que la macula (vision centrale).",
   find_ams_abnormal: "La grille d'Amsler a montré une réponse anormale ({eye}). La macula doit être vérifiée par fond d'œil ou OCT.",
   find_sym: "Éléments relevés au questionnaire : {items}. Chacun augmente le risque mais ne signifie pas à lui seul la maladie.",
-  find_post_sym: "Symptômes signalés dans le questionnaire postopératoire : {items}. Ces réponses seules ne permettent pas de déterminer la cause des symptômes ni l’état de récupération.",
+  find_post_sym: "Éléments relevés au questionnaire postopératoire : {items}. Ces réponses seules ne permettent pas de déterminer la cause des symptômes ni l’état de récupération.",
   find_nosym: "Rien de particulier n'a été relevé au questionnaire.",
   find_disclaimer: "Ce résumé est généré par l'application à partir de phrases fixes selon vos résultats ; ce n'est pas un jugement clinique individuel.",
   report_gate_title: "Veuillez d'abord effectuer un dépistage",
@@ -1235,7 +1237,7 @@ Object.assign(translations.ja, {
   find_ams_normal: "アムスラー自己検査では左右とも明らかな歪み・暗点の回答はありませんでした。この検査は黄斑(中心視野)のみを確認します。",
   find_ams_abnormal: "アムスラー格子で異常な回答がありました({eye})。黄斑の確認が必要で、眼底検査やOCTで調べます。",
   find_sym: "問診で確認された項目: {items}。各項目は該当疾患のリスクを高める要素であり、それ自体が疾患を意味するものではありません。",
-  find_post_sym: "術後の問診で報告された症状: {items}。この回答だけでは、症状の原因や回復状態を判断できません。",
+  find_post_sym: "術後の問診で確認された項目: {items}。この回答だけでは、症状の原因や回復状態を判断できません。",
   find_nosym: "問診で特に確認された項目はありませんでした。",
   find_disclaimer: "この要約はアプリが検査結果に応じて固定文から生成したもので、個別の臨床判断ではありません。",
   report_gate_title: "まず検査を完了してください",
@@ -1253,7 +1255,7 @@ Object.assign(translations.zh, {
   find_ams_normal: "阿姆斯勒自测中双眼均无明显变形或暗点。该检查仅评估黄斑（中心视野）。",
   find_ams_abnormal: "阿姆斯勒方格出现异常（{eye}）。需要检查黄斑，通常通过眼底检查或OCT。",
   find_sym: "问诊中标记的项目：{items}。每项都会提高相应疾病的风险，但本身并不代表患病。",
-  find_post_sym: "术后问诊中报告的症状：{items}。仅凭这些回答无法判断症状的原因或恢复情况。",
+  find_post_sym: "术后问诊中标记的项目：{items}。仅凭这些回答无法判断症状的原因或恢复情况。",
   find_nosym: "问诊中没有特别标记的项目。",
   find_disclaimer: "本摘要由应用根据结果以固定语句生成，并非个体临床判断。",
   report_gate_title: "请先完成检查",

@@ -462,7 +462,10 @@ function resetScreeningState() {
 /** Invalidate derived report data when its screening inputs are restarted. */
 function invalidateScreeningReport() {
     if (typeof resetPlainFindings === 'function') resetPlainFindings();
-    cancelAiOpinion();
+    // 이웃 호출처럼 존재를 확인한다. app-report.js는 이 파일보다 늦게 로드되는데, 느린 망에서
+    // 스크립트가 다 오기 전에 '시작하기'를 누르면 여기서 ReferenceError가 나 버튼이 먹통이 됐다
+    // (2026-09-27 실기기: 새로고침 직후 첫 탭이 무반응).
+    if (typeof cancelAiOpinion === 'function') cancelAiOpinion();
     if (typeof cancelFollowup === 'function') cancelFollowup();
     if (typeof cancelSaveConsent === 'function') cancelSaveConsent();
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
