@@ -19,7 +19,7 @@ TOPICS = {
     "screen_fatigue": "eye fatigue during screen use, without assuming screen use",
     "outdoor_time": "daytime outdoor exposure, without assuming outdoor activity",
     "symptom_duration": "duration of a confirmed symptom, never ask whether it exists again",
-    "daily_impact": "one concrete daily activity affected by a confirmed symptom, do not assume the activity",
+    "daily_impact": "whether the person REDUCED, STOPPED or AVOIDED an activity because of the confirmed symptom. Do not merely ask if reading looks blurry or uncomfortable; that symptom was already asked. Do not assume the activity",
     "symptom_side": "whether a confirmed symptom affects only one eye",
     "symptom_pattern": "one time pattern of a confirmed symptom",
     "symptom_trigger": "one circumstance associated with a confirmed symptom",
@@ -64,6 +64,10 @@ def topics_for(request):
     # When central distortion is the only confirmed symptom, bilateral grid
     # answers already provide its side. Asking the same side adds no information.
     positives = {k for k in bank.SYMPTOM_CODES if request.symptom_answers.get(k) is True}
+    # The fixed central-vision item already names reading as the circumstance.
+    # A broad trigger question kept rephrasing that same answer in live checks.
+    if positives == {"amd_center"}:
+        topics = [t for t in topics if t != "symptom_trigger"]
     if positives == {"amd_center"} and all(type(request.amsler_answers.get(eye)) is bool for eye in ("left", "right")):
         topics = [t for t in topics if t != "symptom_side"]
     return [t for t in topics if t not in bank.asked_ids(request)]
@@ -78,8 +82,21 @@ def basic_error(raw, request, topics, valid_format):
     normalize = lambda s: re.sub(r"[\W_]", "", s.casefold())
     if any(SequenceMatcher(None, normalize(question), normalize(h.q)).ratio() > .8 for h in request.chat_history):
         return "repeated_question"
-    if re.search(r"언제|얼마나|어느 쪽|어떻게|왜 |몇 |설명해|\b(?:when|how long|which|why|describe)\b", question, re.I):
+    if re.search(r"언제|얼마나|어느 쪽|어떻게|왜 |몇 |설명해|^(?:when|how long|which|why|describe)\b", question, re.I):
         return "not_yesno_question"
+    if raw["topic"] == "daily_impact":
+        # The fixed questionnaire already asks about difficulty reading. A follow-up
+        # must ask about changed activity, not restate that same difficulty.
+        action_words = {
+            "ko": r"줄|피하|중단|포기|그만|못하",
+            "en": r"reduc|stop|avoid|cut back|giv(?:e|en|ing) up",
+            "es": r"reduc|dejad|evit|limit|abandon",
+            "fr": r"rédu|renonc|arrêt|évit|limit",
+            "ja": r"減|控|やめ|諦|中止",
+            "zh": r"减少|停止|放弃|避免|限制",
+        }
+        if not re.search(action_words.get(request.lang, action_words["en"]), question, re.I):
+            return "daily_impact_must_ask_changed_activity_not_repeat_symptom"
     # Block common diagnostic assertions before the model review as well.
     if re.search(r"진단|가능성이|정상이므로|정상이니|안심|백내장이|녹내장이|황반변성이|diagnos|you have (?:cataract|glaucoma)|rule out", question, re.I):
         return "diagnostic_assertion"
@@ -136,8 +153,8 @@ async def generate(request, generate_json, valid_format):
                         "single_yesno: exactly one question answerable yes/no, no compound or open-ended question. "
                         "correct_language: entirely in the requested language. safe: no diagnosis, disease probability, "
                         "false reassurance, treatment advice, or unjustified test inference. matches_topic: asks the stated "
-                        "missing information, not a different topic. Reject unsupported premises even if they sound plausible.\n"
-                        + "DATA=" + data + "\nPROPOSAL=" + json.dumps(raw, ensure_ascii=False), REVIEW_SCHEMA)
+                        "missing information, not a different topic; its Yes answer must match the meaning in topic_definition. Reject reversed polarity. Reject unsupported premises even if they sound plausible.\n"
+                        + "DATA=" + data + "\nPROPOSAL=" + json.dumps({**raw, "topic_definition": TOPICS[raw["topic"]]}, ensure_ascii=False), REVIEW_SCHEMA)
                     if isinstance(review, dict) and review.get("verdict") == "ok":
                         q = raw["question"].strip()
                         return {"question": q, "question_id": raw["topic"], "question_texts": {request.lang: q},

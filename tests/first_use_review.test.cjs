@@ -179,3 +179,30 @@ test('리포트에 "내 검사 결과를 쉽게 설명해 줘" 버튼이 6개 �
  const c=setup({});
  for(const lang of ['ko','en','es','fr','ja','zh']) assert.ok(vm.runInContext(`translations.${lang}.rep_followup_explain`,c),lang);
 });
+
+test('chat context distinguishes unknown, no and unanswered risk factors',()=>{
+ const c=setup({lang:'ko',riskAnswers:{surgery:'none',diabetes:'unknown',hypertension:false},chatSymptoms:[],amslerResult:{}});
+ c.document={getElementById:()=>null};
+ const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ vm.runInContext(src.slice(src.indexOf('function buildChatContext'),src.indexOf('/** \'내 결과 쉽게')),c);
+ const ctx=vm.runInContext('buildChatContext()',c);
+ assert.ok(ctx.includes('"diabetes":"unknown"'));
+ assert.ok(ctx.includes('"hypertension":false'));
+ assert.ok(!ctx.includes('"smoking":false'));
+});
+
+test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async () => {
+ // 서버 안전 필터가 "고혈압 아니오인데 혈압 관리" 같은 문장을 지우려면 사실 목록이 필요하다(2026-09-29).
+ const sent=[];
+ const el={value:'관리 방법',classList:{add(){},remove(){}},appendChild(){},setAttribute(){},removeAttribute(){},focus(){},innerText:''};
+ const c=vm.createContext({state:{lang:'ko',riskAnswers:{hypertension:false,diabetes:true},sessionGeneration:1,triage:{level:'weeks'}},
+  translations:{ko:{}},document:{getElementById:()=>el},AbortController,console,
+  fetch:(url,opt)=>{sent.push(JSON.parse(opt.body));return Promise.reject(new Error('stop'))},
+  createAiLoader:()=>({el:{},stop(){}}),buildChatContext:()=>'ctx',buildOpinionSymptoms:()=>['Hypertension: no','Diabetes: yes']});
+ const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf('/** 챗봇이 \'내 결과\'')),c);
+ vm.runInContext(src.slice(src.indexOf('async function askGemmaMore('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
+ await vm.runInContext('askGemmaMore()',c);
+ assert.deepEqual(sent[0].facts,['Hypertension: no','Diabetes: yes']);
+ assert.equal(sent[0].explain_results,false);
+});

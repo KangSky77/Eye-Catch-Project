@@ -51,9 +51,13 @@ class PlainFindingsRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    explain_results: bool = False
     lang: str = Field(default="ko", max_length=10)
     user_msg: str = Field(..., min_length=1, max_length=1000)
     context: str = Field(default="", max_length=5000)
+    # AI 소견 요청과 같은 사실 목록(Hypertension: no, '2년 내 검진 없음' 등). 안전 필터가 이 사실과
+    # 정면으로 어긋나는 문장을 지운다(safety.contradicts_facts). 예전 프론트는 보내지 않는다 — 기본값 빈 목록.
+    facts: list[SymptomText] = Field(default_factory=list, max_length=30)
 
 class QuestionGenRequest(BaseModel):
     lang: str = Field(default="ko", max_length=10)

@@ -117,5 +117,54 @@ async def test_translation_requires_explicit_semantic_equivalence(monkeypatch, e
 def test_grid_side_already_known_is_not_asked_again():
     request = req(symptom_answers={"amd_center": True}, amsler_answers={"left": True, "right": False})
     assert "symptom_side" not in personal.topics_for(request)
+    assert "symptom_trigger" not in personal.topics_for(request)
     request.symptom_answers["cat_foggy"] = True
     assert "symptom_side" in personal.topics_for(request)  # foggy-vision side is still unknown
+
+@pytest.mark.anyio
+async def test_reviewer_receives_server_topic_definition_and_yes_polarity(monkeypatch):
+    prompts = []
+    async def fake(prompt, schema):
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            return {'topic': 'sugar_off_target', 'question': '혈당이 목표보다 자주 높아지나요?'}
+        return {'verdict': 'ok'}
+    monkeypatch.setattr(llm, 'generate_json', fake)
+    result = await llm.generate_personalized_question(req(risk_answers={'diabetes': True}))
+    assert result['source'] == 'generated'
+    assert 'topic_definition' in prompts[1] and 'Yes = often above target' in prompts[1]
+    assert 'Reject reversed polarity' in prompts[1]
+
+
+def test_yesno_question_may_contain_when_without_being_open_ended():
+    request = req(lang="en")
+    assert personal.basic_error({"topic": "screen_fatigue", "question": "Do your eyes tire when using a screen?"},
+                                request, personal.topics_for(request), llm._valid_question_output) is None
+    assert personal.basic_error({"topic": "screen_fatigue", "question": "When do your eyes tire?"},
+                                request, personal.topics_for(request), llm._valid_question_output) == "not_yesno_question"
+
+
+def test_daily_impact_cannot_repeat_reading_symptom_instead_of_changed_activity():
+    request = req(symptom_answers={"amd_center": True})
+    topics = personal.topics_for(request)
+    repeated = {"topic": "daily_impact", "question": "중심 시야가 휘는 증상이 글자를 읽을 때 더 불편하게 느껴지나요?"}
+    assert personal.basic_error(repeated, request, topics, llm._valid_question_output).startswith("daily_impact_must_")
+    changed = {"topic": "daily_impact", "question": "가운데가 흐리게 보여 독서 시간을 줄인 적이 있나요?"}
+    assert personal.basic_error(changed, request, topics, llm._valid_question_output) is None
+
+@pytest.mark.anyio
+async def test_result_explanation_uses_report_only_without_general_advice_reference(monkeypatch):
+    from app.services import llm
+    captured = []
+    def forbidden(*_):
+        pytest.fail('Result explanation must not retrieve general health advice')
+    async def fake(prompt, **kwargs):
+        captured.append(prompt)
+        yield 'Existing results explained.'
+    monkeypatch.setattr(llm.knowledge, 'retrieve_for_chat', forbidden)
+    monkeypatch.setattr(llm, 'sanitized_stream', fake)
+    result = ''.join([c async for c in llm.chat_with_gemma_stream('Explain my results', 'REPORT FACTS', 'en', explain_results=True)])
+    assert result == 'Existing results explained.'
+    assert 'REPORT FACTS' in captured[0]
+    assert 'Do not add lifestyle advice' in captured[0]
+    assert 'Unknown or missing answers do not mean No' in captured[0]

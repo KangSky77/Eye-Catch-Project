@@ -420,6 +420,10 @@ function buildChatContext() {
     // 검사 요약 해석에는 AI 맞춤 질문 답변 줄도 들어 있다(app-findings.js) — 따로 넣지 않는다.
     const findings = typeof buildFindings === 'function' ? buildFindings() : [];
     if (findings.length) parts.push(`[${t.find_title || 'Result summary'}]\n` + findings.map(line => '- ' + line).join('\n'));
+    const riskAnswers = Object.fromEntries(['diabetes', 'hypertension', 'smoking', 'family']
+        .filter(key => [true, false, 'unknown'].includes(state.riskAnswers?.[key]))
+        .map(key => [key, state.riskAnswers[key]]));
+    parts.push('[Structured risk answers: true=yes, false=no, unknown=not sure; missing=unanswered] ' + JSON.stringify(riskAnswers));
     const factors = computeRiskScore(state.riskAnswers || {}).factors || [];
     if (factors.length) parts.push(`[${t.chat_ctx_risk || 'Risk factors'}] ${factors.join(', ')}`);
     const summary = state.opinionSummaryText || document.getElementById('gemma-opinion-text')?.innerText || '';
@@ -432,10 +436,10 @@ function askExplainResults() {
     const inputEl = document.getElementById('user-followup-input');
     if (!inputEl || _followupBusy) return;
     inputEl.value = translations[state.lang].rep_followup_explain || '';
-    askGemmaMore();
+    askGemmaMore(true);
 }
 
-async function askGemmaMore() {
+async function askGemmaMore(explainResults = false) {
     if (state.triage?.level === 'urgent') return;
     if (_followupBusy) return;   // 답변 스트리밍 중 재전송 금지 (응답이 뒤섞이는 것 방지)
 
@@ -471,7 +475,9 @@ async function askGemmaMore() {
         const response = await fetch('/api/chat-with-gemma', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context }),
+            // facts: AI 소견 요청과 같은 사실 목록 — 서버 안전 필터가 이 사실과 어긋나는 문장을 지운다
+            body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context, explain_results: explainResults === true,
+                                   facts: buildOpinionSymptoms() }),
             signal: active.controller.signal
         });
 

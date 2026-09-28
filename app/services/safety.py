@@ -38,7 +38,7 @@ EXCLUSION_PATTERNS = [
     r"가능성[이은도가]?\s*(?:매우\s*)?낮", r"위험[이은도가]?\s*(?:매우\s*)?낮", r"아닐\s*가능성",
     r"배제(?:할\s*수\s*있|됩니다|된다)", r"걱정하지\s*않으셔도", r"안심하셔도",
     r"정상입니다", r"이상\s*없습니다",
-    r"\bunlikely\b", r"\brule[sd]?\s+out\b", r"\bno\s+need\s+to\s+worry\b",
+    r"\bunlikely\b", r"\bno\s+need\s+to\s+worry\b",
     r"\blow\s+(?:risk|likelihood|probability)\b", r"\bnot\s+at\s+risk\b",
     r"心配(?:は)?(?:いりません|ありません)", r"可能性(?:は)?低",
     r"不必担心", r"可能性(?:很)?低",
@@ -62,6 +62,20 @@ DIAGNOSIS_PATTERNS = [
 ]
 
 _EXCL = [re.compile(p, re.I) for p in EXCLUSION_PATTERNS]
+
+# 영어 'rule out'은 부정문이면 오히려 지켜야 할 문장이다.
+# 예전에는 r"\brule[sd]?\s+out\b" 하나로 걸러서 "Early cataract cannot be ruled out"처럼 올바른 한계 문장까지
+# 지웠다 — 영어 사용자는 결과 설명에서 사진 결과 문장을 통째로 잃었다(2026-09-29 실측 2/2).
+# 한국어 "배제할 수는 없습니다"는 위 패턴에 걸리지 않아 원래 통과했다(다른 4개 언어도 확인).
+_RULE_OUT = re.compile(r"\brule[sd]?\s+out\b|\bruling\s+out\b", re.I)
+_RULE_OUT_NEGATED = re.compile(
+    r"(?:\bnot|\bcannot|\bcan\s+not|n't|\bnever|\bunable\s+to|\bno\s+way\s+to)\s+"
+    r"(?:(?:be|been|fully|completely|reliably|definitively|safely|yet)\s+){0,2}$", re.I)
+
+
+def _claims_rule_out(sentence: str) -> bool:
+    """'rule out'을 단정하는가. 바로 앞이 부정(not·cannot·can't·does not…)이면 한계를 말하는 문장이다."""
+    return any(not _RULE_OUT_NEGATED.search(sentence[:m.start()]) for m in _RULE_OUT.finditer(sentence))
 _PROB = [re.compile(p, re.I) for p in PROBABILITY_PATTERNS]
 _DIAG = [re.compile(p, re.I) for p in DIAGNOSIS_PATTERNS]
 
@@ -118,14 +132,17 @@ _NO_RECENT_EXAM_ITEM = re.compile(
 
 _NO_HYPERTENSION_ITEM = re.compile(r"^Hypertension:\s*no$", re.I)
 _NO_DIABETES_ITEM = re.compile(r"^Diabetes:\s*no$", re.I)
+# 한국어는 사이에 단어가 한두 개 끼어도 잡는다: "혈압을 잘 관리", "혈압을 철저히 관리", "혈압과 혈당을 관리".
+# 예전 패턴은 '을'·'을 꾸준히'만 허용해서 "혈당과 혈압을 잘 관리해야 합니다"가 고혈압 '아니오'인 사람의
+# 챗봇 답변에 그대로 나갔다(2026-09-29 실측). 이 규칙은 'Hypertension: no'일 때만 쓰인다.
 _PERSONAL_BP_ADVICE = re.compile(
-    r"혈압\s*(?:을|을\s*꾸준히)?\s*(?:관리|조절|조정|유지|낮추)"
+    r"혈압(?:을|를|도|은|과|와)?\s*(?:[가-힣]+\s+){0,2}(?:관리|조절|조정|유지|낮추)"
     r"|(?:manage|control|monitor|keep\s+track\s+of|lower)\s+(?:your\s+)?blood\s+pressure"
     r"|keep\s+(?:your\s+)?blood\s+pressure\s+(?:under\s+control|stable|in\s+check)"
     r"|(?:gestione|controle|surveillez|contrôlez|g[eé]rez)\s+(?:su|votre)\s+(?:presi[oó]n\s+arterial|tension\s+art[eé]rielle)"
     r"|血圧(?:を)?(?:管理|コントロール)|控制血压|管理血压", re.I)
 _PERSONAL_GLUCOSE_ADVICE = re.compile(
-    r"혈당\s*(?:을)?\s*(?:관리|조절|조정|유지|낮추)"
+    r"혈당(?:을|를|도|은|과|와)?\s*(?:[가-힣]+\s+){0,2}(?:관리|조절|조정|유지|낮추)"
     r"|(?:manage|control|monitor|lower)\s+(?:your\s+)?blood\s+(?:sugar|glucose)"
     r"|血糖(?:を)?(?:管理|コントロール)|控制血糖|管理血糖", re.I)
 
@@ -225,7 +242,7 @@ def check_sentence(sentence: str, facts: list[str] | None = None, night_context:
         return "driving_max_headlights"  # 다른 운전자 눈부심 위험
     if any(p.search(sentence) for p in _PROB):
         return "probability"          # 보정되지 않은 점수를 확률로 말함
-    if any(p.search(sentence) for p in _EXCL):
+    if any(p.search(sentence) for p in _EXCL) or _claims_rule_out(sentence):
         return "exclusion"            # 스크리닝으로 배제 불가
     if any(p.search(sentence) for p in _DIAG):
         return "diagnosis"            # 확정 진단
