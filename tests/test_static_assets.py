@@ -404,9 +404,10 @@ def test_촬영_안내가_플래시를_켜라고_하지_않는다():
 def test_촬영_안내가_정면중앙과_고른조명을_요청한다():
     """구도·밝기 스트레스 테스트 결과를 과도한 직사광선 권유로 되돌리지 않는다."""
     data = (STATIC / "data.js").read_text(encoding="utf-8")
-    assert "정면을 보고 한쪽 눈씩 화면 중앙에 맞춰주세요" in data
+    # 2026-09-28: 실제 사용자는 얼굴 사진을 찍는다 — 업로드 가이드는 얼굴 정면·두 눈 중앙 구도를 요청한다.
+    assert "얼굴을 정면에서 찍어 주세요. 두 눈을 크게 뜨고 화면 중앙에 오게 맞춰주세요" in data
     assert "직접 비치지 않는 고른 실내 조명" in data
-    assert "Look straight ahead and center one eye at a time" in data
+    assert "Take a front-facing photo of your face. Open both eyes wide and keep them centered" in data
     assert "soft, even room light" in data
 
 
