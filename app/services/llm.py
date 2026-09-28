@@ -30,6 +30,17 @@ LANG_NAMES = {
     "zh": "中文 (Chinese)",
 }
 
+# Fixed notice shown when the fact filter removes model advice that contradicts
+# the patient's questionnaire answers. Keep it separate from model output.
+FACT_FILTER_NOTICE = {
+    "ko": "문진 답변과 맞지 않는 조언은 제외했어요. 입력한 답변을 다시 확인해 주세요.",
+    "en": "I left out advice that conflicted with your questionnaire answers. Please check the answers you entered.",
+    "es": "Omití los consejos que contradecían sus respuestas al cuestionario. Revise las respuestas que indicó.",
+    "fr": "J’ai retiré les conseils incompatibles avec vos réponses au questionnaire. Veuillez vérifier vos réponses.",
+    "ja": "問診の回答と矛盾する助言は省きました。入力した回答をご確認ください。",
+    "zh": "我已省略与问卷回答矛盾的建议。请核对您填写的回答。",
+}
+
 def _lang_name(lang: str) -> str:
     return LANG_NAMES.get(lang, "English")
 
@@ -451,7 +462,7 @@ async def stream_with_keepalive(prompt: str):
         await asyncio.gather(task, return_exceptions=True)
 
 async def sanitized_stream(prompt: str, facts: list[str] | None = None, night_context: bool = False,
-                           driving_context: bool = False):
+                           driving_context: bool = False, filtered_reasons: set[str] | None = None):
     """스트림을 문장 단위로 버퍼링해 안전 필터를 통과한 문장만 내보낸다.
 
     왜 문장 단위인가: 토큰을 그대로 흘리면 위험한 문장이 화면에 찍힌 뒤에야 걸러낼 수 있다.
@@ -480,6 +491,8 @@ async def sanitized_stream(prompt: str, facts: list[str] | None = None, night_co
             why = safety.check_sentence(sentence.strip(), facts, night_context, driving_context)
             if why:
                 dropped.append(why)
+                if filtered_reasons is not None:
+                    filtered_reasons.add(why)
                 logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, sentence.strip()[:120])
             else:
                 # 공백만 내보낸 것은 '내용을 냈다'고 볼 수 없다 — 화면에는 빈 칸으로 보인다
@@ -491,6 +504,8 @@ async def sanitized_stream(prompt: str, facts: list[str] | None = None, night_co
         why = safety.check_sentence(tail, facts, night_context, driving_context)
         if why:
             dropped.append(why)
+            if filtered_reasons is not None:
+                filtered_reasons.add(why)
             logger.warning("⚠️  안전 필터가 LLM 문장을 제거: %s | %s", why, tail[:120])
         else:
             emitted = True
@@ -573,8 +588,13 @@ async def pick_advice(facts: "advice.Facts", opts: dict) -> tuple[dict, str]:
     for attempt in range(2):
         choice = advice.validate_choice(await generate_json(prompt, schema), facts, opts)
         if choice:
-            return choice, "ai" if attempt == 0 else "ai_retry"
-    return advice.fallback_choice(facts, opts), "fallback"
+            prioritized = advice.apply_choice_priorities(choice, facts, opts)
+            source = "ai" if attempt == 0 else "ai_retry"
+            if prioritized != choice:
+                source += "_adjusted"
+            return prioritized, source
+    fallback = advice.apply_choice_priorities(advice.fallback_choice(facts, opts), facts, opts)
+    return fallback, "fallback"
 
 
 async def _choice_opinion_stream(facts: "advice.Facts", lang: str):
@@ -706,10 +726,24 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", 
         # 자유 질문은 소견서보다 더 자유롭게 흘러가므로 필터가 더 중요하다
         # facts: 고혈압 '아니오'인 사람에게 "혈압을 관리하세요"가 3번 중 2번 나갔다(2026-09-29 실측) —
         # 지시문의 일반 관리 수칙 예시를 모델이 그대로 따라 했다. AI 소견과 같은 사실 필터로 막는다.
-        async for chunk in sanitized_stream(_build_chat_prompt(user_msg, context, lang, reference, explain_results=explain_results),
-                                            facts=facts or [],
-                                            night_context=safety.mentions_night(user_msg),
-                                            driving_context=safety.mentions_driving(user_msg)): yield chunk
+        filtered_reasons: set[str] = set()
+        async for chunk in sanitized_stream(
+            _build_chat_prompt(user_msg, context, lang, reference, explain_results=explain_results),
+            facts=facts or [],
+            night_context=safety.mentions_night(user_msg),
+            driving_context=safety.mentions_driving(user_msg),
+            filtered_reasons=filtered_reasons,
+        ):
+            # If every sentence was removed for contradicting known answers, give
+            # the user a clear explanation instead of making the chat look broken.
+            if chunk == ERROR_MARKER + "AI_FILTER_EMPTY" and "contradicts_facts" in filtered_reasons:
+                yield FACT_FILTER_NOTICE.get(lang, FACT_FILTER_NOTICE["en"])
+                return
+            yield chunk
+            if chunk.startswith(ERROR_MARKER):
+                return
+        if "contradicts_facts" in filtered_reasons:
+            yield "\n\n" + FACT_FILTER_NOTICE.get(lang, FACT_FILTER_NOTICE["en"])
     except Exception:
         logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"

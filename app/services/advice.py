@@ -785,6 +785,36 @@ def fallback_choice(f: Facts, opts: dict) -> dict:
     return {"exams": pair[:2], "care": opts["care"][0], "closing": opts["closing"][0]}
 
 
+def apply_choice_priorities(choice: dict, f: Facts, opts: dict) -> dict:
+    """Keep valid model picks, but apply high-value priorities already encoded by the facts.
+
+    A schema-valid choice can still ignore a confirmed glaucoma finding or choose a
+    generic weeks-to-visit line over an available personalized closing. These rules
+    only select from the reviewed options for this person.
+    """
+    if f.postop:
+        return choice
+
+    result = {**choice}
+    flags, codes = f.flags, f.codes
+    glaucoma = "glaucoma" in codes or any(x.startswith("sym_gla_") for x in flags)
+    retina = "retinopathy" in codes or "risk_diabetes" in flags
+    macular = "macular" in codes or f.amsler_abnormal or "sym_amd_center" in flags
+
+    # The glaucoma pathway needs both pressure and side-vision checks. Preserve the
+    # existing retina/macula priority when several pathways compete for two exam slots.
+    if glaucoma and not retina and not macular and "visual_field" in opts["exams"]:
+        result["exams"] = ["iop", "visual_field"]
+
+    # The on-screen triage card already carries the weeks timeline; use the closing
+    # line for a person's specific risk/history when one is available.
+    if result.get("closing") == "visit_weeks":
+        specific_closings = [item for item in opts["closing"] if item != "visit_weeks"]
+        if specific_closings:
+            result["closing"] = specific_closings[0]
+    return result
+
+
 def _catalog(f: Facts):
     return (POST_CARE, POST_CLOSING) if f.postop else (CARE, CLOSING)
 
