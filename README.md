@@ -890,28 +890,41 @@ Content-Type: application/json
 # 문장 단위 안전 필터를 거치므로 확률·배제·질환 교차 문장은 도착하지 않습니다.
 ```
 
-### ❓ 맞춤형 문진 질문 생성
-```bash
-POST /api/generate-next-question
-Content-Type: application/json
+### ❓ 개인화 추가 문진 생성
+`POST /api/generate-next-question`은 검사 원자료와 문진 답변을 바탕으로 AI가
+아직 확인하지 않은 내용을 고르고 질문을 직접 작성합니다. 문구 목록은 실패 시 예비 수단입니다.
 
+```json
 {
   "lang": "ko",
-  "cataract_res": "특이 소견 없음 (정상)",
-  "amsler_res": "정상",
-  "chat_history": [{"q": "눈이 침침한가요?", "a": "아니오"}]
-}
-
-# 응답
-{
-  "question": "밝은 곳에서 눈이 부시는 느낌이 있나요?",
-  "answer_type": "yesno"      # yesno = 네/아니오 버튼 | text = 자유 입력칸
+  "cataract_res": "사진만으로 판단이 어렵습니다",
+  "amsler_res": "미실시",
+  "cataract_code": "uncertain",
+  "amsler_answers": {},
+  "risk_answers": {"age": "60s", "diabetes": false},
+  "chat_history": [],
+  "symptom_answers": {"cat_foggy": true, "cat_glare": "unknown"},
+  "asked_question_ids": [],
+  "postoperative": false,
+  "red_flags": []
 }
 ```
 
-> 화면에는 '네'/'아니오' 버튼뿐이라 프롬프트로 예/아니오 질문을 요구하지만,
-> LLM이 가끔 서술형을 냅니다. 그때는 폐기하지 않고 `answer_type: "text"`로 알려
-> 프론트가 자유 입력칸을 띄웁니다.
+1. 서버가 사실 코드로 가능한 질문 주제를 제한합니다. `false`와 `"unknown"`은 증상으로 간주하지 않습니다.
+2. AI가 검사·문진·이전 질문을 함께 보고 주제와 질문 문장을 생성합니다.
+3. 형식·근접 중복·일부 단정 표현은 코드로 검사합니다. 별도의 모델 호출은 근거, 의미 중복,
+   예/아니오 응답 가능 여부, 언어, 안전성, 주제 일치를 검토합니다.
+4. 거절된 질문은 한 번 재작성합니다. 전체 생성·검토가 40초를 넘거나 실패하면
+   `app/services/questions.py`의 남은 문항을 사용합니다. 화면 대기는 45초입니다.
+
+응답의 `source`는 `generated`, `generated_retry`, `rule`, `none`이며 실제 생성과 예비 문구를 구분합니다.
+`question_id`는 의미 주제 ID입니다. 같은 주제는 다시 묻지 않고 최대 2문항에서 끝납니다.
+`question_texts`는 확보된 번역만 포함합니다. 언어 전환 시 `/api/translate-question`으로
+동일한 질문을 번역하고 의미 동등성을 검토합니다. 번역 실패 시 안내와 함께 원문을 유지합니다.
+수술 후 경로·응급 신호에서는 추가 문진을 건너뛰며, 추가 답변은 진료 시점 판정을 바꾸지 않습니다.
+
+별도 검토도 같은 로컬 모델을 이용하므로 의미 오류를 완전히 차단한다는 보장은 없습니다.
+임상 검증된 진단 설문이 아니며, 실제 사용자 배포 전 사례 검토와 의료진 검토가 필요합니다.
 
 ### 🗨️ 리포트 추가 질문 (챗봇)
 ```bash
