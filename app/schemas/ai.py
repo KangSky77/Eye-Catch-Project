@@ -51,6 +51,7 @@ class PlainFindingsRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    explain_results: bool = False
     lang: str = Field(default="ko", max_length=10)
     user_msg: str = Field(..., min_length=1, max_length=1000)
     context: str = Field(default="", max_length=5000)

@@ -35,7 +35,7 @@ def test_새_검사는_이전_추가질문_답변을_지운다():
 def test_추가질문_답변에_세대_가드가_있다():
     """스트리밍 도중 새 검사가 시작되면 늦게 도착한 답변이 새 리포트에 박혔다."""
     rep = read("static/app-report.js")
-    body = rep[rep.index("async function askGemmaMore()"):]
+    body = rep[rep.index("async function askGemmaMore("):]
     body = body[:body.index("\n}\n")]
     assert "state.sessionGeneration" in body
     assert body.count("isCurrent()") >= 3

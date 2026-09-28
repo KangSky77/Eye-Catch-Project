@@ -179,3 +179,14 @@ test('리포트에 "내 검사 결과를 쉽게 설명해 줘" 버튼이 6개 �
  const c=setup({});
  for(const lang of ['ko','en','es','fr','ja','zh']) assert.ok(vm.runInContext(`translations.${lang}.rep_followup_explain`,c),lang);
 });
+
+test('chat context distinguishes unknown, no and unanswered risk factors',()=>{
+ const c=setup({lang:'ko',riskAnswers:{surgery:'none',diabetes:'unknown',hypertension:false},chatSymptoms:[],amslerResult:{}});
+ c.document={getElementById:()=>null};
+ const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ vm.runInContext(src.slice(src.indexOf('function buildChatContext'),src.indexOf('/** \'내 결과 쉽게')),c);
+ const ctx=vm.runInContext('buildChatContext()',c);
+ assert.ok(ctx.includes('"diabetes":"unknown"'));
+ assert.ok(ctx.includes('"hypertension":false'));
+ assert.ok(!ctx.includes('"smoking":false'));
+});

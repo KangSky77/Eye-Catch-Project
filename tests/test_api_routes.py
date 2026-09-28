@@ -306,3 +306,14 @@ def test_question_translation_route_keeps_semantics(client, monkeypatch):
         'question': '흐리게 보이는 느낌이 한쪽 눈에만 있나요?', 'source_lang': 'ko', 'target_lang': 'en'})
     assert r.status_code == 200 and r.json()['translated'] is True
     assert r.json()['question'] == 'Is the blurred vision in only one eye?'
+
+def test_explanation_intent_reaches_chat_service(client, monkeypatch):
+    captured = {}
+    async def fake(user_msg, context, lang, explain_results=False):
+        captured['explain_results'] = explain_results
+        yield 'report explanation'
+    monkeypatch.setattr(routes, 'chat_with_gemma_stream', fake)
+    response = client.post('/api/chat-with-gemma', json={
+        'lang':'ko', 'user_msg':'내 검사 결과를 쉽게 설명해 줘', 'context':'확인된 결과', 'explain_results':True})
+    assert response.status_code == 200
+    assert captured['explain_results'] is True
