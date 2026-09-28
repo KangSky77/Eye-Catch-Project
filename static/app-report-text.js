@@ -27,3 +27,26 @@ const urgentReportCopy = {
 };
 for (const [lang, [title, note]] of Object.entries(urgentReportCopy))
  Object.assign(translations[lang], {report_urgent_title: title, opinion_urgent_note: note});
+
+// 챗봇이 내 결과를 쉽게 풀어 주는 버튼과, 챗봇에 넘기는 문맥의 머리말(2026-09-28).
+const explainResultsCopy = {
+ ko: ['내 검사 결과를 쉽게 설명해 줘', '위험요인', '맞춤 질문 답변', 'AI 3줄 요약'],
+ en: ['Explain my results in simple words', 'Risk factors', 'Personalized question answers', 'AI 3-line summary'],
+ es: ['Explícame mis resultados con palabras sencillas', 'Factores de riesgo', 'Respuestas a preguntas personalizadas', 'Resumen de IA en 3 líneas'],
+ fr: ['Explique-moi mes résultats simplement', 'Facteurs de risque', 'Réponses aux questions personnalisées', 'Résumé IA en 3 lignes'],
+ ja: ['私の検査結果をわかりやすく説明して', 'リスク要因', 'パーソナル質問への回答', 'AIの3行要約'],
+ zh: ['用简单的话解释我的检查结果', '风险因素', '个性化问题的回答', 'AI三行摘要'],
+};
+for (const [lang, [btn, risk, personal, summary]] of Object.entries(explainResultsCopy))
+ Object.assign(translations[lang], {rep_followup_explain: btn, chat_ctx_risk: risk, chat_ctx_personal: personal, chat_ctx_summary: summary});
+
+// 검사 요약 해석에 남기는 AI 맞춤 질문 답변(2026-09-28). 판정이 아니라 진료 때 참고할 답변 기록이다.
+const personalFindingCopy = {
+ ko: 'AI 맞춤 질문에 답한 내용: {items}. 진료 때 참고할 수 있도록 남겨 둡니다.',
+ en: 'Your answers to the AI personalized questions: {items}. Kept here for reference at your visit.',
+ es: 'Sus respuestas a las preguntas personalizadas de la IA: {items}. Se guardan como referencia para la consulta.',
+ fr: 'Vos réponses aux questions personnalisées de l’IA : {items}. Conservées pour référence lors de la consultation.',
+ ja: 'AIのパーソナル質問への回答: {items}。受診時の参考として残しています。',
+ zh: '您对AI个性化问题的回答：{items}。保留以供就诊时参考。',
+};
+for (const [lang, text] of Object.entries(personalFindingCopy)) translations[lang].find_personal = text;

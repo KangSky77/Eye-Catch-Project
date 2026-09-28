@@ -148,3 +148,34 @@ test('AI 소견 요청에 문진 항목·위험요인 코드가 언어와 무관
  assert.deepEqual(Array.from(vm.runInContext('opinionFlagCodes()',c)),
   ['sym_chk_recent','sym_dr_fundus','risk_diabetes','risk_smoking','age_60s']);
 });
+
+test('맞춤 질문의 답이 리포트 해석·AI 조언 코드·챗봇 문맥에 모두 실린다', () => {
+ // 2026-09-28: 맞춤 질문에 답해도 결과가 그대로라 "왜 물어봤지?"가 됐다.
+ const c=setup({lang:'ko',riskAnswers:{surgery:'none',diabetes:true,age:'60s'},chatSymptoms:['sym_chk_recent'],
+  dynamicAnswers:[{q:'최근 한 달 동안 안약을 사용한 적이 있나요?',a:'네',value:true,question_id:'eye_drops'},
+                  {q:'혈당이 목표보다 자주 높나요?',a:'아니오',value:false,question_id:'sugar_off_target'}],
+  amslerResult:{}});
+ c.document={getElementById:()=>null};
+ for(const f of ['app-findings.js']) vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
+ const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
+ vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
+ const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ vm.runInContext(src.slice(src.indexOf('function opinionFlagCodes'),src.indexOf('async function finish')),c);
+ vm.runInContext(src.slice(src.indexOf('function buildChatContext'),src.indexOf('/** \'내 결과 쉽게')),c);
+ const findings=vm.runInContext('buildFindings()',c);
+ const personal=findings.find(line=>line.startsWith('AI 맞춤 질문에 답한 내용'));
+ assert.ok(personal && personal.includes('안약') && personal.includes('→ 네'));
+ const codes=Array.from(vm.runInContext('opinionFlagCodes()',c));
+ assert.ok(codes.includes('ans_eye_drops'));
+ assert.ok(!codes.includes('ans_sugar_off_target'),"'아니오'는 조언을 열지 않는다");
+ const ctx=vm.runInContext('buildChatContext()',c);
+ assert.ok(ctx.includes('안약') && ctx.includes('검사 요약 해석'),'챗봇이 검사 해석과 맞춤 질문 답을 안다');
+ assert.ok(ctx.length<=5000);
+});
+
+test('리포트에 "내 검사 결과를 쉽게 설명해 줘" 버튼이 6개 언어로 있다', () => {
+ const html=fs.readFileSync(path.join(__dirname,'../static/index.html'),'utf8');
+ assert.match(html,/id="followup-explain-btn"[^>]*onclick="askExplainResults\(\)"/);
+ const c=setup({});
+ for(const lang of ['ko','en','es','fr','ja','zh']) assert.ok(vm.runInContext(`translations.${lang}.rep_followup_explain`,c),lang);
+});

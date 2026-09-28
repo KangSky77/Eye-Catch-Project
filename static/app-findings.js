@@ -98,6 +98,13 @@ function buildFindings() {
         out.push(t.find_nosym);
     }
 
+    // --- AI 맞춤 질문 ---
+    // 예전에는 맞춤 질문의 답이 리포트 어디에도 남지 않아 '물어봐 놓고 결과는 그대로'였다(2026-09-28).
+    const personal = (state.dynamicAnswers || []).filter(item => item.q && item.a);
+    if (personal.length && t.find_personal) {
+        out.push(t.find_personal.replace('{items}', personal.map(item => `${item.q} → ${item.a}`).join(' / ')));
+    }
+
     return out.filter(Boolean);
 }
 

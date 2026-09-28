@@ -66,8 +66,10 @@ SYMPTOM_CODES = {"cat_glare", "cat_foggy", "amd_center", "gla_field"}
 MAX_FOLLOWUPS = 2
 # Topics identify missing information, not prewritten questions.
 GENERATED_TOPICS = {
-    "symptom_side", "symptom_pattern", "symptom_trigger", "care_access",
-    "photo_followup", "amsler_followup",
+    "symptom_side", "symptom_pattern", "symptom_trigger",
+    "sugar_off_target", "bp_off_target", "quit_interest",
+    # 2026-09-28에 뺀 주제 — 예전 클라이언트가 보낸 '이미 물은 주제' 기록은 계속 인식한다.
+    "care_access", "photo_followup", "amsler_followup",
 }
 
 

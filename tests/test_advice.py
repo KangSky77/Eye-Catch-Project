@@ -149,3 +149,30 @@ async def test_AI서버에_연결할_수_없으면_규칙_선택을_AI소견으�
     monkeypatch.setattr(llm, "generate_json", down)
     out = await _collect()
     assert out.startswith(llm.ERROR_MARKER)
+
+
+def test_맞춤질문에_예라고_답한_주제는_그_답에_맞춘_조언을_연다():
+    """2026-09-28: 맞춤 질문의 답이 아무 데도 쓰이지 않았다 — 이제 답에 따라 선택지가 바뀐다."""
+    base = dict(flag_codes=["risk_diabetes", "age_60s"], symptom_codes=["retinopathy"], triage_level="weeks")
+    before = advice.options_for(_facts(**base))
+    after = advice.options_for(_facts(**{**base, "flag_codes": base["flag_codes"] + [
+        "ans_eye_drops", "ans_sugar_off_target", "ans_screen_fatigue"]}))
+    assert {"bring_drops", "sugar_consult"} <= set(after["closing"]) and not {"bring_drops", "sugar_consult"} & set(before["closing"])
+    assert "eye_rest" in after["care"] and "eye_rest" not in before["care"]
+    # 빨리 진료가 필요한 경우에도 '진료 때 알릴 것'은 쓸모가 있다
+    now = advice.options_for(_facts(cataract_code="risk", triage_level="now", flag_codes=["ans_eye_injury"]))
+    assert now["closing"][:2] == ["visit_soon", "warning_signs"] and "mention_injury" in now["closing"]
+
+
+def test_답변_조언도_어떤_조합이든_안전필터를_통과한다():
+    persona = dict(flag_codes=["risk_diabetes", "risk_smoking", "ans_eye_injury", "ans_eye_drops", "ans_daily_impact",
+                               "ans_sugar_off_target", "ans_quit_interest", "ans_outdoor_time", "age_70s"],
+                   symptoms=["Hypertension: no", "Diabetes: yes"], symptom_codes=["retinopathy"], triage_level="monitor")
+    f = _facts(**persona)
+    opts = advice.options_for(f)
+    for care, closing in itertools.product(opts["care"], opts["closing"]):
+        for lang in LANGS:
+            text = advice.compose({"exams": opts["exams"][:2], "care": care, "closing": closing}, f, lang)
+            for sentence in safety.SENT_SPLIT.split(text.replace("<<<SUMMARY>>>", "\n")):
+                if sentence.strip():
+                    assert safety.check_sentence(sentence.strip(), persona["symptoms"]) is None, (lang, sentence)

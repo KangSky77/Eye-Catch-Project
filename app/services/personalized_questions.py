@@ -18,15 +18,20 @@ TOPICS = {
     "eye_drops": "recent eye drop use",
     "screen_fatigue": "eye fatigue during screen use, without assuming screen use",
     "outdoor_time": "daytime outdoor exposure, without assuming outdoor activity",
-    "care_access": "practical access to an eye clinic, without assuming a barrier",
     "symptom_duration": "duration of a confirmed symptom, never ask whether it exists again",
     "daily_impact": "one concrete daily activity affected by a confirmed symptom, do not assume the activity",
     "symptom_side": "whether a confirmed symptom affects only one eye",
     "symptom_pattern": "one time pattern of a confirmed symptom",
     "symptom_trigger": "one circumstance associated with a confirmed symptom",
-    "photo_followup": "whether the person has discussed this photo screening finding with a clinician; do not call it a diagnosis",
-    "amsler_followup": "whether the person has discussed the reported grid distortion with a clinician; do not diagnose",
+    # 문진 위험요인에서 나오는 주제(2026-09-28). 증상이 없는 사람도 '내 답'에 맞춘 질문을 받게 한다.
+    # 예전에는 이 자리에 '사진 결과를 의사와 이야기했나'(방금 앱에서 찍은 사진인데)·'안과에 갈 방법이 있나'가
+    # 있어서, 증상이 없는 사람의 질문 20개 중 10개가 어색했다(photo_followup 7·care_access 4 등).
+    "sugar_off_target": "whether their blood sugar often goes above the target their doctor set (Yes = often above target); the person reported diabetes",
+    "bp_off_target": "whether their blood pressure often stays above the target their doctor set (Yes = often above target); the person reported high blood pressure",
+    "quit_interest": "whether they would like help to quit smoking (Yes = wants help); the person reported smoking",
 }
+# 'glasses_help'(안경을 써도 잘 안 보이나)는 넣었다가 뺐다(2026-09-28 실측): '예'의 뜻을 정해 줘도 AI가 15번 중 8번
+# "안경이 선명하게 해 주나요?"처럼 반대로 물었고, 안경을 쓴다고 전제했다. AI 검토도 뒤집힘을 잡지 못했다.
 SYMPTOMS = {"cat_glare": "glare", "cat_foggy": "foggy vision", "amd_center": "center of view looks bent or wavy", "gla_field": "peripheral vision difficulty"}
 
 
@@ -49,13 +54,13 @@ def context(request):
 def topics_for(request):
     if not bank.eligible_ids(request):
         return []
-    topics = bank.eligible_ids(request) + ["care_access"]
+    risk = request.risk_answers
+    # 이 사람의 위험요인에서 나온 주제를 앞에 둔다 — 누구에게나 할 수 있는 질문(화면 피로 등)보다 '나만의' 질문이다.
+    topics = [t for t, key in (("sugar_off_target", "diabetes"), ("bp_off_target", "hypertension"),
+                               ("quit_interest", "smoking")) if risk.get(key) is True]
+    topics += bank.eligible_ids(request)
     if any(request.symptom_answers.get(k) is True for k in bank.SYMPTOM_CODES):
         topics += ["symptom_side", "symptom_pattern", "symptom_trigger"]
-    if request.cataract_code in {"risk", "borderline", "uncertain"}:
-        topics += ["photo_followup"]
-    if any(v is True for v in request.amsler_answers.values()):
-        topics += ["amsler_followup"]
     # When central distortion is the only confirmed symptom, bilateral grid
     # answers already provide its side. Asking the same side adds no information.
     positives = {k for k in bank.SYMPTOM_CODES if request.symptom_answers.get(k) is True}
@@ -101,7 +106,8 @@ async def generate(request, generate_json, valid_format):
         f"Write ONE personalized follow-up question in {language}, answerable with Yes/No/Not sure. "
         "Choose a missing-information topic and write the question yourself using the person's facts. Use everyday language, not medical jargon. "
         "Prioritize a confirmed symptom and what is still unknown about it. If there is no confirmed symptom, "
-        "ask a neutral context question relevant to their tests or risk factors. "
+        "prefer a topic about the person's own risk factor (diabetes, blood pressure, smoking) or test result over a general lifestyle topic. "
+        "Follow the Yes meaning written in the topic description. "
         "Ask only one specific thing. NEVER ask when, how long, which, why, or ask for a description. "
         "For duration use a yes/no threshold, for example 'Has the reported problem lasted more than a month?' "
         "No greeting, explanations, medical advice or test interpretation. Emergency signs (pain, sudden loss, flashes) were screened earlier; do not ask them again. "

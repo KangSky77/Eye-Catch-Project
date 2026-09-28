@@ -816,7 +816,7 @@ async function handleChatAnswer(yes) {
         const current = state.chatHistory[state.chatHistory.length - 1];
         if (current) {
             current.a = answerText;
-            state.dynamicAnswers.push({ q: current.q, a: answerText,
+            state.dynamicAnswers.push({ q: current.q, a: answerText, value: yes,
                 ...(current.question_id ? {question_id: current.question_id} : {}) });
         }
         // 소견서 문맥과 리포트 표시에만 남긴다(chatSymptoms). symptomCodes에는 넣지 않는다 —

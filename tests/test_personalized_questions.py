@@ -15,11 +15,20 @@ def test_topics_require_explicit_symptoms_and_test_results():
     for value in (False, "unknown"):
         assert "symptom_side" not in personal.topics_for(req(symptom_answers={"cat_foggy": value}))
     assert "symptom_side" in personal.topics_for(req(symptom_answers={"cat_foggy": True}))
-    assert "photo_followup" not in personal.topics_for(req(cataract_code="normal"))
-    assert "photo_followup" in personal.topics_for(req(cataract_code="uncertain"))
-    assert "amsler_followup" in personal.topics_for(req(amsler_answers={"left": True}))
-    assert "amsler_followup" not in personal.topics_for(req(amsler_answers={"left": "unable"}))
+    # 방금 앱에서 찍은 사진·격자를 '의사와 이야기했나'로 묻던 주제는 뺐다(2026-09-28 실측 7/50 어색).
+    for removed in ("photo_followup", "amsler_followup", "care_access"):
+        assert removed not in personal.topics_for(req(cataract_code="uncertain", amsler_answers={"left": True}))
+    # 안경 주제는 AI가 '예'의 뜻을 뒤집어 물어서 뺐다(15번 중 8번)
+    assert "glasses_help" not in personal.topics_for(req(cataract_code="uncertain", risk_answers={"age": "70s"}))
     assert not personal.topics_for(req(asked_question_ids=["symptom_side", "care_access"]))
+
+
+def test_위험요인이_있으면_그_사람만의_주제가_먼저_온다():
+    topics = personal.topics_for(req(risk_answers={"diabetes": True, "hypertension": False, "smoking": True}))
+    assert topics[:2] == ["sugar_off_target", "quit_interest"]
+    assert "bp_off_target" not in topics
+    # '모르겠어요'나 '아니오'는 위험요인이 아니다
+    assert "sugar_off_target" not in personal.topics_for(req(risk_answers={"diabetes": "unknown"}))
 
 
 @pytest.mark.anyio
