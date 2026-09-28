@@ -475,7 +475,9 @@ async function askGemmaMore(explainResults = false) {
         const response = await fetch('/api/chat-with-gemma', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context, explain_results: explainResults === true }),
+            // facts: AI 소견 요청과 같은 사실 목록 — 서버 안전 필터가 이 사실과 어긋나는 문장을 지운다
+            body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context, explain_results: explainResults === true,
+                                   facts: buildOpinionSymptoms() }),
             signal: active.controller.signal
         });
 

@@ -286,3 +286,33 @@ def test_이전_절의_검진_부정은_다음_절의_허위이력을_허용하�
     assert safety.check_sentence(
         "No recent eye exam; continue with regular eye check-ups.", ["No exam in 2 years"]
     ) == "contradicts_facts"
+
+
+def test_영어_rule_out은_부정문이면_지우지_않는다():
+    """'Early cataract cannot be ruled out'까지 지워 영어 결과 설명에서 사진 결과가 사라졌다(2026-09-29 실측 2/2)."""
+    for keep in ["Early cataract cannot be ruled out by a photo.", "This result does not rule out cataract.",
+                 "A normal grid can't rule out other problems.", "A photo cannot fully rule out disease."]:
+        assert safety.check_sentence(keep, []) is None, keep
+    for drop in ["This result rules out cataract.", "We can rule out glaucoma.",
+                 "The grid test is normal, ruling out macular problems."]:
+        assert safety.check_sentence(drop, []) == "exclusion", drop
+
+
+@pytest.mark.anyio
+async def test_챗봇도_사실과_어긋나는_문장을_지운다(monkeypatch):
+    from app.services import llm
+    async def fake(prompt):
+        for s in ["혈당과 혈압을 꾸준히 관리하세요. ", "눈을 자주 쉬게 해 주세요."]:
+            yield s
+    monkeypatch.setattr(llm, "stream_with_keepalive", fake)
+    out = "".join([c async for c in llm.chat_with_gemma_stream("관리 방법", "", "ko", facts=["Hypertension: no"])])
+    assert "혈압" not in out and "쉬게" in out
+
+
+def test_혈압_혈당_조언은_사이에_단어가_끼어도_사실과_어긋나면_지운다():
+    """'혈당과 혈압을 잘 관리해야 합니다'가 고혈압 '아니오'인 사람의 챗봇 답에 나갔다(2026-09-29 실측)."""
+    no_bp = ["Hypertension: no"]
+    for s in ["혈당과 혈압을 잘 관리해야 합니다.", "혈압과 혈당을 꾸준히 관리하세요.", "혈압을 철저히 관리하는 것이 좋습니다."]:
+        assert safety.check_sentence(s, no_bp) == "contradicts_facts", s
+    assert safety.check_sentence("혈당을 꾸준히 관리하면 망막 혈관을 지키는 데 도움이 됩니다.", no_bp) is None
+    assert safety.check_sentence("혈압을 잘 관리해 주세요.", []) is None   # 사실이 없으면 지우지 않는다

@@ -309,7 +309,7 @@ def test_question_translation_route_keeps_semantics(client, monkeypatch):
 
 def test_explanation_intent_reaches_chat_service(client, monkeypatch):
     captured = {}
-    async def fake(user_msg, context, lang, explain_results=False):
+    async def fake(user_msg, context, lang, explain_results=False, facts=None):
         captured['explain_results'] = explain_results
         yield 'report explanation'
     monkeypatch.setattr(routes, 'chat_with_gemma_stream', fake)
@@ -317,3 +317,17 @@ def test_explanation_intent_reaches_chat_service(client, monkeypatch):
         'lang':'ko', 'user_msg':'내 검사 결과를 쉽게 설명해 줘', 'context':'확인된 결과', 'explain_results':True})
     assert response.status_code == 200
     assert captured['explain_results'] is True
+
+
+def test_챗봇_요청의_사실목록이_안전필터까지_전달된다(client, monkeypatch):
+    """고혈압 '아니오'인 사람에게 챗봇이 혈압 관리를 권하던 문제(2026-09-29 실측 2/3) — 사실 필터로 막는다."""
+    captured = {}
+    async def fake(user_msg, context, lang, explain_results=False, facts=None):
+        captured['facts'] = facts
+        yield 'ok'
+    monkeypatch.setattr(routes, 'chat_with_gemma_stream', fake)
+    r = client.post('/api/chat-with-gemma', json={'lang': 'ko', 'user_msg': '관리 방법', 'context': '',
+                                                  'facts': ['Hypertension: no', '2년 내 검진 없음']})
+    assert r.status_code == 200 and captured['facts'] == ['Hypertension: no', '2년 내 검진 없음']
+    # 예전 프론트(facts 없음)도 그대로 동작한다
+    assert client.post('/api/chat-with-gemma', json={'lang': 'ko', 'user_msg': '관리', 'context': ''}).status_code == 200

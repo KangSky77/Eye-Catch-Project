@@ -692,12 +692,16 @@ Do not add any fact in the summary. Output nothing else."""
         logger.error("⚠️  소견서 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"
 
-async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", explain_results: bool = False):
+async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", explain_results: bool = False,
+                                 facts: list[str] | None = None):
     # RAG: 질문 키워드로 관련 참고지식을 검색해 주입
     reference = "" if explain_results else knowledge.format_reference(knowledge.retrieve_for_chat(user_msg))
     try:
         # 자유 질문은 소견서보다 더 자유롭게 흘러가므로 필터가 더 중요하다
+        # facts: 고혈압 '아니오'인 사람에게 "혈압을 관리하세요"가 3번 중 2번 나갔다(2026-09-29 실측) —
+        # 지시문의 일반 관리 수칙 예시를 모델이 그대로 따라 했다. AI 소견과 같은 사실 필터로 막는다.
         async for chunk in sanitized_stream(_build_chat_prompt(user_msg, context, lang, reference, explain_results=explain_results),
+                                            facts=facts or [],
                                             night_context=safety.mentions_night(user_msg),
                                             driving_context=safety.mentions_driving(user_msg)): yield chunk
     except Exception:
