@@ -210,6 +210,11 @@ def test_고혈압이_없어도_일반적인_검사_권유는_유지한다():
     assert safety.check_sentence("Manage your blood sugar carefully.", ["Diabetes: no"]) == "contradicts_facts"
 
 
+def test_정상혈압을_전제한_장문_관리권유도_고혈압없음과_모순으로_거른다():
+    sentence = "혈압 수치가 정상 범위에 있더라도 꾸준히 관리하는 것이 눈 건강을 지키는 데 도움이 됩니다."
+    assert safety.check_sentence(sentence, ["Hypertension: no"]) == "contradicts_facts"
+
+
 # 2026-09-23 실사용 테스트: "밤 운전 눈부심을 줄이는 방법"에 선글라스 착용을 권했다(야간엔 시야가 더 어두워진다).
 @pytest.mark.parametrize("sentence, night", [
     ("이럴 때는 자외선 노출을 줄이기 위해 선글라스를 착용하시는 것이 도움이 됩니다.", True),   # 실제 문장 — 질문이 밤 운전

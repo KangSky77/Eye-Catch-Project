@@ -123,7 +123,9 @@ function clearUploadError() {
 function refreshUploadError() {
     const el = document.getElementById('upload-error');
     if (!el || el.classList.contains('hidden') || !state.uploadErrorCode) return;
-    const msg = translations[state.lang]['ai_' + state.uploadErrorCode];
+    const key = state.uploadErrorCode.startsWith('err_')
+        ? state.uploadErrorCode : 'ai_' + state.uploadErrorCode;
+    const msg = translations[state.lang][key];
     if (msg) el.textContent = msg;
 }
 
@@ -254,7 +256,7 @@ async function runAIAnalysis(droppedFile) {
     clearUploadError();
     if (!file.type.startsWith('image/')) {
         showToast(t.err_file_type || "Please upload an image file.", 'error');
-        showUploadError(t.err_file_type || "Please upload an image file.");
+        showUploadError(t.err_file_type || "Please upload an image file.", 'err_file_type');
         return;
     }
     // 서버 상한 검사보다 먼저 줄인다 — 200MP 원본은 축소 전에 이미 10MB를 넘는다
@@ -266,7 +268,7 @@ async function runAIAnalysis(droppedFile) {
 
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
         const m = (t.err_file_size || "File too large ({n} MB max).").replace('{n}', MAX_UPLOAD_MB);
-        showToast(m, 'error'); showUploadError(m);
+        showToast(m, 'error'); showUploadError(m, 'err_file_size');
         return;
     }
 
@@ -762,7 +764,7 @@ function recordAmsler(bad) {
             prompt.classList.add('just-switched');
         }
         const tt = translations[state.lang];
-        if (typeof showToast === 'function' && tt.ams_switch_toast) showToast(tt.ams_switch_toast, 'info', 3500);
+        if (typeof showToast === 'function' && tt.ams_switch_toast) showToast(tt.ams_switch_toast, 'info', 3500, 'ams_switch_toast');
         return;                       // 아직 반대쪽 눈이 남았다
     }
 

@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.services import knowledge
 from app.services import safety
 from app.services import advice
+from app.services import explain_check
 from app.services import questions as followup_questions
 
 logger = logging.getLogger(__name__)
@@ -693,7 +694,12 @@ Do not add any fact in the summary. Output nothing else."""
         yield ERROR_MARKER + "AI_SERVER_ERROR"
 
 async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", explain_results: bool = False,
-                                 facts: list[str] | None = None):
+                                 facts: list[str] | None = None, explain_required: list[str] | None = None,
+                                 explain_fallback: list[str] | None = None):
+    if explain_results and explain_required and explain_fallback:
+        async for chunk in _checked_explain_stream(context, lang, facts or [], explain_required, explain_fallback):
+            yield chunk
+        return
     # RAG: 질문 키워드로 관련 참고지식을 검색해 주입
     reference = "" if explain_results else knowledge.format_reference(knowledge.retrieve_for_chat(user_msg))
     try:
@@ -707,6 +713,35 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", 
     except Exception:
         logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"
+
+async def _checked_explain_stream(context: str, lang: str, facts: list[str], required: list[str], fallback: list[str]):
+    """결과 설명을 끝까지 받은 뒤 필수 항목을 확인하고, 빠졌으면 고정 문장으로 바꿔 한 번에 내보낸다.
+
+    스트리밍을 포기하는 대가는 3문장(e2b 기준 몇 초)만큼 로더가 더 도는 것뿐이다.
+    한 번 화면에 찍힌 설명을 지우고 바꾸는 쪽이 사용자에게 더 혼란스럽다.
+    AI가 실패하거나 필터가 전부 지웠을 때도 고정 문장은 보여줄 수 있으므로 오류 대신 그것을 낸다.
+    """
+    text = ""
+    failed = ""
+    try:
+        async for chunk in sanitized_stream(_build_chat_prompt("", context, lang, explain_results=True), facts=facts):
+            if chunk == KEEPALIVE:
+                yield chunk
+            elif chunk.startswith(ERROR_MARKER):
+                failed = chunk[len(ERROR_MARKER):]
+                break
+            else:
+                text += chunk
+    except Exception:
+        logger.error("⚠️  결과 설명 생성 오류 — 고정 문장으로 대신한다", exc_info=True)
+        failed = "AI_SERVER_ERROR"
+    missing = [failed] if failed else explain_check.missing_items(text, required, lang)
+    if not missing:
+        yield text
+        return
+    logger.warning("⚠️  결과 설명에서 필수 항목 누락 — 고정 문장으로 대신한다: %s | %s", ",".join(missing), text[:160])
+    yield await explain_check.fallback_text(fallback, lang)
+
 
 # 화면에는 '네/아니오' 버튼뿐이라, 서술형 질문이 나오면 사용자가 답할 방법이 없다.
 # 프롬프트로 제약을 걸어도 LLM이 가끔 어기므로 서버에서 한 번 더 거른다.

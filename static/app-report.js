@@ -431,6 +431,37 @@ function buildChatContext() {
     return parts.join('\n\n').slice(0, 5000);
 }
 
+/**
+ * 결과 설명에 반드시 들어가야 할 항목과, 빠졌을 때 대신 보여줄 고정 문장.
+ * AI 설명이 격자 이상이나 권장 시기를 빠뜨리는 일이 실측에서 나왔다(2026-09-29, 8번 중 격자 2·시기 1).
+ * 서버가 설명을 끝까지 받은 뒤 확인하고, 빠졌으면 이 고정 문장으로 바꾼다(app/services/explain_check.py).
+ * 문장은 buildFindings()에 실제로 들어간 줄만 쓴다 — 수술 이력으로 사진 판독을 뺀 회차 등은 거기서 이미 걸러진다.
+ */
+function explainCheckPayload() {
+    const t = translations[state.lang];
+    const findings = typeof buildFindings === 'function' ? buildFindings() : [];
+    const required = [];
+    const fallback = [];
+    const photo = { risk: t.find_cat_risk, borderline: t.find_cat_borderline,
+                    uncertain: t.find_cat_uncertain, normal: t.find_cat_normal }[state.aiResultCode];
+    if (photo && findings.includes(photo)) {
+        fallback.push(photo);
+        if (state.aiResultCode === 'risk' || state.aiResultCode === 'borderline') required.push('cat_' + state.aiResultCode);
+    }
+    const ams = (t.find_ams_abnormal || '').replace('{eye}', formatAmslerResult());
+    if (state.hasAmsler && findings.includes(ams)) {
+        const r = state.amslerResult || {};
+        required.push(r.left === true && r.right === true ? 'ams_both' : r.left === true ? 'ams_left' : 'ams_right');
+        fallback.push(ams);
+    }
+    const level = state.triage?.level;
+    if ((level === 'now' || level === 'weeks') && state.triage.label) {
+        required.push('tri_' + level);
+        fallback.push(state.triage.label);
+    }
+    return required.length ? { explain_required: required, explain_fallback: fallback } : {};
+}
+
 /** '내 결과 쉽게 설명해 줘' 버튼 — 입력 없이 바로 묻는다. */
 function askExplainResults() {
     const inputEl = document.getElementById('user-followup-input');
@@ -477,7 +508,7 @@ async function askGemmaMore(explainResults = false) {
             headers: { 'Content-Type': 'application/json' },
             // facts: AI 소견 요청과 같은 사실 목록 — 서버 안전 필터가 이 사실과 어긋나는 문장을 지운다
             body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context, explain_results: explainResults === true,
-                                   facts: buildOpinionSymptoms() }),
+                                   facts: buildOpinionSymptoms(), ...(explainResults === true ? explainCheckPayload() : {}) }),
             signal: active.controller.signal
         });
 

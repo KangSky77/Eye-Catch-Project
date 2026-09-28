@@ -111,7 +111,8 @@ async def get_ai_opinion(req: GemmaRequest):
 @router.post("/api/chat-with-gemma")
 async def chat_with_gemma(req: ChatRequest):
     return StreamingResponse(
-        _limited_stream(chat_with_gemma_stream(req.user_msg, req.context, req.lang, explain_results=req.explain_results, facts=req.facts)),
+        _limited_stream(chat_with_gemma_stream(req.user_msg, req.context, req.lang, explain_results=req.explain_results, facts=req.facts,
+                                                explain_required=req.explain_required, explain_fallback=req.explain_fallback)),
         media_type="text/plain"
     )
 

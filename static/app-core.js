@@ -277,6 +277,13 @@ function updateUI(lang) {
         if (translations[lang][key]) el.title = translations[lang][key];
     });
 
+    // 토스트는 동적으로 만들어져 일반 번역 순회 시점에 없을 수 있다.
+    // 검사 중 언어를 바꿔도 남아 있는 안내를 새 언어로 다시 그린다.
+    document.querySelectorAll('.toast-msg[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang][key]) el.textContent = translations[lang][key];
+    });
+
     renderStepProgress();   // "5단계 중 2단계" 라벨도 선택 언어로
 
     openMap();   // '전체 지도' 링크 주소도 언어에 맞춘다(한국어 카카오맵 / 그 외 구글 지도)
@@ -561,7 +568,7 @@ const TOAST_ICONS = {
     info:    '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8h.01"/></svg>'
 };
 
-function showToast(message, type = 'info', duration = 4500) {
+function showToast(message, type = 'info', duration = 4500, i18nKey = '') {
     const host = document.getElementById('toast-host');
     if (!host) { console.warn(message); return; }
 
@@ -573,6 +580,7 @@ function showToast(message, type = 'info', duration = 4500) {
     icon.innerHTML = TOAST_ICONS[type] || TOAST_ICONS.info;   // 고정 상수라 주입 위험 없음
     const text = document.createElement('span');
     text.className = 'toast-msg';
+    if (i18nKey) text.dataset.i18n = i18nKey;
     text.textContent = message;                               // 서버/사용자 문자열은 항상 textContent
     el.appendChild(icon);
     el.appendChild(text);

@@ -136,7 +136,9 @@ _NO_DIABETES_ITEM = re.compile(r"^Diabetes:\s*no$", re.I)
 # 예전 패턴은 '을'·'을 꾸준히'만 허용해서 "혈당과 혈압을 잘 관리해야 합니다"가 고혈압 '아니오'인 사람의
 # 챗봇 답변에 그대로 나갔다(2026-09-29 실측). 이 규칙은 'Hypertension: no'일 때만 쓰인다.
 _PERSONAL_BP_ADVICE = re.compile(
-    r"혈압(?:을|를|도|은|과|와)?\s*(?:[가-힣]+\s+){0,2}(?:관리|조절|조정|유지|낮추)"
+    # 작은 모델이 "혈압 수치가 정상 범위에 있더라도 꾸준히 관리"처럼
+    # 여러 수식어를 사이에 끼우면 2단어 제한을 넘어 사실 필터를 빠져나간다.
+    r"혈압(?:을|를|도|은|과|와)?\s*(?:[가-힣]+\s+){0,6}(?:관리|조절|조정|유지|낮추)"
     r"|(?:manage|control|monitor|keep\s+track\s+of|lower)\s+(?:your\s+)?blood\s+pressure"
     r"|keep\s+(?:your\s+)?blood\s+pressure\s+(?:under\s+control|stable|in\s+check)"
     r"|(?:gestione|controle|surveillez|contrôlez|g[eé]rez)\s+(?:su|votre)\s+(?:presi[oó]n\s+arterial|tension\s+art[eé]rielle)"

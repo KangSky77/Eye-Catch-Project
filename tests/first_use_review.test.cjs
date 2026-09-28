@@ -206,3 +206,30 @@ test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async ()
  assert.deepEqual(sent[0].facts,['Hypertension: no','Diabetes: yes']);
  assert.equal(sent[0].explain_results,false);
 });
+
+test('결과 설명 요청은 빠지면 안 되는 항목과 대체 고정 문장을 함께 보낸다', () => {
+ // 2026-09-29 e2b 실측: 위험 사례 10번 중 격자 이상 2번·'빠른 시일 내' 3번이 설명에서 빠졌다.
+ const load=state=>{
+  const c=setup({lang:'ko',riskAnswers:{surgery:'none'},chatSymptoms:[],...state});
+  c.document={getElementById:()=>null};
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../static/app-findings.js'),'utf8'),c);
+  const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
+  vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
+  const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+  vm.runInContext(src.slice(src.indexOf('function explainCheckPayload'),src.indexOf('/** \'내 결과 쉽게')),c);
+  return {c,p:vm.runInContext('explainCheckPayload()',c),t:vm.runInContext('translations.ko',c)};
+ };
+ const {p,t}=load({aiResultCode:'risk',amslerResult:{left:true,right:false},hasAmsler:true,
+  triage:{level:'now',label:'빠른 시일 내 안과 진료를 권합니다'}});
+ assert.deepEqual(Array.from(p.explain_required),['cat_risk','ams_left','tri_now']);
+ assert.equal(p.explain_fallback[0],t.find_cat_risk);
+ assert.ok(p.explain_fallback[1].includes('왼쪽'));
+ assert.equal(p.explain_fallback[2],'빠른 시일 내 안과 진료를 권합니다');
+ // 정상·관찰 결과는 확인할 비정상 소견이 없다 — 예전처럼 바로 흘려보낸다
+ const normal=load({aiResultCode:'normal',amslerResult:{left:false,right:false},hasAmsler:false,triage:{level:'monitor',label:'x'}});
+ assert.deepEqual({...normal.p},{});
+ // 수술 이력으로 사진 판독을 뺀 회차는 백내장 소견을 요구하지 않는다(buildFindings에 없는 줄)
+ const postop=load({aiResultCode:'risk',riskAnswers:{surgery:'past',surgery_type:'cataract'},amslerResult:{},hasAmsler:false,
+  triage:{level:'weeks',label:'수 주 내 안과 검진을 권합니다'}});
+ assert.ok(!Array.from(postop.p.explain_required||[]).includes('cat_risk'));
+});
