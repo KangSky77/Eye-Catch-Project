@@ -58,19 +58,19 @@ test('postoperative symptoms use reported-symptom wording in all six languages',
  }
 });
 
-test('stalled personalized question falls back at the deadline and discards late AI response',async()=>{
- const c=setup('today');let expire,late,signal,shown=[];
+test('stalled optional question ends at the deadline and discards late AI response',async()=>{
+ const c=setup('today');let expire,late,signal,shown=[],finishes=0;
  const deadline=vm.runInContext('NEXT_QUESTION_DEADLINE_MS',c);
  // 로컬 Gemma 실측(6.3~7.8초, 노트북 14.6~25.0초)보다 짧으면 맞춤 질문이 한 번도 나오지 않는다
  assert.ok(deadline>=25000,'deadline '+deadline);
  Object.assign(c,{setTimeout(fn,ms){assert.equal(ms,deadline);expire=fn;return 1},clearTimeout(){},
   fetch(url,options){signal=options.signal;return new Promise(resolve=>late=resolve)},
-  removeLoadingMsg(){},addMsg(sender,q){shown.push(q)},setChatAnswerMode(){},renderChatOptions(){}});
+  removeLoadingMsg(){},addMsg(sender,q){shown.push(q)},setChatAnswerMode(){},renderChatOptions(){},clearChatControls(){},finish(){finishes++}});
  c.state.chatHistory=[];c.state.sessionGeneration=1;
  const pending=vm.runInContext('fetchNextQuestion()',c);expire();await pending;
- assert.equal(signal.aborted,true);assert.equal(shown[0],vm.runInContext('translations.ko.nextq_fallback',c));
+ assert.equal(signal.aborted,true);assert.equal(shown.length,0);assert.equal(finishes,1);
  late({json:async()=>({question:'Late AI question'})});await new Promise(r=>setImmediate(r));
- assert.equal(shown.length,1);assert.equal(c.state.chatBusy,false);
+ assert.equal(shown.length,0);assert.equal(finishes,1);
 });
 
 test('duplicate AI, empty replies and failed requests never repeat the fallback',async()=>{
@@ -80,10 +80,12 @@ test('duplicate AI, empty replies and failed requests never repeat the fallback'
    removeLoadingMsg(){},addMsg(sender,q){shown.push(q)},setChatAnswerMode(){},renderChatOptions(){},clearChatControls(){},finish(){finishes++}});
   c.state.chatHistory=[];c.state.sessionGeneration=1;
   await vm.runInContext('fetchNextQuestion()',c);
-  c.state.chatHistory.at(-1).a='No';
-  await vm.runInContext('fetchNextQuestion()',c);
-  assert.equal(shown.length,1,lang+'/'+mode);assert.equal(finishes,1);
-  assert.equal(c.state.chatHistory.length,1);
+  if(mode==='duplicate'){
+   c.state.chatHistory.at(-1).a='No';
+   await vm.runInContext('fetchNextQuestion()',c);
+  }
+  assert.equal(shown.length,mode==='duplicate'?1:0,lang+'/'+mode);assert.equal(finishes,1);
+  assert.equal(c.state.chatHistory.length,shown.length);
  }
 });
 
@@ -246,7 +248,7 @@ test('remote cataract surgery suppresses unlocalized photo inference but retains
 });
 test('unperformed Amsler is passed to additional-question AI as unperformed',async()=>{
  const c=setup('today');let payload;
- Object.assign(c,{fetch:async(url,options)=>{payload=JSON.parse(options.body);return {json:async()=>({question:''})}},removeLoadingMsg(){},addMsg(){},setChatAnswerMode(){},renderChatOptions(){},addLoadingMsg(){}});
+ Object.assign(c,{fetch:async(url,options)=>{payload=JSON.parse(options.body);return {json:async()=>({question:''})}},removeLoadingMsg(){},addMsg(){},setChatAnswerMode(){},renderChatOptions(){},addLoadingMsg(){},clearChatControls(){},finish(){}});
  c.state.chatHistory=[];c.state.sessionGeneration=1;c.state.hasAmsler=false;
  await vm.runInContext('fetchNextQuestion()',c);
  assert.equal(payload.amsler_res,vm.runInContext('formatAmslerResult()',c));
@@ -457,4 +459,68 @@ test('positive diabetes, hypertension and smoking answers reach the opinion as e
   for (const f of ['Diabetes: yes','Hypertension: yes','Smoking: yes']) assert.ok(facts.includes(f),lang+' '+f);
   assert.ok(!facts.includes('Diabetes: no'),lang);
  }
+});
+
+test('catalog IDs survive language changes and unknown answers; request carries structured facts',async()=>{
+ const c=setup('none');let payload,resolveFetch,shown=[];
+ const texts={ko:'눈을 다친 적이 있나요?',en:'Have you ever injured an eye?'};
+ Object.assign(c,{fetch:async(url,options)=>{payload=JSON.parse(options.body);return new Promise(resolve=>resolveFetch=resolve)},
+  removeLoadingMsg(){},addMsg(who,q){shown.push(q)},setChatAnswerMode(){},renderChatOptions(){},advanceAfterDynamicAnswer(){}});
+ Object.assign(c.state,{chatHistory:[],dynamicAnswers:[],sessionGeneration:1,symptomAnswers:{cat_foggy:'unknown'},redFlags:[],stepIdx:99,dynamicCount:0,chatSymptoms:[]});
+ const pending=vm.runInContext('fetchNextQuestion()',c);c.state.lang='en';
+ resolveFetch({json:async()=>({question:texts.ko,question_id:'eye_injury',question_texts:texts,answer_type:'yesno',done:false})});await pending;
+ assert.equal(shown[0],texts.en);assert.equal(payload.symptom_answers.cat_foggy,'unknown');
+ assert.equal(payload.postoperative,false);assert.deepEqual(payload.red_flags,[]);
+ const text={nodeType:3,nodeValue:texts.en};c.Node={TEXT_NODE:3};
+ c.document={getElementById:id=>id==='step-chat'?{classList:{contains:()=>true}}:id==='chat-box'?{querySelectorAll:sel=>sel.includes('chat-bot')?[{firstElementChild:{lastChild:text}}]:[]}:null};
+ c.state.riskIdx=99;c.state.symIdx=99;c.state.lang='ko';vm.runInContext('refreshChatLanguage()',c);
+ assert.equal(text.nodeValue,texts.ko);assert.equal(c.state.chatHistory[0].question_id,'eye_injury');
+ await vm.runInContext("handleChatAnswer('unknown')",c);
+ assert.equal(c.state.dynamicAnswers[0].question_id,'eye_injury');
+ assert.equal(c.state.dynamicAnswers[0].a,vm.runInContext('translations.ko.chat_unknown',c));
+ assert.equal(c.state.chatSymptoms.length,0);
+ c.clearChatControls=()=>{};let finishes=0;c.finish=()=>finishes++;
+ const next=vm.runInContext('fetchNextQuestion()',c);
+ assert.deepEqual(payload.asked_question_ids,['eye_injury']);
+ resolveFetch({json:async()=>({done:true,question:''})});await next;
+ assert.equal(finishes,1);assert.equal(c.state.chatHistory.length,1);
+});
+
+test('repeated catalog ID and late previous-session response cannot create another question',async()=>{
+ for(const stale of [false,true]){
+  const c=setup('none');let resolveFetch,shown=0,finishes=0;
+  Object.assign(c,{fetch:()=>new Promise(resolve=>resolveFetch=resolve),removeLoadingMsg(){},addMsg(){shown++},clearChatControls(){},finish(){finishes++}});
+  Object.assign(c.state,{sessionGeneration:1,chatHistory:[{q:'Different language',a:'unknown',question_id:'eye_injury'}]});
+  const pending=vm.runInContext('fetchNextQuestion()',c);if(stale)c.state.sessionGeneration++;
+  resolveFetch({json:async()=>({question:'눈을 다친 적이 있나요?',question_id:'eye_injury',answer_type:'yesno'})});await pending;
+  assert.equal(shown,0);assert.equal(finishes,stale?0:1);
+ }
+});
+
+test('generated question translates without replacing its identity and ignores stale translations',async()=>{
+ for(const stale of [false,true]){
+  const c=setup('none');let resolveFetch,payload,refreshes=0;
+  const current={text:'흐리게 보이는 것이 한쪽 눈에만 있나요?',lang:'ko',id:'symptom_side',generated:true,texts:{ko:'흐리게 보이는 것이 한쪽 눈에만 있나요?'}};
+  Object.assign(c.state,{lang:'en',sessionGeneration:1,dynamicQuestion:current});
+  Object.assign(c,{fetch:(url,opts)=>{assert.equal(url,'/api/translate-question');payload=JSON.parse(opts.body);return new Promise(resolve=>resolveFetch=resolve)},
+   clearChatControls(){},addLoadingMsg(){},removeLoadingMsg(){},refreshChatLanguage(){refreshes++}});
+  const pending=vm.runInContext('translatePendingQuestion(state.dynamicQuestion)',c);
+  assert.equal(c.state.chatBusy,true);assert.equal(payload.question,current.text);
+  if(stale){c.state.sessionGeneration++;c.state.dynamicQuestion=null;}
+  resolveFetch({ok:true,json:async()=>({translated:true,question:'Is the blurred vision in only one eye?'})});await pending;
+  assert.equal(current.id,'symptom_side');assert.equal(refreshes,stale?0:1);
+  if(!stale)assert.equal(current.texts.en,'Is the blurred vision in only one eye?');
+ }
+});
+
+test('failed translation preserves original question and history instead of substituting a fallback',async()=>{
+ const c=setup('none');let notices=[],buttons;
+ const current={text:'한쪽 눈에서만 흐리게 보이나요?',lang:'ko',id:'symptom_side',generated:true,texts:{}};
+ Object.assign(c.state,{lang:'en',sessionGeneration:1,dynamicQuestion:current,chatHistory:[{q:current.text,a:'',question_id:current.id}]});
+ Object.assign(c,{fetch:async()=>({ok:true,json:async()=>({translated:false,question:''})}),clearChatControls(){},addLoadingMsg(){},removeLoadingMsg(){},
+  addMsg(who,text){notices.push(text)},setChatAnswerMode(){},renderChatOptions(o){buttons=o},document:{getElementById:()=>null}});
+ await vm.runInContext('translatePendingQuestion(state.dynamicQuestion)',c);
+ assert.equal(current.text,'한쪽 눈에서만 흐리게 보이나요?');assert.equal(c.state.chatHistory.length,1);
+ assert.equal(c.state.chatHistory[0].q,current.text);assert.equal(buttons.length,3);assert.equal(c.state.chatBusy,false);
+ assert.match(notices[0],/Translation failed/);
 });

@@ -98,7 +98,8 @@ async def test_alternative_questions_get_text_input(monkeypatch, question):
     async def generate(_):
         return question
     monkeypatch.setattr(llm, 'generate_ollama', generate)
-    assert await llm.generate_next_question('en', '', '', []) == (question, 'text')
+    lang = 'ko' if question.startswith('불편한') else 'en'
+    assert await llm.generate_next_question(lang, '', '', []) == (question, 'text')
 
 
 def test_gate_is_required_for_readiness():
@@ -111,7 +112,8 @@ def test_gate_is_required_for_readiness():
 def test_dynamic_question_answers_are_kept_as_pairs():
     chat = (Path(__file__).resolve().parent.parent / 'static' / 'app-chat.js').read_text(encoding='utf-8')
     report = (Path(__file__).resolve().parent.parent / 'static' / 'app-report.js').read_text(encoding='utf-8')
-    assert 'state.dynamicAnswers.push({ q: current.q, a: answerText })' in chat
+    assert 'state.dynamicAnswers.push({ q: current.q, a: answerText,' in chat
+    assert 'question_id: current.question_id' in chat
     assert 'state.dynamicAnswers || []' in report
 
 

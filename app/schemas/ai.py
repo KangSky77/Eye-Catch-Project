@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool
 
 # 리스트 항목 하나하나의 길이 상한.
 # 리스트 길이(max_length=30)만 막으면 "짧은 항목 30개"는 걸러도 "거대한 항목 30개"는 통과해,
@@ -60,6 +60,18 @@ class QuestionGenRequest(BaseModel):
     cataract_res: str = Field(..., max_length=200)   # GemmaRequest와 동일 사유 (fr/es 경계+두눈 문자열 110자)
     amsler_res: str = Field(..., max_length=100)
     chat_history: list[ChatHistoryItem] = Field(default_factory=list, max_length=50)
+    symptom_answers: dict[SymptomCode, StrictBool | Literal["unknown"]] = Field(default_factory=dict, max_length=50)
+    asked_question_ids: list[SymptomCode] = Field(default_factory=list, max_length=20)
+    cataract_code: str = Field(default="", max_length=20)
+    amsler_answers: dict[Literal["left", "right"], StrictBool | Literal["unable"]] = Field(default_factory=dict)
+    risk_answers: dict[SymptomCode, StrictBool | Annotated[str, Field(max_length=30)]] = Field(default_factory=dict, max_length=20)
+    postoperative: bool = False
+    red_flags: list[SymptomCode] = Field(default_factory=list, max_length=10)
+
+class QuestionTranslationRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+    source_lang: Literal["ko", "en", "es", "fr", "ja", "zh"]
+    target_lang: Literal["ko", "en", "es", "fr", "ja", "zh"]
 
 class SaveDiagnosisRequest(BaseModel):
     # The save API requires an explicit consent declaration, supplied only when

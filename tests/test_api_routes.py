@@ -165,10 +165,10 @@ def test_get_ai_opinion_상한초과는_422(client):
 
 def test_generate_next_question(client, monkeypatch):
     async def fake(*a, **kw):
-        return "야간 운전 시 빛 번짐이 있나요?", "yesno"
-    monkeypatch.setattr(routes, "generate_next_question", fake)
+        return {"question": "눈을 다친 적이 있나요?", "answer_type": "yesno"}
+    monkeypatch.setattr(routes, "generate_personalized_question", fake)
     r = client.post("/api/generate-next-question", json={"cataract_res": "정상", "amsler_res": "정상"})
-    assert r.json() == {"question": "야간 운전 시 빛 번짐이 있나요?", "answer_type": "yesno"}
+    assert r.json() == {"question": "눈을 다친 적이 있나요?", "answer_type": "yesno"}
 
 
 @pytest.mark.parametrize("signals", [{"red_flags": ["rf_acute"]}, {"triage_level": "urgent"}])
@@ -184,14 +184,14 @@ def test_응급_고정안내는_LLM_대기열을_우회한다(client, monkeypatc
     assert len(r.text.split("<<<SUMMARY>>>\n")[1].splitlines()) == 3
 
 
-def test_generate_next_question_서술형이면_answer_type이_text(client, monkeypatch):
-    # 프론트가 이 값을 보고 네/아니오 버튼 대신 자유 입력칸을 띄운다.
-    # 이 계약이 깨지면 사용자가 답할 수 없는 질문 앞에서 문진이 멈춘다.
+def test_next_question_ignores_model_prose_and_returns_catalog_copy(client, monkeypatch):
     async def fake(*a, **kw):
-        return "시력 변화를 자세히 설명해 주시겠어요?", "text"
-    monkeypatch.setattr(routes, "generate_next_question", fake)
+        return {"question_id": "eye_injury", "question": "시력 변화를 설명해 주세요."}
+    monkeypatch.setattr("app.services.llm.generate_json", fake)
     r = client.post("/api/generate-next-question", json={"cataract_res": "정상", "amsler_res": "정상"})
-    assert r.json()["answer_type"] == "text"
+    assert r.json()["answer_type"] == "yesno"
+    assert r.json()["question"] == "눈을 다친 적이 있나요?"
+    assert r.json()["question_id"] == "eye_injury"
 
 
 @pytest.mark.parametrize("params", [
@@ -283,3 +283,26 @@ def test_흔들림을_반사보다_먼저_판정한다():
     from pathlib import Path
     src = (Path(__file__).resolve().parent.parent / "app" / "services" / "vision.py").read_text(encoding="utf-8")
     assert src.index('"blurry"') < src.index('"hold"')
+
+def test_personalized_route_returns_generated_question_after_review(client, monkeypatch):
+    responses = iter([{'topic': 'symptom_side', 'question': '흐리게 보이는 느낌이 한쪽 눈에만 있나요?'}, {'verdict': 'ok'}])
+    async def fake(*_):
+        return next(responses)
+    monkeypatch.setattr('app.services.llm.generate_json', fake)
+    r = client.post('/api/generate-next-question', json={
+        'cataract_res': 'uncertain', 'amsler_res': 'normal', 'cataract_code': 'uncertain',
+        'symptom_answers': {'cat_foggy': True}, 'lang': 'ko'})
+    assert r.status_code == 200
+    assert r.json()['source'] == 'generated'
+    assert r.json()['question'] == '흐리게 보이는 느낌이 한쪽 눈에만 있나요?'
+
+
+def test_question_translation_route_keeps_semantics(client, monkeypatch):
+    responses = iter([{'question': 'Is the blurred vision in only one eye?'}, {'equivalent': True}])
+    async def fake(*_):
+        return next(responses)
+    monkeypatch.setattr('app.services.llm.generate_json', fake)
+    r = client.post('/api/translate-question', json={
+        'question': '흐리게 보이는 느낌이 한쪽 눈에만 있나요?', 'source_lang': 'ko', 'target_lang': 'en'})
+    assert r.status_code == 200 and r.json()['translated'] is True
+    assert r.json()['question'] == 'Is the blurred vision in only one eye?'

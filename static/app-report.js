@@ -70,6 +70,10 @@ function opinionFlagCodes() {
         ...['diabetes', 'hypertension', 'smoking', 'family']
             .filter(k => state.riskAnswers?.[k] === true).map(k => 'risk_' + k),
         ...(state.riskAnswers?.age ? ['age_' + state.riskAnswers.age] : []),
+        // 맞춤 질문에 '예'라고 답한 주제 → 그 답에 맞춘 조언이 선택지로 열린다(app/services/advice.py).
+        ...(state.dynamicAnswers || [])
+            .filter(item => item.value === true && /^[a-z_]{3,16}$/.test(item.question_id || ''))
+            .map(item => 'ans_' + item.question_id),
     ].slice(0, 40);
 }
 
@@ -396,6 +400,39 @@ function cancelFollowup() {
     }
     const sendBtn = document.getElementById('followup-send-btn');
     if (sendBtn) { sendBtn.disabled = false; sendBtn.removeAttribute('aria-busy'); }
+    const explainBtn = document.getElementById('followup-explain-btn');
+    if (explainBtn) explainBtn.disabled = false;
+}
+
+/** 챗봇이 '내 결과'를 알 수 있게 넘기는 문맥.
+ *
+ *  예전에는 AI 3줄 요약(생활 조언)만 넘겨서, "내 검사 결과를 쉽게 설명해 줘"라고 물으면 챗봇이 결과를
+ *  모른 채 "실제 검사 기록을 확인해야 합니다"라고 답했다(2026-09-28 실측 2/2). 검사 해석은 앱이 코드로
+ *  만든 고정 문장(buildFindings)을 그대로 넘긴다 — 챗봇은 그 문장을 쉬운 말로 풀어 줄 뿐 새로 판정하지 않는다.
+ *  서버 스키마 상한(ChatRequest.context 5000자)에 맞춰 자른다 — 넘기면 422가 나서 '서버 연결 불가'로 오인된다. */
+function buildChatContext() {
+    const t = translations[state.lang];
+    const parts = [];
+    // 권장 조치의 이유 문구(why)는 넘기지 않는다. "경계 소견, 확인이 필요한 증상, 또는 미뤄진 검진"처럼
+    // '셋 중 하나'를 뜻하는 일반 문장이라, 챗봇이 "경계 소견이 발견되었다"로 읽었다(2026-09-28 실측).
+    // 실제로 해당하는 항목은 아래 검사 요약 해석에 들어 있다.
+    if (state.triage) parts.push(`[${t.tri_title || 'Recommended action'}] ${state.triage.label || ''}`);
+    // 검사 요약 해석에는 AI 맞춤 질문 답변 줄도 들어 있다(app-findings.js) — 따로 넣지 않는다.
+    const findings = typeof buildFindings === 'function' ? buildFindings() : [];
+    if (findings.length) parts.push(`[${t.find_title || 'Result summary'}]\n` + findings.map(line => '- ' + line).join('\n'));
+    const factors = computeRiskScore(state.riskAnswers || {}).factors || [];
+    if (factors.length) parts.push(`[${t.chat_ctx_risk || 'Risk factors'}] ${factors.join(', ')}`);
+    const summary = state.opinionSummaryText || document.getElementById('gemma-opinion-text')?.innerText || '';
+    if (summary) parts.push(`[${t.chat_ctx_summary || 'AI 3-line summary'}]\n${summary}`);
+    return parts.join('\n\n').slice(0, 5000);
+}
+
+/** '내 결과 쉽게 설명해 줘' 버튼 — 입력 없이 바로 묻는다. */
+function askExplainResults() {
+    const inputEl = document.getElementById('user-followup-input');
+    if (!inputEl || _followupBusy) return;
+    inputEl.value = translations[state.lang].rep_followup_explain || '';
+    askGemmaMore();
 }
 
 async function askGemmaMore() {
@@ -409,8 +446,7 @@ async function askGemmaMore() {
 
     if (!userMsg) { inputEl.focus(); return; }
 
-    // 서버 스키마 상한(ChatRequest.context 5000자)에 맞춰 자름 — 넘기면 422가 나서 '서버 연결 불가'로 오인
-    const context = (state.opinionFullText || document.getElementById('gemma-opinion-text').innerText).slice(0, 5000);
+    const context = buildChatContext();
 
     // 스트리밍 도중 새 검사가 시작되면(로고 클릭 등) 이 답변은 새 리포트의 것이 아니다.
     // 세대 번호를 찍어 두고 도착한 조각마다 같은 세션인지 확인한다.
@@ -421,6 +457,8 @@ async function askGemmaMore() {
 
     _followupBusy = true;
     if (sendBtn) { sendBtn.disabled = true; sendBtn.setAttribute('aria-busy', 'true'); }
+    const explainBtn = document.getElementById('followup-explain-btn');
+    if (explainBtn) explainBtn.disabled = true;
     inputEl.value = '';
     responseEl.classList.remove('hidden');
     responseEl.innerText = '';

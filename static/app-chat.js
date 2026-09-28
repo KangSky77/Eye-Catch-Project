@@ -488,11 +488,18 @@ function refreshChatLanguage() {
                 ? [{ label: t.chat_yes, value: true }, { label: t.chat_no, value: false }]
                 : yesNoUnknownOptions());
         } else if (state.dynamicQuestion) {
-            // A generated question has no translated catalog entry. Replace only
-            // the pending question with the new language's reviewed fallback.
-            // Earlier answered questions remain part of the conversation history.
+            // Catalog questions keep their ID and use the corresponding translation.
+            // Only legacy replies without translations need the fallback path.
             const current = state.dynamicQuestion;
-            if (current.lang !== state.lang) {
+            if (current.lang !== state.lang && current.texts?.[state.lang]) {
+                current.text = current.texts[state.lang];
+                current.lang = state.lang;
+                const previous = state.chatHistory[state.chatHistory.length - 1];
+                if (previous && previous.a === '') previous.q = current.text;
+            } else if (current.lang !== state.lang && current.generated) {
+                translatePendingQuestion(current);
+                return;
+            } else if (current.lang !== state.lang) {
                 const fallback = t.nextq_fallback || '';
                 const previous = state.chatHistory[state.chatHistory.length - 1];
                 if (previous && previous.a === '') state.chatHistory.pop();
@@ -526,6 +533,63 @@ function refreshChatLanguage() {
         const textNode = bubble.lastChild;
         if (textNode && textNode.nodeType === Node.TEXT_NODE) textNode.nodeValue = question;
         else bubble.textContent = question;
+    }
+}
+
+// Translate the same unanswered question. A stale translation must never replace
+// another question/session, and a failed translation must not change its meaning.
+async function translatePendingQuestion(current) {
+    if (current.translating) return;
+    const generation = state.sessionGeneration;
+    const target = state.lang;
+    current.translating = true;
+    state.chatBusy = true;
+    clearChatControls();
+    addLoadingMsg(translations[target].next_q_generating || '');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), NEXT_QUESTION_DEADLINE_MS);
+    let translated = false;
+    try {
+        const response = await fetch('/api/translate-question', {
+            method: 'POST', signal: controller.signal,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({question: current.text, source_lang: current.lang, target_lang: target})
+        });
+        if (!response.ok) throw new Error('translation unavailable');
+        const result = await response.json();
+        if (state.sessionGeneration !== generation || state.dynamicQuestion !== current) return;
+        if (result.translated && result.question) {
+            current.texts = {...current.texts, [target]: result.question};
+            translated = true;
+        }
+    } catch (_) {
+        // Keep the original wording and give an explicit, localized notice below.
+    } finally {
+        clearTimeout(timer);
+        current.translating = false;
+        if (state.sessionGeneration !== generation || state.dynamicQuestion !== current) return;
+        removeLoadingMsg();
+        state.chatBusy = false;
+        if (state.lang !== target || translated) {
+            refreshChatLanguage();
+        } else {
+            const notices = {
+                ko: '질문을 번역하지 못해 원문을 표시합니다. 언어를 다시 선택하면 재시도합니다.',
+                en: 'Translation failed; the original question is shown. Select the language again to retry.',
+                es: 'No se pudo traducir; se muestra la pregunta original. Vuelva a elegir el idioma para reintentar.',
+                fr: 'La traduction a échoué ; la question originale est affichée. Sélectionnez à nouveau la langue pour réessayer.',
+                ja: '翻訳できないため元の質問を表示しています。言語を再選択すると再試行します。',
+                zh: '翻译失败，现显示原问题。重新选择语言可重试。'
+            };
+            addMsg('bot', notices[state.lang] || notices.en);
+            // This notice is not a question: future translations must target the
+            // question bubble rather than the notice or add another history item.
+            const box = document.getElementById('chat-box');
+            const bots = box?.querySelectorAll('[data-chat-bot="1"]');
+            bots?.[bots.length - 1]?.removeAttribute('data-chat-bot');
+            setChatAnswerMode('yesno');
+            renderChatOptions(yesNoUnknownOptions(), v => handleChatAnswer(v));
+        }
     }
 }
 
@@ -614,13 +678,8 @@ function isDuplicateQuestion(q) {
     return asked.some(prev => _similarity(prev, q) >= DUP_QUESTION_THRESHOLD);
 }
 
-// 맞춤 질문 응답 대기 상한.
-// 멈춘 AI가 문진을 붙잡지 않게 하려는 안전장치이지, 평소 응답을 자르려는 값이 아니다.
-// 6초로 두었더니 로컬 Gemma(e2b, 모델이 이미 올라온 상태)가 6.5·6.3·7.8초로 3번 모두 넘겨
-// (2026-09-15 실측) 맞춤 질문이 한 번도 나오지 않았다 — 늘 기본 질문이 나오고, 두 번째는
-// 중복으로 걸려 문진이 그대로 끝났다. 노트북 실측 14.6~25.0초(addLoadingMsg 주석)를 덮되
-// 서버의 Ollama 타임아웃(120초)보다는 한참 짧게 둔다. 기다리는 동안 경과 시간이 표시된다.
-const NEXT_QUESTION_DEADLINE_MS = 30000;
+// 서버 생성·검토 제한(40초)에 대기열·통신 시간을 더한 화면 대기 상한.
+const NEXT_QUESTION_DEADLINE_MS = 45000;
 
 async function fetchNextQuestion() {
     const generation = state.sessionGeneration;
@@ -629,9 +688,12 @@ async function fetchNextQuestion() {
     // finish()와 동일하게 선택 언어로 전달 (LLM 프롬프트 컨텍스트 언어 일관성)
     const amslerRes = formatAmslerResult();
 
-    // 서버 실패·빈 응답이면 선택 언어의 기본 질문으로 폴백 (백엔드도 실패 시 ""를 반환)
-    let q = translations[state.lang].nextq_fallback || "추가적으로 눈이 불편하신 곳이 있나요?";
+    // 선택할 질문이 없거나 서버에 연결할 수 없으면 선택 문진을 끝낸다.
+    let q = '';
     let answerType = 'yesno';
+    let questionId = null;
+    let questionTexts = null;
+    let generated = false;
     const controller = typeof AbortController === 'function' ? new AbortController() : null;
     let deadline;
     try {
@@ -643,9 +705,22 @@ async function fetchNextQuestion() {
                 lang: state.lang,
                 cataract_res: cataractRes,
                 amsler_res: amslerRes,
-                chat_history: state.chatHistory
+                chat_history: state.chatHistory,
+                symptom_answers: state.symptomAnswers || {},
+                risk_answers: state.riskAnswers || {},
+                cataract_code: typeof effectiveCataractCode === 'function' ? effectiveCataractCode() : '',
+                amsler_answers: state.amslerResult || {},
+                asked_question_ids: [...new Set([
+                    ...(state.dynamicAnswers || []).map(item => item.question_id),
+                    ...(state.chatHistory || []).map(item => item.question_id)
+                ].filter(Boolean))],
+                postoperative: typeof hasSurgery === 'function' && hasSurgery(),
+                red_flags: state.redFlags || []
             })
-        }).then(response => response.json());
+        }).then(response => {
+            if (response.ok === false) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        });
         // Bound the complete response, including its body. A stalled AI must not block the survey.
         const result = await Promise.race([request, new Promise((_, reject) => {
             deadline = setTimeout(() => {
@@ -653,38 +728,44 @@ async function fetchNextQuestion() {
                 reject(new Error('question deadline'));
             }, NEXT_QUESTION_DEADLINE_MS);
         })]);
-        if (result.question && !isDuplicateQuestion(result.question)) {
+        if (result.done) {
+            q = '';
+        } else if (result.question && (result.question_id || !isDuplicateQuestion(result.question))) {
             q = result.question;
+            questionId = result.question_id || null;
+            questionTexts = result.question_texts || null;
+            generated = result.source === 'generated' || result.source === 'generated_retry';
             // 서버가 이 질문을 네/아니오로 답할 수 있는지 알려준다.
             // 서술형이면 버튼 대신 자유 입력칸을 띄운다 — 버튼만 있으면 답할 방법이 없다.
             answerType = result.answer_type === 'text' ? 'text' : 'yesno';
         } else if (result.question) {
-            // 되묻기 — 선택 언어의 기본 질문(nextq_fallback)으로 대체한다
+            // 구버전 응답이 되묻기를 하면 추가 문진을 종료한다.
             console.warn('중복에 가까운 맞춤 질문을 버렸습니다:', result.question);
         }
     } catch (e) {
-        // 네트워크 오류 → 위의 폴백 질문(예/아니오형) 그대로 사용
+        // 네트워크 오류는 추가 문진을 끝내며 고정 문진 결과를 바꾸지 않는다.
     } finally {
         clearTimeout(deadline);
         if (state.sessionGeneration !== generation) return;
         // The response belongs to the language selected when the request began.
-        // If it changed during generation, use the current language's fallback.
+        // Catalog replies carry all translations; legacy replies use the generic text.
         if (state.lang !== requestLang) {
-            q = translations[state.lang].nextq_fallback || '';
+            q = questionTexts?.[state.lang] || (generated ? q : q ? translations[state.lang].nextq_fallback || '' : '');
             answerType = 'yesno';
         }
         removeLoadingMsg(); // "생성 중..." 메시지 제거
         // Fallbacks must pass the same check as AI questions. End optional questions
         // when no fresh question is available instead of repeating an answered one.
-        if (!q.trim() || isDuplicateQuestion(q)) {
+        const alreadyAsked = questionId && (state.chatHistory || []).some(item => item.question_id === questionId);
+        if (!q.trim() || alreadyAsked || (!questionId && isDuplicateQuestion(q))) {
             state.chatBusy = true;
             clearChatControls();
             finish();
             return;
         }
         addMsg('bot', q, dynamicProgress());
-        state.chatHistory.push({ q: q, a: "" });
-        state.dynamicQuestion = { text: q, lang: state.lang, answerType };
+        state.chatHistory.push({ q: q, a: "", ...(questionId ? {question_id: questionId} : {}) });
+        state.dynamicQuestion = { text: q, lang: generated && !questionTexts?.[state.lang] ? requestLang : state.lang, answerType, id: questionId, texts: questionTexts, generated };
         setChatAnswerMode(answerType);
         if (answerType !== 'text') {
             // 맞춤형 질문 전용 버튼을 새로 그린다(문진 핸들러가 아니라 handleChatAnswer로).
@@ -694,6 +775,7 @@ async function fetchNextQuestion() {
             renderChatOptions(yesNoUnknownOptions(), v => handleChatAnswer(v));
         }
         state.chatBusy = false;   // 새 질문 표시 완료 → 답변 잠금 해제
+        if (generated && state.dynamicQuestion.lang !== state.lang) translatePendingQuestion(state.dynamicQuestion);
     }
 }
 
@@ -734,7 +816,8 @@ async function handleChatAnswer(yes) {
         const current = state.chatHistory[state.chatHistory.length - 1];
         if (current) {
             current.a = answerText;
-            state.dynamicAnswers.push({ q: current.q, a: answerText });
+            state.dynamicAnswers.push({ q: current.q, a: answerText, value: yes,
+                ...(current.question_id ? {question_id: current.question_id} : {}) });
         }
         // 소견서 문맥과 리포트 표시에만 남긴다(chatSymptoms). symptomCodes에는 넣지 않는다 —
         // computeTriage의 anySymptom이 그것을 세기 때문에, LLM이 즉석에서 만든 검수되지 않은

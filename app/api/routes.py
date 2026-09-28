@@ -6,11 +6,12 @@ from starlette.concurrency import run_in_threadpool
 from app.core.config import settings
 from app.services.vision import predict_cataract, validate_and_read_image
 from app.services import vision, eye_validator, eye_detector
-from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_next_question, KEEPALIVE, KEEPALIVE_INTERVAL
+from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_personalized_question, translate_personalized_question, KEEPALIVE, KEEPALIVE_INTERVAL
+from app.services import questions as followup_questions
 from app.services.clinics import search_eye_clinics
 from app.services.plain_language import rewrite_findings
 from app.services.database import save_diagnosis
-from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, SaveDiagnosisRequest, PlainFindingsRequest
+from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, SaveDiagnosisRequest, PlainFindingsRequest, QuestionTranslationRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -116,12 +117,16 @@ async def chat_with_gemma(req: ChatRequest):
 
 @router.post("/api/generate-next-question")
 async def generate_next_question_endpoint(req: QuestionGenRequest):
+    if not followup_questions.eligible_ids(req):
+        return followup_questions.response()
     async with _llm_slots:
-        question, answer_type = await generate_next_question(
-            req.lang, req.cataract_res, req.amsler_res, req.chat_history
-        )
-    # answer_type: "yesno"(네/아니오 버튼) | "text"(자유 입력칸)
-    return {"question": question, "answer_type": answer_type}
+        return await generate_personalized_question(req)
+
+@router.post("/api/translate-question")
+async def translate_question_endpoint(req: QuestionTranslationRequest):
+    async with _llm_slots:
+        return await translate_personalized_question(req)
+
 
 @router.post("/api/plain-findings")
 async def plain_findings(req: PlainFindingsRequest):

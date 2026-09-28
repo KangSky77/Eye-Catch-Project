@@ -415,6 +415,107 @@ CLOSING = {
     },
 }
 
+
+# 맞춤 질문에 "예"라고 답한 주제(ans_*)에서 열리는 마무리 조언(2026-09-28).
+# 예전에는 맞춤 질문의 답이 아무 데도 쓰이지 않았다 — 이제 답에 따라 AI가 고를 수 있는 조언이 달라진다.
+CLOSING.update({
+    "mention_injury": {
+        "desc": "tell the doctor about a past eye injury (answered Yes to eye injury)",
+        "line": {
+            "ko": "예전에 눈을 다친 적이 있다면 진료 때 꼭 알려 주세요.",
+            "en": "If you have injured an eye before, be sure to mention it at your visit.",
+            "es": "Si alguna vez se lesionó un ojo, menciónelo en la consulta.",
+            "fr": "Si vous vous êtes déjà blessé un œil, signalez-le lors de la consultation.",
+            "ja": "以前に目をけがしたことがあれば、受診時に必ず伝えてください。",
+            "zh": "如果以前眼睛受过伤，请在就诊时一定告诉医生。",
+        },
+        "why": {
+            "ko": "오래전 눈 외상도 수정체나 안압에 영향을 줄 수 있어 의사가 진료할 때 참고합니다.",
+            "en": "Even an old eye injury can affect the lens or eye pressure, so doctors take it into account.",
+            "es": "Incluso una lesión antigua puede afectar al cristalino o a la presión ocular, y el médico lo tiene en cuenta.",
+            "fr": "Même une ancienne blessure peut affecter le cristallin ou la pression de l’œil ; le médecin en tient compte.",
+            "ja": "昔の目のけがでも水晶体や眼圧に影響することがあり、医師が診察の参考にします。",
+            "zh": "即使是很久以前的眼外伤，也可能影响晶状体或眼压，医生会作为参考。",
+        },
+    },
+    "bring_drops": {
+        "desc": "bring current eye drops or their names to the visit (answered Yes to recent eye drop use)",
+        "line": {
+            "ko": "지금 쓰고 있는 안약이 있다면 진료 때 가져가거나 이름을 알려 주세요.",
+            "en": "If you use eye drops, bring them or tell the doctor their names at your visit.",
+            "es": "Si usa gotas para los ojos, llévelas a la consulta o indique su nombre.",
+            "fr": "Si vous utilisez des gouttes, apportez-les ou donnez leur nom lors de la consultation.",
+            "ja": "使っている目薬があれば、受診時に持参するか名前を伝えてください。",
+            "zh": "如果正在使用眼药水，请就诊时带上或告诉医生药名。",
+        },
+        "why": {
+            "ko": "일부 안약(예: 스테로이드 안약)은 오래 쓰면 눈에 영향을 줄 수 있어 의사가 확인합니다.",
+            "en": "Some drops, such as steroid drops, can affect the eye with long-term use, so the doctor will want to check.",
+            "es": "Algunas gotas, como las de corticoides, pueden afectar al ojo con el uso prolongado; el médico querrá revisarlas.",
+            "fr": "Certaines gouttes, comme les corticoïdes, peuvent agir sur l’œil à long terme ; le médecin voudra les vérifier.",
+            "ja": "ステロイド点眼薬など一部の目薬は長く使うと目に影響することがあり、医師が確認します。",
+            "zh": "部分眼药水（如激素类眼药水）长期使用可能影响眼睛，医生需要确认。",
+        },
+    },
+    "mention_impact": {
+        "desc": "describe everyday activities made harder at the visit (answered Yes to daily impact)",
+        "line": {
+            "ko": "눈 때문에 불편해진 일상 활동이 있다면 진료 때 구체적으로 말씀하세요.",
+            "en": "If your eyes make everyday activities harder, describe them at your visit.",
+            "es": "Si sus ojos le dificultan actividades diarias, descríbalas en la consulta.",
+            "fr": "Si vos yeux gênent vos activités quotidiennes, décrivez-les lors de la consultation.",
+            "ja": "目のせいで不便になった日常の活動があれば、受診時に具体的に伝えましょう。",
+            "zh": "如果眼睛问题让日常活动变得困难，请在就诊时具体说明。",
+        },
+        "why": {
+            "ko": "일상생활에 얼마나 불편한지는 치료 시기를 정할 때 의사가 중요하게 보는 정보입니다.",
+            "en": "How much your daily life is affected is important information when the doctor decides on the timing of treatment.",
+            "es": "Cuánto afecta a su vida diaria es un dato importante cuando el médico decide el momento del tratamiento.",
+            "fr": "L’impact sur la vie quotidienne est une information importante pour décider du moment d’un traitement.",
+            "ja": "日常生活への影響の大きさは、医師が治療の時期を決めるときに重視する情報です。",
+            "zh": "日常生活受影响的程度，是医生决定治疗时机的重要信息。",
+        },
+    },
+    "sugar_consult": {
+        "desc": "plan eye checks with the diabetes doctor (answered Yes to blood sugar often above target)",
+        "line": {
+            "ko": "혈당이 목표보다 자주 높다면 당뇨 진료 때 눈 검사 계획도 함께 상의해 보세요.",
+            "en": "If your blood sugar is often above target, discuss an eye check plan at your diabetes visits too.",
+            "es": "Si su glucosa suele estar por encima del objetivo, hable también de un plan de revisión ocular en sus consultas de diabetes.",
+            "fr": "Si votre glycémie dépasse souvent l’objectif, parlez aussi d’un suivi des yeux lors de vos consultations pour le diabète.",
+            "ja": "血糖が目標より高いことが多いなら、糖尿病の受診時に目の検査の予定も相談しましょう。",
+            "zh": "如果血糖经常高于目标，看糖尿病门诊时也请一起商量眼部检查计划。",
+        },
+        "why": {
+            "ko": "혈당 조절이 어려울수록 망막 변화가 생기기 쉬워 안저 검사를 더 챙기는 것이 좋습니다.",
+            "en": "Retina changes become more common when blood sugar is hard to control, so retina checks matter more.",
+            "es": "Los cambios en la retina son más frecuentes cuando cuesta controlar la glucosa, por eso importa más revisarla.",
+            "fr": "Les atteintes de la rétine sont plus fréquentes quand la glycémie est difficile à équilibrer : le contrôle de la rétine compte davantage.",
+            "ja": "血糖のコントロールが難しいほど網膜の変化が起こりやすいため、眼底検査がより大切です。",
+            "zh": "血糖越难控制，视网膜越容易出现变化，因此眼底检查更为重要。",
+        },
+    },
+    "quit_help": {
+        "desc": "free quit-smoking support (answered Yes to wanting help to quit smoking)",
+        "line": {
+            "ko": "담배를 끊고 싶다면 보건소 금연클리닉에서 무료로 도움을 받을 수 있어요.",
+            "en": "If you want to quit smoking, free quit-smoking services can help.",
+            "es": "Si quiere dejar de fumar, los servicios gratuitos para dejar de fumar pueden ayudarle.",
+            "fr": "Si vous voulez arrêter de fumer, des services gratuits d’aide à l’arrêt peuvent vous accompagner.",
+            "ja": "禁煙したいなら、禁煙外来や無料の相談窓口のサポートを受けられます。",
+            "zh": "如果想戒烟，可以借助免费的戒烟服务。",
+        },
+        "why": {
+            "ko": "금연 상담과 약물 지원을 함께 받으면 혼자 할 때보다 성공하기 쉽습니다.",
+            "en": "Counselling together with medication support makes quitting easier than trying alone.",
+            "es": "El asesoramiento junto con apoyo farmacológico facilita dejarlo más que intentarlo solo.",
+            "fr": "Un accompagnement associé à une aide médicamenteuse facilite l’arrêt par rapport à un essai seul.",
+            "ja": "カウンセリングと薬のサポートを組み合わせると、一人で挑戦するより成功しやすくなります。",
+            "zh": "咨询加药物辅助，比独自尝试更容易成功。",
+        },
+    },
+})
+
 # ── 수술 4주 이내(술후 문진) ────────────────────────────────────────────
 # 1줄째는 앱이 이미 정한 권장 조치(computeTriage → postoperativeTriage)를 그대로 옮긴다. AI가 고르지 않는다.
 POST_ACTION = {
@@ -593,7 +694,7 @@ class Facts:
 
 def facts_from(symptoms: list[str], flag_codes: list[str] | None, symptom_codes: list[str] | None,
                cataract_code: str, amsler_abnormal: bool, triage_level: str) -> Facts:
-    flags = {f for f in (flag_codes or []) if f.startswith(("sym_", "risk_"))}
+    flags = {f for f in (flag_codes or []) if f.startswith(("sym_", "risk_", "ans_"))}
     age = next((f[4:] for f in (flag_codes or []) if f.startswith("age_")), "")
     # 예전 프론트(flag_codes 없음)도 위험요인 '예/아니오'는 언어 중립 문자열로 보낸다.
     for item in symptoms or []:
@@ -640,19 +741,27 @@ def options_for(f: Facts) -> dict:
     if "sym_cat_glare" in fl: care.append("night_driving")
     if macular or f.age in _AGE_50_PLUS: care.append("home_amsler")
     if fl & {"sym_cat_foggy", "sym_amd_center", "sym_cat_glasses"}: care.append("reading_light")
-    if cataract_signs: care.append("uv")
+    if cataract_signs or "ans_outdoor_time" in fl: care.append("uv")
+    if "ans_screen_fatigue" in fl: care.append("eye_rest")
     # 이 사람에게 딱 맞는 조언이 있으면 누구에게나 할 수 있는 일반론(자외선·눈 휴식)은 빼 둔다.
     # 선택지에 남겨 두면 당뇨 환자에게도 '눈 휴식'을 고르는 일이 생긴다.
     if not care:
         care = list(_GENERIC_CARE)
 
+    # 맞춤 질문 답에서 열리는 조언. '진료 때 알릴 것'은 빨리 진료를 받아야 하는 경우에도 쓸모가 있다.
+    answered = [advice_id for code, advice_id in (
+        ("ans_eye_injury", "mention_injury"), ("ans_eye_drops", "bring_drops"),
+        ("ans_daily_impact", "mention_impact"),
+        ("ans_sugar_off_target", "sugar_consult"), ("ans_quit_interest", "quit_help")) if code in fl]
+    tell = [a for a in answered if a in ("mention_injury", "bring_drops", "mention_impact")]
     if f.triage == "now":
-        closing = ["visit_soon", "warning_signs"]
+        closing = ["visit_soon", "warning_signs"] + tell
     else:
         specific = []
         if "risk_diabetes" in fl: specific.append("diabetic_yearly")
         if "sym_chk_recent" in fl: specific.append("exam_overdue")
         if "sym_gla_iop" in fl: specific.append("glaucoma_followup")
+        specific += answered
         if f.triage == "weeks":
             closing = ["visit_weeks"] + specific
         else:
@@ -707,7 +816,9 @@ def selection_prompt(f: Facts, opts: dict) -> str:
         "The app writes the sentences itself. You only CHOOSE option ids.\n"
         f"Person's screening facts (codes): {', '.join(facts) or 'none'}\n"
         "Code meanings: sym_* = a questionnaire item this person flagged, risk_* = a risk factor they have, "
-        "sym_chk_recent = no eye exam in 2 years, sym_dr_fundus = no retina exam in the last year.\n\n"
+        "sym_chk_recent = no eye exam in 2 years, sym_dr_fundus = no retina exam in the last year, "
+        "ans_* = the person answered Yes to a personalized follow-up question on that topic "
+        "(an option built for their own answer usually fits best).\n\n"
         f"{exam_part}"
         "care: pick the ONE tip that fits this person's flagged items best "
         "(a tip about their own risk factor or symptom beats a general tip).\n"

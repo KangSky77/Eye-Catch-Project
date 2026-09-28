@@ -1707,3 +1707,8 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 /* 수술 경로에서는 일반 촬영 가이드 바로 아래에 수술 안내가 붙는다 — 두 상자 사이를 좁힌다 */
 #upload-guide:has(+ .surgery-note:not([hidden])) { margin-bottom: .75rem; }
 #upload-guide + .surgery-note { margin-top: 0; }
+
+/* '내 검사 결과를 쉽게 설명해 줘' — 입력 없이 누르는 추천 질문 */
+.followup-chip { display: inline-block; padding: .45rem .8rem; border-radius: 999px; font-size: .75rem; font-weight: 700;
+    color: var(--ec-blue); background: #eef4ff; border: 1px solid #d5e3ff; }
+.followup-chip:disabled { opacity: .5; }
