@@ -136,6 +136,8 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_runtime_ranges(self):
         """잘못된 환경변수로 판정 구간이 겹치는 상태는 기동 전에 차단한다."""
+        if self.opinion_mode not in {"choice", "free"}:
+            raise ValueError("OPINION_MODE는 'choice' 또는 'free'여야 합니다.")
         if not (0 <= self.uncertain_threshold < self.borderline_threshold < self.risk_threshold <= 100):
             raise ValueError(
                 "임계값은 0 <= UNCERTAIN_THRESHOLD < BORDERLINE_THRESHOLD "
