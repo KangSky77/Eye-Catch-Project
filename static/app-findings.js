@@ -20,7 +20,7 @@
 // ==========================================
 
 /** 현재 state로부터 안전한 해석 문장 목록을 만든다. */
-function buildFindings() {
+function buildFindings({ includePersonal = true } = {}) {
     const t = translations[state.lang];
     const out = [];
     if (typeof hasSurgery === 'function' && hasSurgery()) {
@@ -91,9 +91,10 @@ function buildFindings() {
     }
 
     // --- 문진 ---
-    if (state.chatSymptoms && state.chatSymptoms.length) {
+    const symptoms = formatSymptoms();
+    if (symptoms.length) {
         const summary = hasSurgery() ? t.find_post_sym : t.find_sym;
-        out.push((summary || '').replace('{items}', formatSymptoms().join(', ')));
+        out.push((summary || '').replace('{items}', symptoms.join(', ')));
     } else {
         out.push(t.find_nosym);
     }
@@ -101,7 +102,7 @@ function buildFindings() {
     // --- AI 맞춤 질문 ---
     // 예전에는 맞춤 질문의 답이 리포트 어디에도 남지 않아 '물어봐 놓고 결과는 그대로'였다(2026-09-28).
     const personal = (state.dynamicAnswers || []).filter(item => item.q && item.a);
-    if (personal.length && t.find_personal) {
+    if (includePersonal && personal.length && t.find_personal) {
         out.push(t.find_personal.replace('{items}', personal.map(item => `${item.q} → ${item.a}`).join(' / ')));
     }
 

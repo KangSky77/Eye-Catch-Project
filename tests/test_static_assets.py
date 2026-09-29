@@ -103,6 +103,13 @@ def _tokens_from_markup() -> dict[str, set[str]]:
     return found
 
 
+def _report_source() -> str:
+    """Read the report modules in the page's load order."""
+    return "\n".join((STATIC / name).read_text(encoding="utf-8") for name in (
+        "app-report.js", "app-report-chat.js", "app-report-pdf.js",
+    ))
+
+
 def test_마크업의_tailwind_클래스가_빌드본에_존재():
     tailwind_css = (STATIC / "tailwind.css").read_text(encoding="utf-8")
     style_css = (STATIC / "style.css").read_text(encoding="utf-8")
@@ -232,56 +239,8 @@ def test_바뀐_정적파일은_캐시_버전도_올라간다():
     assert not stale, "index.html의 ?v=를 올려야 합니다:\n" + "\n".join(stale)
 
 
-def _classify_vision_results(payload: dict) -> dict:
-    """브라우저와 같은 JS 판정 함수를 Node에서 직접 실행한다."""
-    source_path = json.dumps(str(STATIC / "app-visiontest.js"))
-    payload_json = json.dumps(payload)
-    script = f"""
-const fs = require('fs');
-global.window = {{
-  addEventListener() {{}},
-  ECCalib: {{ decimalToLogMAR(a) {{ return -Math.log10(a); }} }}
-}};
-const source = fs.readFileSync({source_path}, 'utf8');
-(0, eval)(source + '\\n;process.stdout.write(JSON.stringify(vtClassifyResults({payload_json})));');
-"""
-    completed = subprocess.run(
-        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, check=True
-    )
-    return json.loads(completed.stdout)
 
 
-def test_기능검사_측정불가_상태를_좌우차이없음으로_처리하지_않는다():
-    """양안 실패, 한쪽 실패, 정상 비교를 서로 다른 상태로 보존한다."""
-    both_failed = _classify_vision_results({
-        "left": {"acuity": None, "contrast": None},
-        "right": {"acuity": None, "contrast": None},
-    })
-    assert both_failed["bothEyesUnmeasurable"] is True
-    assert both_failed["oneSideUnmeasurable"] is False
-    assert both_failed["asymmetric"] is False
-
-    one_failed = _classify_vision_results({
-        "left": {"acuity": None, "contrast": None},
-        "right": {"acuity": 0.63, "contrast": 1.2},
-    })
-    assert one_failed["bothEyesUnmeasurable"] is False
-    assert one_failed["oneSideUnmeasurable"] is True
-    assert one_failed["asymmetric"] is True
-
-    comparable = _classify_vision_results({
-        "left": {"acuity": 0.8, "contrast": 1.2},
-        "right": {"acuity": 0.8, "contrast": 1.2},
-    })
-    assert comparable["bothEyesUnmeasurable"] is False
-    assert comparable["oneSideUnmeasurable"] is False
-    assert comparable["asymmetric"] is False
-
-    threshold = _classify_vision_results({
-        "left": {"acuity": 0.8, "contrast": 0.9},
-        "right": {"acuity": 0.8, "contrast": 1.2},
-    })
-    assert threshold["asymmetric"] is True, "0.30 logCS 경계값이 부동소수점 오차로 빠지면 안 됩니다"
 
 
 def test_기능검사_코드가_제품화면에서_로드되지_않는다():
@@ -347,7 +306,7 @@ def test_맞춤형질문_답변버튼은_문진핸들러가_아니라_전용핸�
 def test_맞춤형질문_모르겠어요는_증상으로_세지_않는다():
     """AI 질문에도 '모르겠어요'가 있다. 'unknown'은 truthy라 if (yes)로 비교하면 증상으로 새어 든다."""
     chat = (STATIC / "app-chat.js").read_text(encoding="utf-8")
-    assert "yes === true && !state.chatSymptoms.includes('symptom_extra')" in chat
+    assert "state.chatSymptoms.push('symptom_extra')" not in chat
     assert "yes === 'unknown' ? tl.chat_unknown" in chat
 
 
@@ -466,7 +425,7 @@ def test_소견서_실패시_검사전체를_다시_하지_않고_재시도할_�
     """소견서 생성은 개발 중 --reload 재시작, ngrok 끊김, Ollama 콜드스타트로
     흔히 끊긴다. 예전에는 finish() 안에 통째로 들어 있어서 실패하면
     문진부터 다시 해야 했다."""
-    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    report = _report_source()
 
     # 재시도 가능한 별도 함수로 분리돼 있어야 한다
     assert "async function runAiOpinion()" in report
@@ -546,19 +505,13 @@ def test_흔들림_보류를_프론트가_처리한다():
 
 def test_시력검사_화면이_제품에_노출되지_않는다():
     """시력검사 기능을 제품 화면에서 제거하면 관련 버튼도 노출되지 않는다."""
-    vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
-    assert "function vtCantSee()" in vt
-    # 보관된 구현 자체는 향후 재사용할 수 있도록 검증한다.
-    assert "DIRECTIONS.find(d => d !== vtState.current)" in vt
-    assert "vtAnswer(wrong)" in vt
-
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
     assert "vtCantSee()" not in html
     assert 'data-i18n="vt_guess_hint"' not in html
 
     data = (STATIC / "data.js").read_text(encoding="utf-8")
-    assert data.count("vt_cant_see:") == 6
-    assert data.count("vt_guess_hint:") == 6
+    assert "vt_cant_see:" not in data
+    assert "vt_guess_hint:" not in data
 
 
 def test_시력검사_UI는_제품범위에서_제외되어_있다():
@@ -625,7 +578,7 @@ def test_리포트_AI_소견_라벨이_상세설명까지_포괄한다():
 def test_소견_완료후_부가동작_실패가_연결끊김으로_보이지_않는다():
     """S25 Ultra 실기기 재현(2026-09-02): 안드로이드 크롬은 페이지 컨텍스트의 new Notification()이
     예외를 던진다. 그 예외가 스트림 try/catch로 흘러 완성된 소견을 '연결 끊김'으로 덮어썼다."""
-    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    report = _report_source()
     assert "function notifyOpinionDone()" in report
     body = report[report.index("function notifyOpinionDone()"):]
     body = body[: body.index("\n}")]
@@ -737,7 +690,6 @@ def test_외부리뷰_문구_진단_아닌_리포트_점수는_100점만점_범�
     index = (STATIC / "index.html").read_text(encoding="utf-8")
     guide = index[index.index('id="step-guide"'):index.index('id="step-photo"')]
     assert 'data-i18n="scope_note"' in guide, "범위 고지가 촬영 직전 화면에 붙어 있어야 한다"
-    assert "검사는 모두 마쳤지만" in data, "시력검사 실패 문구는 '완료됐지만 계산 불가'로"
     disease = (STATIC / "app-disease.js").read_text(encoding="utf-8")
     assert "_simLevel" in disease, "언어 전환 시 시야 체험 강도가 초기화되면 안 된다"
 
@@ -781,7 +733,7 @@ def test_리포트_값이_언어전환에_따라_다시_그려진다():
     라벨만 번역되고 값은 이전 언어로 남았다(영어 리포트에 한국어가 섞임)."""
     core = (STATIC / "app-core.js").read_text(encoding="utf-8")
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
-    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    report = _report_source()
     findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
 
     # 언어 중립 원자료만 저장하고, 표시 문자열은 포매터가 만든다
@@ -834,8 +786,8 @@ def test_암슬러_격자가_화면_캘리브레이션을_사용한다():
     assert "transition:" in rule and "all" not in rule.split("transition:")[1].split(";")[0], (
         f"격자 크기가 애니메이션되면 칸 계산이 어긋난다: {rule.split('transition:')[1].split(';')[0]!r}")
 
-    # 숨겨진 상태(폭 0)에서 재면 크기가 틀어진다 — 보일 때까지 미룬다
-    assert "requestAnimationFrame(renderAmslerGrid)" in vision
+    # 숨겨진 격자는 그리지 않는다. 시작 시 화면을 보인 뒤 그리며 무한 RAF를 예약하지 않는다.
+    assert "requestAnimationFrame(renderAmslerGrid)" not in vision
 
     # 계산된 거리를 안내하므로 안내문에 30cm를 박아두면 안 된다
     assert data.count("ams_dist_note:") == 6
@@ -912,18 +864,16 @@ def test_촬영안내가_두_화면에서_같은_말을_한다():
 def test_안보여요_안내가_제품화면에서_제거되었다():
     """제거한 시력검사의 안내 문구가 제품 화면에 남지 않아야 한다."""
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
-    vt = (STATIC / "app-visiontest.js").read_text(encoding="utf-8")
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert 'id="vt-cant-see-hint"' not in html
-    assert "vt_cant_see_hint" in vt
-    assert data.count("vt_cant_see_hint:") == 6
+    assert "vt_cant_see_hint:" not in data
 
 
 def test_소견서_언어불일치를_사용자에게_알린다():
     """LLM 소견서는 생성 시점 언어로 고정된다. 자동 번역하지 않는 대신
     다시 생성할 수 있다는 사실을 알려야 한다."""
     html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
-    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    report = _report_source()
     data = (STATIC / "data.js").read_text(encoding="utf-8")
     assert 'id="opinion-stale"' in html
     assert "function regenerateOpinion()" in report
@@ -987,16 +937,11 @@ def test_저장소_접근이_초기화를_중단시키지_않는다():
     감싸지 않은 호출이 DOMContentLoaded 블록 안에 있으면 번역·글자 크기·탭 활성화가
     통째로 중단돼 앱이 빈 화면처럼 보인다. 접근은 readStore/writeStore로만 한다."""
     core = (STATIC / "app-core.js").read_text(encoding="utf-8")
-    calib = (STATIC / "calibration.js").read_text(encoding="utf-8")
 
     assert "function readStore(" in core and "function writeStore(" in core
     # 헬퍼 본체(각 1회)를 빼면 app-core.js에 날것의 localStorage 호출이 남아 있으면 안 된다
     assert core.count("localStorage.getItem") == 1, "app-core.js에 감싸지 않은 getItem이 있다"
     assert core.count("localStorage.setItem") == 1, "app-core.js에 감싸지 않은 setItem이 있다"
-    # calibration.js는 읽기·쓰기 모두 try/catch 안에 있어야 한다
-    for call in ("localStorage.getItem", "localStorage.setItem"):
-        idx = calib.index(call)
-        assert "try" in calib[max(0, idx - 200):idx], f"calibration.js의 {call}이 try 밖에 있다"
 
 
 def test_안과검색_실패를_결과없음으로_안내하지_않는다():
@@ -1035,7 +980,7 @@ def test_맞춤질문이_고정문항_주제를_되묻지_않게_막는다():
     실기기에서 고정 문항 '안개가 낀 것처럼 뿌옇게 보이나요?' 직후
     '사물의 경계가 흐릿하게 보이나요?'를 생성했다(2026-09-04).
     data.js의 문항을 고치면 llm.py의 금지 목록도 함께 갱신해야 한다."""
-    llm = (ROOT / "app" / "services" / "llm.py").read_text(encoding="utf-8")
+    llm = (ROOT / "app" / "services" / "llm.py").read_text(encoding="utf-8") + (ROOT / "app/services/question_validation.py").read_text(encoding="utf-8") + (ROOT / "app/services/llm_prompts.py").read_text(encoding="utf-8")
     assert "_COVERED_TOPICS_KO" in llm and "_COVERED_TOPICS_EN" in llm
     assert "_OPEN_AREAS_KO" in llm and "_OPEN_AREAS_EN" in llm
     # 고정 문항이 다루는 대표 주제가 금지 목록에 실제로 들어 있는지
@@ -1058,8 +1003,9 @@ def test_검수되지_않은_맞춤질문이_진료시점을_바꾸지_않는다
         "검수되지 않은 맞춤 질문의 답이 다시 symptomCodes로 들어가고 있다 "
         "— computeTriage의 anySymptom이 이것을 세어 진료 시점을 올린다."
     )
-    # 소견서 문맥·리포트 표시용으로는 계속 남겨야 한다
-    assert "state.chatSymptoms.push('symptom_extra')" in chat
+    # 맞춤 질문의 답은 별도로 보존하고 증상으로 분류하지 않는다.
+    assert "state.dynamicAnswers.push({ q: current.q, a: answerText," in chat
+    assert "state.chatSymptoms.push('symptom_extra')" not in chat
 
 
 def test_맞춤질문_길이가_스키마_상한_안에_있다():
@@ -1067,7 +1013,7 @@ def test_맞춤질문_길이가_스키마_상한_안에_있다():
 
     maxDynamic이 2 이상이면 실제로 왕복하므로, 너무 긴 질문은 서버가 버리고
     프론트 기본 질문을 쓰게 해야 한다 — 자르면 문장이 중간에 끊긴다."""
-    llm = (ROOT / "app" / "services" / "llm.py").read_text(encoding="utf-8")
+    llm = (ROOT / "app" / "services" / "llm.py").read_text(encoding="utf-8") + (ROOT / "app/services/question_validation.py").read_text(encoding="utf-8") + (ROOT / "app/services/llm_prompts.py").read_text(encoding="utf-8")
     schema = (ROOT / "app" / "schemas" / "ai.py").read_text(encoding="utf-8")
     assert "MAX_QUESTION_CHARS = 500" in llm
     assert "len(q) > MAX_QUESTION_CHARS" in llm
@@ -1143,7 +1089,7 @@ def test_미응답_눈을_정상으로_말하지_않는다():
 def test_소견서_요청_항목이_서버_상한_안에_들어간다():
     """자유 답변을 그대로 chat_symptoms에 넣어 111자에서 422가 났고,
     프론트는 그걸 '로컬 AI 서버와 연결이 끊어졌습니다'로 표시했다."""
-    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    report = _report_source()
     schema = (ROOT / "app" / "schemas" / "ai.py").read_text(encoding="utf-8")
 
     assert "function buildOpinionSymptoms()" in report
@@ -1195,14 +1141,14 @@ def test_PDF에_권장조치와_검사요약해석이_들어간다():
     보여주는데, PDF에는 그 항목이 없었다. 게다가 사람이 검수한 결정론적 해석
     (app-findings.js)이 빠지고 LLM 3줄 요약만 실려, safety.py가 세운
     '해석은 코드가, 생활 조언은 LLM이' 구조와 정반대로 담기고 있었다."""
-    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    report = _report_source()
     pdf_fn = report[report.index("printDiv.innerHTML = `"):]
     pdf_fn = pdf_fn[:pdf_fn.index("`;") + 2]
 
     assert "triage.label" in pdf_fn and "triage.why" in pdf_fn, "PDF에 권장 조치가 없다"
     assert "findings.map" in pdf_fn, "PDF에 검사 요약 해석이 없다"
     # 화면 DOM을 긁지 않고 원자료에서 다시 만들어야 언어·상태가 어긋나지 않는다
-    assert "computeTriage({" in report and "buildFindings()" in report
+    assert "computeCurrentTriage()" in report and "buildFindings()" in report
     # 삽입 전 escape는 다른 필드와 동일하게 (XSS 방지)
     for expr in ("escapeHTML(triage.label)", "escapeHTML(triage.why)"):
         assert expr in pdf_fn, f"{expr} 가 escape 없이 들어간다"
@@ -1211,7 +1157,7 @@ def test_PDF에_권장조치와_검사요약해석이_들어간다():
 def test_기능검사_결과가_리포트에서_제거되었다():
     """사용하지 않는 시력·대비감도 결과가 리포트에 섞이지 않아야 한다."""
     findings = (STATIC / "app-findings.js").read_text(encoding="utf-8")
-    report = (STATIC / "app-report.js").read_text(encoding="utf-8")
+    report = _report_source()
     assert "state.visionTest" not in findings
     assert "state.visionTest" not in report
 

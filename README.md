@@ -172,6 +172,8 @@ Eye-Catch (C:\eye_catch)
 │   │       ├── vision.py        # AI 추론 + 임계값 + 눈별/편측 판정
 │   │       ├── eye_detector.py  # MTCNN 얼굴→눈 크롭 (좌/우는 사진 x좌표로 확정)
 │   │       ├── llm.py           # Gemma 호출(고르기·챗봇·맞춤 질문) + RAG + 하트비트 스트리밍
+│   │       ├── llm_prompts.py   # 프롬프트 작성 (모델 호출과 분리)
+│   │       ├── question_validation.py # 질문 형식·언어 검증
 │   │       ├── advice.py        # 🆕 AI 3줄 요약의 검수된 조언 문장(6개 언어) + 선택지 규칙
 │   │       ├── safety.py        # LLM 출력 안전 필터 (확률·배제·질환 교차·진단 표현 제거)
 │   │       ├── knowledge.py     # 🆕 RAG 안과 참고지식 베이스 + 검색
@@ -190,7 +192,7 @@ Eye-Catch (C:\eye_catch)
 │   │   └── brightiris_attributions.csv  # v5 보강분 201장 출처·라이선스 전수 기록
 │   ├── tests/                   # 🆕 pytest 자동 테스트 (수 초 완료, GPU·Ollama·DB 불필요)
 │   ├── docs/                    # 재학습 절차와 버전 기록
-│   ├── model_archive/           # 이전 모델 메타데이터(.pth는 Git 제외)
+│   ├── model_archive/           # 이전 모델·메타데이터·학습 로그(.pth와 로그는 Git 제외)
 │   ├── requirements.txt         # 의존성 (CUDA torch) — 나머지는 requirements-base.txt
 │   ├── .github/workflows/       # 🆕 CI — PR마다 pytest 자동 실행
 │   └── dataset/                 # 이미지 데이터셋 (17,243장, 근접중복 그룹 단위 분할)
@@ -203,7 +205,9 @@ Eye-Catch (C:\eye_catch)
 │       ├── app-core.js          # 공통 기반 (state·i18n·스트림 리더·로더) — 항상 먼저 로드
 │       ├── app-vision.js        # 백내장 분석 요청/결과 렌더 (눈별·편측 표시)
 │       ├── app-chat.js          # 문진 챗봇 (고정 질문 + 동적 질문)
-│       ├── app-report.js        # 소견서 스트리밍 + PDF 생성
+│       ├── app-report.js        # 리포트 화면 + 소견서 스트리밍
+│       ├── app-report-chat.js   # 추가 질문 + 검사 결과 설명
+│       ├── app-report-pdf.js    # PDF 생성 + 다운로드
 │       ├── app-disease.js       # 질환 카드/모달 + 시야 체험 패널
 │       ├── app-map.js           # Leaflet 지도 + 주변 안과 목록
 │       ├── data.js              # 6개국어 번역 + 문진 질문 + 질환 데이터

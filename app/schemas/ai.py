@@ -58,11 +58,12 @@ class ChatRequest(BaseModel):
     # AI 소견 요청과 같은 사실 목록(Hypertension: no, '2년 내 검진 없음' 등). 안전 필터가 이 사실과
     # 정면으로 어긋나는 문장을 지운다(safety.contradicts_facts). 예전 프론트는 보내지 않는다 — 기본값 빈 목록.
     facts: list[SymptomText] = Field(default_factory=list, max_length=30)
-    # 결과 설명 버튼 전용: 설명에 반드시 들어가야 할 항목과, 빠졌을 때 대신 보여줄 고정 문장(소견 원문·권장 조치).
-    # 서버가 설명을 끝까지 받은 뒤 확인한다(explain_check.py). 비어 있으면 예전처럼 바로 흘려보낸다.
+    # 결과 설명은 보고서의 고정 문장만 사용한다. required는 구버전 요청 호환용이며
+    # 단어 검사로 AI 해석을 허용하지 않는다. 원문이 없으면 설명을 생성하지 않는다.
     explain_required: list[Literal["cat_risk", "cat_borderline", "ams_left", "ams_right", "ams_both",
                                    "tri_now", "tri_weeks"]] = Field(default_factory=list, max_length=7)
-    explain_fallback: list[Annotated[str, Field(max_length=400)]] = Field(default_factory=list, max_length=6)
+    # 수술·판독 한계·미측정·문진 소견을 빠뜨리지 않는다. 여러 증상의 요약은 400자를 넘을 수 있다.
+    explain_fallback: list[Annotated[str, Field(max_length=2000)]] = Field(default_factory=list, max_length=20)
 
 class QuestionGenRequest(BaseModel):
     lang: str = Field(default="ko", max_length=10)

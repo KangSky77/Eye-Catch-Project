@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 function setup(surgery='none',lang='ko'){
  const c=vm.createContext({state:{lang,riskAnswers:{surgery},symptomAnswers:{},amslerResult:{},chatSymptoms:[]},window:{addEventListener(){}},console,setTimeout,clearTimeout,AbortController});
- for(const f of ['data.js','app-safety-copy.js','app-report-text.js','app-surgery.js','app-chat.js','app-assess.js','app-findings.js','app-report.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
+ for(const f of ['data.js','app-safety-copy.js','app-report-text.js','app-surgery.js','app-chat.js','app-assess.js','app-findings.js','app-report.js','app-report-chat.js','app-report-pdf.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
  const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
  vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
  return c;

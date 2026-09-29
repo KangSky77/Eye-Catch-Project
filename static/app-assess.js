@@ -122,6 +122,16 @@ function computeTriage(ctx) {
     };
 }
 
+/** 화면·후속 설명이 같은 입력과 현재 언어로 권장 조치를 계산한다. */
+function computeCurrentTriage() {
+    return computeTriage({
+        cataractCode: state.aiResultCode, amslerAbnormal: state.hasAmsler,
+        symptomCodes: state.symptomCodes, symptomScore: state.symptomScore,
+        riskScore: computeRiskScore(state.riskAnswers || {}).score,
+        redFlags: state.redFlags,
+    });
+}
+
 /** 리포트에 행동 권고 카드를 그린다. */
 // 권장 조치 아이콘 — 리포트에서 가장 눈에 먼저 들어오는 자리다.
 // 이모지는 기기·OS마다 모양과 색이 달라서(특히 🚑/🚨는 플랫폼별 차이가 크다)

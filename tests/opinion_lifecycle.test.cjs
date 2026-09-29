@@ -1,3 +1,4 @@
+const { readReportScripts } = require('./helpers/report-scripts.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -34,7 +35,7 @@ function setup() {
             return { text: response.text, hasError: !!response.error };
         } };
     vm.createContext(context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../static/app-report.js'), 'utf8'), context);
+    vm.runInContext(readReportScripts(), context);
     const core = fs.readFileSync(path.join(__dirname, '../static/app-core.js'), 'utf8');
     vm.runInContext(core.slice(core.indexOf('function resetScreeningState()'), core.indexOf('\nfunction openMap()')), context);
     context.requestSaveConsent = data => saves.push(data);

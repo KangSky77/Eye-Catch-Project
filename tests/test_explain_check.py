@@ -105,18 +105,17 @@ async def test_incomplete_explanation_is_replaced_by_fixed_wording(monkeypatch):
              "빠른 시일 내 안과 진료를 권합니다"]
     out = [c async for c in llm.chat_with_gemma_stream("x", "ctx", "ko", explain_results=True,
                                                        explain_required=["cat_risk", "tri_now"], explain_fallback=lines)]
-    assert out[0] == llm.KEEPALIVE
-    body = "".join(out[1:])
+    body = "".join(out)
     assert "강하게" in body and body.endswith("빠른 시일 내 안과 진료를 권합니다.")
 
 
 @pytest.mark.anyio
-async def test_complete_explanation_is_kept(monkeypatch):
+async def test_even_plausible_model_explanation_is_not_used(monkeypatch):
     answer = "백내장 특징이 강하게 감지됐습니다. 빠른 시일 내 안과 진료를 받으세요."
     monkeypatch.setattr(llm, "sanitized_stream", await _fake_stream(answer))
     out = [c async for c in llm.chat_with_gemma_stream("x", "ctx", "ko", explain_results=True,
                                                        explain_required=["cat_risk", "tri_now"], explain_fallback=["고정"])]
-    assert "".join(c for c in out if c != llm.KEEPALIVE) == answer
+    assert out == ['고정.']
 
 
 @pytest.mark.anyio

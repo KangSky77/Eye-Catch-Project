@@ -819,15 +819,8 @@ async function handleChatAnswer(yes) {
             state.dynamicAnswers.push({ q: current.q, a: answerText, value: yes,
                 ...(current.question_id ? {question_id: current.question_id} : {}) });
         }
-        // 소견서 문맥과 리포트 표시에만 남긴다(chatSymptoms). symptomCodes에는 넣지 않는다 —
-        // computeTriage의 anySymptom이 그것을 세기 때문에, LLM이 즉석에서 만든 검수되지 않은
-        // 질문에 '네' 하나로 권장 조치가 monitor에서 weeks로 올라갔다(2026-09-04 확인).
-        // computeTriage 주석이 명시하듯 진료 시점은 '사람이 검수한 문항'만으로 정해야 한다.
-        // 자유 입력 경로(handleChatFreeAnswer)는 원래부터 symptomCodes를 건드리지 않았으므로,
-        // 답변 수단(버튼/입력칸)에 따라 판정이 달라지던 불일치도 함께 사라진다.
-        // 맞춤 질문마다 같은 문구를 넣으면 리포트에 같은 항목(symptom_extra)이 두 번 찍힌다
-        // (maxDynamic을 1->2로 올린 뒤 발생). 어차피 같은 뜻이므로 한 번만 남긴다.
-        if (yes === true && !state.chatSymptoms.includes('symptom_extra')) state.chatSymptoms.push('symptom_extra');
+        // 추가 질문의 '예'가 증상이나 위험요인을 뜻하지는 않는다(예: 안약 사용·금연 관심).
+        // 답변 쌍은 위 dynamicAnswers에 보존하고 리포트의 별도 맞춤 질문 줄에 표시한다.
 
         state.dynamicQuestion = null;
         state.dynamicCount++;

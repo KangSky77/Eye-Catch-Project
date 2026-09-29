@@ -13,6 +13,7 @@ const state = {
     aiResultData: null,      // 백내장 분석 원자료 {code, probability, twoEyes, eyes} — 언어 중립
     aiResultCode: "",        // 백내장 판독 코드 'risk'/'normal' (RAG 검색용)
     amslerResult: {},        // 암슬러 응답 {left: bool, right: bool} — 언어 중립
+    amslerStage: 'idle',     // idle / answer / prepare / complete — 반대쪽 눈은 준비 확인 후 응답
     opinionLang: "",         // AI 참고 정보를 생성한 언어 (언어를 바꾸면 재생성 안내)
     eyeBreakdown: [],        // 눈별 결과 [{side, probability, code}]
     asymmetric: false,       // 편측(한쪽 눈만) 위험 여부
@@ -136,7 +137,7 @@ function formatAmslerResult() {
 /** 문진 소견을 현재 언어 문자열 배열로. state.chatSymptoms에는 i18n 키가 들어 있다. */
 function formatSymptoms() {
     const t = translations[state.lang];
-    return (state.chatSymptoms || []).map(k => t[k] || k);
+    return (state.chatSymptoms || []).filter(k => k !== 'symptom_extra').map(k => t[k] || k);
 }
 
 // 백엔드(llm.py)가 AI 오류를 정상 토큰과 구분하기 위해 붙이는 마커 — 프론트는 감지 시 에러 처리
@@ -245,7 +246,15 @@ function changeFontSize(delta) {
 }
 
 function updateUI(lang) {
+    const previousLang = state.lang;
     state.lang = lang;
+    if (previousLang !== lang) {
+        if (typeof cancelFollowup === 'function') cancelFollowup();
+        const followup = document.getElementById('followup-response');
+        if (followup) { followup.innerText = ''; followup.classList.add('hidden'); }
+    }
+    // DOM에 리포트가 없어도 후속 설명에 저장된 이전 언어의 권장 조치를 보내지 않는다.
+    if (state.triage && typeof computeCurrentTriage === 'function') state.triage = computeCurrentTriage();
     writeStore('ec_lang', lang);   // 선택 언어 저장 → 새로고침/재방문 시 복원 (실패해도 계속 진행)
     // 문서 언어도 함께 바꾼다 — 스크린리더 발음, 브라우저 번역 제안, 검색엔진, CJK 폰트
     // 선택이 모두 이 속성을 본다. index.html에 lang="ko"로 박혀 있으면 6개국어가 전부
@@ -327,11 +336,7 @@ function updateUI(lang) {
     }
     const triBox = document.getElementById('triage-box');
     if (triBox && triBox.children.length && state.triage && typeof renderTriage === 'function') {
-        renderTriage(triBox, computeTriage({
-            cataractCode: state.aiResultCode, amslerAbnormal: state.hasAmsler,
-            symptomCodes: state.symptomCodes, symptomScore: state.symptomScore,
-            redFlags: state.redFlags,
-        }), computeRiskScore(state.riskAnswers || {}).factors);
+        renderTriage(triBox, state.triage, computeRiskScore(state.riskAnswers || {}).factors);
     }
 }
 
@@ -348,6 +353,10 @@ function showTab(tid, moveFocus = true) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const target = document.getElementById(tid);
     if (target) target.classList.add('active');
+    // 숨겨진 동안 회전·크기 변경이 있었어도, 검사 탭이 보이면 실제 폭으로 다시 그린다.
+    if (tid === 'tab-test' && state.step === 'step-amsler' && typeof renderAmslerGrid === 'function') {
+        renderAmslerGrid();
+    }
     window.scrollTo(0, 0);
 
     // 상단/하단 네비 활성 상태 동기화 (data-tab 기준)
@@ -381,6 +390,13 @@ const STEP_FLOW = ['step-guide', 'step-photo', 'step-ai-result', 'step-amsler', 
 const STEP_ALIAS = { 'step-ai-loading': 'step-photo' };
 
 function nextStep(sid, viaHistory = false) {
+    // 완료 후 뒤로가기로 격자에 돌아오면 양쪽을 다시 검사할 수 있어야 한다.
+    // 재시작은 stage를 먼저 answer로 바꾸므로 nextStep 재호출이 반복되지 않는다.
+    if (sid === 'step-amsler' && state.amslerStage === 'complete'
+        && typeof startAmslerStep === 'function') {
+        startAmslerStep(viaHistory);
+        return;
+    }
     document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(sid);
     if (!target) return;
@@ -463,6 +479,7 @@ function resetScreeningState() {
     state.aiResultData = null; state.aiResultCode = ''; state.eyeBreakdown = [];
     state.photoChecks = [];
     state.asymmetric = false; state.amslerResult = {}; state.hasAmsler = false;
+    state.amslerStage = 'idle';
     invalidateScreeningReport();
 }
 

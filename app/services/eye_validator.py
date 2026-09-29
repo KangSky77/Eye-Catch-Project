@@ -104,6 +104,17 @@ def _try_load() -> bool:
         if _loaded:   # 락을 기다리는 동안 다른 스레드가 이미 로드를 끝냈을 수 있음
             return True
         try:
+            if not _GATE_PATH.exists():
+                logger.error("⚠️  eye_gate.npz 없음 — 다음 요청에 다시 확인합니다")
+                return False
+            # 필수 게이트를 먼저 검증한다. 부분 로드나 누락을 성공으로 캐시하지 않는다.
+            with np.load(_GATE_PATH) as g:
+                gate_w = g["w"].astype(np.float32)
+                gate_b = float(g["b"].reshape(-1)[0])
+                gate_thr = float(g["threshold"])
+            if (gate_w.shape != (512,) or not np.isfinite(gate_w).all()
+                    or not np.isfinite(gate_b) or not 0 < gate_thr < 1):
+                raise ValueError("eye_gate.npz has invalid weights or threshold")
             net = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
             net.fc = torch.nn.Identity()
             net.eval().to(device)
@@ -119,14 +130,10 @@ def _try_load() -> bool:
             net.layer4.register_forward_hook(_keep_layer4)
             _net = net
             _centroid = torch.from_numpy(centroid).to(device)
-            if _GATE_PATH.exists():
-                g = np.load(_GATE_PATH)
-                _gate_w = torch.from_numpy(g["w"].astype(np.float32)).to(device)
-                _gate_b = float(g["b"][0])
-                _gate_thr = float(g["threshold"])
-                logger.info("눈 게이트 로드: 임계값 %.3f", _gate_thr)
-            else:
-                logger.error("⚠️  eye_gate.npz 없음 — 검증기를 준비 완료로 취급하지 않습니다")
+            _gate_w = torch.from_numpy(gate_w).to(device)
+            _gate_b = gate_b
+            _gate_thr = gate_thr
+            logger.info("눈 게이트 로드: 임계값 %.3f", _gate_thr)
             _load_open_gate()
             _loaded = True
         except Exception:
@@ -278,6 +285,8 @@ def gate_available() -> bool:
 
 def is_ready() -> bool:
     """사진 분석에 필수인 눈 게이트와 눈 뜸 판정기가 모두 준비됐는가."""
+    if not _try_load():
+        return False
     base = bool(_loaded and _net is not None and _centroid is not None and _gate_w is not None)
     # vision.py는 파일 유무와 무관하게 뜸 판정기를 요구한다. 파일이 모두 빠졌을 때도
     # readyz가 200을 반환하면 분석은 503인 서버로 트래픽을 보내게 된다.

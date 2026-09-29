@@ -155,16 +155,14 @@ def test_daily_impact_cannot_repeat_reading_symptom_instead_of_changed_activity(
 @pytest.mark.anyio
 async def test_result_explanation_uses_report_only_without_general_advice_reference(monkeypatch):
     from app.services import llm
-    captured = []
     def forbidden(*_):
         pytest.fail('Result explanation must not retrieve general health advice')
     async def fake(prompt, **kwargs):
-        captured.append(prompt)
-        yield 'Existing results explained.'
+        pytest.fail('Result interpretation must not use free model generation')
+        yield ''
     monkeypatch.setattr(llm.knowledge, 'retrieve_for_chat', forbidden)
     monkeypatch.setattr(llm, 'sanitized_stream', fake)
-    result = ''.join([c async for c in llm.chat_with_gemma_stream('Explain my results', 'REPORT FACTS', 'en', explain_results=True)])
+    result = ''.join([c async for c in llm.chat_with_gemma_stream(
+        'Explain my results', 'REPORT FACTS', 'en', explain_results=True,
+        explain_fallback=['Existing results explained.'])])
     assert result == 'Existing results explained.'
-    assert 'REPORT FACTS' in captured[0]
-    assert 'Do not add lifestyle advice' in captured[0]
-    assert 'Unknown or missing answers do not mean No' in captured[0]

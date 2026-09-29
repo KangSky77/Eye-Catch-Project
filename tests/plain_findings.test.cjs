@@ -45,6 +45,7 @@ function setup(lines) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '../static', file), 'utf8'), context);
     }
     const core = fs.readFileSync(path.join(__dirname, '../static/app-core.js'), 'utf8');
+    vm.runInContext(core.slice(core.indexOf('function formatSymptoms()'), core.indexOf('const ERROR_MARKER')), context);
     vm.runInContext(core.slice(core.indexOf('function resetScreeningState()'), core.indexOf('\nfunction openMap()')), context);
     const shown = () => box.children[1].children.map(li => li.children[1].textContent).join(' ||| ');
     return { context, box, calls, shown, fixed: () => [...context.buildFindings()].join(' ||| ') };

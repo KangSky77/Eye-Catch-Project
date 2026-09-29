@@ -471,31 +471,13 @@ const diseaseData = {
     ]
 };
 // ==========================================================================
-// 확장 문자열 (시력·대비감도 검사 / 위험도 문진 / 행동 권고 / 동의)
+// 확장 문자열 (위험도 문진 / 행동 권고 / 동의)
 // 기존 6개 언어 객체를 직접 수정하는 대신 여기서 병합한다 — 추가/검토가 쉽고
 // 누락된 언어가 있으면 병합 시점에 콘솔로 바로 드러난다.
 // ==========================================================================
 const extraStrings = {
   ko: {
-    vt_title: "시력 · 대비감도 자가검사", vt_start: "검사 시작",
-    vt_calib_title: "1단계 · 화면 크기 맞추기",
-    vt_calib_desc: "카드(신용/체크/신분증)를 화면에 대고 사각형을 실물과 같은 크기로 맞추세요. 국제 규격이라 어느 카드든 됩니다.",
-    vt_calib_edge_long: "긴 변 85.6mm", vt_calib_edge_short: "짧은 변 54.0mm",
-    vt_calib_save: "저장하고 계속", vt_calib_done: "화면 보정 완료",
-    vt_calib_verify: "확인: 아래 막대가 자로 정확히 50mm면 보정이 맞습니다.",
-    vt_eye_left: "왼쪽 눈", vt_eye_right: "오른쪽 눈",
-    vt_cover_left: "왼쪽 눈을 손으로 가려주세요", vt_cover_right: "오른쪽 눈을 손으로 가려주세요",
-    vt_acuity: "시력", vt_contrast: "대비감도",
-    vt_acuity_desc: "E가 향하는 방향을 고르세요. 점점 작아집니다.",
-    vt_contrast_desc: "E가 점점 흐려집니다. 보이는 동안 방향을 고르세요.",
-    vt_begin: "준비됐어요", vt_which_dir: "E가 향하는 방향은?",
-    vt_cant_see: "안 보여요", vt_guess_hint: "잘 모르겠으면 감으로 골라도 됩니다.",
-    vt_result_title: "기능검사 결과", vt_redo: "다시 검사", vt_recalibrate: "화면 다시 맞추기",
-    vt_need_calib: "먼저 화면 크기 맞추기를 완료해주세요.",
-    vt_asym: "좌우 결과 차이가 관찰됐습니다. 측정 조건에 따라 달라질 수 있으므로 재검사 후에도 차이가 지속되면 안과에서 확인하세요.",
-    vt_unmeasurable: "검사는 마쳤지만 한쪽 눈은 유효한 측정값을 계산할 수 없었습니다. 조건을 확인해 재검사하고, 차이가 지속되면 안과에서 확인하세요.",
-    vt_unmeasurable_both: "검사는 모두 마쳤지만 양쪽 눈 모두 유효한 측정값을 계산할 수 없었습니다. 조명·거리·눈 가림을 확인하고 다시 검사해 주세요.",
-    vt_unmeasurable_kinds: "{kinds} 항목은 양쪽 눈 모두 유효한 측정값을 계산할 수 없었습니다. 조명·거리·눈 가림을 확인하고 다시 검사해 주세요.",
+
     q_age: "연령대를 알려주세요.", q_diabetes: "당뇨가 있으신가요?",
     q_hypertension: "고혈압이 있으신가요?", q_family: "가족 중 녹내장·황반변성 진단을 받은 분이 있나요?",
     q_smoking: "현재 흡연 중이신가요?",
@@ -514,25 +496,7 @@ const extraStrings = {
     rep_info_title: "AI 소견", info_writing: "AI가 참고 정보를 정리하고 있습니다"
   },
   en: {
-    vt_title: "Visual Acuity & Contrast Test", vt_start: "Start test",
-    vt_calib_title: "Step 1 · Match your screen size",
-    vt_calib_desc: "Hold any card (credit/debit/ID) against the screen and resize the rectangle to match. Cards are a fixed international size.",
-    vt_calib_edge_long: "Long edge 85.6mm", vt_calib_edge_short: "Short edge 54.0mm",
-    vt_calib_save: "Save and continue", vt_calib_done: "Screen calibrated",
-    vt_calib_verify: "Check: the bar below should measure exactly 50mm with a ruler.",
-    vt_eye_left: "Left eye", vt_eye_right: "Right eye",
-    vt_cover_left: "Cover your left eye", vt_cover_right: "Cover your right eye",
-    vt_acuity: "Acuity", vt_contrast: "Contrast sensitivity",
-    vt_acuity_desc: "Pick the direction the E points. It gets smaller each round.",
-    vt_contrast_desc: "The E gets fainter. Pick its direction while you can still see it.",
-    vt_begin: "I am ready", vt_which_dir: "Which way does the E point?",
-    vt_cant_see: "I can't see it", vt_guess_hint: "If you are unsure, a guess is fine.",
-    vt_result_title: "Functional test results", vt_redo: "Test again", vt_recalibrate: "Recalibrate screen",
-    vt_need_calib: "Please complete screen calibration first.",
-    vt_asym: "A difference between the two eyes was observed. Testing conditions can affect the result; repeat the test and seek an eye exam if the difference persists.",
-    vt_unmeasurable: "The test was completed, but a valid measurement could not be calculated for one eye. Check the conditions and retest; if the difference persists, see an eye doctor.",
-    vt_unmeasurable_both: "The test was completed, but a valid measurement could not be calculated for either eye. Check the lighting, distance and eye covering, then try again.",
-    vt_unmeasurable_kinds: "No valid measurement could be calculated for either eye on: {kinds}. Check lighting, distance and eye covering, then test again.",
+
     q_age: "What is your age range?", q_diabetes: "Do you have diabetes?",
     q_hypertension: "Do you have high blood pressure?", q_family: "Has a family member been diagnosed with glaucoma or macular degeneration?",
     q_smoking: "Do you currently smoke?",
@@ -551,25 +515,7 @@ const extraStrings = {
     rep_info_title: "AI opinion", info_writing: "The AI is preparing reference notes"
   },
   es: {
-    vt_title: "Test de agudeza y sensibilidad al contraste", vt_start: "Comenzar",
-    vt_calib_title: "Paso 1 · Ajuste el tamaño de pantalla",
-    vt_calib_desc: "Ponga una tarjeta (crédito/débito/identificación) sobre la pantalla y ajuste el rectángulo. Las tarjetas tienen tamaño internacional fijo.",
-    vt_calib_edge_long: "Lado largo 85,6mm", vt_calib_edge_short: "Lado corto 54,0mm",
-    vt_calib_save: "Guardar y continuar", vt_calib_done: "Pantalla calibrada",
-    vt_calib_verify: "Compruebe: la barra inferior debe medir exactamente 50mm con una regla.",
-    vt_eye_left: "Ojo izquierdo", vt_eye_right: "Ojo derecho",
-    vt_cover_left: "Cúbrase el ojo izquierdo", vt_cover_right: "Cúbrase el ojo derecho",
-    vt_acuity: "Agudeza", vt_contrast: "Sensibilidad al contraste",
-    vt_acuity_desc: "Elija hacia dónde apunta la E. Se hará más pequeña.",
-    vt_contrast_desc: "La E se hará más tenue. Elija su dirección mientras la vea.",
-    vt_begin: "Estoy listo", vt_which_dir: "¿Hacia dónde apunta la E?",
-    vt_cant_see: "No lo veo", vt_guess_hint: "Si no está seguro, puede adivinar.",
-    vt_result_title: "Resultados funcionales", vt_redo: "Repetir test", vt_recalibrate: "Recalibrar pantalla",
-    vt_need_calib: "Complete primero la calibración de pantalla.",
-    vt_asym: "Se observó una diferencia entre ambos ojos. Las condiciones pueden afectar el resultado; repita la prueba y consulte si la diferencia persiste.",
-    vt_unmeasurable: "La prueba se completó, pero no se pudo calcular una medición válida para un ojo. Revise las condiciones y repita; si la diferencia persiste, consulte a un oftalmólogo.",
-    vt_unmeasurable_both: "La prueba se completó, pero no se pudo calcular una medición válida para ninguno de los ojos. Revise la luz, la distancia y la oclusión y repita.",
-    vt_unmeasurable_kinds: "No se pudo calcular una medición válida en ninguno de los dos ojos para: {kinds}. Revise la iluminación, la distancia y la oclusión, y repita la prueba.",
+
     q_age: "¿Cuál es su rango de edad?", q_diabetes: "¿Tiene diabetes?",
     q_hypertension: "¿Tiene hipertensión?", q_family: "¿Algún familiar fue diagnosticado con glaucoma o degeneración macular?",
     q_smoking: "¿Fuma actualmente?",
@@ -588,25 +534,7 @@ const extraStrings = {
     rep_info_title: "Informe de la IA", info_writing: "La IA está preparando las notas"
   },
   fr: {
-    vt_title: "Test d'acuité et de sensibilité au contraste", vt_start: "Commencer",
-    vt_calib_title: "Étape 1 · Calibrer la taille de l'écran",
-    vt_calib_desc: "Placez une carte (crédit/débit/identité) sur l'écran et ajustez le rectangle. Les cartes ont une taille internationale fixe.",
-    vt_calib_edge_long: "Grand côté 85,6mm", vt_calib_edge_short: "Petit côté 54,0mm",
-    vt_calib_save: "Enregistrer et continuer", vt_calib_done: "Écran calibré",
-    vt_calib_verify: "Vérifiez : la barre ci-dessous doit mesurer exactement 50mm avec une règle.",
-    vt_eye_left: "Œil gauche", vt_eye_right: "Œil droit",
-    vt_cover_left: "Couvrez votre œil gauche", vt_cover_right: "Couvrez votre œil droit",
-    vt_acuity: "Acuité", vt_contrast: "Sensibilité au contraste",
-    vt_acuity_desc: "Choisissez la direction du E. Il devient plus petit.",
-    vt_contrast_desc: "Le E devient plus pâle. Choisissez sa direction tant que vous le voyez.",
-    vt_begin: "Je suis prêt", vt_which_dir: "Dans quelle direction pointe le E ?",
-    vt_cant_see: "Je ne le vois pas", vt_guess_hint: "En cas de doute, devinez sans souci.",
-    vt_result_title: "Résultats fonctionnels", vt_redo: "Refaire le test", vt_recalibrate: "Recalibrer l'écran",
-    vt_need_calib: "Veuillez d'abord calibrer l'écran.",
-    vt_asym: "Un écart entre les deux yeux a été observé. Les conditions peuvent influencer le résultat ; recommencez et consultez si l'écart persiste.",
-    vt_unmeasurable: "Le test est terminé, mais aucune mesure valide n'a pu être calculée pour un œil. Vérifiez les conditions et recommencez ; si l'écart persiste, consultez un ophtalmologiste.",
-    vt_unmeasurable_both: "Le test est terminé, mais aucune mesure valide n'a pu être calculée pour les deux yeux. Vérifiez les conditions et recommencez.",
-    vt_unmeasurable_kinds: "Aucune mesure valide n'a pu être calculée pour les deux yeux sur : {kinds}. Vérifiez l'éclairage, la distance et l'occlusion, puis refaites le test.",
+
     q_age: "Quelle est votre tranche d'âge ?", q_diabetes: "Êtes-vous diabétique ?",
     q_hypertension: "Avez-vous de l'hypertension ?", q_family: "Un proche a-t-il été diagnostiqué d'un glaucome ou d'une DMLA ?",
     q_smoking: "Fumez-vous actuellement ?",
@@ -625,25 +553,7 @@ const extraStrings = {
     rep_info_title: "Avis de l'IA", info_writing: "L'IA prépare les notes de référence"
   },
   ja: {
-    vt_title: "視力・コントラスト感度セルフチェック", vt_start: "検査を開始",
-    vt_calib_title: "ステップ1・画面サイズの調整",
-    vt_calib_desc: "カード(クレジット/キャッシュ/身分証)を画面に当て、四角形を実物と同じ大きさに合わせてください。カードは国際規格で固定サイズです。",
-    vt_calib_edge_long: "長辺 85.6mm", vt_calib_edge_short: "短辺 54.0mm",
-    vt_calib_save: "保存して続ける", vt_calib_done: "画面調整完了",
-    vt_calib_verify: "確認: 下のバーが定規でちょうど50mmなら調整は正しいです。",
-    vt_eye_left: "左目", vt_eye_right: "右目",
-    vt_cover_left: "左目を手で覆ってください", vt_cover_right: "右目を手で覆ってください",
-    vt_acuity: "視力", vt_contrast: "コントラスト感度",
-    vt_acuity_desc: "Eの向きを選んでください。だんだん小さくなります。",
-    vt_contrast_desc: "Eが薄くなっていきます。見える間に向きを選んでください。",
-    vt_begin: "準備できました", vt_which_dir: "Eはどの向き？",
-    vt_cant_see: "見えません", vt_guess_hint: "わからないときは勘で選んでも大丈夫です。",
-    vt_result_title: "機能検査の結果", vt_redo: "もう一度検査", vt_recalibrate: "画面を再調整",
-    vt_need_calib: "先に画面サイズの調整を完了してください。",
-    vt_asym: "左右の結果に差が見られました。測定条件で変わることがあるため、再検査後も差が続く場合は眼科でご確認ください。",
-    vt_unmeasurable: "検査は終わりましたが、片眼は有効な測定値を計算できませんでした。条件を確認して再検査し、差が続くなら眼科で確認してください。",
-    vt_unmeasurable_both: "検査は終わりましたが、両眼とも有効な測定値を計算できませんでした。照明・距離・遮蔽を確認して再検査してください。",
-    vt_unmeasurable_kinds: "{kinds}の項目は両眼とも有効な測定値を算出できませんでした。照明・距離・目の覆いを確認して再検査してください。",
+
     q_age: "年代を教えてください。", q_diabetes: "糖尿病はありますか？",
     q_hypertension: "高血圧はありますか？", q_family: "ご家族に緑内障・黄斑変性と診断された方はいますか？",
     q_smoking: "現在喫煙していますか？",
@@ -662,25 +572,7 @@ const extraStrings = {
     rep_info_title: "AIの所見", info_writing: "AIが参考情報をまとめています"
   },
   zh: {
-    vt_title: "视力与对比敏感度自测", vt_start: "开始检查",
-    vt_calib_title: "第1步 · 校准屏幕尺寸",
-    vt_calib_desc: "把任意卡片(信用卡/借记卡/身份证)贴在屏幕上，调整矩形至与实物一致。卡片为国际统一尺寸。",
-    vt_calib_edge_long: "长边 85.6mm", vt_calib_edge_short: "短边 54.0mm",
-    vt_calib_save: "保存并继续", vt_calib_done: "屏幕校准完成",
-    vt_calib_verify: "验证：用尺子量下方色条，应恰好为50mm。",
-    vt_eye_left: "左眼", vt_eye_right: "右眼",
-    vt_cover_left: "请遮住左眼", vt_cover_right: "请遮住右眼",
-    vt_acuity: "视力", vt_contrast: "对比敏感度",
-    vt_acuity_desc: "选择E的朝向，字符会越来越小。",
-    vt_contrast_desc: "E会越来越淡。在还能看见时选择朝向。",
-    vt_begin: "准备好了", vt_which_dir: "E朝向哪个方向？",
-    vt_cant_see: "看不清", vt_guess_hint: "不确定时可以凭感觉选择。",
-    vt_result_title: "功能检查结果", vt_redo: "重新检查", vt_recalibrate: "重新校准屏幕",
-    vt_need_calib: "请先完成屏幕校准。",
-    vt_asym: "双眼结果存在差异。测量条件可能影响结果；请重新检查，若差异持续请到眼科确认。",
-    vt_unmeasurable: "检查已完成，但一只眼无法计算出有效测量值。请检查条件后重新检查；如差异持续，请到眼科确认。",
-    vt_unmeasurable_both: "检查已完成，但双眼均无法计算出有效测量值。请检查光线、距离和遮眼方式后重新检查。",
-    vt_unmeasurable_kinds: "{kinds}项目双眼均无法计算出有效测量值。请检查光线、距离和遮眼情况后重新检查。",
+
     q_age: "请问您的年龄段？", q_diabetes: "您有糖尿病吗？",
     q_hypertension: "您有高血压吗？", q_family: "家人中有被诊断为青光眼或黄斑变性的吗？",
     q_smoking: "您目前吸烟吗？",
@@ -793,93 +685,63 @@ Object.assign(translations.zh, { survey_mode_surgery_check: "手术史确认 · 
 
 // 카드 방향 안내 — 폰은 카드를 세워야 폭 54mm·높이 85.6mm가 모두 화면에 들어간다.
 Object.assign(translations.ko, {
-  vt_orient_portrait: "카드를 <b>세로로 세워</b> 화면에 대고, 파란 사각형을 카드와 똑같이 맞추세요.",
-  vt_orient_landscape: "카드를 <b>가로로 눕혀</b> 화면에 대고, 파란 사각형을 카드와 똑같이 맞추세요."
-});
+
+  });
 Object.assign(translations.en, {
-  vt_orient_portrait: "Hold the card <b>upright (portrait)</b> against the screen and match the blue rectangle to it.",
-  vt_orient_landscape: "Lay the card <b>sideways (landscape)</b> against the screen and match the blue rectangle to it."
-});
+
+  });
 Object.assign(translations.es, {
-  vt_orient_portrait: "Coloque la tarjeta <b>en vertical</b> sobre la pantalla y ajuste el rectángulo azul a ella.",
-  vt_orient_landscape: "Coloque la tarjeta <b>en horizontal</b> sobre la pantalla y ajuste el rectángulo azul a ella."
-});
+
+  });
 Object.assign(translations.fr, {
-  vt_orient_portrait: "Placez la carte <b>à la verticale</b> sur l'écran et ajustez le rectangle bleu à sa taille.",
-  vt_orient_landscape: "Placez la carte <b>à l'horizontale</b> sur l'écran et ajustez le rectangle bleu à sa taille."
-});
+
+  });
 Object.assign(translations.ja, {
-  vt_orient_portrait: "カードを<b>縦向き</b>に画面へ当て、青い四角をカードにぴったり合わせてください。",
-  vt_orient_landscape: "カードを<b>横向き</b>に画面へ当て、青い四角をカードにぴったり合わせてください。"
-});
+
+  });
 Object.assign(translations.zh, {
-  vt_orient_portrait: "将卡片<b>竖放</b>贴在屏幕上，把蓝色矩形调整到与卡片一致。",
-  vt_orient_landscape: "将卡片<b>横放</b>贴在屏幕上，把蓝色矩形调整到与卡片一致。"
-});
+
+  });
 
 // 카드를 화면에 대면 그 접촉이 터치로 인식돼 화면이 확대/스크롤되는 문제 안내
 Object.assign(translations.ko, {
-  vt_touch_hint: "카드를 화면 <b>위쪽 가장자리</b>에 걸쳐 대고, 아래 <b>+/−</b> 버튼으로 크기를 맞추세요. 이 단계에서는 화면 확대·스크롤이 잠시 꺼집니다.",
-  vt_nudge_fine: "미세", vt_nudge_coarse: "크게"
-});
+
+   });
 Object.assign(translations.en, {
-  vt_touch_hint: "Rest the card along the <b>top edge</b> of the screen and use the <b>+/−</b> buttons below to size it. Pinch-zoom and scrolling are turned off during this step.",
-  vt_nudge_fine: "Fine", vt_nudge_coarse: "Coarse"
-});
+
+   });
 Object.assign(translations.es, {
-  vt_touch_hint: "Apoye la tarjeta en el <b>borde superior</b> de la pantalla y use los botones <b>+/−</b> para ajustar. El zoom y el desplazamiento se desactivan en este paso.",
-  vt_nudge_fine: "Fino", vt_nudge_coarse: "Grueso"
-});
+
+   });
 Object.assign(translations.fr, {
-  vt_touch_hint: "Posez la carte le long du <b>bord supérieur</b> de l'écran et utilisez les boutons <b>+/−</b> pour ajuster. Le zoom et le défilement sont désactivés à cette étape.",
-  vt_nudge_fine: "Fin", vt_nudge_coarse: "Large"
-});
+
+   });
 Object.assign(translations.ja, {
-  vt_touch_hint: "カードを画面の<b>上端</b>に沿えて置き、下の<b>+/−</b>ボタンでサイズを合わせてください。この手順では拡大・スクロールを一時的に無効化します。",
-  vt_nudge_fine: "微調整", vt_nudge_coarse: "粗調整"
-});
+
+   });
 Object.assign(translations.zh, {
-  vt_touch_hint: "把卡片贴在屏幕<b>上边缘</b>，用下方的<b>+/−</b>按钮调整大小。此步骤会暂时关闭缩放与滚动。",
-  vt_nudge_fine: "微调", vt_nudge_coarse: "粗调"
-});
+
+   });
 
 // 화면 고정 토글 + 거리 측정 안내
 Object.assign(translations.ko, {
-  vt_lock_off: "화면 고정하기", vt_lock_on: "고정됨 — 해제하려면 탭",
-  vt_lock_hint: "카드를 올려놓을 위치까지 스크롤한 뒤 <b>화면 고정</b>을 누르세요. 고정하면 카드가 닿아도 화면이 움직이지 않고, <b>+/−</b> 버튼으로만 크기를 바꿉니다.",
-  vt_dist_tolerance: "거리가 10% 틀려도 시력 오차는 0.04 logMAR — <b>시력표 반 줄도 안 됩니다</b>. 대비감도는 이보다도 둔감하고, 좌우 눈 비교는 거리와 아예 무관합니다.",
-  vt_dist_custom: "직접 입력 (cm)"
-});
+
+  });
 Object.assign(translations.en, {
-  vt_lock_off: "Lock the screen", vt_lock_on: "Locked — tap to unlock",
-  vt_lock_hint: "Scroll to where you want to rest the card, then tap <b>Lock the screen</b>. While locked, the card touching the screen won't move it — resize with the <b>+/−</b> buttons only.",
-  vt_dist_tolerance: "A 10% distance error shifts acuity by only 0.04 logMAR — <b>less than half a line</b> on an eye chart. Contrast sensitivity is even less sensitive, and left/right comparison doesn't depend on distance at all.",
-  vt_dist_custom: "Enter manually (cm)"
-});
+
+  });
 Object.assign(translations.es, {
-  vt_lock_off: "Bloquear pantalla", vt_lock_on: "Bloqueada — toque para desbloquear",
-  vt_lock_hint: "Desplácese hasta donde apoyará la tarjeta y pulse <b>Bloquear pantalla</b>. Bloqueada, la tarjeta no moverá la pantalla; ajuste solo con <b>+/−</b>.",
-  vt_dist_tolerance: "Un error del 10% en distancia cambia la agudeza solo 0,04 logMAR — <b>menos de media línea</b>. La sensibilidad al contraste es aún menos sensible.",
-  vt_dist_custom: "Introducir (cm)"
-});
+
+  });
 Object.assign(translations.fr, {
-  vt_lock_off: "Verrouiller l'écran", vt_lock_on: "Verrouillé — touchez pour déverrouiller",
-  vt_lock_hint: "Faites défiler jusqu'à l'endroit où poser la carte, puis touchez <b>Verrouiller l'écran</b>. Une fois verrouillé, la carte ne fera plus bouger l'écran ; ajustez avec <b>+/−</b>.",
-  vt_dist_tolerance: "Une erreur de 10% sur la distance ne décale l'acuité que de 0,04 logMAR — <b>moins d'une demi-ligne</b>. La sensibilité au contraste y est encore moins sensible.",
-  vt_dist_custom: "Saisir (cm)"
-});
+
+  });
 Object.assign(translations.ja, {
-  vt_lock_off: "画面を固定", vt_lock_on: "固定中 — タップで解除",
-  vt_lock_hint: "カードを置きたい位置までスクロールしてから<b>画面を固定</b>を押してください。固定中はカードが触れても画面が動かず、<b>+/−</b>ボタンだけでサイズを変えます。",
-  vt_dist_tolerance: "距離が10%ずれても視力の誤差は0.04 logMAR — <b>視力表の半行未満</b>です。コントラスト感度はさらに鈍感で、左右比較は距離と無関係です。",
-  vt_dist_custom: "直接入力 (cm)"
-});
+
+  });
 Object.assign(translations.zh, {
-  vt_lock_off: "锁定屏幕", vt_lock_on: "已锁定 — 点击解锁",
-  vt_lock_hint: "先滚动到想放卡片的位置，再点<b>锁定屏幕</b>。锁定后卡片接触屏幕也不会移动画面，只用<b>+/−</b>按钮调整大小。",
-  vt_dist_tolerance: "距离偏差10%时视力误差仅0.04 logMAR — <b>不到视力表半行</b>。对比敏感度更不敏感，左右眼比较则与距离无关。",
-  vt_dist_custom: "手动输入 (cm)"
-});
+
+  });
 
 // ==========================================================================
 // 질환별 문진 재설계
@@ -1074,72 +936,60 @@ Object.assign(translations.ko, {
   q_dr_fundus: "최근 1년 안에 안저 검사를 받으셨나요? (안저 = 눈 안쪽 망막. 눈에 약을 넣어 동공을 키우고 들여다보는 검사입니다)",
   q_dr_floaters: "눈앞에 검은 점이나 실오라기 같은 것(비문증)이 갑자기 많아졌나요?",
   q_rf_acute: "최근 눈이 심하게 아프면서 두통·구역질이 나고, 불빛 주위에 무지개 같은 테가 보인 적이 있나요?",
-  vt_dist_label: "화면에서 눈까지 거리",
+
   dist_arm: "팔 뻗은 거리 (약 60cm) · 준비물 없음",
-  vt_dist_how: "더 정확히 재고 싶다면 (선택)",
-  vt_dist_guide: "<b>그냥 팔을 쭉 뻗은 거리면 충분합니다.</b> 준비물이 필요 없고, 아래 설명처럼 오차가 결과를 크게 바꾸지 않아요.<br><br>더 정확히 재고 싶다면, 캘리브레이션에 쓴 <b>카드 긴 변이 8.56cm</b>이고 <b>A4 긴 변이 29.7cm</b>입니다.<br>· <b>60cm</b> = A4 긴 변 <b>2번</b> (59.4cm)<br>· <b>40cm</b> = A4 긴 변 <b>1번</b> + 카드 <b>1.2번</b>",
-  vt_dist_tolerance: "거리가 10% 틀려도 시력 오차는 0.04 logMAR — <b>시력표 반 줄도 안 됩니다</b>. 대비감도는 이보다 더 둔감하고, <b>이 앱에서 가장 신뢰도 높은 지표인 좌우 눈 비교는 거리와 아예 무관합니다</b>."
-});
+
+  });
 Object.assign(translations.en, {
   q_gla_iop: "Has an eye doctor ever told you your eye pressure was high? (Eye pressure = the fluid pressure inside your eye, measured at routine eye exams)",
   q_gla_myopia: "Are you highly myopic? (Glasses stronger than -6.00 — without them, even your fingers at arm's length look blurry)",
   q_dr_fundus: "Have you had a fundus exam within the last year? (Fundus = the retina at the back of the eye; drops widen the pupil so the doctor can look inside)",
   q_dr_floaters: "Has the number of dark spots or thread-like floaters in your vision suddenly increased?",
   q_rf_acute: "Have you recently had severe eye pain with headache or nausea, and seen rainbow-like rings around lights?",
-  vt_dist_label: "Distance from screen to your eyes",
+
   dist_arm: "Arm's length (about 60cm) · nothing needed",
-  vt_dist_how: "Want to measure it more precisely? (optional)",
-  vt_dist_guide: "<b>Just holding it at arm's length is enough.</b> Nothing to fetch, and as explained below the error barely changes the result.<br><br>If you want more precision: the card you calibrated with is <b>8.56cm</b> on its long edge and A4 paper is <b>29.7cm</b>.<br>· <b>60cm</b> = A4 long edge <b>×2</b> (59.4cm)<br>· <b>40cm</b> = A4 <b>×1</b> + card <b>×1.2</b>",
-  vt_dist_tolerance: "A 10% distance error shifts acuity by only 0.04 logMAR — <b>less than half a line</b> on an eye chart. Contrast sensitivity is even less sensitive, and <b>the left/right comparison — this app's most reliable signal — doesn't depend on distance at all</b>."
-});
+
+  });
 Object.assign(translations.es, {
   q_gla_iop: "¿Le han dicho que tiene la presión ocular alta? (Presión ocular = la presión del líquido dentro del ojo, se mide en revisiones)",
   q_gla_myopia: "¿Tiene miopía alta? (Graduación superior a -6,00 — sin gafas, ni los dedos con el brazo extendido se ven nítidos)",
   q_dr_fundus: "¿Se ha hecho un examen de fondo de ojo en el último año? (Fondo de ojo = la retina; con gotas se dilata la pupila para mirar dentro)",
   q_dr_floaters: "¿Han aumentado de golpe los puntos oscuros o filamentos (moscas volantes)?",
   q_rf_acute: "¿Ha tenido dolor ocular intenso con dolor de cabeza o náuseas, y halos como un arcoíris alrededor de las luces?",
-  vt_dist_label: "Distancia de la pantalla a sus ojos",
+
   dist_arm: "Con el brazo extendido (unos 60cm) · sin preparativos",
-  vt_dist_how: "¿Quiere medirlo con más precisión? (opcional)",
-  vt_dist_guide: "<b>Con el brazo extendido basta.</b> No hace falta nada más y, como se explica abajo, el error apenas cambia el resultado.<br><br>Si quiere más precisión: la tarjeta mide <b>8,56cm</b> de lado largo y un A4 <b>29,7cm</b>.<br>· <b>60cm</b> = A4 <b>×2</b> (59,4cm)<br>· <b>40cm</b> = A4 <b>×1</b> + tarjeta <b>×1,2</b>",
-  vt_dist_tolerance: "Un error del 10% cambia la agudeza solo 0,04 logMAR — <b>menos de media línea</b>. La sensibilidad al contraste es aún menos sensible, y <b>la comparación entre ojos, la señal más fiable de esta app, no depende de la distancia</b>."
-});
+
+  });
 Object.assign(translations.fr, {
   q_gla_iop: "Un ophtalmologiste vous a-t-il dit que votre tension oculaire était élevée ? (Tension oculaire = la pression du liquide dans l'œil, mesurée lors des examens)",
   q_gla_myopia: "Êtes-vous fortement myope ? (Correction au-delà de -6,00 — sans lunettes, même vos doigts à bout de bras sont flous)",
   q_dr_fundus: "Avez-vous eu un examen du fond d'œil cette dernière année ? (Fond d'œil = la rétine ; des gouttes dilatent la pupille pour regarder à l'intérieur)",
   q_dr_floaters: "Le nombre de points noirs ou filaments (corps flottants) a-t-il augmenté brusquement ?",
   q_rf_acute: "Avez-vous eu une douleur oculaire intense avec maux de tête ou nausées, et des halos comme un arc-en-ciel autour des lumières ?",
-  vt_dist_label: "Distance entre l'écran et vos yeux",
+
   dist_arm: "À bout de bras (environ 60cm) · rien à préparer",
-  vt_dist_how: "Mesurer plus précisément ? (facultatif)",
-  vt_dist_guide: "<b>À bout de bras, cela suffit.</b> Rien à aller chercher, et comme expliqué ci-dessous l'erreur ne change presque rien.<br><br>Pour plus de précision : la carte fait <b>8,56cm</b> de grand côté et un A4 <b>29,7cm</b>.<br>· <b>60cm</b> = A4 <b>×2</b> (59,4cm)<br>· <b>40cm</b> = A4 <b>×1</b> + carte <b>×1,2</b>",
-  vt_dist_tolerance: "Une erreur de 10% ne décale l'acuité que de 0,04 logMAR — <b>moins d'une demi-ligne</b>. La sensibilité au contraste y est encore moins sensible, et <b>la comparaison entre les deux yeux, le signal le plus fiable de cette app, ne dépend pas de la distance</b>."
-});
+
+  });
 Object.assign(translations.ja, {
   q_gla_iop: "眼科で「眼圧が高い」と言われたことがありますか？（眼圧＝目の中の圧力。健診の眼科項目でも測ります）",
   q_gla_myopia: "強度近視ですか？（度数 -6.00 以上。眼鏡を外すと腕を伸ばした先の指もぼやける程度です）",
   q_dr_fundus: "この1年以内に眼底検査を受けましたか？（眼底＝目の奥の網膜。目薬で瞳孔を広げて中を見る検査です）",
   q_dr_floaters: "黒い点や糸くずのようなもの（飛蚊症）が急に増えましたか？",
   q_rf_acute: "最近、強い目の痛みと頭痛・吐き気があり、光の周りに虹のような輪が見えたことはありますか？",
-  vt_dist_label: "画面から目までの距離",
+
   dist_arm: "腕を伸ばした距離（約60cm）・準備物なし",
-  vt_dist_how: "もっと正確に測りたい場合（任意）",
-  vt_dist_guide: "<b>腕を伸ばした距離で十分です。</b>準備物は要らず、下の説明のとおり誤差は結果をほとんど変えません。<br><br>より正確に測るなら、キャリブレーションに使ったカードの長辺が<b>8.56cm</b>、A4の長辺が<b>29.7cm</b>です。<br>· <b>60cm</b> = A4長辺<b>2回</b>(59.4cm)<br>· <b>40cm</b> = A4<b>1回</b> + カード<b>1.2回</b>",
-  vt_dist_tolerance: "距離が10%ずれても視力の誤差は0.04 logMAR — <b>視力表の半行未満</b>です。コントラスト感度はさらに鈍感で、<b>このアプリで最も信頼できる指標である左右差は距離と無関係</b>です。"
-});
+
+  });
 Object.assign(translations.zh, {
   q_gla_iop: "眼科医生是否说过您的眼压偏高？（眼压＝眼球内部的压力，体检的眼科项目也会测）",
   q_gla_myopia: "您是高度近视吗？（度数超过 -6.00，不戴眼镜时连伸直手臂的手指都看不清）",
   q_dr_fundus: "最近一年内做过眼底检查吗？（眼底＝眼球后部的视网膜，需滴药水散瞳后查看）",
   q_dr_floaters: "眼前的黑点或丝状物（飞蚊症）是否突然增多？",
   q_rf_acute: "最近是否有剧烈眼痛伴头痛、恶心，并在灯光周围看到彩虹样的光圈？",
-  vt_dist_label: "屏幕到眼睛的距离",
+
   dist_arm: "手臂伸直的距离（约60cm）· 无需准备",
-  vt_dist_how: "想量得更准确？（可选）",
-  vt_dist_guide: "<b>手臂伸直的距离就够了。</b>无需任何准备，且如下所述误差几乎不改变结果。<br><br>若想更准确：校准用的卡片长边<b>8.56cm</b>，A4纸长边<b>29.7cm</b>。<br>· <b>60cm</b> = A4长边<b>×2</b>(59.4cm)<br>· <b>40cm</b> = A4<b>×1</b> + 卡片<b>×1.2</b>",
-  vt_dist_tolerance: "距离偏差10%时视力误差仅0.04 logMAR — <b>不到视力表半行</b>。对比敏感度更不敏感，而<b>本应用最可靠的指标——左右眼比较——与距离完全无关</b>。"
-});
+
+  });
 
 // ==========================================================================
 // 결정론적 검사 해석 + '확률' 표기 정정
@@ -1280,9 +1130,7 @@ Object.assign(translations.zh, { map_offline: "无法加载地图。请检查网
 //   측정값은 '참고용'으로만 제시하고, 임상 시력값처럼 보이지 않게 한다.
 // ==========================================================================
 Object.assign(translations.ko, {
-  vt_intro_desc: "화면에 표시한 시표로 좌우 눈의 기능 차이를 참고용으로 살펴봅니다. 임상 시력값이나 질환 진단을 제공하지 않습니다.",
-  vt_beta_note: "참고용 측정입니다. 기기·조명·거리에 따라 값이 달라질 수 있어, 절대값보다 좌우 차이를 보는 용도로 쓰세요.",
-  vt_cross_match: "사진 분석에서도 좌우 차이 소견이 있었습니다(두 결과 모두 참고용입니다).",
+
   tri_factors: "정기 검진을 권하는 이유: {items}",
   tri_note_uncertain: "다만 이번 사진은 판독이 어려웠습니다. 눈을 한쪽씩 가까이(20~30cm) 다시 찍어 확인해 주세요.",
   save_saving: "저장 중...", save_done: "저장했습니다.", save_declined: "저장에 동의하지 않아 서버에 저장하지 않았습니다.", chat_progress: "문진 진행 중 · {n}번째 질문", pdf_wait_opinion: "AI 소견을 작성하는 중입니다. 완성되면 PDF를 내려받을 수 있어요.", pdf_no_opinion: "AI 소견을 생성하지 못했습니다. 권장 조치와 검사 요약 해석은 위 내용을 따르세요.",
@@ -1290,9 +1138,7 @@ Object.assign(translations.ko, {
   calib_stale: "화면 설정이 바뀐 것 같습니다(회전·확대·창 크기). 정확한 측정을 위해 다시 보정해 주세요."
 });
 Object.assign(translations.en, {
-  vt_intro_desc: "Uses on-screen optotypes to look at the difference between your two eyes, for reference only. It does not provide a clinical acuity value or a diagnosis.",
-  vt_beta_note: "Reference measurement. Values vary with device, lighting and distance, so use it to compare your two eyes rather than as an absolute number.",
-  vt_cross_match: "The photo analysis also showed a side difference (both are reference findings).",
+
   tri_factors: "Why regular check-ups are recommended: {items}",
   tri_note_uncertain: "That said, this photo was hard to read. Please retake it one eye at a time, up close (20-30 cm), and check again.",
   save_saving: "Saving...", save_done: "Saved.", save_declined: "You declined consent. This result was not saved to the server.", chat_progress: "Survey in progress · Question {n}", pdf_wait_opinion: "The AI advice is still being written. You can download the PDF once it is complete.", pdf_no_opinion: "AI advice could not be generated. Follow the recommended action and result summary above.",
@@ -1300,9 +1146,7 @@ Object.assign(translations.en, {
   calib_stale: "Your display settings seem to have changed (rotation, zoom, window size). Please calibrate again for an accurate measurement."
 });
 Object.assign(translations.es, {
-  vt_intro_desc: "Usa optotipos en pantalla para observar la diferencia entre sus dos ojos, solo como referencia. No ofrece agudeza clínica ni diagnóstico.",
-  vt_beta_note: "Medición de referencia. Los valores varían según dispositivo, luz y distancia; úselo para comparar ambos ojos, no como valor absoluto.",
-  vt_cross_match: "El análisis de foto también mostró diferencia lateral (ambos son hallazgos de referencia).",
+
   tri_factors: "Por qué se recomiendan revisiones periódicas: {items}",
   tri_note_uncertain: "Aun así, esta foto fue difícil de interpretar. Vuelva a tomarla de cerca (20-30 cm), un ojo cada vez, y compruébelo de nuevo.",
   save_saving: "Guardando...", save_done: "Guardado.", save_declined: "No dio su consentimiento. Este resultado no se guardó en el servidor.", chat_progress: "Cuestionario en curso · Pregunta {n}", pdf_wait_opinion: "El informe de la IA aún se está redactando. Podrá descargar el PDF cuando termine.", pdf_no_opinion: "No se pudo generar el informe de la IA. Siga la acción recomendada y el resumen de resultados anteriores.",
@@ -1310,9 +1154,7 @@ Object.assign(translations.es, {
   calib_stale: "Parece que cambió la configuración de pantalla (rotación, zoom, tamaño). Calibre de nuevo."
 });
 Object.assign(translations.fr, {
-  vt_intro_desc: "Utilise des optotypes à l'écran pour observer l'écart entre vos deux yeux, à titre indicatif. Ne fournit ni acuité clinique ni diagnostic.",
-  vt_beta_note: "Mesure indicative. Les valeurs varient selon l'appareil, l'éclairage et la distance ; utilisez-la pour comparer les deux yeux.",
-  vt_cross_match: "L'analyse photo montrait aussi une différence latérale (les deux sont indicatifs).",
+
   tri_factors: "Pourquoi des contrôles réguliers sont recommandés : {items}",
   tri_note_uncertain: "Cette photo restait toutefois difficile à interpréter. Reprenez-la de près (20-30 cm), un œil à la fois, puis vérifiez de nouveau.",
   save_saving: "Enregistrement...", save_done: "Enregistré.", save_declined: "Vous avez refusé. Ce résultat n’a pas été enregistré sur le serveur.", chat_progress: "Questionnaire en cours · Question {n}", pdf_wait_opinion: "L’avis de l’IA est en cours de rédaction. Vous pourrez télécharger le PDF une fois terminé.", pdf_no_opinion: "L’avis de l’IA n’a pas pu être généré. Suivez l’action recommandée et le résumé des résultats ci-dessus.",
@@ -1320,9 +1162,7 @@ Object.assign(translations.fr, {
   calib_stale: "Vos réglages d'affichage semblent avoir changé (rotation, zoom, taille). Veuillez recalibrer."
 });
 Object.assign(translations.ja, {
-  vt_intro_desc: "画面に表示した視標で左右の差を参考として確認します。臨床的な視力値や診断は提供しません。",
-  vt_beta_note: "参考測定です。機器・照明・距離で値が変わるため、絶対値ではなく左右差を見る用途にお使いください。",
-  vt_cross_match: "写真解析でも左右差の所見がありました（いずれも参考情報です）。",
+
   tri_factors: "定期検診をお勧めする理由: {items}",
   tri_note_uncertain: "ただし今回の写真は判読が難しい状態でした。片目ずつ近く（20〜30cm）で撮り直して、もう一度ご確認ください。",
   save_saving: "保存中...", save_done: "保存しました。", save_declined: "保存に同意しなかったため、この結果はサーバーに保存していません。", chat_progress: "問診中 · {n}問目", pdf_wait_opinion: "AI所見を作成中です。完成後にPDFをダウンロードできます。", pdf_no_opinion: "AI所見を作成できませんでした。上記の推奨対応と検査結果の要約に従ってください。",
@@ -1330,9 +1170,7 @@ Object.assign(translations.ja, {
   calib_stale: "画面設定が変わったようです（回転・ズーム・サイズ）。正確な測定のため再調整してください。"
 });
 Object.assign(translations.zh, {
-  vt_intro_desc: "用屏幕上的视标以参考方式观察双眼差异。不提供临床视力值或诊断。",
-  vt_beta_note: "参考性测量。数值会随设备、光线与距离变化，请用于比较双眼而非作为绝对值。",
-  vt_cross_match: "照片分析也显示了单侧差异（两者均为参考信息）。",
+
   tri_factors: "建议定期检查的原因：{items}",
   tri_note_uncertain: "不过这张照片难以判读。请一次拍一只眼睛，靠近（20~30厘米）重新拍摄后再确认。",
   save_saving: "保存中...", save_done: "已保存。", save_declined: "您未同意保存。本结果未保存到服务器。", chat_progress: "问卷进行中 · 第{n}题", pdf_wait_opinion: "AI意见正在撰写中。完成后即可下载PDF。", pdf_no_opinion: "未能生成AI意见。请按照上方的建议措施和结果摘要处理。",
@@ -1345,8 +1183,6 @@ Object.assign(translations.zh, {
 //   - ams_*      : 암슬러 격자를 화면 캘리브레이션으로 실물 크기에 맞추면서
 //                  실제 보아야 할 거리와 커버되는 시야각을 사용자에게 알려준다.
 //   - result_*   : 결과 화면에 '무엇을 분석했는지'를 되돌려 보여준다.
-//   - vt_cant_see_hint : '안 보여요'는 건너뛰기가 아니라 오답 집계다(설계 의도).
-//                  같은 버튼을 여러 번 눌러야 하는 이유를 한 번만 설명한다.
 //   - opinion_*  : LLM 소견서는 생성 시점 언어로 고정된다 — 언어를 바꾸면
 //                  자동 번역하지 않고, 다시 생성할 수 있다는 사실을 알린다.
 // ==========================================================================
@@ -1354,9 +1190,9 @@ Object.assign(translations.ko, {
   ams_dist_note: "이 화면에서는 약 {d}cm 거리에서 보세요 — 중심 {deg}° 범위를 확인합니다.",
   ams_dist_note_uncal: "이 화면에서는 약 {d}cm 거리에서 보세요. 기기마다 실제 크기가 달라 확인되는 범위는 이보다 좁을 수 있습니다.",
   ams_glasses_note: "평소 책을 읽을 때 쓰시는 안경(돋보기)을 그대로 쓰고 보세요. 안경 없이 보면 초점이 안 맞아 흐린 것을 '휘어 보임'으로 답하기 쉽습니다.",
-  vt_glasses_note: "평소 멀리 볼 때 쓰시는 안경이나 렌즈를 그대로 착용하고 검사하세요. 좌우 차이를 보는 검사라 한쪽만 교정된 상태면 결과가 왜곡됩니다.",
+
   result_photo_label: "분석한 사진",
-  vt_cant_see_hint: "안 보이면 남은 문항도 이 버튼을 눌러주세요. 정확한 측정을 위해 단계는 끝까지 진행합니다.",
+
   opinion_stale: "아래 AI 참고 정보는 이전 언어로 작성되었습니다.",
   opinion_urgent_note: "아래 조언은 오늘 진료를 받으신 뒤에 참고하세요. 지금은 위 안내대로 바로 진료를 받는 것이 먼저입니다.",
   opinion_regen: "현재 언어로 다시 생성",
@@ -1366,9 +1202,9 @@ Object.assign(translations.en, {
   ams_dist_note: "On this screen, view from about {d}cm — this covers the central {deg}°.",
   ams_dist_note_uncal: "On this screen, view from about {d}cm. Physical size varies by device, so the area actually checked may be smaller than intended.",
   ams_glasses_note: "Wear the glasses you normally use for reading. Without them the grid can look blurred, and blur is easy to report as distortion.",
-  vt_glasses_note: "Wear the glasses or contacts you normally use for distance. This test compares your two eyes, so results are skewed if only one eye is corrected.",
+
   result_photo_label: "Analysed photo",
-  vt_cant_see_hint: "If you can't see it, press this for the remaining items too. Each level runs to the end so the measurement stays accurate.",
+
   opinion_stale: "The AI notes below were written in a different language.",
   opinion_urgent_note: "Read the advice below after today's urgent visit. Getting seen right away, as shown above, comes first.",
   opinion_regen: "Regenerate in the current language",
@@ -1378,9 +1214,9 @@ Object.assign(translations.es, {
   ams_dist_note: "En esta pantalla, mire desde unos {d} cm: cubre los {deg}° centrales.",
   ams_dist_note_uncal: "En esta pantalla, mire desde unos {d} cm. El tamaño real varía según el dispositivo, por lo que el área revisada puede ser menor de lo previsto.",
   ams_glasses_note: "Use las gafas que utiliza normalmente para leer. Sin ellas la cuadrícula puede verse borrosa, y es fácil confundir el desenfoque con distorsión.",
-  vt_glasses_note: "Use las gafas o lentillas que utiliza normalmente para ver de lejos. Esta prueba compara ambos ojos, así que el resultado se distorsiona si solo uno está corregido.",
+
   result_photo_label: "Foto analizada",
-  vt_cant_see_hint: "Si no lo ve, pulse también en los ítems restantes. Cada nivel se completa para que la medición sea precisa.",
+
   opinion_stale: "Las notas de IA siguientes se redactaron en otro idioma.",
   opinion_urgent_note: "Lea los consejos siguientes después de la consulta urgente de hoy. Lo primero es acudir de inmediato, como se indica arriba.",
   opinion_regen: "Regenerar en el idioma actual",
@@ -1390,9 +1226,9 @@ Object.assign(translations.fr, {
   ams_dist_note: "Sur cet écran, regardez à environ {d} cm : cela couvre les {deg}° centraux.",
   ams_dist_note_uncal: "Sur cet écran, regardez à environ {d} cm. La taille réelle varie selon l'appareil : la zone réellement vérifiée peut être plus petite que prévu.",
   ams_glasses_note: "Portez les lunettes que vous utilisez habituellement pour lire. Sans elles, la grille peut paraître floue, et le flou se confond aisément avec une déformation.",
-  vt_glasses_note: "Portez les lunettes ou lentilles que vous utilisez habituellement pour voir de loin. Ce test compare vos deux yeux : le résultat est faussé si un seul œil est corrigé.",
+
   result_photo_label: "Photo analysée",
-  vt_cant_see_hint: "Si vous ne le voyez pas, appuyez aussi pour les items restants. Chaque niveau va jusqu'au bout pour une mesure fiable.",
+
   opinion_stale: "Les notes IA ci-dessous ont été rédigées dans une autre langue.",
   opinion_urgent_note: "Lisez les conseils ci-dessous après la consultation urgente d'aujourd'hui. Consulter immédiatement, comme indiqué ci-dessus, passe avant tout.",
   opinion_regen: "Régénérer dans la langue actuelle",
@@ -1402,9 +1238,9 @@ Object.assign(translations.ja, {
   ams_dist_note: "この画面では約{d}cmの距離で見てください — 中心{deg}°の範囲を確認します。",
   ams_dist_note_uncal: "この画面では約{d}cmの距離で見てください。端末ごとに実寸が異なるため、実際に確認できる範囲は想定より狭い場合があります。",
   ams_glasses_note: "普段の読書用メガネ（老眼鏡）をかけたまま見てください。かけないとピントが合わず、ぼやけを「ゆがみ」と答えやすくなります。",
-  vt_glasses_note: "普段の遠く用のメガネ・コンタクトをつけたまま検査してください。左右差をみる検査なので、片眼だけ矯正されていると結果がゆがみます。",
+
   result_photo_label: "解析した写真",
-  vt_cant_see_hint: "見えない場合は残りの問題もこのボタンを押してください。正確な測定のため、段階は最後まで進みます。",
+
   opinion_stale: "以下のAI参考情報は別の言語で作成されました。",
   opinion_urgent_note: "以下の助言は本日の緊急受診のあとにお読みください。まずは上の案内どおり、すぐに受診してください。",
   opinion_regen: "現在の言語で再生成",
@@ -1414,9 +1250,9 @@ Object.assign(translations.zh, {
   ams_dist_note: "在此屏幕上请从约{d}厘米处观看 — 覆盖中心{deg}°范围。",
   ams_dist_note_uncal: "在此屏幕上请从约 {d}cm 处观看。各设备实际尺寸不同，实际检查到的范围可能比预期更小。",
   ams_glasses_note: "请戴上平时看书用的眼镜（老花镜）观看。不戴时对不上焦，容易把模糊当成“变形”来作答。",
-  vt_glasses_note: "请戴上平时看远处用的眼镜或隐形眼镜进行检查。本检查比较双眼差异，若只有一只眼被矫正，结果会失真。",
+
   result_photo_label: "已分析的照片",
-  vt_cant_see_hint: "看不清时，剩余题目也请按此按钮。为保证测量准确，每个级别都会做完。",
+
   opinion_stale: "以下AI参考信息是用其他语言撰写的。",
   opinion_urgent_note: "以下建议请在今天紧急就诊之后再参考。当务之急是按上方提示立即就医。",
   opinion_regen: "用当前语言重新生成",
@@ -1438,6 +1274,8 @@ const clarityCopy = {
   consent_why: "저장은 선택이에요. 저장하지 않아도 이 리포트와 PDF는 그대로 쓸 수 있어요. 저장한 기록은 계정과 연결되지 않아 나중에 앱에서 다시 불러올 수 없고, 서비스 개선을 위한 기록으로만 쓰여요.",
   report_issued_on: "{date} 발행",
   ams_switch_toast: "왼쪽 눈 끝! 이제 오른쪽 눈 차례예요 — 왼쪽 눈을 가려 주세요.",
+  ams_right_ready: "왼쪽 눈을 가렸어요 — 오른쪽 눈 검사 시작",
+  post_upload_guide: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>편안하게 정면을 보세요. 눈을 억지로 크게 뜨지 마세요.</li>",
  },
  en: {
   result_plain_normal: "The photo showed no cloudy areas that look like cataract.",
@@ -1447,6 +1285,8 @@ const clarityCopy = {
   consent_why: "Saving is optional. This report and the PDF work the same without saving. Saved records are not linked to an account, so you can't reopen them in the app later; they are used only to improve the service.",
   report_issued_on: "Issued {date}",
   ams_switch_toast: "Left eye done! Now the right eye — please cover your left eye.",
+  ams_right_ready: "My left eye is covered — start the right-eye check",
+  post_upload_guide: "<li>Hold the phone steady.</li><li>Turn the flash off.</li><li>Face forward comfortably. Do not force your eyes open.</li>",
  },
  es: {
   result_plain_normal: "En la foto no se vieron zonas turbias que parezcan catarata.",
@@ -1456,6 +1296,8 @@ const clarityCopy = {
   consent_why: "Guardar es opcional. Este informe y el PDF funcionan igual sin guardar. Los registros guardados no están vinculados a una cuenta, así que no podrá volver a abrirlos en la app; solo se usan para mejorar el servicio.",
   report_issued_on: "Emitido el {date}",
   ams_switch_toast: "¡Ojo izquierdo listo! Ahora el derecho: tápese el ojo izquierdo.",
+  ams_right_ready: "Ya cubrí el ojo izquierdo — empezar con el derecho",
+  post_upload_guide: "<li>Mantenga el teléfono firme.</li><li>Apague el flash.</li><li>Mire al frente con comodidad. No abra los ojos a la fuerza.</li>",
  },
  fr: {
   result_plain_normal: "La photo ne montre pas de zone trouble évoquant une cataracte.",
@@ -1465,6 +1307,8 @@ const clarityCopy = {
   consent_why: "L'enregistrement est facultatif. Ce rapport et le PDF fonctionnent de la même façon sans enregistrement. Les données enregistrées ne sont liées à aucun compte : vous ne pourrez pas les rouvrir dans l'app ; elles servent uniquement à améliorer le service.",
   report_issued_on: "Émis le {date}",
   ams_switch_toast: "Œil gauche terminé ! Au tour de l'œil droit : couvrez l'œil gauche.",
+  ams_right_ready: "Mon œil gauche est couvert — commencer avec le droit",
+  post_upload_guide: "<li>Tenez le téléphone bien stable.</li><li>Désactivez le flash.</li><li>Regardez droit devant vous sans effort. Ne forcez pas les yeux à s’ouvrir.</li>",
  },
  ja: {
   result_plain_normal: "写真では、白内障のような白い濁りは見られませんでした。",
@@ -1474,6 +1318,8 @@ const clarityCopy = {
   consent_why: "保存は任意です。保存しなくても、このレポートとPDFはそのまま使えます。保存した記録はアカウントと結びつかないため、後でアプリから開き直すことはできず、サービス改善のための記録としてのみ使われます。",
   report_issued_on: "{date} 発行",
   ams_switch_toast: "左目は完了！次は右目です — 左目を覆ってください。",
+  ams_right_ready: "左目を覆いました — 右目の検査を開始",
+  post_upload_guide: "<li>手ブレしないように撮ってください。</li><li>フラッシュはオフにしてください。</li><li>楽に正面を見てください。無理に目を大きく開けないでください。</li>",
  },
  zh: {
   result_plain_normal: "照片中没有看到像白内障那样的混浊区域。",
@@ -1483,6 +1329,8 @@ const clarityCopy = {
   consent_why: "保存是可选的。不保存也能照常使用本报告和PDF。保存的记录不与账户关联，之后无法在应用中重新打开，仅用于改进服务。",
   report_issued_on: "{date} 生成",
   ams_switch_toast: "左眼完成！现在检查右眼 — 请遮住左眼。",
+  ams_right_ready: "已遮住左眼 — 开始检查右眼",
+  post_upload_guide: "<li>请保持手机稳定。</li><li>请关闭闪光灯。</li><li>舒适地看向正前方，不要强行睁大眼睛。</li>",
  },
 };
 for (const [lang, copy] of Object.entries(clarityCopy)) Object.assign(translations[lang], copy);

@@ -603,11 +603,12 @@ function refreshAiResultDisplay() {
 // 양안으로 보면 한쪽 눈의 결손을 반대쪽 눈이 메워버려 이상을 놓친다.
 // 실제 임상 프로토콜도 한눈 가리기 + 중심 응시가 기본이다.
 // ------------------------------------------------------------------
-function startAmslerStep() {
+function startAmslerStep(viaHistory = false) {
     state.sessionGeneration++;
     if (typeof removeLoadingMsg === 'function') removeLoadingMsg();
     invalidateScreeningReport();
     state.amslerEye = 'left';
+    state.amslerStage = 'answer';
     state.amslerResult = {};
     state.hasAmsler = false;
     // 방어적 정리 — 지금 코드는 검사 격자에 왜곡을 걸지 않지만, 브라우저가 예전 JS를
@@ -616,7 +617,7 @@ function startAmslerStep() {
     if (box) box.classList.remove('amsler-distorted');
     // 격자 크기는 부모의 실제 폭을 재서 정한다 — 화면에 붙이기 전에 계산하면
     // 폭이 0이라 잘못된 크기가 나온다. 그래서 nextStep() 다음에 그린다.
-    nextStep('step-amsler');
+    nextStep('step-amsler', viaHistory);
     const skipped = document.getElementById('photo-skipped-note');
     if (skipped) skipped.classList.toggle('hidden', state.aiResultCode !== 'postop');
     updateAmslerPrompt();
@@ -635,7 +636,21 @@ function updateAmslerPrompt() {
         // 두 번째 눈은 색을 바꿔 첫 번째 눈과 다른 화면처럼 보이게 한다
         el.classList.toggle('is-second', state.amslerEye === 'right');
     }
+    const answers = document.getElementById('amsler-answers');
+    const ready = document.getElementById('amsler-ready-btn');
+    if (answers) answers.hidden = state.amslerStage !== 'answer';
+    if (ready) ready.hidden = state.amslerStage !== 'prepare';
     renderAmslerGrid();
+}
+
+/** 눈 가림을 바꾼 뒤 별도의 준비 확인을 받아 반대쪽 눈 응답을 연다. */
+function prepareRightAmsler() {
+    if (state.amslerStage !== 'prepare' || state.amslerEye !== 'right') return;
+    state.amslerStage = 'answer';
+    updateAmslerPrompt();
+    // 누르고 있던 Enter/Space가 곧바로 첫 답변까지 입력하지 않도록 안내에 포커스를 둔다.
+    const prompt = document.getElementById('amsler-eye-instruction');
+    if (prompt) prompt.focus({ preventScroll: true });
 }
 
 // ------------------------------------------------------------------
@@ -662,10 +677,9 @@ const CSS_PX_PER_MM = 96 / 25.4;   // CSS px의 기준 해상도(96dpi)
 function renderAmslerGrid() {
     const box = document.getElementById('amsler-box');
     if (!box) return;
-    // 아직 화면에 붙지 않았으면(폭 0) 재봤자 0이다 — 다음 프레임에 다시 시도한다.
-    // 이걸 빼면 숨겨진 상태에서 잰 값으로 그려져 칸 수와 안내 거리가 어긋난다.
+    // 숨겨진 화면은 여기서 끝낸다. 시작 시 nextStep()으로 보인 뒤 다시 그리므로
+    // 대기 프레임을 반복 예약할 필요가 없다(언어 전환마다 무한 루프가 생겼다).
     if (!box.offsetParent && box.getBoundingClientRect().width === 0) {
-        requestAnimationFrame(renderAmslerGrid);
         return;
     }
     const t = translations[state.lang];
@@ -745,10 +759,13 @@ function scrollAmslerPromptIntoView() {
 
 function recordAmsler(bad) {
     if (![true, false, 'unable'].includes(bad)) return;
+    if (state.amslerStage !== 'answer'
+        || Object.prototype.hasOwnProperty.call(state.amslerResult, state.amslerEye)) return;
     state.amslerResult[state.amslerEye] = bad;
     state.hasAmsler = state.amslerResult.left === true || state.amslerResult.right === true;
 
     if (state.amslerEye === 'left') {
+        state.amslerStage = 'prepare';
         state.amslerEye = 'right';
         updateAmslerPrompt();
         // 검사하는 눈이 바뀐 것을 반드시 보여준다.
@@ -757,6 +774,8 @@ function recordAmsler(bad) {
         // 즉 완전히 보이지 않는다. 여기서 스크롤을 되돌리지 않으면 눈이 바뀐 사실을
         // 볼 방법이 없어, 같은 눈으로 두 번 답하고도 좌우를 비교했다고 기록된다.
         scrollAmslerPromptIntoView();
+        const ready = document.getElementById('amsler-ready-btn');
+        if (ready) ready.focus({ preventScroll: true });
         const prompt = document.getElementById('amsler-eye-instruction');
         if (prompt) {
             prompt.classList.remove('just-switched');
@@ -769,6 +788,8 @@ function recordAmsler(bad) {
     }
 
     const L = state.amslerResult.left === true, R = state.amslerResult.right === true;
+    state.amslerStage = 'complete';
+    updateAmslerPrompt();
     state.hasAmsler = L || R;         // 한쪽이라도 이상이면 이상 소견
     // 표시 문구는 formatAmslerResult()가 현재 언어로 만든다 — 여기서 문자열로 굳히지 않는다
     nextStep('step-chat');

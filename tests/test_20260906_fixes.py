@@ -34,7 +34,7 @@ def test_새_검사는_이전_추가질문_답변을_지운다():
 
 def test_추가질문_답변에_세대_가드가_있다():
     """스트리밍 도중 새 검사가 시작되면 늦게 도착한 답변이 새 리포트에 박혔다."""
-    rep = read("static/app-report.js")
+    rep = read("static/app-report-chat.js")
     body = rep[rep.index("async function askGemmaMore("):]
     body = body[:body.index("\n}\n")]
     assert "state.sessionGeneration" in body
@@ -53,7 +53,7 @@ def test_응급신호가_소견서_요청에_실린다():
 
 
 def test_응급_프롬프트가_한가한_표현을_금지한다():
-    llm = read("app/services/llm.py")
+    llm = read("app/services/llm.py") + read("app/services/llm_prompts.py")
     assert "_URGENT_BLOCK_KO" in llm and "_URGENT_BLOCK_EN" in llm
     assert "urgent=bool(red_flags)" in llm
     for banned in ("정기 검진", "예약을 잡"):
@@ -99,7 +99,7 @@ def test_스크롤_목적지에_헤더_회피_여백이_있다():
     sticky 헤더(59~74px)가 그 자리를 덮고 있어 목적지가 통째로 가려졌다."""
     css = read("static/style.css")
     assert "scroll-margin-top" in css
-    for sel in ("#amsler-eye-instruction", "#vt-test-area", "#vt-calib"):
+    for sel in ("#amsler-eye-instruction", "#vision-sim-panel"):
         assert sel in css, f"{sel}에 scroll-margin이 없다"
 
 
@@ -161,10 +161,9 @@ def test_대기중에는_이전_질문_버튼을_치운다():
     assert "chat-controls" in body and "innerHTML = ''" in body
 
 
-def test_기타증상_문구가_한_번만_들어간다():
-    """맞춤 질문을 1개에서 2개로 늘린 뒤 리포트에 '기타 의심 증상 추가 발견'이
-    두 번 찍혔다 — 맞춤 질문마다 같은 코드를 넣고 있었다."""
-    assert "!state.chatSymptoms.includes('symptom_extra')" in read("static/app-chat.js")
+def test_맞춤질문_답변을_기타증상으로_분류하지_않는다():
+    """중립적인 추가 질문의 '예'는 증상이 아니다. 답변 쌍만 보존한다."""
+    assert "state.chatSymptoms.push('symptom_extra')" not in read("static/app-chat.js")
 
 
 def test_맞춤질문_중복_필터가_있다():
@@ -189,11 +188,6 @@ def test_진행표시가_맞춤질문까지_센다():
 
 # ── 기능검사 / 질환 카드 / 레이아웃 ──────────────────────────────────────
 
-def test_측정불가_문구가_항목별로_나온다():
-    """'양쪽 눈 모두 유효한 측정값을 계산할 수 없었습니다'가 바로 두 줄 위의
-    logCS 1.80을 스스로 부정했다 — 시력만 실패하고 대비는 측정된 경우."""
-    assert "vt_unmeasurable_kinds" in read("static/app-visiontest.js")
-    assert read("static/data.js").count("vt_unmeasurable_kinds:") == 6
 
 
 def test_질환_카드를_키보드로_열_수_있다():

@@ -1,3 +1,4 @@
+const { readReportScripts } = require('./helpers/report-scripts.cjs');
 // 2026-09-27 발표 전 첫 사용 점검(PC + 갤럭시 S25 Ultra 실기기)에서 고친 것들의 회귀 테스트.
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
@@ -143,7 +144,7 @@ test('수술 경로의 촬영 버튼은 "수술 관련 사진"이라고 부르�
 test('AI 소견 요청에 문진 항목·위험요인 코드가 언어와 무관하게 실린다', () => {
  const c=vm.createContext({state:{lang:'en',riskAnswers:{diabetes:true,hypertension:false,smoking:true,age:'60s'},
   chatSymptoms:['sym_chk_recent','sym_dr_fundus','번역된 문장']},window:{addEventListener(){}},console});
- const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ const src=readReportScripts();
  vm.runInContext(src.slice(src.indexOf('function opinionFlagCodes'),src.indexOf('async function finish')),c);
  assert.deepEqual(Array.from(vm.runInContext('opinionFlagCodes()',c)),
   ['sym_chk_recent','sym_dr_fundus','risk_diabetes','risk_smoking','age_60s']);
@@ -159,7 +160,7 @@ test('맞춤 질문의 답이 리포트 해석·AI 조언 코드·챗봇 문맥�
  for(const f of ['app-findings.js']) vm.runInContext(fs.readFileSync(path.join(__dirname,'../static',f),'utf8'),c);
  const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
  vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
- const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ const src=readReportScripts();
  vm.runInContext(src.slice(src.indexOf('function opinionFlagCodes'),src.indexOf('async function finish')),c);
  vm.runInContext(src.slice(src.indexOf('function buildChatContext'),src.indexOf('/** \'내 결과 쉽게')),c);
  const findings=vm.runInContext('buildFindings()',c);
@@ -183,7 +184,7 @@ test('리포트에 "내 검사 결과를 쉽게 설명해 줘" 버튼이 6개 �
 test('chat context distinguishes unknown, no and unanswered risk factors',()=>{
  const c=setup({lang:'ko',riskAnswers:{surgery:'none',diabetes:'unknown',hypertension:false},chatSymptoms:[],amslerResult:{}});
  c.document={getElementById:()=>null};
- const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ const src=readReportScripts();
  vm.runInContext(src.slice(src.indexOf('function buildChatContext'),src.indexOf('/** \'내 결과 쉽게')),c);
  const ctx=vm.runInContext('buildChatContext()',c);
  assert.ok(ctx.includes('"diabetes":"unknown"'));
@@ -199,7 +200,7 @@ test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async ()
   translations:{ko:{}},document:{getElementById:()=>el},AbortController,console,
   fetch:(url,opt)=>{sent.push(JSON.parse(opt.body));return Promise.reject(new Error('stop'))},
   createAiLoader:()=>({el:{},stop(){}}),buildChatContext:()=>'ctx',buildOpinionSymptoms:()=>['Hypertension: no','Diabetes: yes']});
- const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+ const src=readReportScripts();
  vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf('/** 챗봇이 \'내 결과\'')),c);
  vm.runInContext(src.slice(src.indexOf('async function askGemmaMore('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
  await vm.runInContext('askGemmaMore()',c);
@@ -215,7 +216,7 @@ test('결과 설명 요청은 빠지면 안 되는 항목과 대체 고정 문�
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../static/app-findings.js'),'utf8'),c);
   const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
   vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
-  const src=fs.readFileSync(path.join(__dirname,'../static/app-report.js'),'utf8');
+  const src=readReportScripts();
   vm.runInContext(src.slice(src.indexOf('function explainCheckPayload'),src.indexOf('/** \'내 결과 쉽게')),c);
   return {c,p:vm.runInContext('explainCheckPayload()',c),t:vm.runInContext('translations.ko',c)};
  };
@@ -224,10 +225,12 @@ test('결과 설명 요청은 빠지면 안 되는 항목과 대체 고정 문�
  assert.deepEqual(Array.from(p.explain_required),['cat_risk','ams_left','tri_now']);
  assert.equal(p.explain_fallback[0],t.find_cat_risk);
  assert.ok(p.explain_fallback[1].includes('왼쪽'));
- assert.equal(p.explain_fallback[2],'빠른 시일 내 안과 진료를 권합니다');
- // 정상·관찰 결과는 확인할 비정상 소견이 없다 — 예전처럼 바로 흘려보낸다
+ assert.equal(p.explain_fallback.at(-1),'빠른 시일 내 안과 진료를 권합니다');
+ // 정상·관찰 결과도 검증된 문장을 보낸다 — 자유 AI 해석으로 되돌아가지 않는다.
  const normal=load({aiResultCode:'normal',amslerResult:{left:false,right:false},hasAmsler:false,triage:{level:'monitor',label:'x'}});
- assert.deepEqual({...normal.p},{});
+ assert.equal(normal.p.explain_required.length,0);
+ assert.ok(Array.from(normal.p.explain_fallback).includes(normal.t.find_cat_normal));
+ assert.ok(Array.from(normal.p.explain_fallback).includes(normal.t.find_ams_normal));
  // 수술 이력으로 사진 판독을 뺀 회차는 백내장 소견을 요구하지 않는다(buildFindings에 없는 줄)
  const postop=load({aiResultCode:'risk',riskAnswers:{surgery:'past',surgery_type:'cataract'},amslerResult:{},hasAmsler:false,
   triage:{level:'weeks',label:'수 주 내 안과 검진을 권합니다'}});
