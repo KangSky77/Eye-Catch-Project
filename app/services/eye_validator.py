@@ -4,9 +4,10 @@
 "이 사진이 정말 눈(클로즈업)인가?"를 판별해, 전혀 관계없는 사진(풍경·문서·셀카 등)에
 의료 결과가 생성되는 것을 막는다.
 
-방식: ImageNet 사전학습 ResNet18 임베딩(512-dim)과 '눈 이미지 분포의 중심(centroid)'
-      코사인 유사도. 정상·백내장 눈은 모두 분포 안(유사도 높음), 비-눈은 분포 밖(낮음).
-      → 음성(비-눈) 학습 데이터 없이 동작하고, 백내장 눈도 정상 눈과 함께 통과한다.
+방식: ImageNet 사전학습 ResNet18 임베딩(512-dim) 위의 눈/비-눈 로지스틱 게이트(eye_gate.npz).
+      처음(2026-08)에는 '눈 이미지 분포의 중심(centroid)'과의 코사인 유사도로 판정했지만, 이마·볼·코·
+      안저사진·가린 눈이 모두 통과해(2026-09-02 실측) 게이트로 바꿨다. 게이트 파일이 없으면 폴백하지 않고
+      사용 불가(None)를 돌려 호출자가 차단한다. centroid는 준비 상태 확인과 scripts/의 분석 도구에만 남아 있다.
       (Haar 눈 검출은 백내장 동공을 자주 놓쳐 부적합 / 백내장 미세조정 백본은 OOD 분리 실패 — 실측 확인)
 
 [운영 안정성]
@@ -189,10 +190,6 @@ def _embedding(img) -> torch.Tensor:
         return feat / (feat.norm() + 1e-8)
 
 
-def _similarity(img) -> float:
-    return float(torch.dot(_embedding(img), _centroid).item())
-
-
 @torch.no_grad()
 def _gate_prob(img) -> float:
     """눈일 확률(0~1) — L2 정규화 임베딩에 로지스틱 1층."""
@@ -298,7 +295,7 @@ def check_eye(img):
     - (True, score)  : 눈으로 판단
     - (False, score) : 눈 아님 (풍경·피부·감은 눈·선글라스 등)
     - (None, None)   : 검증기 사용 불가 → 호출자는 fail-closed(차단)해야 함
-    score는 게이트가 있으면 눈일 확률(0~1), 없으면 중심 벡터 코사인 유사도.
+    score는 게이트가 판정한 눈일 확률(0~1).
     """
     if not _try_load():
         return None, None

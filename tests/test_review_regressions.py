@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from PIL import Image
 
 from app.api import routes
-from app.services import vision, eye_validator, llm
+from app.services import vision, eye_validator, llm, question_validation
 
 
 @pytest.mark.anyio
@@ -88,18 +88,16 @@ def test_env_backups_are_ignored():
     assert result.returncode == 0
 
 
-@pytest.mark.anyio
 @pytest.mark.parametrize('question', [
     'Does this affect one eye or both eyes?',
     'Is it one or both eyes?',
     '불편한 눈은 한쪽 눈인가요, 양쪽 눈인가요?',
 ])
-async def test_alternative_questions_get_text_input(monkeypatch, question):
-    async def generate(_):
-        return question
-    monkeypatch.setattr(llm, 'generate_ollama', generate)
+def test_alternative_questions_get_text_input(question):
+    """선택형 질문은 버리지 않고 자유 입력칸으로 받는다(형식 검사는 통과, 예/아니오는 아님)."""
     lang = 'ko' if question.startswith('불편한') else 'en'
-    assert await llm.generate_next_question(lang, '', '', []) == (question, 'text')
+    assert question_validation._valid_question_output(question, lang, [])
+    assert not question_validation._is_yes_no_question(question)
 
 
 def test_gate_is_required_for_readiness():

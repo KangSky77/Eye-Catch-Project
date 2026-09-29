@@ -7,16 +7,9 @@ from app.services import knowledge
 from app.services import safety
 from app.services import advice
 from app.services import explain_check
-from app.services import questions as followup_questions
 
-from app.services.llm_prompts import (
-    LANG_NAMES, _lang_name, _build_opinion_prompt, _build_chat_prompt,
-    _build_next_question_prompt, _care_examples,
-)
-from app.services.question_validation import (
-    MAX_QUESTION_CHARS, _is_compound_question, _is_yes_no_question,
-    _valid_question_output,
-)
+from app.services.llm_prompts import _lang_name, _build_opinion_prompt, _build_chat_prompt
+from app.services.question_validation import _valid_question_output
 
 logger = logging.getLogger(__name__)
 
@@ -241,32 +234,6 @@ async def translate_personalized_question(request):
     return await personalized_questions.translate(request, generate_json, _valid_question_output)
 
 
-async def select_next_question(request):
-    """Offline selection-only baseline; the live API uses generate_personalized_question."""
-    eligible = followup_questions.eligible_ids(request)
-    if not eligible:
-        return followup_questions.response()
-    picked, source = eligible[0], "rule"
-    if len(eligible) > 1:
-        schema = {"type": "object", "properties": {"question_id": {"type": "string", "enum": eligible}},
-                  "required": ["question_id"], "additionalProperties": False}
-        # No patient prose is placed in the instruction context.
-        facts = {key: value for key, value in request.symptom_answers.items()
-                 if key in followup_questions.SYMPTOM_CODES}
-        prompt = ("Select one useful follow-up question ID from the allowed list. "
-                  "Return JSON only. Explicit true means a reported symptom; unknown is not true.\n"
-                  + json.dumps({"answers": facts, "choices": {
-                      key: followup_questions.QUESTIONS[key]["en"] for key in eligible}}, ensure_ascii=False))
-        try:
-            raw = await asyncio.wait_for(generate_json(prompt, schema), timeout=12)
-            candidate = raw.get("question_id") if isinstance(raw, dict) else None
-            if isinstance(candidate, str) and candidate in eligible:
-                picked, source = candidate, "ai"
-        except Exception:
-            logger.info("Question selection unavailable; using an eligible catalog question")
-    return followup_questions.response(picked, request.lang, source)
-
-
 async def pick_advice(facts: "advice.Facts", opts: dict) -> tuple[dict, str]:
     """AI가 선택지 중에서 고른다. 형식이 틀리면 한 번 더, 그래도 틀리면 규칙 기반 선택.
     Ollama 자체에 연결할 수 없으면 예외를 그대로 올린다 — AI가 없는데 'AI 소견'이라고 내보내지 않는다."""
@@ -434,49 +401,3 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", 
     except Exception:
         logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"
-
-async def generate_next_question(lang: str, cataract_res: str, amsler_res: str, chat_history: list) -> tuple[str, str]:
-    """Legacy offline comparison helper. HTTP requests use generate_personalized_question only."""
-    # ChatHistoryItem은 Pydantic 모델이므로 .q / .a 속성으로 접근
-    if lang == "ko":
-        q_label, a_label, empty = "의사", "환자", "아직 진행된 문진 대화가 없습니다."
-    else:   # 프롬프트 언어 일관성 — 한국어 라벨이 섞이면 모델이 한국어로 답할 확률이 올라간다
-        q_label, a_label, empty = "Doctor", "Patient", "No screening conversation yet."
-    history_text = "\n".join(
-        [f"- {q_label}: {item.q}\n- {a_label}: {item.a}" for item in chat_history]
-    ).strip() or empty
-    try:
-        # 실패/빈 응답이면 빈 문자열 반환 → 프론트(app-chat.js)가 선택 언어의
-        # 기본 질문(nextq_fallback)으로 대체한다. 여기서 한국어 문장을 고정 반환하면
-        # 영어 등 다른 언어 사용자에게 한국어 질문이 나가므로 폴백은 프론트에 위임.
-        prompt = _build_next_question_prompt(lang, cataract_res, amsler_res, history_text)
-        q = (await generate_ollama(prompt) or "").strip()
-        # '한쪽 눈인가요, 양쪽인가요?' 같은 선택형은 이미 자유 입력칸으로 받으므로 묶음으로 보지 않는다.
-        if _is_yes_no_question(q) and _is_compound_question(q):
-            # 한 번만 다시 쓰게 한다 — 그래도 묶여 있으면 검수된 기본 질문(프론트 폴백)이 낫다.
-            logger.info("동적 문진 질문이 두 상황을 묶음 — 재생성: %r", q)
-            retry_note = ("\n\n[다시 쓰기] 방금 쓴 질문은 두 상황을 묶었습니다. 한 가지만 물으세요: "
-                          if lang == "ko" else
-                          "\n\n[REWRITE] Your question combined two situations. Ask about only one: ")
-            q = (await generate_ollama(prompt + retry_note + q) or "").strip()
-            if _is_yes_no_question(q) and _is_compound_question(q):
-                return "", "yesno"
-        if not q:
-            return "", "yesno"
-        # 맞춤 질문이 2회차부터는 chat_history로 되돌아오는데, ChatHistoryItem.q의 상한이
-        # 500자다(app/schemas/ai.py). 넘기면 다음 요청이 422로 거부되고 프론트는 그것을
-        # 조용히 기본 질문으로 폴백해버린다. 애초에 이 길이면 '한 문장 질문'이 아니라
-        # 모델이 장황하게 늘어놓은 것이므로, 자르지 말고 버려서 기본 질문을 쓰게 한다.
-        if len(q) > MAX_QUESTION_CHARS:
-            logger.warning("⚠️  동적 문진 질문이 너무 김(%d자) — 기본 질문으로 폴백", len(q))
-            return "", "yesno"
-        if not _valid_question_output(q, lang, chat_history):
-            logger.info("동적 문진 형식·언어·중복 검사 실패 — 기본 질문으로 폴백")
-            return "", "yesno"
-        # 프롬프트로 예/아니오를 요구하지만 LLM이 가끔 서술형을 낸다.
-        # 예전에는 그런 질문을 버렸는데, 좋은 질문인 경우가 많아 버리기 아깝다.
-        # 대신 종류를 알려주고 프론트가 자유 입력칸을 띄우게 한다.
-        return q, ("yesno" if _is_yes_no_question(q) else "text")
-    except Exception:
-        logger.warning("⚠️  동적 문진 질문 생성 실패 — 프론트 기본 질문으로 폴백", exc_info=True)
-        return "", "yesno"

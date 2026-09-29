@@ -316,17 +316,6 @@ body {
     white-space: nowrap;
 }
 .clinic-item .ci-dist + a { margin-left: 10px; }
-.map-pin {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -100%);
-    font-size: 2rem;
-    pointer-events: none;
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-    animation: pinBounce 1.6s ease-in-out infinite;
-}
-@keyframes pinBounce { 0%,100% { transform: translate(-50%, -100%); } 50% { transform: translate(-50%, -118%); } }
 
 .clinic-item {
     display: flex;
@@ -938,7 +927,6 @@ html[data-font="2"] { font-size: 20px; }
     .flow-icon { width: 41px; height: 41px; }
     .flow-line { margin-top: 20px; }
     .primary-cta { min-height: 54px; width: min(100%, 350px); }
-    .medical-notice { max-width: 320px; line-height: 1.45; }
     #step-guide, #step-photo, #step-ai-result, #step-amsler, #step-chat { padding-top: 1.5rem; }
     #step-guide .glass-card, #step-photo .glass-card { padding: 1.5rem !important; }
     #tab-disease, #tab-report, #tab-map { padding-top: 2rem; }
@@ -1445,16 +1433,6 @@ body.modal-open { overflow: hidden; }
 /* ==========================================
    시야 체험 패널 (질환 탭 맨 아래) — 카드 스타일은 모달 시절의 .dm-sim 을 그대로 재사용
    ========================================== */
-.sim-cta { margin-top: 28px; text-align: center; }
-.sim-open-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    width: min(100%, 420px); min-height: 54px; padding: 0 22px;
-    border-radius: 16px; border: 1.5px solid var(--ec-blue);
-    background: #fff; color: var(--ec-blue); font-weight: 800; font-size: .95rem; cursor: pointer;
-    box-shadow: 0 10px 22px -16px rgba(21, 94, 239, .7);
-}
-.sim-open-btn svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.sim-open-btn[aria-expanded="true"] { background: var(--ec-blue); color: #fff; }
 .sim-panel { margin: 18px auto 0; max-width: 640px; }
 .sim-panel-title { margin: 0; font-size: 1.25rem; font-weight: 900; color: #0b1f3a; text-align: center; }
 .sim-panel-desc { margin: 6px 0 0; text-align: center; color: #526277; font-size: .82rem; }
@@ -1568,7 +1546,6 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 .gate-options button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
 .gate-options button span { display: block; font-weight: 800; font-size: .9375rem; color: #1e293b; }
 .gate-options button small { display: block; margin-top: 2px; font-size: .75rem; color: #64748b; }
-.gate-link { display: block; width: 100%; margin-top: 4px; font-size: .8125rem; font-weight: 700; color: #1d4ed8; text-decoration: underline; }
 
 /* 수술 후 촬영 안내 — 보호대를 벗고 찍는 일이 없어야 한다 */
 .surgery-note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 16px; padding: 14px 16px; }

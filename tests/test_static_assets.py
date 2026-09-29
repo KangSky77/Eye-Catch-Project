@@ -763,15 +763,17 @@ def test_리포트가_위험점수를_확률로_표기하지_않는다():
     assert "score_label" in core, "리포트도 결과 카드와 같은 '위험 점수' 표기를 쓴다"
 
 
-def test_암슬러_격자가_화면_캘리브레이션을_사용한다():
+def test_암슬러_격자가_임상_규격으로_그려진다():
     """회귀: 240 CSS px 고정 + 24px 칸(10x10)이라 30cm에서 약 12°만 덮었다.
-    임상 규격은 10cm / 5mm 칸(20x20) = 중심 20°."""
+    임상 규격은 10cm / 5mm 칸(20x20) = 중심 20°.
+    화면 보정(calibration.js)은 시력검사와 함께 없어져(2026-09-29) CSS 기준 px/mm로 그린다."""
     vision = (STATIC / "app-vision.js").read_text(encoding="utf-8")
     css = (STATIC / "style.css").read_text(encoding="utf-8")
     data = (STATIC / "data.js").read_text(encoding="utf-8")
 
     assert "function renderAmslerGrid()" in vision
-    assert "loadCalibration" in vision, "시력검사의 px/mm 보정을 재사용해야 한다"
+    assert "const pxPerMm = CSS_PX_PER_MM;" in vision
+    assert "loadCalibration" not in vision, "없는 보정 함수를 찾는 죽은 분기가 남아 있다"
     assert "AMSLER_CELLS = 20" in vision
     assert "AMSLER_FIELD_DEG = 20" in vision
     # JS가 못 돈 순간의 대비책도 칸 수는 20x20이어야 한다 (240 / 12)
@@ -790,7 +792,7 @@ def test_암슬러_격자가_화면_캘리브레이션을_사용한다():
     assert "requestAnimationFrame(renderAmslerGrid)" not in vision
 
     # 계산된 거리를 안내하므로 안내문에 30cm를 박아두면 안 된다
-    assert data.count("ams_dist_note:") == 6
+    assert data.count("ams_dist_note_uncal:") == 6
     assert "30cm 거리에서 가운데 점" not in data
 
 
@@ -972,23 +974,6 @@ def test_판독어려움_판정이_권장조치와_모순되지_않는다():
     assert data.count("tri_note_uncertain:") == 6, "6개국어 문구가 갖춰지지 않았다"
     # 서버의 판정 코드와 짝이 맞는지 — 코드가 늘면 이 테스트가 먼저 알려준다
     assert '"uncertain"' in vision
-
-
-def test_맞춤질문이_고정문항_주제를_되묻지_않게_막는다():
-    """LLM 프롬프트에 '이미 물어본 주제' 금지 목록이 없으면 거의 매번 중복 질문이 나온다.
-
-    실기기에서 고정 문항 '안개가 낀 것처럼 뿌옇게 보이나요?' 직후
-    '사물의 경계가 흐릿하게 보이나요?'를 생성했다(2026-09-04).
-    data.js의 문항을 고치면 llm.py의 금지 목록도 함께 갱신해야 한다."""
-    llm = (ROOT / "app" / "services" / "llm.py").read_text(encoding="utf-8") + (ROOT / "app/services/question_validation.py").read_text(encoding="utf-8") + (ROOT / "app/services/llm_prompts.py").read_text(encoding="utf-8")
-    assert "_COVERED_TOPICS_KO" in llm and "_COVERED_TOPICS_EN" in llm
-    assert "_OPEN_AREAS_KO" in llm and "_OPEN_AREAS_EN" in llm
-    # 고정 문항이 다루는 대표 주제가 금지 목록에 실제로 들어 있는지
-    for topic in ("뿌옇게", "눈부심", "안경 도수", "비문증", "안압"):
-        assert topic in llm, f"금지 목록에 '{topic}'이 없다"
-    # 아무도 묻지 않는 영역으로 유도하고 있는지
-    for area in ("편측성", "스테로이드", "자외선"):
-        assert area in llm, f"유도 영역에 '{area}'가 없다"
 
 
 def test_검수되지_않은_맞춤질문이_진료시점을_바꾸지_않는다():

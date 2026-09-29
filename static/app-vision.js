@@ -684,9 +684,9 @@ function renderAmslerGrid() {
     }
     const t = translations[state.lang];
 
-    const cal = (typeof loadCalibration === 'function') ? loadCalibration() : null;
-    const calibrated = !!cal && !(typeof calibrationStale === 'function' && calibrationStale(cal));
-    const pxPerMm = calibrated ? cal.pxPerMm : CSS_PX_PER_MM;
+    // 화면 보정(px/mm)은 시력검사와 함께 없어졌다(calibration.js, 2026-09-29 삭제). 실제 크기를 알 수 없으므로
+    // CSS 기준(96dpi)으로 그리고, 안내문도 시야각을 단정하지 않는 문구 하나만 쓴다.
+    const pxPerMm = CSS_PX_PER_MM;
 
     // 격자가 들어갈 수 있는 폭 = 부모의 '콘텐츠 폭'(패딩 제외).
     // clientWidth에는 패딩이 포함돼 있어서 그대로 쓰면 카드 밖으로 넘치고,
@@ -718,14 +718,11 @@ function renderAmslerGrid() {
 
     const note = document.getElementById('amsler-dist-note');
     if (note) {
-        // 보정 전에는 화면의 px/mm를 CSS 기준(96dpi = 3.78 px/mm)으로 가정한다.
+        // 화면의 px/mm를 CSS 기준(96dpi = 3.78 px/mm)으로 가정한다.
         // 요즘 폰은 4.5~5.5라 이 가정이 거의 항상 틀린다 — S25 Ultra는 5.23이었다.
         // 그래서 격자를 75.7mm로 착각하고 21cm를 안내하지만 실제 크기는 54.7mm여서
-        // 그 거리에서는 14.8°만 덮는다. 20°라고 단정하면 안 되는 이유다.
-        // 보정한 뒤에는 실제 px/mm를 쓰므로 거리와 시야각이 모두 맞는다(실측 16cm / 20.0°).
-        note.textContent = calibrated
-            ? (t.ams_dist_note || '').replace('{d}', distCm).replace('{deg}', AMSLER_FIELD_DEG)
-            : (t.ams_dist_note_uncal || '').replace('{d}', distCm);
+        // 그 거리에서는 14.8°만 덮는다. 그래서 시야각을 단정하지 않는 문구를 쓴다.
+        note.textContent = (t.ams_dist_note_uncal || '').replace('{d}', distCm);
     }
 }
 

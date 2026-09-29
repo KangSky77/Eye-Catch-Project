@@ -16,7 +16,8 @@ app/services/eye_validator.py는 app/models/eye_centroid.npy를 **읽기만** �
 
 임계값 근거도 같이 뽑는다:
     --non-eye 폴더를 주면 '눈 최소 유사도'와 '비-눈 최대 유사도'를 함께 출력해,
-    config.py의 eye_sim_threshold(현재 0.55)가 그 사이에 있는지 확인할 수 있다.
+    예전 중심 벡터 임계값(0.55 → 0.62)이 그 사이에 있는지 확인할 수 있다.
+    (2026-09-02부터 실제 판정은 eye_gate.npz 게이트가 한다. 중심 벡터 임계값 설정은 2026-09-29에 지웠다.)
 
 기본적으로 덮어쓰지 않는다:
     배포 중인 centroid를 말없이 갈아치우면 의료 게이트의 동작이 조용히 바뀐다.
@@ -36,8 +37,8 @@ app/services/eye_validator.py는 app/models/eye_centroid.npy를 **읽기만** �
     눈 사진 15/17,017장(0.09%)만 '눈 아님'으로 거부된다. 밝은 홍채 201장은 최소 유사도가
     0.576으로 전부 통과한다. 즉 현재 게이트는 실측상 잘 동작하고 있다.
 
-    교체하려면 반드시 --non-eye 로 임계값을 다시 구하고 config.py의 eye_sim_threshold를
-    같이 갱신할 것 — centroid가 바뀌면 0.55는 더 이상 같은 의미가 아니다.
+    교체하려면 반드시 --non-eye 로 임계값 근거를 다시 구할 것 — centroid가 바뀌면
+    예전 임계값은 더 이상 같은 의미가 아니다.
 
 실행:
     python scripts/build_eye_centroid.py                          # 계산 + 기존 파일과 비교만
@@ -195,7 +196,7 @@ def main():
               f"\n⚠️  겹침: 비-눈 최대 {hi:.3f} >= 눈 최소 {lo:.3f} — 완전 분리 불가")
         if hi < lo:
             print(f"→ 권장 임계값(중간값): {(lo + hi) / 2:.3f}  "
-                  f"(config.py의 eye_sim_threshold와 비교할 것)")
+                  f"(예전 중심 벡터 임계값 0.62와 비교할 것)")
     else:
         print("\n(--non-eye 폴더를 주면 임계값 근거까지 계산합니다)")
 
