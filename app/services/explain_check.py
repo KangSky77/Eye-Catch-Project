@@ -1,8 +1,8 @@
 """결과 설명은 보고서 원문을 검수된 쉬운 문장표로 바꾼다.
 
-missing_items는 과거 모델 출력의 누락을 조사하는 보조 도구다. 단어가 모두
-있어도 의미가 뒤집힐 수 있으므로 안전 판정이나 출력 허용에 사용하지 않는다.
-llm.chat_with_gemma_stream은 결과 설명에서 항상 fallback_text만 사용한다.
+기본(EXPLAIN_MODE=fixed)은 fallback_text만 쓴다. missing_items는 실험 모드(ai_checked)에서
+AI 설명의 누락을 거르는 데와 모델 출력 조사에만 쓴다. 단어가 모두 있어도 의미가 뒤집힐 수 있으므로
+통과했다고 안전이 보장되지는 않는다.
 """
 import re
 

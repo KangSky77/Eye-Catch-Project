@@ -1,9 +1,9 @@
-Object.assign(translations.ko, {"q_surgery": "눈 수술을 받은 적이 있나요?", "surgery_today": "오늘 수술했습니다", "surgery_recent": "최근 4주 이내", "surgery_past": "4주보다 이전", "surgery_none": "수술한 적 없습니다", "opinion_more": "더 보기 · 상세 설명", "surgery_note": "수술 후 증상은 수술 병원에 문의하세요. 심한 통증이나 갑작스러운 시력 저하는 즉시 진료가 필요합니다."});
-Object.assign(translations.en, {"q_surgery": "Have you had eye surgery?", "surgery_today": "Today", "surgery_recent": "Within 4 weeks", "surgery_past": "Over 4 weeks ago", "surgery_none": "Never", "opinion_more": "More · Details", "surgery_note": "Contact your surgical team about postoperative symptoms. Severe pain or sudden vision loss needs urgent care."});
-Object.assign(translations.es, {"q_surgery": "¿Ha tenido cirugía ocular?", "surgery_today": "Hoy", "surgery_recent": "En las últimas 4 semanas", "surgery_past": "Hace más de 4 semanas", "surgery_none": "Nunca", "opinion_more": "Ver más · Detalles", "surgery_note": "Consulte al equipo quirúrgico sobre síntomas. Dolor intenso o pérdida súbita de visión requieren atención urgente."});
-Object.assign(translations.fr, {"q_surgery": "Avez-vous eu une chirurgie oculaire ?", "surgery_today": "Aujourd’hui", "surgery_recent": "Depuis moins de 4 semaines", "surgery_past": "Depuis plus de 4 semaines", "surgery_none": "Jamais", "opinion_more": "Voir plus · Détails", "surgery_note": "Contactez votre équipe chirurgicale. Douleur intense ou perte soudaine de vision nécessitent une consultation urgente."});
-Object.assign(translations.ja, {"q_surgery": "目の手術を受けたことがありますか？", "surgery_today": "今日", "surgery_recent": "4週間以内", "surgery_past": "4週間より前", "surgery_none": "ありません", "opinion_more": "もっと見る・詳しい説明", "surgery_note": "術後の症状は手術を受けた医療機関に相談してください。強い痛みや急な視力低下はすぐに受診してください。"});
-Object.assign(translations.zh, {"q_surgery": "您做过眼部手术吗？", "surgery_today": "今天", "surgery_recent": "最近4周内", "surgery_past": "4周以前", "surgery_none": "没有", "opinion_more": "查看更多 · 详细说明", "surgery_note": "术后症状请咨询手术医院。剧烈疼痛或视力突然下降需要立即就医。"});
+Object.assign(translations.ko, {"explain_unavailable": "지금은 결과 설명을 만들 수 없어요. 위의 검사 요약을 확인해 주세요.", "q_surgery": "눈 수술을 받은 적이 있나요?", "surgery_today": "오늘 수술했습니다", "surgery_recent": "최근 4주 이내", "surgery_past": "4주보다 이전", "surgery_none": "수술한 적 없습니다", "opinion_more": "더 보기 · 상세 설명", "surgery_note": "수술 후 증상은 수술 병원에 문의하세요. 심한 통증이나 갑작스러운 시력 저하는 즉시 진료가 필요합니다."});
+Object.assign(translations.en, {"explain_unavailable": "The explanation isn't available right now. Please see the result summary above.", "q_surgery": "Have you had eye surgery?", "surgery_today": "Today", "surgery_recent": "Within 4 weeks", "surgery_past": "Over 4 weeks ago", "surgery_none": "Never", "opinion_more": "More · Details", "surgery_note": "Contact your surgical team about postoperative symptoms. Severe pain or sudden vision loss needs urgent care."});
+Object.assign(translations.es, {"explain_unavailable": "La explicación no está disponible ahora. Consulte el resumen de resultados de arriba.", "q_surgery": "¿Ha tenido cirugía ocular?", "surgery_today": "Hoy", "surgery_recent": "En las últimas 4 semanas", "surgery_past": "Hace más de 4 semanas", "surgery_none": "Nunca", "opinion_more": "Ver más · Detalles", "surgery_note": "Consulte al equipo quirúrgico sobre síntomas. Dolor intenso o pérdida súbita de visión requieren atención urgente."});
+Object.assign(translations.fr, {"explain_unavailable": "L’explication n’est pas disponible pour le moment. Consultez le résumé des résultats ci-dessus.", "q_surgery": "Avez-vous eu une chirurgie oculaire ?", "surgery_today": "Aujourd’hui", "surgery_recent": "Depuis moins de 4 semaines", "surgery_past": "Depuis plus de 4 semaines", "surgery_none": "Jamais", "opinion_more": "Voir plus · Détails", "surgery_note": "Contactez votre équipe chirurgicale. Douleur intense ou perte soudaine de vision nécessitent une consultation urgente."});
+Object.assign(translations.ja, {"explain_unavailable": "現在、結果の説明を表示できません。上の検査結果のまとめをご確認ください。", "q_surgery": "目の手術を受けたことがありますか？", "surgery_today": "今日", "surgery_recent": "4週間以内", "surgery_past": "4週間より前", "surgery_none": "ありません", "opinion_more": "もっと見る・詳しい説明", "surgery_note": "術後の症状は手術を受けた医療機関に相談してください。強い痛みや急な視力低下はすぐに受診してください。"});
+Object.assign(translations.zh, {"explain_unavailable": "目前无法显示结果说明。请查看上方的检查结果摘要。", "q_surgery": "您做过眼部手术吗？", "surgery_today": "今天", "surgery_recent": "最近4周内", "surgery_past": "4周以前", "surgery_none": "没有", "opinion_more": "查看更多 · 详细说明", "surgery_note": "术后症状请咨询手术医院。剧烈疼痛或视力突然下降需要立即就医。"});
 
 // 검사 요약 해석의 '쉬운 말' 보기 — 준비된 고정 표현이 있는 줄만 교체한다(app-findings.js).
 const plainFindingsCopy = {
@@ -28,14 +28,15 @@ const urgentReportCopy = {
 for (const [lang, [title, note]] of Object.entries(urgentReportCopy))
  Object.assign(translations[lang], {report_urgent_title: title, opinion_urgent_note: note});
 
-// 챗봇이 내 결과를 쉽게 풀어 주는 버튼과, 챗봇에 넘기는 문맥의 머리말(2026-09-28).
+// 내 결과를 쉬운 말로 보여 주는 버튼과, 챗봇에 넘기는 문맥의 머리말(2026-09-28).
+// 버튼은 기본적으로 AI가 아니라 검수된 문장표를 보여 준다(2026-09-29) — AI에게 묻는 말투('설명해 줘')를 쓰지 않는다.
 const explainResultsCopy = {
- ko: ['내 검사 결과를 쉽게 설명해 줘', '위험요인', '맞춤 질문 답변', 'AI 3줄 요약'],
- en: ['Explain my results in simple words', 'Risk factors', 'Personalized question answers', 'AI 3-line summary'],
- es: ['Explícame mis resultados con palabras sencillas', 'Factores de riesgo', 'Respuestas a preguntas personalizadas', 'Resumen de IA en 3 líneas'],
- fr: ['Explique-moi mes résultats simplement', 'Facteurs de risque', 'Réponses aux questions personnalisées', 'Résumé IA en 3 lignes'],
- ja: ['私の検査結果をわかりやすく説明して', 'リスク要因', 'パーソナル質問への回答', 'AIの3行要約'],
- zh: ['用简单的话解释我的检查结果', '风险因素', '个性化问题的回答', 'AI三行摘要'],
+ ko: ['내 검사 결과 쉬운 말로 보기', '위험요인', '맞춤 질문 답변', 'AI 3줄 요약'],
+ en: ['See my results in plain words', 'Risk factors', 'Personalized question answers', 'AI 3-line summary'],
+ es: ['Ver mis resultados en palabras sencillas', 'Factores de riesgo', 'Respuestas a preguntas personalizadas', 'Resumen de IA en 3 líneas'],
+ fr: ['Voir mes résultats en mots simples', 'Facteurs de risque', 'Réponses aux questions personnalisées', 'Résumé IA en 3 lignes'],
+ ja: ['私の検査結果をやさしい言葉で見る', 'リスク要因', 'パーソナル質問への回答', 'AIの3行要約'],
+ zh: ['用简单的话查看我的检查结果', '风险因素', '个性化问题的回答', 'AI三行摘要'],
 };
 for (const [lang, [btn, risk, personal, summary]] of Object.entries(explainResultsCopy))
  Object.assign(translations[lang], {rep_followup_explain: btn, chat_ctx_risk: risk, chat_ctx_personal: personal, chat_ctx_summary: summary});

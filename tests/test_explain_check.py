@@ -126,3 +126,38 @@ async def test_ai_failure_still_shows_fixed_wording(monkeypatch):
     out = [c async for c in llm.chat_with_gemma_stream("x", "ctx", "ko", explain_results=True,
                                                        explain_required=["tri_now"], explain_fallback=["빠른 시일 내 안과 진료를 권합니다"])]
     assert out == ["빠른 시일 내 안과 진료를 권합니다."]
+
+
+# ── 실험 모드(EXPLAIN_MODE=ai_checked): 최종발표 전 2번 방식 측정용 ──────────────────
+
+@pytest.fixture
+def ai_checked(monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "explain_mode", "ai_checked")
+
+
+@pytest.mark.anyio
+async def test_ai_checked_keeps_a_complete_explanation(monkeypatch, ai_checked):
+    answer = "백내장 특징이 강하게 감지됐습니다. 빠른 시일 내 안과 진료를 받으세요."
+    monkeypatch.setattr(llm, "sanitized_stream", await _fake_stream(answer))
+    out = [c async for c in llm.chat_with_gemma_stream("x", "ctx", "ko", explain_results=True,
+                                                       explain_required=["cat_risk", "tri_now"], explain_fallback=["고정"])]
+    assert "".join(c for c in out if c != llm.KEEPALIVE) == answer
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("answer", [
+    "백내장 특징이 감지됐습니다. 안과 검사가 필요합니다.",            # 시기 빠짐
+    "백내장 특징은 정상입니다. 빠른 시일 내 안과 진료를 받으세요.",    # 뒤집힘
+])
+async def test_ai_checked_replaces_missing_or_reversed_items_with_fixed_wording(monkeypatch, ai_checked, answer):
+    monkeypatch.setattr(llm, "sanitized_stream", await _fake_stream(answer))
+    out = [c async for c in llm.chat_with_gemma_stream("x", "ctx", "ko", explain_results=True,
+                                                       explain_required=["cat_risk", "tri_now"], explain_fallback=["고정"])]
+    assert "".join(c for c in out if c != llm.KEEPALIVE) == "고정."
+
+
+def test_explain_mode_rejects_unknown_values():
+    from app.core.config import Settings
+    with pytest.raises(ValueError):
+        Settings(explain_mode="free")

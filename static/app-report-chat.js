@@ -113,6 +113,8 @@ async function askGemmaMore(explainResults = false) {
     active.loader = loader;
     responseEl.appendChild(loader.el);
     let firstChunk = true;
+    // 결과 보기는 질문·답(Q/A) 형식으로 쓰지 않는다 — 기본은 AI 답이 아니라 리포트의 검수된 문장이다.
+    const prefix = explainResults === true ? '' : `Q: ${userMsg}\nA: `;
 
     try {
         const response = await fetch('/api/chat-with-gemma', {
@@ -133,14 +135,17 @@ async function askGemmaMore(explainResults = false) {
                 loader.stop();
                 firstChunk = false;
             }
-            responseEl.innerText = `Q: ${userMsg}\nA: ` + disp;
+            responseEl.innerText = prefix + disp;
         });
         loader.stop();              // 빈 응답이어도 로더는 정리
         if (!isCurrent()) return;   // 새 검사가 시작됐으면 이 답변은 버린다
-        responseEl.innerText = `Q: ${userMsg}\nA: ` + text;
+        responseEl.innerText = prefix + text;
         const streamError = hasError;
         if (streamError) {          // AI 오류 → 에러 메시지로 대체
-            responseEl.innerText = translations[state.lang].srv_err || "서버와 연결할 수 없습니다.";
+            // 결과 설명은 AI를 부르지 않는다 — 설명할 소견 문장이 없을 때만 오류가 온다(서버 연결 문제가 아니다).
+            const t = translations[state.lang];
+            responseEl.innerText = (text.includes('EXPLANATION_UNAVAILABLE') && t.explain_unavailable)
+                || t.srv_err || "서버와 연결할 수 없습니다.";
             responseEl.classList.add('text-rose-600');
             return;
         }
