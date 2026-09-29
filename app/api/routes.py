@@ -114,7 +114,8 @@ async def chat_with_gemma(req: ChatRequest):
                                    explain_results=req.explain_results, facts=req.facts,
                                    explain_required=req.explain_required, explain_fallback=req.explain_fallback)
     return StreamingResponse(
-        stream if req.explain_results else _limited_stream(stream),
+        # 고정 문장 설명은 모델을 부르지 않으므로 줄을 서지 않는다. 실험 모드(ai_checked)는 모델을 부른다.
+        stream if req.explain_results and settings.explain_mode == "fixed" else _limited_stream(stream),
         media_type="text/plain"
     )
 

@@ -208,6 +208,41 @@ test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async ()
  assert.equal(sent[0].explain_results,false);
 });
 
+test('설명할 소견 문장이 없으면 서버 연결 오류가 아니라 결과 요약을 보라고 안내한다', async () => {
+ // 결과 설명은 AI를 부르지 않는다 — EXPLANATION_UNAVAILABLE은 연결 문제가 아니다(2026-09-29).
+ const el={value:'설명',classList:{add(){},remove(){}},appendChild(){},setAttribute(){},removeAttribute(){},focus(){},innerText:''};
+ const t={srv_err:'서버와 연결할 수 없습니다.',explain_unavailable:'지금은 결과 설명을 만들 수 없어요.'};
+ const c=vm.createContext({state:{lang:'ko',riskAnswers:{},sessionGeneration:1,triage:{level:'monitor'}},
+  translations:{ko:t},document:{getElementById:()=>el},AbortController,console,
+  fetch:async()=>({ok:true}),readAiStream:async()=>({text:'EXPLANATION_UNAVAILABLE',hasError:true}),
+  createAiLoader:()=>({el:{},stop(){}}),buildChatContext:()=>'ctx',buildOpinionSymptoms:()=>[],explainCheckPayload:()=>({})});
+ const src=readReportScripts();
+ vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf("/** 챗봇이 '내 결과'")),c);
+ vm.runInContext(src.slice(src.indexOf('async function askGemmaMore('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
+ await vm.runInContext('askGemmaMore(true)',c);
+ assert.equal(el.innerText,t.explain_unavailable);
+ // 일반 질문의 AI 오류는 그대로 서버 오류 안내
+ el.value='질문';c.readAiStream=async()=>({text:'AI_SERVER_ERROR',hasError:true});
+ await vm.runInContext('askGemmaMore()',c);
+ assert.equal(el.innerText,t.srv_err);
+});
+
+test('결과 쉬운 말 보기는 AI 질문·답(Q/A) 형식으로 보이지 않는다', async () => {
+ // 기본은 AI 답이 아니라 리포트의 검수된 문장이다(2026-09-29, EXPLAIN_MODE=fixed).
+ const el={value:'',classList:{add(){},remove(){}},appendChild(){},setAttribute(){},removeAttribute(){},focus(){},innerText:''};
+ const c=vm.createContext({state:{lang:'ko',riskAnswers:{},sessionGeneration:1,triage:{level:'monitor'}},
+  translations:{ko:{rep_followup_explain:'내 검사 결과 쉬운 말로 보기'}},document:{getElementById:()=>el},AbortController,console,
+  fetch:async()=>({ok:true}),readAiStream:async()=>({text:'고정 문장입니다.',hasError:false}),
+  createAiLoader:()=>({el:{},stop(){}}),buildChatContext:()=>'ctx',buildOpinionSymptoms:()=>[],explainCheckPayload:()=>({})});
+ const src=readReportScripts();
+ vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf("/** 챗봇이 '내 결과'")),c);
+ vm.runInContext(src.slice(src.indexOf('function askExplainResults('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
+ vm.runInContext('askExplainResults()',c);
+ await new Promise(r=>setTimeout(r,10));
+ assert.equal(el.innerText,'고정 문장입니다.');
+ assert.ok(!el.innerText.startsWith('Q:'));
+});
+
 test('결과 설명 요청은 빠지면 안 되는 항목과 대체 고정 문장을 함께 보낸다', () => {
  // 2026-09-29 e2b 실측: 위험 사례 10번 중 격자 이상 2번·'빠른 시일 내' 3번이 설명에서 빠졌다.
  const load=state=>{

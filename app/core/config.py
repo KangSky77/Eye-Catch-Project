@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     #            문진 사실을 문장으로 다시 쓰지 않으므로 사실을 뒤집을 수 없다. (기본)
     #   free   — 예전 방식. AI가 조언 문장을 직접 쓰고 안전 필터가 걸러낸다(비교 측정용으로 남김).
     opinion_mode: str = "choice"
+    # '내 검사 결과 쉬운 말로 보기' 버튼의 설명 방식.
+    #   fixed      — 리포트 검사 요약을 검수된 쉬운 말 문장표로 보여준다. AI를 부르지 않는다. (기본)
+    #   ai_checked — AI가 3문장으로 풀어 쓰고, 비정상 소견·어느 눈·권장 시기가 빠지거나 뒤집히면 fixed 문장으로 바꾼다.
+    #                2026-09-29 비교(e2b 15회): 4번 대체, 검사를 통과한 틀린 문장 1번("안저 검사로 확진"),
+    #                평균 10~14초. 최종발표(10/21) 전 추가 측정용 실험 모드다.
+    explain_mode: str = "fixed"
     kakao_rest_key: str = ""   # 카카오 로컬 REST API 키(.env의 KAKAO_REST_KEY) — 안과 검색용
     max_upload_size_bytes: int = 10 * 1024 * 1024  # .env의 MAX_UPLOAD_SIZE_BYTES로 덮어쓰기 가능
     # 무거운 추론/LLM 작업이 동시에 몰릴 때 CPU·VRAM이 고갈되지 않도록 제한한다.
@@ -116,6 +122,8 @@ class Settings(BaseSettings):
         """잘못된 환경변수로 판정 구간이 겹치는 상태는 기동 전에 차단한다."""
         if self.opinion_mode not in {"choice", "free"}:
             raise ValueError("OPINION_MODE는 'choice' 또는 'free'여야 합니다.")
+        if self.explain_mode not in {"fixed", "ai_checked"}:
+            raise ValueError("EXPLAIN_MODE는 'fixed' 또는 'ai_checked'여야 합니다.")
         if not (0 <= self.uncertain_threshold < self.borderline_threshold < self.risk_threshold <= 100):
             raise ValueError(
                 "임계값은 0 <= UNCERTAIN_THRESHOLD < BORDERLINE_THRESHOLD "

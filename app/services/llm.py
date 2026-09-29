@@ -224,6 +224,34 @@ async def generate_json(prompt: str, schema: dict):
         return None
 
 
+async def _checked_explain_stream(context: str, lang: str, facts: list[str], required: list[str], fixed_text: str):
+    """EXPLAIN_MODE=ai_checked 전용(실험). AI 설명을 끝까지 받은 뒤 필수 항목을 확인하고,
+    빠지거나 뒤집혔으면 fixed 모드와 같은 고정 문장으로 바꿔 한 번에 내보낸다.
+
+    단어 검사라 '다 들어 있지만 뜻이 틀린' 문장은 못 잡는다(2026-09-29: "안저 검사로 확진" 통과).
+    그래서 기본값이 아니다. AI가 실패하거나 필터가 전부 지웠을 때도 고정 문장을 낸다.
+    """
+    text, failed = "", ""
+    try:
+        async for chunk in sanitized_stream(_build_chat_prompt("", context, lang, explain_results=True), facts=facts):
+            if chunk == KEEPALIVE:
+                yield chunk
+            elif chunk.startswith(ERROR_MARKER):
+                failed = chunk[len(ERROR_MARKER):]
+                break
+            else:
+                text += chunk
+    except Exception:
+        logger.error("⚠️  결과 설명 생성 오류 — 고정 문장으로 대신한다", exc_info=True)
+        failed = "AI_SERVER_ERROR"
+    missing = [failed] if failed else explain_check.missing_items(text, required, lang)
+    if not missing:
+        yield text
+        return
+    logger.warning("⚠️  결과 설명에서 필수 항목 누락 — 고정 문장으로 대신한다: %s | %s", ",".join(missing), text[:160])
+    yield fixed_text
+
+
 async def generate_personalized_question(request):
     from app.services import personalized_questions
     return await personalized_questions.generate(request, generate_json, _valid_question_output)
@@ -374,10 +402,16 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", 
         # can contain every required term. Use the same reviewed wording as the
         # report for all results, including normal, unmeasured and postoperative.
         text = await explain_check.fallback_text(explain_fallback or [], lang)
-        yield text if text else ERROR_MARKER + "EXPLANATION_UNAVAILABLE"
+        if not text:
+            yield ERROR_MARKER + "EXPLANATION_UNAVAILABLE"
+        elif settings.explain_mode == "ai_checked":
+            async for chunk in _checked_explain_stream(context, lang, facts or [], explain_required or [], text):
+                yield chunk
+        else:
+            yield text
         return
     # RAG: 질문 키워드로 관련 참고지식을 검색해 주입
-    reference = "" if explain_results else knowledge.format_reference(knowledge.retrieve_for_chat(user_msg))
+    reference = knowledge.format_reference(knowledge.retrieve_for_chat(user_msg))
     try:
         # 자유 질문은 소견서보다 더 자유롭게 흘러가므로 필터가 더 중요하다
         # facts: 고혈압 '아니오'인 사람에게 "혈압을 관리하세요"가 3번 중 2번 나갔다(2026-09-29 실측) —
