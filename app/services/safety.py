@@ -132,6 +132,7 @@ _NO_RECENT_EXAM_ITEM = re.compile(
 
 _NO_HYPERTENSION_ITEM = re.compile(r"^Hypertension:\s*no$", re.I)
 _NO_DIABETES_ITEM = re.compile(r"^Diabetes:\s*no$", re.I)
+_NO_SMOKING_ITEM = re.compile(r"^Smoking:\s*no$", re.I)
 # 한국어는 사이에 단어가 한두 개 끼어도 잡는다: "혈압을 잘 관리", "혈압을 철저히 관리", "혈압과 혈당을 관리".
 # 예전 패턴은 '을'·'을 꾸준히'만 허용해서 "혈당과 혈압을 잘 관리해야 합니다"가 고혈압 '아니오'인 사람의
 # 챗봇 답변에 그대로 나갔다(2026-09-29 실측). 이 규칙은 'Hypertension: no'일 때만 쓰인다.
@@ -139,14 +140,23 @@ _PERSONAL_BP_ADVICE = re.compile(
     # 작은 모델이 "혈압 수치가 정상 범위에 있더라도 꾸준히 관리"처럼
     # 여러 수식어를 사이에 끼우면 2단어 제한을 넘어 사실 필터를 빠져나간다.
     r"혈압(?:을|를|도|은|과|와)?\s*(?:[가-힣]+\s+){0,6}(?:관리|조절|조정|유지|낮추)"
-    r"|(?:manage|control|monitor|keep\s+track\s+of|lower)\s+(?:your\s+)?blood\s+pressure"
+    # 영어는 -ing 형태와 '혈당과 혈압'을 묶은 표현도 잡는다: "managing your blood sugar and blood pressure"가
+    # 고혈압 '아니오'인 사람의 챗봇 답에 그대로 나갔다(2026-09-29 실측).
+    r"|(?:manag|control|monitor|keep\w*\s+track\s+of|lower)\w*\s+(?:your\s+)?(?:blood\s+(?:sugar|glucose)\s+(?:and|&)\s+)?blood\s+pressure"
+    r"|blood\s+(?:sugar|glucose)\s*(?:and|/|&)\s*(?:blood\s+)?pressure\s+(?:management|control)|blood\s+pressure\s+(?:management|control)"
     r"|keep\s+(?:your\s+)?blood\s+pressure\s+(?:under\s+control|stable|in\s+check)"
     r"|(?:gestione|controle|surveillez|contrôlez|g[eé]rez)\s+(?:su|votre)\s+(?:presi[oó]n\s+arterial|tension\s+art[eé]rielle)"
     r"|血圧(?:を)?(?:管理|コントロール)|控制血压|管理血压", re.I)
 _PERSONAL_GLUCOSE_ADVICE = re.compile(
     r"혈당(?:을|를|도|은|과|와)?\s*(?:[가-힣]+\s+){0,2}(?:관리|조절|조정|유지|낮추)"
-    r"|(?:manage|control|monitor|lower)\s+(?:your\s+)?blood\s+(?:sugar|glucose)"
+    r"|(?:manag|control|monitor|lower)\w*\s+(?:your\s+)?(?:blood\s+pressure\s+(?:and|&)\s+)?blood\s+(?:sugar|glucose)"
+    r"|blood\s+(?:sugar|glucose)\s*(?:(?:and|/|&)\s*(?:blood\s+)?pressure\s+)?(?:management|control)"
     r"|血糖(?:を)?(?:管理|コントロール)|控制血糖|管理血糖", re.I)
+
+# 흡연 '아니오'인 사람에게 금연을 권하는 문장. 챗봇 지시문 예시에서 빼도 8번 중 1번은 "금연을 하시고"가 나왔다(2026-09-29).
+_QUIT_SMOKING_ADVICE = re.compile(
+    r"금연|담배를?\s*끊|(?:quit|stop)(?:ting|ping)?\s+smoking|smoking\s+cessation"
+    r"|dejar\s+de\s+fumar|arr[êe]ter\s+de\s+fumer|禁煙|たばこをやめ|タバコをやめ|戒烟", re.I)
 
 
 # 밤·어두운 곳에서 선글라스·색 렌즈 권유. 2026-09-23 실사용 테스트에서 "밤 운전 눈부심을 줄이는 방법"에
@@ -218,6 +228,8 @@ def contradicts_facts(sentence: str, facts: list[str] | None) -> bool:
     if any(_NO_HYPERTENSION_ITEM.search(f or "") for f in facts) and _PERSONAL_BP_ADVICE.search(sentence):
         return True
     if any(_NO_DIABETES_ITEM.search(f or "") for f in facts) and _PERSONAL_GLUCOSE_ADVICE.search(sentence):
+        return True
+    if any(_NO_SMOKING_ITEM.search(f or "") for f in facts) and _QUIT_SMOKING_ADVICE.search(sentence):
         return True
     if not any(_NO_RECENT_EXAM_ITEM.search(f or "") for f in facts):
         return False

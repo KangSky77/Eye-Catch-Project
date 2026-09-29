@@ -31,6 +31,8 @@ function buildOpinionSymptoms() {
             // 부정 답변은 목록이 길어도 잘리지 않도록 앞에 둔다.
             ...(state.riskAnswers?.hypertension === false ? ['Hypertension: no'] : []),
             ...(state.riskAnswers?.diabetes === false ? ['Diabetes: no'] : []),
+            // 챗봇 지시문이 비흡연자에게 '금연' 예시를 빼는 데 쓴다(llm._care_examples).
+            ...(state.riskAnswers?.smoking === false ? ['Smoking: no'] : []),
             // '예'도 같은 형식으로 명시한다. 번역된 '당뇨' 한 단어만 보내면 소형 모델이 거의 무시해
             // 당뇨 환자에게 '규칙적인 생활 습관' 같은 일반론만 나왔다(2026-09-27: 명시 전 0/3 → 명시 후 3/4 혈당 관리).
             ...(state.riskAnswers?.diabetes === true ? ['Diabetes: yes'] : []),

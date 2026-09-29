@@ -875,6 +875,19 @@ def validate_choice(raw, f: Facts, opts: dict) -> dict | None:
     return {"exams": exams[:2], "care": care, "closing": closing}
 
 
+# '수 주 내' 단계인데 마무리 문장이 맞춤 문장(당뇨 연 1회 검사 등)이면 그 앞에 붙인다.
+# apply_choice_priorities가 visit_weeks를 맞춤 문장으로 바꾸면 요약 3줄에서 '몇 주 안에'가 사라지고
+# "해마다 안저 검사"만 남아 1년 뒤에 가도 되는 것처럼 읽힐 수 있었다(2026-09-29 실측 4/4).
+WEEKS_LEAD = {
+    "ko": "화면의 권장 조치대로 몇 주 안에 안과 검진을 받으세요.",
+    "en": "As recommended above, have an eye exam within the next few weeks.",
+    "es": "Como indica la acción recomendada, hágase una revisión ocular en las próximas semanas.",
+    "fr": "Comme recommandé ci-dessus, faites un examen des yeux dans les prochaines semaines.",
+    "ja": "上の推奨対応のとおり、数週間以内に眼科検診を受けてください。",
+    "zh": "请按照上方的建议措施，在几周内进行眼科检查。",
+}
+
+
 def compose(choice: dict, f: Facts, lang: str) -> str:
     """선택 → 화면 문구. 형식은 예전 자유 작문과 같다: 상세 설명, <<<SUMMARY>>>, 요약 3줄."""
     lang = lang if lang in LANGS else "en"
@@ -887,10 +900,13 @@ def compose(choice: dict, f: Facts, lang: str) -> str:
         line1 = EXAM_LINE[lang].format(a=EXAMS[a]["name"][lang], b=EXAMS[b]["name"][lang])
         why1 = EXAMS[a]["why"][lang] + " " + EXAMS[b]["why"][lang]
     care, closing = care_cat[choice["care"]], closing_cat[choice["closing"]]
-    lines = [line1, care["line"][lang], closing["line"][lang]]
+    closing_line = closing["line"][lang]
+    if not f.postop and f.triage == "weeks" and choice["closing"] != "visit_weeks":
+        closing_line = f"{WEEKS_LEAD[lang]} {closing_line}"
+    lines = [line1, care["line"][lang], closing_line]
     detail = "\n".join([
         f"{line1} {why1}",
         f"{care['line'][lang]} {care['why'][lang]}",
-        f"{closing['line'][lang]} {closing['why'][lang]}",
+        f"{closing_line} {closing['why'][lang]}",
     ])
     return detail + "\n<<<SUMMARY>>>\n" + "\n".join(lines)
