@@ -21,6 +21,15 @@ test('negative hypertension and diabetes answers reach the opinion in every lang
  }
 });
 
+test('비흡연 답도 사실 목록에 실려 챗봇이 금연 예시를 빼게 한다',()=>{
+ // 2026-09-29: 챗봇 지시문의 관리 수칙 예시(금연·혈당·혈압)를 '아니오'인 사람에게서 뺀다(llm._care_examples).
+ const c=setup('none','ko');
+ Object.assign(c.state.riskAnswers,{smoking:false});
+ assert.ok(vm.runInContext('buildOpinionSymptoms()',c).includes('Smoking: no'));
+ c.state.riskAnswers.smoking='unknown';
+ assert.ok(!vm.runInContext('buildOpinionSymptoms()',c).includes('Smoking: no'),'모르겠어요는 아니오가 아니다');
+});
+
 test('recent surgery report titles follow actual photo applicability in every language',()=>{
  for(const lang of ['ko','en','es','fr','ja','zh']) {
   const c=setup('recent',lang);

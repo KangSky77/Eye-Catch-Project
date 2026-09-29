@@ -30,15 +30,16 @@ LANG_NAMES = {
     "zh": "中文 (Chinese)",
 }
 
-# Fixed notice shown when the fact filter removes model advice that contradicts
-# the patient's questionnaire answers. Keep it separate from model output.
+# 챗봇 답이 '문진 답과 어긋나는 문장'만으로 이루어져 전부 지워졌을 때 빈 화면 대신 보여 주는 고정 문구.
+# 일부만 지워졌을 때는 붙이지 않는다 — 고혈압·당뇨 '아니오'인 사람의 평범한 질문에서 7번 중 7번 붙었고,
+# 예전 문구의 '입력한 답변을 다시 확인해 주세요'는 틀린 쪽이 AI인데 사용자가 잘못 답한 것처럼 읽혔다(2026-09-29).
 FACT_FILTER_NOTICE = {
-    "ko": "문진 답변과 맞지 않는 조언은 제외했어요. 입력한 답변을 다시 확인해 주세요.",
-    "en": "I left out advice that conflicted with your questionnaire answers. Please check the answers you entered.",
-    "es": "Omití los consejos que contradecían sus respuestas al cuestionario. Revise las respuestas que indicó.",
-    "fr": "J’ai retiré les conseils incompatibles avec vos réponses au questionnaire. Veuillez vérifier vos réponses.",
-    "ja": "問診の回答と矛盾する助言は省きました。入力した回答をご確認ください。",
-    "zh": "我已省略与问卷回答矛盾的建议。请核对您填写的回答。",
+    "ko": "문진에서 답하신 내용과 맞지 않는 답변만 나와서 보여 드리지 않았어요. 질문을 조금 바꿔 다시 물어봐 주세요.",
+    "en": "The only answer I produced conflicted with your questionnaire answers, so I did not show it. Please try asking in a different way.",
+    "es": "La única respuesta generada contradecía sus respuestas al cuestionario, así que no la mostré. Pruebe a preguntar de otra forma.",
+    "fr": "La seule réponse produite contredisait vos réponses au questionnaire, je ne l’ai donc pas affichée. Essayez de reformuler votre question.",
+    "ja": "問診の回答と合わない答えしか出なかったため、表示しませんでした。聞き方を少し変えてもう一度お試しください。",
+    "zh": "生成的回答与您的问卷回答不符，因此没有显示。请换一种方式再问一次。",
 }
 
 def _lang_name(lang: str) -> str:
@@ -207,7 +208,36 @@ Line 3: One more lifestyle tip, or a reminder to get regular check-ups.
 - Avoid generic filler like "eyes are precious". Every line must connect to this patient's flagged items.""".strip()
 
 
-def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = "", explain_results: bool = False) -> str:
+def _care_examples(lang: str, facts: list[str] | None) -> tuple[str, str]:
+    """챗봇의 '일반 관리 수칙' 예시와, 문진에서 '아니오'로 답한 항목은 조언하지 말라는 한 줄.
+
+    예시에 '혈당·혈압 관리'가 늘 들어 있어서 고혈압·당뇨 '아니오'인 사람에게도 모델이 그대로 따라 썼다
+    (2026-09-29: 7번 중 7번 — 사실 필터가 지우긴 했지만 매번 지울 문장을 만들어 낸 셈이다).
+    """
+    answered_no = {(x or "").strip().lower() for x in facts or []}
+    smoke = "smoking: no" not in answered_no
+    sugar = "diabetes: no" not in answered_no
+    bp = "hypertension: no" not in answered_no
+    if lang == "ko":
+        metabolic = {(True, True): "혈당·혈압 관리", (True, False): "혈당 관리", (False, True): "혈압 관리"}.get((sugar, bp))
+        items = ["낮 야외 활동 때 자외선 차단 선글라스", "금연" if smoke else None, metabolic,
+                 "눈 휴식", "어두운 곳 독서 피하기", "정기 검진"]
+        skipped = [name for name, keep in (("당뇨", sugar), ("고혈압", bp), ("흡연", smoke)) if not keep]
+        rule = (f"\n- 이 사람은 문진에서 {'·'.join(skipped)}에 '아니오'라고 답했습니다. "
+                "그 항목의 관리 조언(혈당·혈압 관리, 금연 등)은 하지 마세요." if skipped else "")
+    else:
+        metabolic = {(True, True): "blood sugar/pressure management", (True, False): "blood sugar management",
+                     (False, True): "blood pressure management"}.get((sugar, bp))
+        items = ["UV sunglasses for daytime outdoor activity", "smoking cessation" if smoke else None, metabolic,
+                 "resting eyes", "avoiding reading in the dark", "regular eye checks"]
+        skipped = [name for name, keep in (("diabetes", sugar), ("hypertension", bp), ("smoking", smoke)) if not keep]
+        rule = (f"\n- This person answered 'no' to {', '.join(skipped)} in the questionnaire. Do not give care advice "
+                "for those items (blood sugar/pressure management, quitting smoking, etc.)." if skipped else "")
+    return ", ".join(x for x in items if x), rule
+
+
+def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = "", explain_results: bool = False,
+                       facts: list[str] | None = None) -> str:
     lang_name = _lang_name(lang)
     if explain_results:
         return (
@@ -224,6 +254,7 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
             + json.dumps(context, ensure_ascii=False)
         )
     reference_block = f"\n{reference}\n" if reference else ""
+    examples, answered_no_rule = _care_examples(lang, facts)
     if lang == "ko":
         return f"""당신은 안과 전문 상담 AI입니다.
 [가장 중요] 답변 전체를 반드시 {lang_name}로만 작성하세요. (Write your ENTIRE response ONLY in {lang_name}.)
@@ -237,7 +268,7 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
   [위험요인]에 없다는 이유만으로 없다고 단정하지 마세요. 구조화된 위험요인 답변에서 true는 예, false는 아니오, unknown은 모르겠어요입니다. 미응답과 unknown은 확인되지 않은 상태이며 해당 질환이 있다는 전제의 조언도 하지 마세요.
 - 사진 AI는 백내장 특징만 봅니다. 사진 결과를 근거로 다른 질환이 '없다'거나 '발견되지 않았다'고 말하지 마세요.
 - 환자의 질문에 친절하고 구체적으로 답변하세요. "안내해 드릴 수 없다"는 식의 회피성 답변은 절대 하지 마세요.
-- 일반적인 눈 건강 관리 수칙은 적극적으로 알려주세요. (예: 낮 야외 활동 때 자외선 차단 선글라스, 금연, 혈당·혈압 관리, 눈 휴식, 어두운 곳 독서 피하기, 정기 검진 등 질문과 관련된 것)
+- 일반적인 눈 건강 관리 수칙은 적극적으로 알려주세요. (예: {examples} 등 질문과 관련된 것){answered_no_rule}
 - 밤·야간 운전·어두운 곳에서는 선글라스나 색이 들어간 렌즈를 절대 권하지 마세요. 시야가 더 어두워져 위험합니다.
 - 운전 중에 눈을 감거나 쉬라는 조언은 하지 마세요. 운전 중 눈이 불편하면 안전한 곳에 차를 세운 뒤 쉬라고 안내하세요.
 - 야간 운전 질문에는 운전 중 눈을 '자주 감기' 같은 휴식법이나 전조등·상향등을 항상 최대로 켜라는 조언을 하지 마세요. 상향등은 다른 차량을 눈부시게 할 수 있습니다.
@@ -264,7 +295,7 @@ def _build_chat_prompt(user_msg: str, context: str, lang: str, reference: str = 
   Use the structured risk answers: true=yes, false=no, unknown=not sure. Missing and unknown are unconfirmed, not absent. Do not presume a risk factor either present or absent merely because it is not listed.
 - The photo AI only looks for cataract features. Never say other eye diseases were 'not found' or are absent based on the photo.
 - Answer the patient's question kindly, professionally, and directly. Do not use evasive phrases like "I cannot help with this."
-- Actively share general eye health care tips related to the question (e.g., UV sunglasses for daytime outdoor activity, smoking cessation, blood sugar/pressure management, resting eyes, avoiding reading in the dark, regular eye checks).
+- Actively share general eye health care tips related to the question (e.g., {examples}).{answered_no_rule}
 - Never recommend sunglasses or tinted lenses at night, for night driving, or in the dark — they reduce vision and are dangerous.
 - Never advise closing or resting the eyes while driving. If the eyes are uncomfortable while driving, tell them to pull over somewhere safe first.
 - For night-driving questions, never suggest frequently closing the eyes or always using maximum/high-beam headlights; high beams can dazzle other drivers.
@@ -728,7 +759,7 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", 
         # 지시문의 일반 관리 수칙 예시를 모델이 그대로 따라 했다. AI 소견과 같은 사실 필터로 막는다.
         filtered_reasons: set[str] = set()
         async for chunk in sanitized_stream(
-            _build_chat_prompt(user_msg, context, lang, reference, explain_results=explain_results),
+            _build_chat_prompt(user_msg, context, lang, reference, explain_results=explain_results, facts=facts),
             facts=facts or [],
             night_context=safety.mentions_night(user_msg),
             driving_context=safety.mentions_driving(user_msg),
@@ -742,8 +773,6 @@ async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", 
             yield chunk
             if chunk.startswith(ERROR_MARKER):
                 return
-        if "contradicts_facts" in filtered_reasons:
-            yield "\n\n" + FACT_FILTER_NOTICE.get(lang, FACT_FILTER_NOTICE["en"])
     except Exception:
         logger.error("⚠️  챗봇 응답 스트리밍 오류", exc_info=True)
         yield ERROR_MARKER + "AI_SERVER_ERROR"

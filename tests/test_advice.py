@@ -176,3 +176,27 @@ def test_답변_조언도_어떤_조합이든_안전필터를_통과한다():
             for sentence in safety.SENT_SPLIT.split(text.replace("<<<SUMMARY>>>", "\n")):
                 if sentence.strip():
                     assert safety.check_sentence(sentence.strip(), persona["symptoms"]) is None, (lang, sentence)
+
+
+@pytest.mark.parametrize("lang", LANGS)
+def test_수주내_단계에서_맞춤_마무리가_와도_시기가_남는다(lang):
+    """당뇨 사례에서 visit_weeks가 '해마다 안저 검사'로 바뀌어 요약 3줄에서 '몇 주 안에'가 사라졌다(2026-09-29)."""
+    f = advice.facts_from(["Diabetes: yes", "Hypertension: no"], ["risk_diabetes", "sym_chk_recent", "age_60s"],
+                          ["chk_recent"], "borderline", False, "weeks")
+    opts = advice.options_for(f)
+    choice = advice.apply_choice_priorities({"exams": ["dilated_fundus", "oct"], "care": "glucose", "closing": "visit_weeks"}, f, opts)
+    assert choice["closing"] == "diabetic_yearly"
+    summary = advice.compose(choice, f, lang).split("<<<SUMMARY>>>")[1].strip().splitlines()
+    assert summary[2] == advice.WEEKS_LEAD[lang] + " " + advice.CLOSING["diabetic_yearly"]["line"][lang]
+    for sentence in safety.SENT_SPLIT.split(summary[2]):
+        if sentence.strip():
+            assert safety.check_sentence(sentence.strip(), ["Diabetes: yes", "Hypertension: no"]) is None, (lang, sentence)
+
+
+def test_시기_문장은_수주내_단계의_맞춤_마무리에만_붙는다():
+    weeks = advice.facts_from(["Diabetes: yes"], ["risk_diabetes"], [], "borderline", False, "weeks")
+    now = advice.facts_from(["Diabetes: yes"], ["risk_diabetes"], [], "risk", True, "now")
+    base = {"exams": ["dilated_fundus", "oct"], "care": "glucose"}
+    plain_weeks = advice.compose({**base, "closing": "visit_weeks"}, weeks, "ko")
+    assert advice.WEEKS_LEAD["ko"] not in plain_weeks        # 이미 '몇 주 안에'인 문장에 겹쳐 붙이지 않는다
+    assert advice.WEEKS_LEAD["ko"] not in advice.compose({**base, "closing": "visit_soon"}, now, "ko")

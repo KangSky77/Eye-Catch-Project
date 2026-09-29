@@ -321,3 +321,33 @@ def test_혈압_혈당_조언은_사이에_단어가_끼어도_사실과_어긋�
         assert safety.check_sentence(s, no_bp) == "contradicts_facts", s
     assert safety.check_sentence("혈당을 꾸준히 관리하면 망막 혈관을 지키는 데 도움이 됩니다.", no_bp) is None
     assert safety.check_sentence("혈압을 잘 관리해 주세요.", []) is None   # 사실이 없으면 지우지 않는다
+
+
+@pytest.mark.parametrize("sentence", [
+    # 2026-09-29 실측: 고혈압·당뇨 '아니오'인 사람의 영어 챗봇 답에 그대로 나갔다(-ing + '혈당과 혈압' 묶음)
+    "Basic care involves protecting your eyes from ultraviolet rays and managing your blood sugar and blood pressure.",
+    "Blood sugar and pressure management also matters.",
+    "Controlling blood glucose protects the retina.",
+])
+def test_영어_혈당혈압_묶음과_ing_형태도_아니오와_모순으로_거른다(sentence):
+    assert safety.check_sentence(sentence, ["Hypertension: no", "Diabetes: no"]) == "contradicts_facts"
+
+
+def test_눈_검사의_안압_언급은_혈압_조언으로_보지_않는다():
+    sentence = "Get a regular eye exam, including checks for eye pressure and the back of the eye."
+    assert safety.check_sentence(sentence, ["Hypertension: no", "Diabetes: no"]) is None
+
+
+@pytest.mark.parametrize("sentence", [
+    "평소 눈 건강을 위해 금연을 하시고, 눈에 무리가 가지 않도록 생활 습관을 잘 관리해 주세요.",   # 실측 문장
+    "Quitting smoking also helps protect your eyes.",
+    "禁煙も目の健康に役立ちます。",
+])
+def test_흡연_아니오인_사람에게_금연을_권하면_거른다(sentence):
+    assert safety.check_sentence(sentence, ["Smoking: no"]) == "contradicts_facts"
+
+
+def test_흡연자이거나_답이_없으면_금연_조언은_남긴다():
+    sentence = "금연하면 백내장 위험을 줄일 수 있습니다."
+    assert safety.check_sentence(sentence, ["Smoking: yes"]) is None
+    assert safety.check_sentence(sentence, []) is None
