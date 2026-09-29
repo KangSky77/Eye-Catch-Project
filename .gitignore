@@ -75,3 +75,11 @@ dataset_smileeye/*
 !dataset_smileeye/ATTRIBUTION.csv
 !dataset_smileeye/review.json
 !dataset_smileeye/split.json
+
+# 발표 작업물(PPT 빌드·차트 임시·대본·시연 녹화) — 로컬 보관용, 앱 코드 아님
+.presentation-*/
+.chart-data-*/
+output/
+_rec/
+/Eye-Catch_*발표*.pptx
+/Eye-Catch_*발표*.md
