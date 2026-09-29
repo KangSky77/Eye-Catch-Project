@@ -1,11 +1,15 @@
-"""Malformed model output must not be displayed as a screening question."""
+"""Malformed model output must not be displayed as a screening question.
+
+맞춤 질문 경로(personalized_questions.generate)가 모델 출력을 화면에 올리기 전에 쓰는 검사를
+직접 확인한다. 예전 자유 생성 경로(llm.generate_next_question)는 2026-09-29에 지웠지만
+형식·언어·중복 검사 규칙은 같은 함수(question_validation)로 그대로 쓰인다.
+"""
 import pytest
 
 from app.schemas.ai import ChatHistoryItem
-from app.services import llm
+from app.services.question_validation import _is_yes_no_question, _valid_question_output
 
 
-@pytest.mark.anyio
 @pytest.mark.parametrize("lang, reply", [
     ("ko", "백내장입니다. 지금 수술을 받으세요."),
     ("ko", "백내장일 수 있습니다. 눈이 아프신가요?"),
@@ -17,14 +21,10 @@ from app.services import llm
     ("zh", "目をけがしたことがありますか？"),
     ("fr", "Your eyes are healthy."),
 ])
-async def test_rejects_non_question_multiple_sentences_and_wrong_script(monkeypatch, lang, reply):
-    async def generate(_):
-        return reply
-    monkeypatch.setattr(llm, "generate_ollama", generate)
-    assert await llm.generate_next_question(lang, "", "", []) == ("", "yesno")
+def test_rejects_non_question_multiple_sentences_and_wrong_script(lang, reply):
+    assert not _valid_question_output(reply, lang, [])
 
 
-@pytest.mark.anyio
 @pytest.mark.parametrize("lang, reply, kind", [
     ("ko", "눈을 다친 적이 있나요?", "yesno"),
     ("en", "Have you had an eye injury?", "yesno"),
@@ -34,18 +34,12 @@ async def test_rejects_non_question_multiple_sentences_and_wrong_script(monkeypa
     ("zh", "您是否曾经眼睛受伤？", "yesno"),
     ("ko", "불편한 눈은 한쪽 눈인가요, 양쪽 눈인가요?", "text"),
 ])
-async def test_preserves_single_questions_and_free_text_controls(monkeypatch, lang, reply, kind):
-    async def generate(_):
-        return reply
-    monkeypatch.setattr(llm, "generate_ollama", generate)
-    assert await llm.generate_next_question(lang, "", "", []) == (reply, kind)
+def test_preserves_single_questions_and_free_text_controls(lang, reply, kind):
+    assert _valid_question_output(reply, lang, [])
+    assert ("yesno" if _is_yes_no_question(reply) else "text") == kind
 
 
-@pytest.mark.anyio
-async def test_rejects_question_already_answered(monkeypatch):
+def test_rejects_question_already_answered():
     question = "눈을 다친 적이 있나요?"
-    async def generate(_):
-        return question
-    monkeypatch.setattr(llm, "generate_ollama", generate)
     history = [ChatHistoryItem(q=question, a="아니오")]
-    assert await llm.generate_next_question("ko", "", "", history) == ("", "yesno")
+    assert not _valid_question_output(question, "ko", history)

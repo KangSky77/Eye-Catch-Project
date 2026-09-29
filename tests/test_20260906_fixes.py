@@ -109,9 +109,10 @@ def test_보정_전에는_시야각을_단정하지_않는다():
     그 거리에서는 20°가 아니라 14.8°만 덮었다."""
     vis = read("static/app-vision.js")
     assert "ams_dist_note_uncal" in vis
-    head = vis[:vis.index("ams_dist_note_uncal")]
-    assert "calibrated" in head[-500:], "보정 여부로 갈라 쓰고 있지 않다"
-    assert read("static/data.js").count("ams_dist_note_uncal:") == 6
+    # 화면 보정 기능이 없으므로(2026-09-29) '중심 20°를 덮는다'고 단정하는 문구는 쓰지 않는다.
+    assert "t.ams_dist_note " not in vis and "t.ams_dist_note)" not in vis and "{deg}" not in vis
+    data = read("static/data.js")
+    assert data.count("ams_dist_note_uncal:") == 6 and "ams_dist_note:" not in data
 
 
 @pytest.mark.parametrize("key", ["ams_glasses_note"])

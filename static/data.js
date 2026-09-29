@@ -1187,7 +1187,6 @@ Object.assign(translations.zh, {
 //                  자동 번역하지 않고, 다시 생성할 수 있다는 사실을 알린다.
 // ==========================================================================
 Object.assign(translations.ko, {
-  ams_dist_note: "이 화면에서는 약 {d}cm 거리에서 보세요 — 중심 {deg}° 범위를 확인합니다.",
   ams_dist_note_uncal: "이 화면에서는 약 {d}cm 거리에서 보세요. 기기마다 실제 크기가 달라 확인되는 범위는 이보다 좁을 수 있습니다.",
   ams_glasses_note: "평소 책을 읽을 때 쓰시는 안경(돋보기)을 그대로 쓰고 보세요. 안경 없이 보면 초점이 안 맞아 흐린 것을 '휘어 보임'으로 답하기 쉽습니다.",
 
@@ -1199,7 +1198,6 @@ Object.assign(translations.ko, {
   sym_glaucoma: "녹내장 의심", sym_retinopathy: "당뇨망막병증 의심"
 });
 Object.assign(translations.en, {
-  ams_dist_note: "On this screen, view from about {d}cm — this covers the central {deg}°.",
   ams_dist_note_uncal: "On this screen, view from about {d}cm. Physical size varies by device, so the area actually checked may be smaller than intended.",
   ams_glasses_note: "Wear the glasses you normally use for reading. Without them the grid can look blurred, and blur is easy to report as distortion.",
 
@@ -1211,7 +1209,6 @@ Object.assign(translations.en, {
   sym_glaucoma: "Glaucoma suspected", sym_retinopathy: "Retinopathy suspected"
 });
 Object.assign(translations.es, {
-  ams_dist_note: "En esta pantalla, mire desde unos {d} cm: cubre los {deg}° centrales.",
   ams_dist_note_uncal: "En esta pantalla, mire desde unos {d} cm. El tamaño real varía según el dispositivo, por lo que el área revisada puede ser menor de lo previsto.",
   ams_glasses_note: "Use las gafas que utiliza normalmente para leer. Sin ellas la cuadrícula puede verse borrosa, y es fácil confundir el desenfoque con distorsión.",
 
@@ -1223,7 +1220,6 @@ Object.assign(translations.es, {
   sym_glaucoma: "Sospecha de glaucoma", sym_retinopathy: "Sospecha de retinopatía"
 });
 Object.assign(translations.fr, {
-  ams_dist_note: "Sur cet écran, regardez à environ {d} cm : cela couvre les {deg}° centraux.",
   ams_dist_note_uncal: "Sur cet écran, regardez à environ {d} cm. La taille réelle varie selon l'appareil : la zone réellement vérifiée peut être plus petite que prévu.",
   ams_glasses_note: "Portez les lunettes que vous utilisez habituellement pour lire. Sans elles, la grille peut paraître floue, et le flou se confond aisément avec une déformation.",
 
@@ -1235,7 +1231,6 @@ Object.assign(translations.fr, {
   sym_glaucoma: "Suspicion de glaucome", sym_retinopathy: "Suspicion de rétinopathie"
 });
 Object.assign(translations.ja, {
-  ams_dist_note: "この画面では約{d}cmの距離で見てください — 中心{deg}°の範囲を確認します。",
   ams_dist_note_uncal: "この画面では約{d}cmの距離で見てください。端末ごとに実寸が異なるため、実際に確認できる範囲は想定より狭い場合があります。",
   ams_glasses_note: "普段の読書用メガネ（老眼鏡）をかけたまま見てください。かけないとピントが合わず、ぼやけを「ゆがみ」と答えやすくなります。",
 
@@ -1247,7 +1242,6 @@ Object.assign(translations.ja, {
   sym_glaucoma: "緑内障の疑い", sym_retinopathy: "糖尿病網膜症の疑い"
 });
 Object.assign(translations.zh, {
-  ams_dist_note: "在此屏幕上请从约{d}厘米处观看 — 覆盖中心{deg}°范围。",
   ams_dist_note_uncal: "在此屏幕上请从约 {d}cm 处观看。各设备实际尺寸不同，实际检查到的范围可能比预期更小。",
   ams_glasses_note: "请戴上平时看书用的眼镜（老花镜）观看。不戴时对不上焦，容易把模糊当成“变形”来作答。",
 
