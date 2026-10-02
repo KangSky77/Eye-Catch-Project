@@ -13,19 +13,19 @@
 // ==========================================
 const translations = {
     ko: {
-        nav_test: "AI 검사", nav_disease: "질환 안내", nav_report: "건강 리포트", nav_map: "병원 찾기",
+        nav_test: "AI 검사", nav_disease: "질환 안내", nav_report: "검사 리포트", nav_map: "병원 찾기",
         intro_title: "당신의 눈 건강,<br><span class='brand-nowrap'>Eye-Catch</span>가 지켜드립니다", intro_desc: "사진 AI·자가검사·문진으로 눈 건강 위험 신호를 한 번에 확인합니다.", scope_note: "사진 AI는 눈에 보이는 진행성 수정체 혼탁 특징만 확인합니다(초기 백내장은 사진으로 확인이 어렵습니다). 황반변성은 암슬러 격자 자가검사로, 녹내장·당뇨망막병증은 문진으로 위험 신호를 살펴봅니다.",
-        flow_photo: "사진 분석", flow_check: "자가진단", flow_report: "맞춤 리포트",
-        start_btn: "Eye-Catch 시작하기", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.",
+        flow_photo: "사진 분석", flow_check: "자가검사", flow_report: "맞춤 리포트",
+        start_btn: "Eye-Catch 시작하기", upload_title: "사진 업로드", upload_btn: "사진 선택 및 전송", camera_btn: "카메라로 바로 찍기", upload_privacy: "사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.", upload_privacy_title: "개인정보 안내", upload_privacy_more: "검사 결과는 서버에 저장하지 않습니다. 보관하려면 PDF를 다운로드해 주세요. 탭을 닫거나 새 검사를 시작하면 이전 결과를 다시 불러올 수 없습니다.",
         guide_title: "정확한 분석 가이드", guide_list: "<li>흔들리지 않게 찍어주세요.</li><li>플래시는 꺼주세요.</li><li>얼굴을 정면에서 찍어 주세요. 두 눈을 크게 뜨고 화면 중앙에 오게 맞춰주세요.</li>",
         tips_title: "정확한 분석을 위한<br>촬영 꿀팁", tip1_t: "흔들리지 않게 촬영하세요", tip1_d: "팔꿈치를 몸에 붙이거나 벽에 기대고, 초점이 맞은 뒤 눌러주세요. 흔들리면 분석이 어려워요.", tip2_t: "플래시는 꺼주세요", tip2_d: "플래시 반사는 혼탁으로 잘못 읽힐 수 있어요. 직사광선이나 조명이 눈에 직접 비치지 않는 고른 실내 조명에서 찍어주세요.", tip3_t: "정면을 보고 눈을 크게 떠 주세요", tip3_d: "얼굴 전체를 정면으로 찍어도 되고, 한쪽 눈을 20~30cm에서 가까이 찍으면 더 정확해요.", tips_btn: "이해했습니다!",
         loading_title: "눈 사진을 확인하고 있어요...", ai_res_title: "사진에서 확인한 눈의 특징", next_amsler: "2단계: 선이 휘어 보이는지 확인하기",
         ams_title: "격자무늬로 중심 시야 확인하기", ams_ok: "선이 곧게 보여요", ams_bad: "선이 휘거나 안 보이는 곳이 있어요",
         ams_example_label: "예시 — 선이 휘거나 안 보이는 곳이 있나요?", ams_example_ok: "선이 곧게 보임", ams_example_bad: "선이 휘거나 빈 곳이 보임",
-        chat_yes: "네", chat_no: "아니오", chat_unknown: "모르겠어요", dis_main_title: "4대 주요 안질환 안내", rep_title: "Eye-Catch 눈 건강 리포트",
+        chat_yes: "네", chat_no: "아니오", chat_unknown: "모르겠어요", dis_main_title: "4대 주요 안질환 안내", rep_title: "Eye-Catch 검사 결과 리포트",
         rep_l1: "1. 백내장 AI 결과", rep_l2: "2. 황반변성 결과", rep_l3: "3. 문진 소견", rep_l4: "4. Gemma AI 맞춤 소견", pdf_btn: "PDF 다운로드", map_btn: "내 주변 안과 찾기",
         msg_gen: "리포트를 생성 중입니다...", res_ams_bad: "이상 소견 (검사 요망)", res_ams_ok: "특이사항 없음", res_chat_none: "주요 증상 없음",
-        rep_warn: "본 리포트는 AI 자가진단 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.",
+        rep_warn: "본 리포트는 AI 자가검사 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.",
         dis_card_hint: "카드를 누르면 자세한 설명을 확인할 수 있어요.", dis_more: "자세히 보기 →", dis_modal_note: "이런 증상이 의심되면 안과 검진을 받아보세요.", dm_close: "닫기", dis_ai_badge: "AI 분석 지원",
         dis_modal_image: "임상 참고 이미지", dis_modal_symptoms: "주요 증상", dis_modal_risk: "위험 요인", dis_modal_care: "검사와 치료", dis_modal_urgent: "빠른 진료가 필요한 경우", dis_modal_source: "공식 질환 정보", dis_modal_image_note: "교육용 참고 이미지이며 사진만으로 질환을 진단할 수 없습니다.", dis_modal_image_source: "이미지 원본", dis_modal_license: "라이선스", dis_modal_image_change_reencoded: "원본 이미지를 웹 표시용으로 축소·재인코딩했습니다(내용 편집·크롭 없음).",
         sim_title: "안구 질환 체험", sim_desc: "이 질환이 진행되면 이렇게 보일 수 있어요", sim_normal: "정상 시야", sim_strength: "체험 강도", sim_disclaimer: "교육용 재현이며 실제 증상은 사람마다 다릅니다. 진단 도구가 아닙니다.", sim_pick: "체험할 질환을 고르고 아래 슬라이더를 움직여 보세요.", sim_photo_credit: "사진",
@@ -52,8 +52,8 @@ const translations = {
         opinion_writing: "AI가 소견서를 작성 중입니다...\n\n", opinion_error: "로컬 AI 서버와 연결이 끊어졌습니다.",
         opinion_retry_hint: "AI 서버가 잠시 응답하지 않았어요. 검사 결과는 그대로 있으니 다시 시도해 보세요.", opinion_retry: "소견서 다시 생성",
         notif_title: "Eye-Catch 검사 완료", notif_body: "AI 맞춤형 소견서 작성이 완료되었습니다! 결과를 확인해보세요.", followup_thinking: "답변을 생각하고 있습니다...\n\n",
-        pdf_doc_title: "Eye-Catch 눈 건강 리포트", pdf_issued: "발급일자", pdf_s1: "1. 백내장 AI 분석 결과", pdf_s2: "2. 황반변성 자가진단 (Amsler Grid)", pdf_s3: "3. AI 문진 주요 소견", pdf_s4: "4. AI 3줄 요약 (Powered by Gemma)",
-        pdf_footer: "본 리포트는 인공지능 기반의 자가진단 보조 자료입니다.<br>정확한 진단 및 처방을 위해서는 반드시 안과 전문의와 상담하시기 바랍니다.",
+        pdf_doc_title: "Eye-Catch 검사 결과 리포트", pdf_issued: "발급일자", pdf_s1: "1. 백내장 AI 분석 결과", pdf_s2: "2. 황반변성 자가검사 (Amsler Grid)", pdf_s3: "3. AI 문진 주요 소견", pdf_s4: "4. AI 3줄 요약 (Powered by Gemma)",
+        pdf_footer: "본 리포트는 인공지능 기반의 자가검사 보조 자료입니다.<br>정확한 진단 및 처방을 위해서는 반드시 안과 전문의와 상담하시기 바랍니다.",
         back_btn: "← 이전", step_progress: "{total}단계 중 {n}단계",
         ams_howto: "한쪽 눈을 가리고 가운데 점을 바라보세요. 반대쪽 눈도 같은 방법으로 확인합니다.",
         err_file_type: "이미지 파일만 올릴 수 있어요.", err_file_size: "사진 용량이 너무 커요. {n}MB 이하 사진을 올려주세요.",
@@ -70,7 +70,7 @@ const translations = {
         nav_test: "AI Analysis", nav_disease: "Diseases", nav_report: "Report", nav_map: "Find Clinic",
         intro_title: "Your Eye Health,<br>Protected by <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "Photo AI, self-tests and a questionnaire check your eyes for risk signals in one go.", scope_note: "The photo AI only checks for visible progressive lens-opacity features (early cataract is hard to see in a photo). Macular degeneration uses the Amsler grid self-test; glaucoma and diabetic retinopathy risk comes from the questionnaire.",
         flow_photo: "Photo analysis", flow_check: "Self-check", flow_report: "Personal report",
-        start_btn: "Start Eye-Catch", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Screening results (verdict text, questionnaire answers, AI summary) are stored only if you consent on the report screen; the photo itself is never stored. Stored results stay in the team's own database.",
+        start_btn: "Start Eye-Catch", upload_title: "Upload Photo", upload_btn: "Select & Send", camera_btn: "Take a photo now", upload_privacy: "Your photo is sent only to this app's server for analysis. It is not kept after analysis and is never used to train the AI.", upload_privacy_title: "Privacy notice", upload_privacy_more: "Results are not saved on the server. Download the PDF to keep a copy. Previous results cannot be reopened after closing the tab or starting a new screening.",
         guide_title: "Analysis Guide", guide_list: "<li>Hold the phone steady.</li><li>Turn the flash off.</li><li>Take a front-facing photo of your face. Open both eyes wide and keep them centered.</li>",
         tips_title: "Photo Tips for<br>Accurate Analysis", tip1_t: "Hold the phone steady", tip1_d: "Tuck your elbows in or lean on a wall, and wait for focus before shooting. Blurry photos can't be analyzed.", tip2_t: "Turn the flash off", tip2_d: "Flash reflections can be misread as clouding. Use soft, even room light without direct light reflecting in the eye.", tip3_t: "Face the camera with eyes wide open", tip3_d: "A straight-on face photo works; a close-up of one eye from 20–30 cm is even more accurate.", tips_btn: "Got it!",
         loading_title: "AI Analyzing...", ai_res_title: "Opacity feature analysis", next_amsler: "Step 2: Macular Test",
@@ -124,7 +124,7 @@ const translations = {
         nav_test: "Análisis IA", nav_disease: "Enfermedades", nav_report: "Informe", nav_map: "Clínicas",
         intro_title: "Tu salud ocular,<br>protegida por <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "IA de fotos, autopruebas y cuestionario revisan de una vez las señales de riesgo ocular.", scope_note: "La IA fotográfica solo detecta rasgos visibles de opacidad avanzada del cristalino (la catarata inicial es difícil de ver en una foto). La degeneración macular se revisa con la rejilla de Amsler, y el riesgo de glaucoma y retinopatía diabética mediante el cuestionario.",
         flow_photo: "Análisis de foto", flow_check: "Autoevaluación", flow_report: "Informe personal",
-        start_btn: "Iniciar Eye-Catch", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados (texto del veredicto, respuestas, resumen de IA) se guardan solo si da su consentimiento en la pantalla del informe; la foto nunca se guarda.",
+        start_btn: "Iniciar Eye-Catch", upload_title: "Subir foto", upload_btn: "Seleccionar foto", camera_btn: "Tomar una foto ahora", upload_privacy: "La foto se envía solo al servidor de esta app para el análisis; no se conserva después ni se usa para entrenar la IA.", upload_privacy_title: "Aviso de privacidad", upload_privacy_more: "Los resultados no se guardan en el servidor. Descargue el PDF para conservarlos. No podrá reabrirlos después de cerrar la pestaña o iniciar otra evaluación.",
         guide_title: "Guía", guide_list: "<li>Mantenga el teléfono firme.</li><li>Apague el flash.</li><li>Haga una foto de frente de la cara. Abra bien los ojos y céntrelos en la imagen.</li>",
         tips_title: "Consejos de foto para<br>un análisis preciso", tip1_t: "Mantenga el teléfono firme", tip1_d: "Apoye los codos en el cuerpo o en una pared y espere a que enfoque antes de disparar. Las fotos movidas no se pueden analizar.", tip2_t: "Apague el flash", tip2_d: "Los reflejos pueden confundirse con opacidad. Use una luz interior suave y uniforme, sin reflejos directos en el ojo.", tip3_t: "Mire a la cámara con los ojos bien abiertos", tip3_d: "Sirve una foto de frente de la cara; un primer plano de un ojo a 20–30 cm es aún más preciso.", tips_btn: "¡Entendido!",
         loading_title: "IA analizando...", ai_res_title: "Análisis de rasgos de opacidad", next_amsler: "Paso 2: Mácula",
@@ -178,7 +178,7 @@ const translations = {
         nav_test: "Analyse IA", nav_disease: "Maladies", nav_report: "Rapport", nav_map: "Trouver Clinique",
         intro_title: "Votre santé oculaire,<br>protégée par <span class='brand-nowrap'>Eye-Catch</span>", intro_desc: "IA photo, auto-tests et questionnaire vérifient d'un coup les signaux de risque oculaire.", scope_note: "L'IA photo ne repère que les signes visibles d'opacité évolutive du cristallin (une cataracte débutante y est difficile à voir). La DMLA est vérifiée avec la grille d'Amsler, le risque de glaucome et de rétinopathie diabétique par le questionnaire.",
         flow_photo: "Analyse photo", flow_check: "Auto-évaluation", flow_report: "Rapport personnel",
-        start_btn: "Démarrer Eye-Catch", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats (verdict, réponses au questionnaire, résumé IA) ne sont enregistrés que si vous y consentez sur l'écran du rapport ; la photo elle-même n'est jamais conservée.",
+        start_btn: "Démarrer Eye-Catch", upload_title: "Télécharger Photo", upload_btn: "Sélectionner Photo", camera_btn: "Prendre une photo maintenant", upload_privacy: "La photo n'est envoyée qu'au serveur de cette application pour l'analyse ; elle n'est pas conservée ensuite ni utilisée pour entraîner l'IA.", upload_privacy_title: "Confidentialité", upload_privacy_more: "Les résultats ne sont pas conservés sur le serveur. Téléchargez le PDF pour les garder. Ils ne peuvent pas être rouverts après la fermeture de l’onglet ou le début d’un nouveau dépistage.",
         guide_title: "Guide", guide_list: "<li>Tenez le téléphone bien stable.</li><li>Désactivez le flash.</li><li>Prenez une photo du visage de face. Ouvrez bien les yeux et centrez-les dans l’image.</li>",
         tips_title: "Conseils photo pour<br>une analyse précise", tip1_t: "Tenez le téléphone bien stable", tip1_d: "Gardez les coudes contre le corps ou appuyez-vous au mur, et attendez la mise au point avant de déclencher. Une photo floue ne peut pas être analysée.", tip2_t: "Désactivez le flash", tip2_d: "Les reflets peuvent être pris pour une opacité. Utilisez un éclairage intérieur doux et uniforme, sans reflet direct dans l'œil.", tip3_t: "Regardez l'objectif, les yeux grands ouverts", tip3_d: "Une photo du visage de face convient ; un gros plan d'un œil à 20–30 cm est encore plus précis.", tips_btn: "Compris !",
         loading_title: "IA en analyse...", ai_res_title: "Analyse des signes d'opacité", next_amsler: "Étape 2: Macula",
@@ -232,7 +232,7 @@ const translations = {
         nav_test: "AI検査", nav_disease: "眼疾患について", nav_report: "健康レポート", nav_map: "病院検索",
         intro_title: "あなたの目の健康、<br><span class='brand-nowrap'>Eye-Catch</span>がお守りします", intro_desc: "写真AI・自己検査・問診で目のリスクサインをまとめて確認します。", scope_note: "写真AIは目に見える進行性の水晶体混濁の特徴のみを確認します（初期白内障は写真では確認しにくい）。黄斑変性はアムスラーグリッドの自己検査で、緑内障・糖尿病網膜症は問診でリスクを確認します。",
         flow_photo: "写真分析", flow_check: "セルフチェック", flow_report: "個別レポート",
-        start_btn: "Eye-Catchを始める", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "検査結果（判定文・問診回答・AI要約）はレポート画面で同意した場合のみ保存され、写真自体は保存されません。",
+        start_btn: "Eye-Catchを始める", upload_title: "写真アップロード", upload_btn: "写真を選択して送信", camera_btn: "カメラで今すぐ撮る", upload_privacy: "写真は分析のためにこのアプリのサーバーにのみ送信され、分析後は保存されず、AIの学習にも使われません。", upload_privacy_title: "プライバシーについて", upload_privacy_more: "結果はサーバーに保存しません。保管するにはPDFをダウンロードしてください。タブを閉じたり新しい検査を始めたりすると、前の結果は再表示できません。",
         guide_title: "正確な分析のために", guide_list: "<li>手ブレしないように撮ってください。</li><li>フラッシュはオフにしてください。</li><li>顔を正面から撮ってください。両目を大きく開けて画面の中央に合わせてください。</li>",
         tips_title: "正確な分析のための<br>撮影のコツ", tip1_t: "手ブレしないように撮影", tip1_d: "肘を体につけるか壁にもたれ、ピントが合ってから撮ってください。ブレた写真は分析できません。", tip2_t: "フラッシュはオフに", tip2_d: "反射は濁りと誤読されることがあります。目に光が直接映り込まない、均一で柔らかな室内光で撮ってください。", tip3_t: "正面を向いて目を大きく開けて", tip3_d: "顔全体を正面から撮っても大丈夫です。片目を20〜30cmで近くから撮るとさらに正確です。", tips_btn: "わかりました！",
         loading_title: "AI分析中...", ai_res_title: "混濁特徴の分析結果", next_amsler: "ステップ2：黄斑変性テスト",
@@ -286,7 +286,7 @@ const translations = {
         nav_test: "AI检测", nav_disease: "疾病指南", nav_report: "健康报告", nav_map: "寻找医院",
         intro_title: "您的眼部健康，<br>由<span class='brand-nowrap'>Eye-Catch</span>守护", intro_desc: "照片AI、自测与问卷，一次性检查眼部风险信号。", scope_note: "照片AI仅检测可见的进行性晶状体混浊特征（早期白内障难以通过照片确认）。黄斑变性通过阿姆斯勒方格表自测，青光眼和糖尿病视网膜病变通过问卷评估风险。",
         flow_photo: "照片分析", flow_check: "自我检测", flow_report: "个性化报告",
-        start_btn: "开始 Eye-Catch", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "检测结果（判定文字、问卷答案、AI摘要）仅在报告页面同意后才会保存，照片本身不会保存。",
+        start_btn: "开始 Eye-Catch", upload_title: "上传照片", upload_btn: "选择并发送照片", camera_btn: "立即用相机拍摄", upload_privacy: "照片仅发送到本应用的服务器用于分析，分析后不会保留，也不会用于训练AI。", upload_privacy_title: "隐私说明", upload_privacy_more: "结果不会保存在服务器上。请下载PDF自行保管。关闭标签页或开始新的检查后，无法重新打开之前的结果。",
         guide_title: "准确分析指南", guide_list: "<li>请保持手机稳定。</li><li>请关闭闪光灯。</li><li>请从正面拍摄脸部。睁大双眼，并让双眼位于画面中央。</li>",
         tips_title: "拍摄小技巧<br>让分析更准确", tip1_t: "拍摄时请保持稳定", tip1_d: "手肘贴身或靠墙固定，等对焦后再拍。照片模糊将无法分析。", tip2_t: "请关闭闪光灯", tip2_d: "反光可能被误判为混浊。请在柔和、均匀的室内光线下拍摄，避免光线直接反射到眼睛。", tip3_t: "正对镜头，睁大眼睛", tip3_d: "可以正面拍整张脸；在20–30厘米处近拍一只眼睛会更准确。", tips_btn: "明白了！",
         loading_title: "AI分析中...", ai_res_title: "混浊特征分析结果", next_amsler: "第二步：黄斑变性测试",
@@ -491,8 +491,6 @@ const extraStrings = {
     ams_which_left: "1/2 · 왼쪽 눈 검사 — 오른쪽 눈을 가리고 중앙 점을 보세요",
     ams_which_right: "2/2 · 이제 오른쪽 눈 — 왼쪽 눈을 가리고 중앙 점을 보세요",
     ams_result_partial: "검사 미완료 (한쪽 눈만 응답)", ams_result_both: "양쪽 모두 이상 응답 없음", ams_result_left: "왼쪽 눈 이상", ams_result_right: "오른쪽 눈 이상", ams_result_bad: "양쪽 이상",
-    consent_title: "결과 저장 동의", consent_agree: "동의하고 저장", consent_skip: "저장하지 않기",
-    consent_text: "검사 결과와 AI 참고 정보를 서버에 저장합니다. 건강정보는 민감정보이므로 동의하신 경우에만 저장하며, 사진은 저장하지 않습니다.",
     rep_info_title: "AI 소견", info_writing: "AI가 참고 정보를 정리하고 있습니다"
   },
   en: {
@@ -510,8 +508,6 @@ const extraStrings = {
     ams_which_left: "1/2 · Left eye — cover your right eye and look at the center dot",
     ams_which_right: "2/2 · Now the right eye — cover your left eye and look at the center dot",
     ams_result_partial: "Incomplete (only one eye answered)", ams_result_both: "No distortion reported in either eye", ams_result_left: "Left eye abnormal", ams_result_right: "Right eye abnormal", ams_result_bad: "Both abnormal",
-    consent_title: "Consent to save results", consent_agree: "Agree and save", consent_skip: "Do not save",
-    consent_text: "Your results and the AI reference notes will be stored on the server. Health data is sensitive, so we store it only with your consent. Photos are never stored.",
     rep_info_title: "AI opinion", info_writing: "The AI is preparing reference notes"
   },
   es: {
@@ -529,8 +525,6 @@ const extraStrings = {
     ams_which_left: "1/2 · Ojo izquierdo — cúbrase el derecho y mire el punto central",
     ams_which_right: "2/2 · Ahora el ojo derecho — cúbrase el izquierdo y mire el punto central",
     ams_result_partial: "Incompleto (solo un ojo respondido)", ams_result_both: "Sin alteraciones indicadas en ningún ojo", ams_result_left: "Ojo izquierdo anormal", ams_result_right: "Ojo derecho anormal", ams_result_bad: "Ambos anormales",
-    consent_title: "Consentimiento para guardar", consent_agree: "Aceptar y guardar", consent_skip: "No guardar",
-    consent_text: "Sus resultados y las notas de referencia de la IA se guardarán en el servidor. Los datos de salud son sensibles, así que solo se guardan con su consentimiento. Las fotos nunca se guardan.",
     rep_info_title: "Informe de la IA", info_writing: "La IA está preparando las notas"
   },
   fr: {
@@ -548,8 +542,6 @@ const extraStrings = {
     ams_which_left: "1/2 · Œil gauche — couvrez le droit et fixez le point central",
     ams_which_right: "2/2 · Maintenant l'œil droit — couvrez le gauche et fixez le point central",
     ams_result_partial: "Incomplet (un seul œil répondu)", ams_result_both: "Aucune anomalie signalée pour les deux yeux", ams_result_left: "Œil gauche anormal", ams_result_right: "Œil droit anormal", ams_result_bad: "Les deux anormaux",
-    consent_title: "Consentement à l'enregistrement", consent_agree: "Accepter et enregistrer", consent_skip: "Ne pas enregistrer",
-    consent_text: "Vos résultats et les notes de référence de l'IA seront enregistrés sur le serveur. Les données de santé étant sensibles, l'enregistrement n'a lieu qu'avec votre consentement. Les photos ne sont jamais enregistrées.",
     rep_info_title: "Avis de l'IA", info_writing: "L'IA prépare les notes de référence"
   },
   ja: {
@@ -567,8 +559,6 @@ const extraStrings = {
     ams_which_left: "1/2 · 左目の検査 — 右目を覆って中央の点を見てください",
     ams_which_right: "2/2 · 次は右目 — 左目を覆って中央の点を見てください",
     ams_result_partial: "未完了（片目のみ回答）", ams_result_both: "両眼とも異常の回答なし", ams_result_left: "左目に異常", ams_result_right: "右目に異常", ams_result_bad: "両眼に異常",
-    consent_title: "結果保存の同意", consent_agree: "同意して保存", consent_skip: "保存しない",
-    consent_text: "検査結果とAI参考情報をサーバーに保存します。健康情報は機微情報のため、同意いただいた場合のみ保存し、写真は保存しません。",
     rep_info_title: "AIの所見", info_writing: "AIが参考情報をまとめています"
   },
   zh: {
@@ -586,8 +576,6 @@ const extraStrings = {
     ams_which_left: "1/2 · 左眼检查 — 遮住右眼并注视中心点",
     ams_which_right: "2/2 · 现在检查右眼 — 遮住左眼并注视中心点",
     ams_result_partial: "未完成（仅回答了一只眼）", ams_result_both: "双眼均未报告异常", ams_result_left: "左眼异常", ams_result_right: "右眼异常", ams_result_bad: "双眼异常",
-    consent_title: "保存结果的同意", consent_agree: "同意并保存", consent_skip: "不保存",
-    consent_text: "检查结果与AI参考信息将保存到服务器。健康信息属于敏感信息，仅在您同意时保存，照片不会被保存。",
     rep_info_title: "AI 意见", info_writing: "AI正在整理参考信息"
   }
 };
@@ -1133,48 +1121,42 @@ Object.assign(translations.ko, {
 
   tri_factors: "정기 검진을 권하는 이유: {items}",
   tri_note_uncertain: "다만 이번 사진은 판독이 어려웠습니다. 눈을 한쪽씩 가까이(20~30cm) 다시 찍어 확인해 주세요.",
-  save_saving: "저장 중...", save_done: "저장했습니다.", save_declined: "저장에 동의하지 않아 서버에 저장하지 않았습니다.", chat_progress: "문진 진행 중 · {n}번째 질문", pdf_wait_opinion: "AI 소견을 작성하는 중입니다. 완성되면 PDF를 내려받을 수 있어요.", pdf_no_opinion: "AI 소견을 생성하지 못했습니다. 권장 조치와 검사 요약 해석은 위 내용을 따르세요.",
-  save_failed: "저장하지 못했습니다. 결과는 화면에서 계속 보실 수 있습니다.", save_retry: "다시 시도",
+  chat_progress: "문진 진행 중 · {n}번째 질문", pdf_wait_opinion: "AI 소견을 작성하는 중입니다. 완성되면 PDF를 내려받을 수 있어요.", pdf_no_opinion: "AI 소견을 생성하지 못했습니다. 권장 조치와 검사 요약 해석은 위 내용을 따르세요.",
   calib_stale: "화면 설정이 바뀐 것 같습니다(회전·확대·창 크기). 정확한 측정을 위해 다시 보정해 주세요."
 });
 Object.assign(translations.en, {
 
   tri_factors: "Why regular check-ups are recommended: {items}",
   tri_note_uncertain: "That said, this photo was hard to read. Please retake it one eye at a time, up close (20-30 cm), and check again.",
-  save_saving: "Saving...", save_done: "Saved.", save_declined: "You declined consent. This result was not saved to the server.", chat_progress: "Survey in progress · Question {n}", pdf_wait_opinion: "The AI advice is still being written. You can download the PDF once it is complete.", pdf_no_opinion: "AI advice could not be generated. Follow the recommended action and result summary above.",
-  save_failed: "Could not save. Your results remain visible on screen.", save_retry: "Try again",
+  chat_progress: "Survey in progress · Question {n}", pdf_wait_opinion: "The AI advice is still being written. You can download the PDF once it is complete.", pdf_no_opinion: "AI advice could not be generated. Follow the recommended action and result summary above.",
   calib_stale: "Your display settings seem to have changed (rotation, zoom, window size). Please calibrate again for an accurate measurement."
 });
 Object.assign(translations.es, {
 
   tri_factors: "Por qué se recomiendan revisiones periódicas: {items}",
   tri_note_uncertain: "Aun así, esta foto fue difícil de interpretar. Vuelva a tomarla de cerca (20-30 cm), un ojo cada vez, y compruébelo de nuevo.",
-  save_saving: "Guardando...", save_done: "Guardado.", save_declined: "No dio su consentimiento. Este resultado no se guardó en el servidor.", chat_progress: "Cuestionario en curso · Pregunta {n}", pdf_wait_opinion: "El informe de la IA aún se está redactando. Podrá descargar el PDF cuando termine.", pdf_no_opinion: "No se pudo generar el informe de la IA. Siga la acción recomendada y el resumen de resultados anteriores.",
-  save_failed: "No se pudo guardar. Sus resultados siguen visibles en pantalla.", save_retry: "Reintentar",
+  chat_progress: "Cuestionario en curso · Pregunta {n}", pdf_wait_opinion: "El informe de la IA aún se está redactando. Podrá descargar el PDF cuando termine.", pdf_no_opinion: "No se pudo generar el informe de la IA. Siga la acción recomendada y el resumen de resultados anteriores.",
   calib_stale: "Parece que cambió la configuración de pantalla (rotación, zoom, tamaño). Calibre de nuevo."
 });
 Object.assign(translations.fr, {
 
   tri_factors: "Pourquoi des contrôles réguliers sont recommandés : {items}",
   tri_note_uncertain: "Cette photo restait toutefois difficile à interpréter. Reprenez-la de près (20-30 cm), un œil à la fois, puis vérifiez de nouveau.",
-  save_saving: "Enregistrement...", save_done: "Enregistré.", save_declined: "Vous avez refusé. Ce résultat n’a pas été enregistré sur le serveur.", chat_progress: "Questionnaire en cours · Question {n}", pdf_wait_opinion: "L’avis de l’IA est en cours de rédaction. Vous pourrez télécharger le PDF une fois terminé.", pdf_no_opinion: "L’avis de l’IA n’a pas pu être généré. Suivez l’action recommandée et le résumé des résultats ci-dessus.",
-  save_failed: "Enregistrement impossible. Vos résultats restent affichés.", save_retry: "Réessayer",
+  chat_progress: "Questionnaire en cours · Question {n}", pdf_wait_opinion: "L’avis de l’IA est en cours de rédaction. Vous pourrez télécharger le PDF une fois terminé.", pdf_no_opinion: "L’avis de l’IA n’a pas pu être généré. Suivez l’action recommandée et le résumé des résultats ci-dessus.",
   calib_stale: "Vos réglages d'affichage semblent avoir changé (rotation, zoom, taille). Veuillez recalibrer."
 });
 Object.assign(translations.ja, {
 
   tri_factors: "定期検診をお勧めする理由: {items}",
   tri_note_uncertain: "ただし今回の写真は判読が難しい状態でした。片目ずつ近く（20〜30cm）で撮り直して、もう一度ご確認ください。",
-  save_saving: "保存中...", save_done: "保存しました。", save_declined: "保存に同意しなかったため、この結果はサーバーに保存していません。", chat_progress: "問診中 · {n}問目", pdf_wait_opinion: "AI所見を作成中です。完成後にPDFをダウンロードできます。", pdf_no_opinion: "AI所見を作成できませんでした。上記の推奨対応と検査結果の要約に従ってください。",
-  save_failed: "保存できませんでした。結果は画面で引き続きご確認いただけます。", save_retry: "再試行",
+  chat_progress: "問診中 · {n}問目", pdf_wait_opinion: "AI所見を作成中です。完成後にPDFをダウンロードできます。", pdf_no_opinion: "AI所見を作成できませんでした。上記の推奨対応と検査結果の要約に従ってください。",
   calib_stale: "画面設定が変わったようです（回転・ズーム・サイズ）。正確な測定のため再調整してください。"
 });
 Object.assign(translations.zh, {
 
   tri_factors: "建议定期检查的原因：{items}",
   tri_note_uncertain: "不过这张照片难以判读。请一次拍一只眼睛，靠近（20~30厘米）重新拍摄后再确认。",
-  save_saving: "保存中...", save_done: "已保存。", save_declined: "您未同意保存。本结果未保存到服务器。", chat_progress: "问卷进行中 · 第{n}题", pdf_wait_opinion: "AI意见正在撰写中。完成后即可下载PDF。", pdf_no_opinion: "未能生成AI意见。请按照上方的建议措施和结果摘要处理。",
-  save_failed: "未能保存。结果仍会显示在屏幕上。", save_retry: "重试",
+  chat_progress: "问卷进行中 · 第{n}题", pdf_wait_opinion: "AI意见正在撰写中。完成后即可下载PDF。", pdf_no_opinion: "未能生成AI意见。请按照上方的建议措施和结果摘要处理。",
   calib_stale: "屏幕设置似乎已更改（旋转、缩放、窗口大小）。请重新校准以确保测量准确。"
 });
 
@@ -1256,7 +1238,6 @@ Object.assign(translations.zh, {
 // 2026-09-23 첫 사용 체험에서 헷갈렸던 곳.
 // result_plain_* : 결과 화면 맨 위의 쉬운 말 한 줄(app-vision.js). 판정 문구(ai_*)와 뜻이 같아야 한다 —
 //                  '정상'·'백내장 아님'처럼 판정보다 센 말을 쓰지 않는다.
-// consent_why    : 저장이 무엇을 위한 것인지, 저장하지 않아도 되는지(app-assess.js).
 // report_issued_on : 리포트 날짜 — 예전엔 'ISSUED'만 영어로 남았다(app-report.js).
 // ams_switch_toast : 암슬러에서 반대쪽 눈으로 넘어갈 때(app-vision.js).
 const clarityCopy = {
@@ -1265,7 +1246,6 @@ const clarityCopy = {
   result_plain_borderline: "사진에서 뿌연 부분이 조금 보였어요. 다시 찍어 보거나 안과에서 확인해 보세요.",
   result_plain_uncertain: "이 사진만으로는 판단하기 어려워요. 한쪽 눈씩 가까이 다시 찍어 주세요.",
   result_plain_risk: "사진에서 뿌옇게 흐린 부분이 뚜렷하게 보였어요. 안과에서 검사를 받아 보세요.",
-  consent_why: "저장은 선택이에요. 저장하지 않아도 이 리포트와 PDF는 그대로 쓸 수 있어요. 저장한 기록은 계정과 연결되지 않아 나중에 앱에서 다시 불러올 수 없고, 서비스 개선을 위한 기록으로만 쓰여요.",
   report_issued_on: "{date} 발행",
   ams_switch_toast: "왼쪽 눈 끝! 이제 오른쪽 눈 차례예요 — 왼쪽 눈을 가려 주세요.",
   ams_right_ready: "왼쪽 눈을 가렸어요 — 오른쪽 눈 검사 시작",
@@ -1276,7 +1256,6 @@ const clarityCopy = {
   result_plain_borderline: "The photo showed some cloudiness. Try another photo or have it checked by an eye doctor.",
   result_plain_uncertain: "This photo is hard to judge. Please retake a close-up of one eye at a time.",
   result_plain_risk: "The photo showed clear cloudy areas. Please get an eye examination.",
-  consent_why: "Saving is optional. This report and the PDF work the same without saving. Saved records are not linked to an account, so you can't reopen them in the app later; they are used only to improve the service.",
   report_issued_on: "Issued {date}",
   ams_switch_toast: "Left eye done! Now the right eye — please cover your left eye.",
   ams_right_ready: "My left eye is covered — start the right-eye check",
@@ -1287,7 +1266,6 @@ const clarityCopy = {
   result_plain_borderline: "En la foto se vio algo de turbidez. Pruebe con otra foto o consúltelo con un oftalmólogo.",
   result_plain_uncertain: "Con esta foto es difícil valorar. Repita un primer plano de cada ojo por separado.",
   result_plain_risk: "En la foto se vieron zonas turbias claras. Hágase una revisión oftalmológica.",
-  consent_why: "Guardar es opcional. Este informe y el PDF funcionan igual sin guardar. Los registros guardados no están vinculados a una cuenta, así que no podrá volver a abrirlos en la app; solo se usan para mejorar el servicio.",
   report_issued_on: "Emitido el {date}",
   ams_switch_toast: "¡Ojo izquierdo listo! Ahora el derecho: tápese el ojo izquierdo.",
   ams_right_ready: "Ya cubrí el ojo izquierdo — empezar con el derecho",
@@ -1298,7 +1276,6 @@ const clarityCopy = {
   result_plain_borderline: "La photo montre un léger voile. Reprenez une photo ou faites vérifier par un ophtalmologiste.",
   result_plain_uncertain: "Cette photo est difficile à évaluer. Reprenez un gros plan de chaque œil séparément.",
   result_plain_risk: "La photo montre des zones troubles nettes. Faites un examen chez un ophtalmologiste.",
-  consent_why: "L'enregistrement est facultatif. Ce rapport et le PDF fonctionnent de la même façon sans enregistrement. Les données enregistrées ne sont liées à aucun compte : vous ne pourrez pas les rouvrir dans l'app ; elles servent uniquement à améliorer le service.",
   report_issued_on: "Émis le {date}",
   ams_switch_toast: "Œil gauche terminé ! Au tour de l'œil droit : couvrez l'œil gauche.",
   ams_right_ready: "Mon œil gauche est couvert — commencer avec le droit",
@@ -1309,7 +1286,6 @@ const clarityCopy = {
   result_plain_borderline: "写真で少し濁りが見られました。撮り直すか、眼科で確認してください。",
   result_plain_uncertain: "この写真だけでは判断が難しいです。片目ずつ近くで撮り直してください。",
   result_plain_risk: "写真ではっきりした濁りが見られました。眼科で検査を受けてください。",
-  consent_why: "保存は任意です。保存しなくても、このレポートとPDFはそのまま使えます。保存した記録はアカウントと結びつかないため、後でアプリから開き直すことはできず、サービス改善のための記録としてのみ使われます。",
   report_issued_on: "{date} 発行",
   ams_switch_toast: "左目は完了！次は右目です — 左目を覆ってください。",
   ams_right_ready: "左目を覆いました — 右目の検査を開始",
@@ -1320,7 +1296,6 @@ const clarityCopy = {
   result_plain_borderline: "照片中看到少许混浊。请重新拍摄，或到眼科检查确认。",
   result_plain_uncertain: "仅凭这张照片难以判断。请分别近距离重拍每只眼睛。",
   result_plain_risk: "照片中看到明显的混浊区域。请到眼科接受检查。",
-  consent_why: "保存是可选的。不保存也能照常使用本报告和PDF。保存的记录不与账户关联，之后无法在应用中重新打开，仅用于改进服务。",
   report_issued_on: "{date} 生成",
   ams_switch_toast: "左眼完成！现在检查右眼 — 请遮住左眼。",
   ams_right_ready: "已遮住左眼 — 开始检查右眼",
@@ -1339,3 +1314,44 @@ const reliabilityCopy = {
  zh: {ai_compressed:'照片压缩过多，可能丢失了眼部细节。请选择相机原图，而不是压缩后的副本。', ai_unstable:'图片的微小变化导致分析结果大幅改变，因此无法显示结果。请正面近距离重新拍摄清晰照片，确保双眼可见。', chk_compression:'没有过度压缩', chk_stable:'图片微小变化下分析保持一致'}
 };
 for (const [lang, copy] of Object.entries(reliabilityCopy)) Object.assign(translations[lang], copy);
+
+// Final-presentation entry and local-only result retention.
+Object.assign(translations.ko, {"intro_limit": "사진 AI는 보이는 혼탁 특징만 확인하며, 진단이나 안과 검사를 대신하지 않습니다.", "ai_cancel": "기다리기 취소"});
+Object.assign(translations.en, {"intro_limit": "Photo AI checks visible clouding only and cannot replace diagnosis or an eye examination.", "ai_cancel": "Cancel waiting"});
+Object.assign(translations.es, {"intro_limit": "La IA solo revisa opacidades visibles; no sustituye el diagnóstico ni el examen oftalmológico.", "ai_cancel": "Cancelar espera"});
+Object.assign(translations.fr, {"intro_limit": "L’IA photo vérifie seulement les opacités visibles et ne remplace ni diagnostic ni examen ophtalmologique.", "ai_cancel": "Annuler l’attente"});
+Object.assign(translations.ja, {"intro_limit": "写真AIは見える濁りのみを確認し、診断や眼科検査の代わりにはなりません。", "ai_cancel": "待機をキャンセル"});
+Object.assign(translations.zh, {"intro_limit": "照片AI仅检查可见混浊，不能替代诊断或眼科检查。", "ai_cancel": "取消等待"});
+Object.assign(translations.ko, {"ai_timeout": "응답을 기다리는 시간이 초과됐어요. 검사 결과는 그대로 있으니 다시 시도해 주세요.", "ai_cancelled": "기다리기를 취소했어요. 검사 결과는 그대로이며, 원하면 다시 시도할 수 있어요."});
+Object.assign(translations.en, {"ai_timeout": "The response timed out. Your results are intact; please retry.", "ai_cancelled": "Waiting cancelled. Your results are intact and you can retry."});
+Object.assign(translations.es, {"ai_timeout": "La respuesta tardó demasiado. Sus resultados siguen disponibles; inténtelo de nuevo.", "ai_cancelled": "Espera cancelada. Sus resultados siguen disponibles y puede volver a intentarlo."});
+Object.assign(translations.fr, {"ai_timeout": "Le délai de réponse est dépassé. Vos résultats sont conservés ; réessayez.", "ai_cancelled": "Attente annulée. Vos résultats sont conservés et vous pouvez réessayer."});
+Object.assign(translations.ja, {"ai_timeout": "応答待ちがタイムアウトしました。検査結果はそのままです。再試行してください。", "ai_cancelled": "待機をキャンセルしました。検査結果はそのままで、再試行できます。"});
+Object.assign(translations.zh, {"ai_timeout": "等待响应超时。检查结果仍然保留，请重试。", "ai_cancelled": "已取消等待。检查结果仍然保留，您可以重试。"});
+translations.ko.opinion_retry_hint = "검사 결과는 그대로 있어요. 원하면 다시 생성할 수 있어요.";
+translations.en.opinion_retry_hint = "Your test results are kept. You can generate the notes again.";
+translations.es.opinion_retry_hint = "Sus resultados siguen disponibles. Puede generar las notas de nuevo.";
+translations.fr.opinion_retry_hint = "Vos résultats sont conservés. Vous pouvez relancer la génération.";
+translations.ja.opinion_retry_hint = "検査結果はそのままです。必要なら再生成できます。";
+translations.zh.opinion_retry_hint = "检查结果仍然保留，您可以重新生成。";
+
+Object.assign(translations.ko, {result_retention_note: "검사 결과는 서버에 저장하지 않습니다. 보관하려면 PDF를 다운로드해 주세요. 탭을 닫거나 새 검사를 시작하면 이전 결과를 다시 불러올 수 없습니다."});
+Object.assign(translations.en, {result_retention_note: "Results are not saved on the server. Download the PDF to keep a copy. Previous results cannot be reopened after closing the tab or starting a new screening."});
+Object.assign(translations.es, {result_retention_note: "Los resultados no se guardan en el servidor. Descargue el PDF para conservarlos. No podrá reabrirlos después de cerrar la pestaña o iniciar otra evaluación."});
+Object.assign(translations.fr, {result_retention_note: "Les résultats ne sont pas conservés sur le serveur. Téléchargez le PDF pour les garder. Ils ne peuvent pas être rouverts après la fermeture de l’onglet ou le début d’un nouveau dépistage."});
+Object.assign(translations.ja, {result_retention_note: "結果はサーバーに保存しません。保管するにはPDFをダウンロードしてください。タブを閉じたり新しい検査を始めたりすると、前の結果は再表示できません。"});
+Object.assign(translations.zh, {result_retention_note: "结果不会保存在服务器上。请下载PDF自行保管。关闭标签页或开始新的检查后，无法重新打开之前的结果。"});
+
+Object.assign(translations.ko, {"status_photo": "사진 분석", "status_ai": "AI 설명", "status_checking": "확인 중", "status_ready": "준비됨", "status_unavailable": "연결 확인 필요", "status_recheck": "다시 확인", "status_checking_note": "검사에 필요한 연결을 확인하고 있어요.", "status_server_unavailable": "서버에 연결되지 않았어요. 잠시 후 다시 확인해 주세요.", "status_photo_unavailable": "사진 분석 준비가 안 됐어요. 실행한 PC에서 서버를 확인해 주세요.", "status_ai_unavailable": "사진 검사는 가능해요. AI 설명은 연결을 확인한 뒤 다시 시도해 주세요.", "status_ready_note": "검사를 시작할 수 있어요. AI 설명은 요청 후 생성됩니다.", "map_retry": "지도 다시 불러오기", "map_include_services": "안경원·검안 서비스도 보기", "map_found_services": "안과·안경원·검안 서비스 {n}곳을 찾았어요.", "clinic_eye": "안과", "clinic_optician": "안경원", "clinic_optometrist": "검안 서비스"});
+Object.assign(translations.en, {"status_photo": "Photo analysis", "status_ai": "AI explanation", "status_checking": "Checking", "status_ready": "Ready", "status_unavailable": "Check connection", "status_recheck": "Check again", "status_checking_note": "Checking the connections needed for screening.", "status_server_unavailable": "Cannot connect to the server. Please check again shortly.", "status_photo_unavailable": "Photo analysis is not ready. Check the server on the host computer.", "status_ai_unavailable": "Photo screening is available. Check the AI connection before retrying explanations.", "status_ready_note": "You can start screening. AI explanations are generated when requested.", "map_retry": "Reload map", "map_include_services": "Also show opticians and optometrists", "map_found_services": "Found {n} eye clinics, opticians and optometrists.", "clinic_eye": "Eye clinic", "clinic_optician": "Optician", "clinic_optometrist": "Optometrist"});
+Object.assign(translations.es, {"status_photo": "Análisis de foto", "status_ai": "Explicación IA", "status_checking": "Comprobando", "status_ready": "Listo", "status_unavailable": "Revisar conexión", "status_recheck": "Comprobar de nuevo", "status_checking_note": "Comprobando las conexiones para la evaluación.", "status_server_unavailable": "No se puede conectar al servidor. Inténtelo de nuevo.", "status_photo_unavailable": "El análisis de fotos no está listo. Revise el servidor.", "status_ai_unavailable": "La evaluación fotográfica está disponible. Revise la conexión IA antes de volver a pedir explicaciones.", "status_ready_note": "Puede iniciar la evaluación. La explicación IA se genera al solicitarla.", "map_retry": "Recargar mapa", "map_include_services": "Mostrar también ópticas y optometristas", "map_found_services": "Se encontraron {n} clínicas, ópticas y optometristas.", "clinic_eye": "Clínica oftalmológica", "clinic_optician": "Óptica", "clinic_optometrist": "Optometrista"});
+Object.assign(translations.fr, {"status_photo": "Analyse photo", "status_ai": "Explication IA", "status_checking": "Vérification", "status_ready": "Prêt", "status_unavailable": "Vérifier la connexion", "status_recheck": "Vérifier à nouveau", "status_checking_note": "Vérification des connexions pour le dépistage.", "status_server_unavailable": "Connexion au serveur impossible. Réessayez.", "status_photo_unavailable": "L’analyse photo n’est pas prête. Vérifiez le serveur.", "status_ai_unavailable": "Le contrôle photo est disponible. Vérifiez la connexion IA avant de redemander une explication.", "status_ready_note": "Vous pouvez commencer. Les explications IA sont générées à la demande.", "map_retry": "Recharger la carte", "map_include_services": "Afficher aussi opticiens et optométristes", "map_found_services": "{n} cliniques, opticiens et optométristes trouvés.", "clinic_eye": "Clinique ophtalmologique", "clinic_optician": "Opticien", "clinic_optometrist": "Optométriste"});
+Object.assign(translations.ja, {"status_photo": "写真分析", "status_ai": "AI説明", "status_checking": "確認中", "status_ready": "準備完了", "status_unavailable": "接続確認が必要", "status_recheck": "再確認", "status_checking_note": "検査に必要な接続を確認しています。", "status_server_unavailable": "サーバーに接続できません。しばらくして再確認してください。", "status_photo_unavailable": "写真分析の準備ができていません。実行中のPCでサーバーを確認してください。", "status_ai_unavailable": "写真検査は利用できます。AI説明は接続確認後に再試行してください。", "status_ready_note": "検査を開始できます。AI説明はリクエスト後に生成されます。", "map_retry": "地図を再読み込み", "map_include_services": "眼鏡店・検眼サービスも表示", "map_found_services": "眼科・眼鏡店・検眼サービスが{n}件見つかりました。", "clinic_eye": "眼科", "clinic_optician": "眼鏡店", "clinic_optometrist": "検眼サービス"});
+Object.assign(translations.zh, {"status_photo": "照片分析", "status_ai": "AI说明", "status_checking": "检查中", "status_ready": "已就绪", "status_unavailable": "需要检查连接", "status_recheck": "重新检查", "status_checking_note": "正在检查所需连接。", "status_server_unavailable": "无法连接服务器，请稍后重试。", "status_photo_unavailable": "照片分析尚未就绪，请在运行应用的电脑上检查服务器。", "status_ai_unavailable": "可以进行照片检查。请确认AI连接后再请求说明。", "status_ready_note": "可以开始检查。AI说明会在请求后生成。", "map_retry": "重新加载地图", "map_include_services": "也显示眼镜店和验光服务", "map_found_services": "找到{n}家眼科、眼镜店和验光服务。", "clinic_eye": "眼科", "clinic_optician": "眼镜店", "clinic_optometrist": "验光服务"});
+
+Object.assign(translations.ko, {"pdf_download_help": "PDF가 준비됐어요. 다운로드가 안 되면 PDF를 열어 저장해 주세요.", "pdf_preview": "PDF 열기"});
+Object.assign(translations.en, {"pdf_download_help": "Your PDF is ready. If the download does not start, open the PDF and save it.", "pdf_preview": "Open PDF"});
+Object.assign(translations.es, {"pdf_download_help": "Su PDF está listo. Si no se descarga, ábralo y guárdelo.", "pdf_preview": "Abrir PDF"});
+Object.assign(translations.fr, {"pdf_download_help": "Votre PDF est prêt. Si le téléchargement ne démarre pas, ouvrez-le et enregistrez-le.", "pdf_preview": "Ouvrir le PDF"});
+Object.assign(translations.ja, {"pdf_download_help": "PDFを作成しました。ダウンロードできない場合はPDFを開いて保存してください。", "pdf_preview": "PDFを開く"});
+Object.assign(translations.zh, {"pdf_download_help": "PDF已准备好。如果未开始下载，请打开PDF并保存。", "pdf_preview": "打开PDF"});

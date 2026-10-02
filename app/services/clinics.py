@@ -65,7 +65,7 @@ async def _search_overpass(lat: float, lng: float, radius: int = 4000, size: int
             "address": tags.get("addr:full") or tags.get("addr:street") or "",
             "url": tags.get("website") or "",
         })
-    out.sort(key=lambda c: c["dist"])
+    out.sort(key=lambda c: (c["type"] != "eye_clinic", c["dist"]))
     return out[:size]
 
 

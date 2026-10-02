@@ -180,6 +180,32 @@ async function readAiStream(response, onUpdate) {
     };
 }
 
+// Covers headers, queued requests and the whole body, including heartbeat-only streams.
+async function withAiDeadline(action, controller, timeoutMs = 180000) {
+    let timer;
+    let onAbort;
+    const aborted = new Promise((_, reject) => {
+        onAbort = () => reject(controller.signal.reason || new Error('AI request cancelled'));
+        controller.signal.addEventListener('abort', onAbort, { once: true });
+        if (controller.signal.aborted) onAbort();
+    });
+    const deadline = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+            const error = new Error('AI request timed out');
+            error.name = 'TimeoutError';
+            reject(error);
+            controller.abort(error);
+        }, timeoutMs);
+    });
+    try {
+        if (controller.signal.aborted) return await aborted;
+        return await Promise.race([action(), aborted, deadline]);
+    } finally {
+        clearTimeout(timer);
+        controller.signal.removeEventListener('abort', onAbort);
+    }
+}
+
 // ------------------------------------------
 // 1-c. localStorage 안전 접근
 //
@@ -246,6 +272,7 @@ function changeFontSize(delta) {
 }
 
 function updateUI(lang) {
+    if (typeof clearPdfDownload === 'function') clearPdfDownload();
     const previousLang = state.lang;
     state.lang = lang;
     if (previousLang !== lang) {
@@ -319,6 +346,9 @@ function updateUI(lang) {
     // 재촬영 안내는 '다음 사진을 고를 때까지' 남는다 — 그 사이 언어를 바꾸면
     // 배너와 안내창이 이전 언어로 남는다. 둘 다 언어 중립 코드에서 다시 만든다.
     if (typeof refreshUploadError === 'function') refreshUploadError();
+    if (typeof refreshAiFailureMessages === 'function') refreshAiFailureMessages();
+    if (typeof refreshServiceStatus === 'function') refreshServiceStatus();
+    if (typeof refreshMapResults === 'function') refreshMapResults();
     if (typeof renderPhotoCheckText === 'function') renderPhotoCheckText();
     // 결과 화면의 사진 캡션
     const rpc = document.getElementById('result-photo-caption');
@@ -327,9 +357,6 @@ function updateUI(lang) {
     if (rpi && translations[lang].result_photo_label) rpi.alt = translations[lang].result_photo_label;
     if (typeof refreshChatLanguage === 'function') refreshChatLanguage();
     if (typeof updateSurveyModeBanner === 'function') updateSurveyModeBanner();
-    // 동의 상자는 결과 완료 후 동적으로 만들어지므로 data-i18n 갱신만으로는
-    // 이미 생성된 한국어 버튼·설명이 바뀌지 않는다.
-    if (typeof refreshSaveConsent === 'function') refreshSaveConsent();
     const findBox = document.getElementById('findings-box');
     if (findBox && findBox.children.length && typeof renderFindings === 'function') {
         renderFindings(findBox);
@@ -467,6 +494,7 @@ function resetScreeningState() {
     // 결과와 입력값만 비워도 업로드 카드의 고정 배너는 DOM에 남아 시연·재검사 사용자를 혼란스럽게 한다.
     if (typeof clearUploadError === 'function') clearUploadError();
     state.stepIdx = 0; state.dynamicCount = 0; state.chatHistory = [];
+    state.opinionErrorKey = ''; state.followupErrorKey = '';
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
     state.dynamicAnswers = []; state.chatBusy = false;
     state.dynamicQuestion = null;
@@ -485,18 +513,17 @@ function resetScreeningState() {
 
 /** Invalidate derived report data when its screening inputs are restarted. */
 function invalidateScreeningReport() {
+    if (typeof clearPdfDownload === 'function') clearPdfDownload();
     if (typeof resetPlainFindings === 'function') resetPlainFindings();
     // 이웃 호출처럼 존재를 확인한다. app-report.js는 이 파일보다 늦게 로드되는데, 느린 망에서
     // 스크립트가 다 오기 전에 '시작하기'를 누르면 여기서 ReferenceError가 나 버튼이 먹통이 됐다
     // (2026-09-27 실기기: 새로고침 직후 첫 탭이 무반응).
     if (typeof cancelAiOpinion === 'function') cancelAiOpinion();
     if (typeof cancelFollowup === 'function') cancelFollowup();
-    if (typeof cancelSaveConsent === 'function') cancelSaveConsent();
     state.opinionRequest = null; state.opinionLang = ''; state.triage = null;
     const opinion = document.getElementById('gemma-opinion-text');
     if (opinion) { opinion.textContent = ''; opinion.classList.add('hidden'); }
     const stale = document.getElementById('opinion-stale'); if (stale) stale.classList.add('hidden');
-    const consent = document.getElementById('consent-box'); if (consent) consent.classList.add('hidden');
     const findings = document.getElementById('findings-box'); if (findings) findings.innerHTML = '';
     const triage = document.getElementById('triage-box'); if (triage) triage.innerHTML = '';
     // 추가 질문(askGemmaMore)의 답변과 입력칸도 지운다.

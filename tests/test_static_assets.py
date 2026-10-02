@@ -1019,22 +1019,6 @@ def test_나이_구간이_고령쪽에서_뭉쳐있지_않다():
     assert "const RISK_MAX = 13;" in assess, "RISK_MAX가 새 배점(5+3+2+2+1)과 안 맞는다"
 
 
-def test_diagnoses_테이블_스키마를_기동시점에_검증한다():
-    """CREATE TABLE IF NOT EXISTS는 '이름'만 본다.
-
-    예전 설계의 테이블(diag_id·cataract_score·ai_result)이 남은 DB에서는 조용히 성공하고,
-    사용자가 저장에 동의한 순간에야 UndefinedColumnError로 터진다 — 실제로 겪었다."""
-    db = (ROOT / "app" / "services" / "database.py").read_text(encoding="utf-8")
-    assert "REQUIRED_COLUMNS" in db and "_verify_schema" in db
-    assert "information_schema.columns" in db
-    # 자동 rename 도입 뒤로 "RENAME TO"는 SQL에도 생겨서 문자열 검사로는 아무것도
-    # 보장하지 못한다(그 상태로 새 DB 기동이 죽는 회귀를 놓쳤다).
-    # 분기 동작은 tests/test_db_schema_init.py에서 가짜 커넥션으로 직접 검증한다.
-    # INSERT가 실제로 쓰는 컬럼이 검증 목록에 다 들어 있는지
-    for col in ("id", "cataract_result", "amsler_result", "symptoms", "gemma_opinion"):
-        assert f'"{col}"' in db, f"검증 목록에 {col}이 없다"
-
-
 def test_언어전환_재렌더가_클래스가_아니라_data_role로_찾는다():
     """'눈별 분석' 제목과 맨 아래 각주가 둘 다 text-slate-400을 갖고 있어서,
     클래스로 찾던 refreshAiResultDisplay가 제목을 각주 문장으로 덮어썼다.

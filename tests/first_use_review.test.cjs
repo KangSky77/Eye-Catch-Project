@@ -145,6 +145,8 @@ test('AI 소견 요청에 문진 항목·위험요인 코드가 언어와 무관
  const c=vm.createContext({state:{lang:'en',riskAnswers:{diabetes:true,hypertension:false,smoking:true,age:'60s'},
   chatSymptoms:['sym_chk_recent','sym_dr_fundus','번역된 문장']},window:{addEventListener(){}},console});
  const src=readReportScripts();
+ Object.assign(c,{setTimeout,clearTimeout});
+ vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
  vm.runInContext(src.slice(src.indexOf('function opinionFlagCodes'),src.indexOf('async function finish')),c);
  assert.deepEqual(Array.from(vm.runInContext('opinionFlagCodes()',c)),
   ['sym_chk_recent','sym_dr_fundus','risk_diabetes','risk_smoking','age_60s']);
@@ -161,6 +163,8 @@ test('맞춤 질문의 답이 리포트 해석·AI 조언 코드·챗봇 문맥�
  const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
  vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
  const src=readReportScripts();
+ Object.assign(c,{setTimeout,clearTimeout});
+ vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
  vm.runInContext(src.slice(src.indexOf('function opinionFlagCodes'),src.indexOf('async function finish')),c);
  vm.runInContext(src.slice(src.indexOf('function buildChatContext'),src.indexOf('/** \'내 결과 쉽게')),c);
  const findings=vm.runInContext('buildFindings()',c);
@@ -185,6 +189,8 @@ test('chat context distinguishes unknown, no and unanswered risk factors',()=>{
  const c=setup({lang:'ko',riskAnswers:{surgery:'none',diabetes:'unknown',hypertension:false},chatSymptoms:[],amslerResult:{}});
  c.document={getElementById:()=>null};
  const src=readReportScripts();
+ Object.assign(c,{setTimeout,clearTimeout});
+ vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
  vm.runInContext(src.slice(src.indexOf('function buildChatContext'),src.indexOf('/** \'내 결과 쉽게')),c);
  const ctx=vm.runInContext('buildChatContext()',c);
  assert.ok(ctx.includes('"diabetes":"unknown"'));
@@ -201,6 +207,8 @@ test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async ()
   fetch:(url,opt)=>{sent.push(JSON.parse(opt.body));return Promise.reject(new Error('stop'))},
   createAiLoader:()=>({el:{},stop(){}}),buildChatContext:()=>'ctx',buildOpinionSymptoms:()=>['Hypertension: no','Diabetes: yes']});
  const src=readReportScripts();
+ Object.assign(c,{setTimeout,clearTimeout});
+ vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
  vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf('/** 챗봇이 \'내 결과\'')),c);
  vm.runInContext(src.slice(src.indexOf('async function askGemmaMore('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
  await vm.runInContext('askGemmaMore()',c);
@@ -217,6 +225,8 @@ test('설명할 소견 문장이 없으면 서버 연결 오류가 아니라 결
   fetch:async()=>({ok:true}),readAiStream:async()=>({text:'EXPLANATION_UNAVAILABLE',hasError:true}),
   createAiLoader:()=>({el:{},stop(){}}),buildChatContext:()=>'ctx',buildOpinionSymptoms:()=>[],explainCheckPayload:()=>({})});
  const src=readReportScripts();
+ Object.assign(c,{setTimeout,clearTimeout});
+ vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
  vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf("/** 챗봇이 '내 결과'")),c);
  vm.runInContext(src.slice(src.indexOf('async function askGemmaMore('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
  await vm.runInContext('askGemmaMore(true)',c);
@@ -235,6 +245,8 @@ test('결과 쉬운 말 보기는 AI 질문·답(Q/A) 형식으로 보이지 않
   fetch:async()=>({ok:true}),readAiStream:async()=>({text:'고정 문장입니다.',hasError:false}),
   createAiLoader:()=>({el:{},stop(){}}),buildChatContext:()=>'ctx',buildOpinionSymptoms:()=>[],explainCheckPayload:()=>({})});
  const src=readReportScripts();
+ Object.assign(c,{setTimeout,clearTimeout});
+ vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
  vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf("/** 챗봇이 '내 결과'")),c);
  vm.runInContext(src.slice(src.indexOf('function askExplainResults('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
  vm.runInContext('askExplainResults()',c);
@@ -252,6 +264,8 @@ test('결과 설명 요청은 빠지면 안 되는 항목과 대체 고정 문�
   const core=fs.readFileSync(path.join(__dirname,'../static/app-core.js'),'utf8');
   vm.runInContext(core.slice(core.indexOf('function formatCataractResult()'),core.indexOf('const ERROR_MARKER')),c);
   const src=readReportScripts();
+ Object.assign(c,{setTimeout,clearTimeout});
+ vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
   vm.runInContext(src.slice(src.indexOf('function explainCheckPayload'),src.indexOf('/** \'내 결과 쉽게')),c);
   return {c,p:vm.runInContext('explainCheckPayload()',c),t:vm.runInContext('translations.ko',c)};
  };

@@ -7,11 +7,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
-    db_host: str = "localhost"
-    db_name: str = "eyecatch_db"
-    db_user: str = "postgres"
-    db_password: str = ""  # .env에서 읽어옴
-    db_port: int = 5432
     # 현재 배포 모델 = EfficientNet-B0 v6(익상편 정상군 편입). v6도 v4 파일명을 그대로
     # 덮어쓰는 운영 방식이라 경로에 _v4가 남아 있다(메타데이터 version 필드 참고).
     # .env가 없는 새 클론도 배포 모델을 그대로 쓰도록 기본값을 여기에 맞춘다 —

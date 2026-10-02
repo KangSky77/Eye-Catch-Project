@@ -16,6 +16,8 @@ function cancelFollowup() {
     if (sendBtn) { sendBtn.disabled = false; sendBtn.removeAttribute('aria-busy'); }
     const explainBtn = document.getElementById('followup-explain-btn');
     if (explainBtn) explainBtn.disabled = false;
+    const cancelBtn = document.getElementById('followup-cancel');
+    if (cancelBtn) cancelBtn.classList.add('hidden');
 }
 
 /** 챗봇이 '내 결과'를 알 수 있게 넘기는 문맥.
@@ -91,6 +93,7 @@ async function askGemmaMore(explainResults = false) {
     const userMsg = inputEl.value.trim();
 
     if (!userMsg) { inputEl.focus(); return; }
+    state.followupErrorKey = '';
 
     const context = buildChatContext();
 
@@ -116,27 +119,31 @@ async function askGemmaMore(explainResults = false) {
     // 결과 보기는 질문·답(Q/A) 형식으로 쓰지 않는다 — 기본은 AI 답이 아니라 리포트의 검수된 문장이다.
     const prefix = explainResults === true ? '' : `Q: ${userMsg}\nA: `;
 
+    const cancelBtn = document.getElementById('followup-cancel');
+    if (cancelBtn) cancelBtn.classList.remove('hidden');
     try {
-        const response = await fetch('/api/chat-with-gemma', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            // facts: AI 소견 요청과 같은 사실 목록 — 서버 안전 필터가 이 사실과 어긋나는 문장을 지운다
-            body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context, explain_results: explainResults === true,
-                                   facts: buildOpinionSymptoms(), ...(explainResults === true ? explainCheckPayload() : {}) }),
-            signal: active.controller.signal
-        });
+        const { text, hasError } = await withAiDeadline(async () => {
+            const response = await fetch('/api/chat-with-gemma', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // facts: AI 소견 요청과 같은 사실 목록 — 서버 안전 필터가 이 사실과 어긋나는 문장을 지운다
+                body: JSON.stringify({ lang: state.lang, user_msg: userMsg, context: context, explain_results: explainResults === true,
+                                       facts: buildOpinionSymptoms(), ...(explainResults === true ? explainCheckPayload() : {}) }),
+                signal: active.controller.signal
+            });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
-        const { text, hasError } = await readAiStream(response, disp => {
-            if (!isCurrent()) return;
-            if (firstChunk) {       // 첫 실제 토큰 도착 → 로더 제거 후 답변 표시 시작
-                loader.stop();
-                firstChunk = false;
-            }
-            responseEl.innerText = prefix + disp;
-        });
+            // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
+            return await readAiStream(response, disp => {
+                if (!isCurrent()) return;
+                if (firstChunk) {       // 첫 실제 토큰 도착 → 로더 제거 후 답변 표시 시작
+                    loader.stop();
+                    firstChunk = false;
+                }
+                responseEl.innerText = prefix + disp;
+            });
+        }, active.controller);
         loader.stop();              // 빈 응답이어도 로더는 정리
         if (!isCurrent()) return;   // 새 검사가 시작됐으면 이 답변은 버린다
         responseEl.innerText = prefix + text;
@@ -144,8 +151,9 @@ async function askGemmaMore(explainResults = false) {
         if (streamError) {          // AI 오류 → 에러 메시지로 대체
             // 결과 설명은 AI를 부르지 않는다 — 설명할 소견 문장이 없을 때만 오류가 온다(서버 연결 문제가 아니다).
             const t = translations[state.lang];
-            responseEl.innerText = (text.includes('EXPLANATION_UNAVAILABLE') && t.explain_unavailable)
-                || t.srv_err || "서버와 연결할 수 없습니다.";
+            if (!inputEl.value) inputEl.value = userMsg;
+            state.followupErrorKey = text.includes('EXPLANATION_UNAVAILABLE') ? 'explain_unavailable' : 'srv_err';
+            responseEl.innerText = t[state.followupErrorKey] || t.srv_err || "서버와 연결할 수 없습니다.";
             responseEl.classList.add('text-rose-600');
             return;
         }
@@ -155,7 +163,11 @@ async function askGemmaMore(explainResults = false) {
     } catch (e) {
         loader.stop();
         if (!isCurrent()) return;
-        responseEl.innerText = translations[state.lang].srv_err || "서버와 연결할 수 없습니다.";
+        // Restore the failed question only when the user has not typed a new draft.
+        if (!inputEl.value) inputEl.value = userMsg;
+        const t = translations[state.lang];
+        state.followupErrorKey = e.name === 'TimeoutError' ? 'ai_timeout' : active.controller.signal.aborted ? 'ai_cancelled' : 'srv_err';
+        responseEl.innerText = t[state.followupErrorKey] || t.srv_err || "서버와 연결할 수 없습니다.";
     } finally {
         if (_activeFollowup === active) cancelFollowup();
     }
@@ -173,3 +185,15 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+function stopFollowupRequest() {
+    if (_activeFollowup) _activeFollowup.controller.abort();
+}
+
+function refreshAiFailureMessages() {
+    const t = translations[state.lang];
+    for (const [key, id] of [[state.opinionErrorKey, 'gemma-opinion-text'], [state.followupErrorKey, 'followup-response']]) {
+        const el = document.getElementById(id);
+        if (key && el && t[key]) el.innerText = t[key];
+    }
+}

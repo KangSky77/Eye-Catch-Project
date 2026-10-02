@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, StrictBool
 
 # 리스트 항목 하나하나의 길이 상한.
 # 리스트 길이(max_length=30)만 막으면 "짧은 항목 30개"는 걸러도 "거대한 항목 30개"는 통과해,
-# 그대로 LLM 프롬프트/DB로 흘러간다. 증상 라벨은 data.js의 고정 문자열(최장 20자 남짓)이라
+# 그대로 LLM 프롬프트로 흘러간다. 증상 라벨은 data.js의 고정 문자열(최장 20자 남짓)이라
 # 100자면 충분히 넉넉하고, 코드는 언어 중립 키('glaucoma' 등)라 20자로 족하다.
 SymptomText = Annotated[str, Field(max_length=100)]
 SymptomCode = Annotated[str, Field(max_length=20)]
@@ -82,16 +82,3 @@ class QuestionTranslationRequest(BaseModel):
     question: str = Field(min_length=1, max_length=500)
     source_lang: Literal["ko", "en", "es", "fr", "ja", "zh"]
     target_lang: Literal["ko", "en", "es", "fr", "ja", "zh"]
-
-class SaveDiagnosisRequest(BaseModel):
-    # The save API requires an explicit consent declaration, supplied only when
-    # the user presses the consent button. A public, unauthenticated API cannot
-    # independently verify who pressed it, but an omitted/false value never saves.
-    consent_to_store: Literal[True]
-    cataract_result: str = Field(..., max_length=200)
-    amsler_result: str = Field(..., max_length=100)
-    chat_symptoms: list[SymptomText] = Field(default_factory=list, max_length=30)
-    gemma_opinion: str = Field(default="", max_length=5000)
-    # 저장 동의 한 번마다 프론트가 만드는 고유 키 — 응답이 늦어 다시 눌러도 한 번만 저장된다.
-    # 키 없이 오는 예전 프론트도 그대로 저장된다(NULL은 고유 인덱스에서 서로 겹치지 않는다).
-    save_key: str | None = Field(default=None, pattern=r"^[A-Za-z0-9-]{8,64}$")

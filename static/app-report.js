@@ -224,6 +224,7 @@ function regenerateOpinion() {
 let _activeOpinion = null;
 
 function cancelAiOpinion() {
+    state.opinionErrorKey = '';
     state.opinionFullText = '';
     state.opinionSummaryText = '';
     const details = document.getElementById('opinion-details');
@@ -238,19 +239,18 @@ function cancelAiOpinion() {
     if (loading) loading.classList.add('hidden');
     const retry = document.getElementById('opinion-retry');
     if (retry) retry.classList.add('hidden');
+    const cancelBtn = document.getElementById('opinion-cancel');
+    if (cancelBtn) cancelBtn.classList.add('hidden');
 }
 
 async function runAiOpinion() {
+    if (typeof clearPdfDownload === 'function') clearPdfDownload();
     if (!state.opinionRequest) return;
     cancelAiOpinion();
-    if (typeof cancelSaveConsent === 'function') cancelSaveConsent();
     const request = JSON.parse(JSON.stringify(state.opinionRequest));
     const active = { controller: new AbortController(), loader: null };
     _activeOpinion = active;
     const isCurrent = () => _activeOpinion === active;
-    const consent = document.getElementById('consent-box');
-    if (consent) consent.classList.add('hidden');
-
     const loadingContainer = document.getElementById('gemma-loading-container');
     const opinionText = document.getElementById('gemma-opinion-text');
     const retryBox = document.getElementById('opinion-retry');
@@ -275,41 +275,46 @@ async function runAiOpinion() {
         if (opinionText) opinionText.classList.remove('hidden');
     };
     // 실패 시 공통 처리 — 문구를 남기고 '다시 시도' 버튼을 보여준다
-    const showFailure = () => {
+    const showFailure = (message, key = 'opinion_error') => {
+        state.opinionErrorKey = key;
         stopOpinionLoader();
         if (opinionText) {
-            opinionText.innerText = translations[state.lang].opinion_error || "로컬 AI 서버와 연결이 끊어졌습니다.";
+            opinionText.innerText = message || translations[state.lang].opinion_error || "로컬 AI 서버와 연결이 끊어졌습니다.";
             opinionText.classList.add('text-rose-600');
         }
         if (retryBox) retryBox.classList.remove('hidden');
     };
 
+    const cancelBtn = document.getElementById('opinion-cancel');
+    if (cancelBtn) cancelBtn.classList.remove('hidden');
     try {
-        const response = await fetch('/api/get-ai-opinion', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(request),
-            signal: active.controller.signal
-        });
+        const { text, hasError } = await withAiDeadline(async () => {
+            const response = await fetch('/api/get-ai-opinion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(request),
+                signal: active.controller.signal
+            });
 
-        if (!isCurrent()) return;
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
-        const { text, hasError } = await readAiStream(response, disp => {
             if (!isCurrent()) return;
-            stopOpinionLoader();   // 첫 실제 토큰 도착 → 로더 제거, 본문 표시 시작
-            // 마커 앞(상세 설명)까지만 흘려보낸다. 요약은 완료 시점에 3줄로 정리해
-            // 이 자리로 옮기고, 상세는 접힘 영역으로 내려간다.
-            // 고정 문구를 넣으면 로더까지 걷힌 뒤라 생성이 끝날 때까지 화면이 멈춘 것처럼 보인다
-            // (상세 6~8문장 + 요약 3줄이라 그 시간이 짧지 않다).
-            opinionText.innerText = disp.split('<<<SUMMARY>>>')[0].replace(/\*\*/g, '');
-        });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            // 공용 스트림 리더(app-core.js) — 하트비트 무시·마커 분리 감지 처리 포함
+            return await readAiStream(response, disp => {
+                if (!isCurrent()) return;
+                stopOpinionLoader();   // 첫 실제 토큰 도착 → 로더 제거, 본문 표시 시작
+                // 마커 앞(상세 설명)까지만 흘려보낸다. 요약은 완료 시점에 3줄로 정리해
+                // 이 자리로 옮기고, 상세는 접힘 영역으로 내려간다.
+                // 고정 문구를 넣으면 로더까지 걷힌 뒤라 생성이 끝날 때까지 화면이 멈춘 것처럼 보인다
+                // (상세 6~8문장 + 요약 3줄이라 그 시간이 짧지 않다).
+                opinionText.innerText = disp.split('<<<SUMMARY>>>')[0].replace(/\*\*/g, '');
+            });
+        }, active.controller);
         if (!isCurrent()) return;
         stopOpinionLoader();       // 빈 응답이어도 로더는 정리
         opinionText.innerText = text;
 
-        // AI 오류면 의료 소견이 아님 → 에러로 표시하고 완료 알림·DB저장을 건너뜀
+        // AI 오류면 의료 소견이 아님 → 에러로 표시하고 완료 알림을 건너뜀
         if (hasError) { showFailure(); return; }
 
         opinionText.classList.remove('text-rose-600');
@@ -345,10 +350,15 @@ async function runAiOpinion() {
         refreshReportResults();
     } catch (e) {
         if (!isCurrent()) return;
-        showFailure();
+        const t = translations[state.lang];
+        const key = e.name === 'TimeoutError' ? 'ai_timeout' : active.controller.signal.aborted ? 'ai_cancelled' : 'opinion_error';
+        showFailure(t[key], key);
         return;
     } finally {
-        if (isCurrent()) _activeOpinion = null;
+        if (isCurrent()) {
+            _activeOpinion = null;
+            if (cancelBtn) cancelBtn.classList.add('hidden');
+        }
     }
 
     // ── 여기부터는 소견을 이미 다 받은 뒤의 '부가 동작'이다. 위 try 안에 두면 안 된다:
@@ -356,17 +366,8 @@ async function runAiOpinion() {
     // 알림만 허용), 그 예외가 catch로 흘러 멀쩡히 완성된 소견을 '로컬 AI 서버와 연결이
     // 끊어졌습니다'로 덮어썼다 (S25 Ultra 실기기 재현, 2026-09-02). 부가 동작 실패는 소견과 무관하다.
     notifyOpinionDone();
-    try {
-        // 진단 결과 DB 저장 — 건강정보는 민감정보라 '동의한 경우에만' 저장한다.
-        requestSaveConsent({
-            cataract_result: request.cataract_res,
-            amsler_result: request.amsler_res,
-            chat_symptoms: request.chat_symptoms,
-            gemma_opinion: (state.opinionFullText || (opinionText ? opinionText.innerText : '')).slice(0, 5000)
-        });
-    } catch (e) {
-        console.warn('save-consent UI failed (opinion is intact)', e);
-    }
+    // Presentation build: PDF is the only persistent copy; no server save request.
+
 }
 
 // 완료 알림 — 데스크톱 브라우저에서만 동작한다. 모바일(안드로이드 크롬)은 페이지 컨텍스트의
@@ -380,4 +381,8 @@ function notifyOpinionDone() {
     } catch (e) {
         /* 모바일: Illegal constructor — 무시 */
     }
+}
+
+function stopOpinionRequest() {
+    if (_activeOpinion) _activeOpinion.controller.abort();
 }

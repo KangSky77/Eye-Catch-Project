@@ -12,7 +12,6 @@ from app.api.routes import router
 from app.core.config import PROJECT_ROOT, settings
 from app.core.upload_limit import PhotoUploadBodyLimit
 from app.services import eye_validator, eye_detector
-from app.services.database import init_db_pool, close_db_pool
 from app.services.llm import warmup_ollama
 from app.services.vision import load_trained_weights
 
@@ -59,12 +58,7 @@ async def lifespan(app: FastAPI):
             "그동안은 사진 없이 증상 확인을 이용하세요. "
             "복구: pip install --no-deps facenet-pytorch"
         )
-    # DB 풀 초기화 (실패해도 서버는 정상 기동)
-    try:
-        await init_db_pool()
-        logger.info("✅ DB 풀 초기화 완료!")
-    except Exception:
-        logger.warning("⚠️  DB 연결 실패 — 진단 저장 기능이 비활성화됩니다", exc_info=True)
+    logger.info("결과 개인 보관은 PDF 다운로드")
 
     try:
         yield
@@ -74,7 +68,6 @@ async def lifespan(app: FastAPI):
             task.cancel()
         if warmup_tasks:
             await asyncio.gather(*warmup_tasks, return_exceptions=True)
-        await close_db_pool()
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(PhotoUploadBodyLimit, max_file_bytes=settings.max_upload_size_bytes)

@@ -35,6 +35,7 @@ function setup() {
             return { text: response.text, hasError: !!response.error };
         } };
     vm.createContext(context);
+    context.setTimeout = setTimeout; context.clearTimeout = clearTimeout;
     vm.runInContext(readReportScripts(), context);
     const core = fs.readFileSync(path.join(__dirname, '../static/app-core.js'), 'utf8');
     vm.runInContext(core.slice(core.indexOf('function resetScreeningState()'), core.indexOf('\nfunction openMap()')), context);
@@ -60,7 +61,7 @@ test('urgent reports do not invite or send further AI questions and normal repor
     assert.equal(h.element('followup-box').classList.contains('hidden'), false);
 });
 
-test('detail is collapsed, summary is displayed, and full advice is saved', async () => {
+test('detail is collapsed and full advice stays available for PDF without a server save', async () => {
     const h = setup(), c = h.context;
     c.state.opinionRequest = h.request('surgery');
     const pending = c.runAiOpinion();
@@ -69,13 +70,14 @@ test('detail is collapsed, summary is displayed, and full advice is saved', asyn
     assert.equal(h.element('gemma-opinion-text').innerText, 'First.\nSecond.\nThird.');
     assert.equal(h.element('opinion-detail-text').textContent, 'Detailed advice.');
     assert.equal(h.element('opinion-details').open, false);
-    assert.match(h.saves[0].gemma_opinion, /Detailed advice/);
+    assert.match(c.state.opinionFullText, /Detailed advice/);
+    assert.equal(h.saves.length, 0);
     c.cancelAiOpinion();
     assert.equal(h.element('opinion-details').classList.contains('hidden'), true);
     assert.equal(c.state.opinionFullText, '');
 });
 
-test('empty summary marker falls back to advice and empty advice cannot be saved', async () => {
+test('empty summary marker falls back to advice and empty advice fails safely', async () => {
  const h=setup(), c=h.context;
  c.state.opinionRequest=h.request('fallback');
  let pending=c.runAiOpinion();
@@ -83,7 +85,7 @@ test('empty summary marker falls back to advice and empty advice cannot be saved
  assert.equal(c.state.opinionSummaryText,'Useful advice.');
  pending=c.runAiOpinion();h.calls[1].resolve({ok:true,text:'<<<SUMMARY>>>'});await pending;
  assert.equal(c.state.opinionSummaryText,'');
- assert.equal(h.saves.length,1);
+ assert.equal(h.saves.length,0);
 });
 
 test('PDF waits only while advice is streaming; failed advice and photo-less sessions still export', async () => {
@@ -125,9 +127,8 @@ test('restart aborts pending fetch; late old response cannot overwrite new repor
     h.calls[1].resolve({ ok: true, text: 'new opinion' }); await next;
     h.calls[0].resolve({ ok: true, text: 'old opinion' }); await old;
     assert.equal(h.element('gemma-opinion-text').innerText, 'new opinion');
-    assert.equal(h.saves.length, 1);
-    assert.equal(h.saves[0].cataract_result, 'new');
-    assert.equal(h.saves[0].gemma_opinion, 'new opinion');
+    assert.equal(h.saves.length, 0);
+    assert.equal(c.state.opinionFullText, 'new opinion');
 });
 
 test('restart during token streaming ignores later tokens and completion', async () => {
@@ -161,7 +162,7 @@ test('language change records original request language and displays regeneratio
     assert.equal(h.element('opinion-stale').classList.contains('hidden'), true);
 });
 
-test('failed response offers retry without consent; retry succeeds', async () => {
+test('failed response offers retry; success still never requests server storage', async () => {
     const h = setup(), c = h.context;
     c.state.opinionRequest = h.request('current');
     const first = c.runAiOpinion();
@@ -170,7 +171,7 @@ test('failed response offers retry without consent; retry succeeds', async () =>
     assert.equal(h.element('opinion-retry').classList.contains('hidden'), false);
     const retry = c.runAiOpinion();
     h.calls[1].resolve({ ok: true, text: 'recovered' }); await retry;
-    assert.equal(h.saves.length, 1);
+    assert.equal(h.saves.length, 0);
     assert.equal(h.element('opinion-retry').classList.contains('hidden'), true);
 });
 
@@ -204,3 +205,101 @@ test('PDF completion after timeout does not download a late file', async () => {
  timers[0]();release({});await new Promise(r=>setImmediate(r));
  assert.equal(downloads.length,0,'timed-out PDF downloaded after the error');
 });
+
+test('PDF stays available to open; replacing it and restarting revoke old copies', async()=>{
+ const h=setup(),c=h.context,revoked=[];let next=0;
+ c.hasCompletedScreening=()=>true;c.showToast=()=>{};c.setButtonBusy=()=>()=>{};
+ c.window.scrollTo=()=>{};c.window.scrollX=0;c.window.scrollY=0;
+ c.buildReportPdf=()=>({outputPdf:async()=>({})});
+ c.setTimeout=()=>1;c.clearTimeout=()=>{};
+ c.URL={createObjectURL:()=>`blob:${++next}`,revokeObjectURL:url=>revoked.push(url)};
+ c.document.body={appendChild(){}};c.document.createElement=()=>({click(){},remove(){}});
+ c.downloadPDF();await new Promise(r=>setImmediate(r));
+ assert.equal(h.element('pdf-preview').href,'blob:1');
+ assert.equal(h.element('pdf-download-help').classList.contains('hidden'),false);
+ c.downloadPDF();await new Promise(r=>setImmediate(r));
+ assert.deepEqual(revoked,['blob:1']);
+ assert.equal(h.element('pdf-preview').href,'blob:2');
+ c.clearPdfDownload();assert.deepEqual(revoked,['blob:1','blob:2']);
+ assert.equal(h.element('pdf-download-help').classList.contains('hidden'),true);
+});
+
+test('restarting during PDF generation suppresses a late file and restores controls',async()=>{
+ const h=setup(),c=h.context;let release,restored=0,created=0;
+ c.hasCompletedScreening=()=>true;c.showToast=()=>{};c.setButtonBusy=()=>()=>restored++;
+ c.window.scrollTo=()=>{};c.window.scrollX=0;c.window.scrollY=0;
+ c.buildReportPdf=()=>({outputPdf:()=>new Promise(resolve=>release=resolve)});
+ c.setTimeout=()=>1;c.clearTimeout=()=>{};
+ c.URL={createObjectURL:()=>{created++;return 'blob:late'},revokeObjectURL(){}};
+ c.document.body={appendChild(){}};
+ c.downloadPDF();c.clearPdfDownload();release({});await new Promise(r=>setImmediate(r));
+ assert.equal(created,0);assert.equal(restored,1);
+});
+
+
+test('user cancellation frees opinion controls and ignores a late successful answer', async () => {
+ const h=setup(),c=h.context;
+ c.state.opinionRequest=h.request('cancel');
+ c.translations.ko.ai_cancelled='cancelled';
+ const pending=c.runAiOpinion();
+ c.stopOpinionRequest();
+ await pending;
+ assert.equal(h.calls[0].options.signal.aborted,true);
+ assert.equal(h.element('gemma-opinion-text').innerText,'cancelled');
+ assert.equal(h.element('opinion-retry').classList.contains('hidden'),false);
+ assert.equal(h.element('opinion-cancel').classList.contains('hidden'),true);
+ h.calls[0].resolve({ok:true,text:'late answer'});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.element('gemma-opinion-text').innerText,'cancelled');
+ assert.equal(h.saves.length,0);
+});
+
+test('whole-request timeout frees a stalled header request without losing screening inputs', async () => {
+ const h=setup(),c=h.context;let timeout;
+ c.setTimeout=(fn,ms)=>{if(ms===180000)timeout=fn;return 1};c.clearTimeout=()=>{};
+ c.translations.ko.ai_timeout='timed out';
+ c.state.aiResultCode='risk';c.state.opinionRequest=h.request('timeout');
+ const pending=c.runAiOpinion();timeout();await pending;
+ assert.equal(h.calls[0].options.signal.aborted,true);
+ assert.equal(h.element('gemma-opinion-text').innerText,'timed out');
+ assert.equal(c.state.aiResultCode,'risk');
+ assert.equal(h.element('opinion-retry').classList.contains('hidden'),false);
+});
+
+
+test('cancel and timeout messages follow a later language switch',()=>{
+ const h=setup(),c=h.context;
+ c.translations.en.ai_cancelled='cancelled';c.translations.en.ai_timeout='timed out';
+ c.state.lang='en';c.state.opinionErrorKey='ai_cancelled';c.state.followupErrorKey='ai_timeout';
+ c.refreshAiFailureMessages();
+ assert.equal(h.element('gemma-opinion-text').innerText,'cancelled');
+ assert.equal(h.element('followup-response').innerText,'timed out');
+});
+
+for (const failure of ['cancel', 'timeout', 'http', 'stream']) {
+ test(`follow-up ${failure} preserves a new draft and restores an untouched failed question`, async()=>{
+  for (const draft of ['', 'next question']) {
+   const h=setup(),c=h.context;
+   const input=h.element('user-followup-input');
+   input.value='original question';
+   let timeout;
+   c.setTimeout=(fn,ms)=>{if(ms===180000)timeout=fn;return 1};c.clearTimeout=()=>{};
+   c.translations.ko.srv_err='connection failed';
+   c.translations.en.srv_err='translated failure';
+   const pending=c.askGemmaMore();
+   input.value=draft;
+   if(failure==='cancel')c.stopFollowupRequest();
+   if(failure==='timeout')timeout();
+   if(failure==='http')h.calls[0].resolve({ok:false,status:503});
+   if(failure==='stream')h.calls[0].resolve({ok:true,text:'AI generation failed',error:true});
+   await pending;
+   assert.equal(input.value,draft||'original question');
+   assert.equal(h.element('followup-send-btn').disabled,false);
+   assert.equal(h.element('followup-cancel').classList.contains('hidden'),true);
+   if(failure==='stream') {
+    c.state.lang='en';c.refreshAiFailureMessages();
+    assert.equal(h.element('followup-response').innerText,'translated failure');
+   }
+  }
+ });
+}

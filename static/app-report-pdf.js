@@ -46,10 +46,10 @@ function buildReportPdf() {
     // PDF 라벨을 선택 언어로 (한국어 폴백)
     const t = translations[state.lang] || {};
     const L = {
-        title:   t.pdf_doc_title || "Eye-Catch 정밀 진단 리포트",
+        title:   t.pdf_doc_title || "Eye-Catch 검사 결과 리포트",
         issued:  t.pdf_issued    || "발급일자",
         s1:      photoSectionLabel(t, t.pdf_s1 || "1. 백내장 AI 분석 결과"),
-        s2:      t.pdf_s2        || "2. 황반변성 자가진단 (Amsler Grid)",
+        s2:      t.pdf_s2        || "2. 황반변성 자가검사 (Amsler Grid)",
         s3:      t.pdf_s3        || "3. AI 문진 주요 소견",
         s4:      triage?.level === 'urgent' ? ('4. ' + t.report_urgent_title)
                     : (t.pdf_s4 || "4. 종합 AI 소견서 (Powered by Gemma)"),
@@ -57,7 +57,7 @@ function buildReportPdf() {
         finds:   t.find_title    || "검사 요약 해석",
         findNote: t.find_disclaimer || "",
         urgentNote: t.opinion_urgent_note || "",
-        footer:  t.pdf_footer    || "본 리포트는 인공지능 기반의 자가진단 보조 자료입니다.<br>정확한 진단 및 처방을 위해서는 반드시 안과 전문의와 상담하시기 바랍니다."
+        footer:  t.pdf_footer    || "본 리포트는 인공지능 기반의 자가검사 보조 자료입니다.<br>정확한 진단 및 처방을 위해서는 반드시 안과 전문의와 상담하시기 바랍니다."
     };
 
     const printDiv = document.createElement('div');
@@ -144,7 +144,7 @@ function buildReportPdf() {
 
     const opt = {
         margin: [15, 12, 15, 12],
-        filename: 'Eye-Catch_Official_Report.pdf',
+        filename: 'Eye-Catch_Screening_Report.pdf',
         image: { type: 'jpeg', quality: 0.95 },
         // windowWidth는 절대 넣지 말 것: 실제 창 폭과 어긋나며 가로 밀림 발생
         html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
@@ -163,6 +163,16 @@ function cleanupPdfHost() {
 }
 
 let _pdfBusy = false;
+let _pdfObjectUrl = null, _cancelPdfExport = null;
+
+function clearPdfDownload() {
+    if (_cancelPdfExport) _cancelPdfExport();
+    if (_pdfObjectUrl) { URL.revokeObjectURL(_pdfObjectUrl); _pdfObjectUrl = null; }
+    const box = document.getElementById('pdf-download-help');
+    if (box) box.classList.add('hidden');
+    const link = document.getElementById('pdf-preview');
+    if (link) link.removeAttribute('href');
+}
 // 구형 기기에서는 캡처만 십수 초가 걸리기도 한다. 넉넉히 두되, 끝은 반드시 있어야 한다.
 const PDF_TIMEOUT_MS = 60000;
 
@@ -203,10 +213,12 @@ function downloadPDF() {
     const complete = () => {
         if (settled) return false;
         settled = true;
+        _cancelPdfExport = null;
         if (timeoutId !== null) clearTimeout(timeoutId);
         restore();
         return true;
     };
+    _cancelPdfExport = complete;
     const fail = err => {
         if (!complete()) return;
         showToast(t.pdf_err || "Could not create the PDF. Please try again.", 'error');
@@ -224,14 +236,19 @@ function downloadPDF() {
             // timeout instead of downloading it after an error or a new attempt.
             if (settled) return;
             const url = URL.createObjectURL(blob);
+            if (_pdfObjectUrl) URL.revokeObjectURL(_pdfObjectUrl);
+            _pdfObjectUrl = url;
+            const preview = document.getElementById('pdf-preview');
+            if (preview) preview.href = url;
+            const help = document.getElementById('pdf-download-help');
+            if (help) help.classList.remove('hidden');
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'Eye-Catch_Official_Report.pdf';
+            a.download = 'Eye-Catch_Screening_Report.pdf';
             document.body.appendChild(a);
             a.click();
             a.remove();
-            // 저장 대화상자가 blob을 읽을 시간을 준 뒤 회수한다.
-            setTimeout(() => URL.revokeObjectURL(url), 60000);
+            // Keep one downloadable PDF available until results change or a new PDF replaces it.
             complete();
         }).catch(fail);
     } catch (err) {         // html2pdf 미로딩 등 동기 실패도 버튼이 잠긴 채로 남지 않게

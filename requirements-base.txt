@@ -22,9 +22,6 @@ httpx==0.28.1              # Ollama 스트리밍 호출
 pillow==12.2.0             # 이미지 처리
 numpy==2.4.4
 
-# 선택: PostgreSQL 진단 저장 (없어도 앱은 동작)
-asyncpg==0.31.0
-
 # facenet-pytorch(MTCNN)가 import 시점에 요구 — facenet 자체는 --no-deps로 별도 설치
 # (구버전 torch를 끌고와 설치된 torch를 다운그레이드하려 하기 때문. requirements.txt 참고)
 requests==2.34.2

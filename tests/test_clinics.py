@@ -36,3 +36,19 @@ async def test_키없어도_OSM결과로_폴백(monkeypatch):
     out = await clinics.search_eye_clinics(37.5, 127.0)
     assert out["source"] == "overpass"
     assert out["clinics"] == osm_result
+
+
+@pytest.mark.anyio
+async def test_eye_clinics_survive_result_limit_even_when_optician_is_closer(monkeypatch):
+    import httpx
+    class FakeClient:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def post(self, url, **kwargs):
+            return httpx.Response(200, request=httpx.Request('POST', url), json={'elements': [
+                {'lat':37.5, 'lon':127, 'tags':{'name':'Optician', 'shop':'optician'}},
+                {'lat':37.51, 'lon':127, 'tags':{'name':'Clinic', 'healthcare':'ophthalmologist'}}]})
+    monkeypatch.setattr(clinics.httpx, 'AsyncClient', FakeClient)
+    result = await clinics._search_overpass(37.5,127,size=1)
+    assert [c['name'] for c in result] == ['Clinic']

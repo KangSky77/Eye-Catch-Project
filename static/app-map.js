@@ -7,7 +7,8 @@ const DEFAULT_CENTER = [37.5012, 127.0396];   // 위치 거부 시 기본(강남
 // 목록 아이콘 — 기기마다 모양이 달라지는 이모지 대신 앱 전체와 같은 선형 SVG
 const CLINIC_ICON = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 21V8.6l8-5 8 5V21"/><path d="M9.5 21v-5h5v5"/><path d="M12 7.4v3.4M10.3 9.1h3.4"/></svg>';
 const GLOBE_ICON = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.2 2.4 3.4 5.4 3.4 8.5S14.2 18.1 12 20.5c-2.2-2.4-3.4-5.4-3.4-8.5S9.8 5.9 12 3.5Z"/></svg>';
-let _map = null, _userMarker = null, _clinicLayer = null;
+let _map = null, _userMarker = null, _clinicLayer = null, _mapTiles = null;
+let _lastClinicSearch = null;
 
 function ensureMap() {
     if (_map) { _map.invalidateSize(); return _map; }
@@ -23,13 +24,13 @@ function ensureMap() {
     });
     // 지도 '타일'은 성격상 로컬 번들에 넣을 수 없다(전 세계 이미지).
     // 오프라인이면 빈 회색 화면이 남는데, 그걸 방치하면 앱이 고장난 것처럼 보인다.
-    // → 타일 로드 실패를 감지해 안내로 대체한다. 나머지 기능(검사·문진·리포트·PDF)은 영향 없음.
-    let tileFailed = false;
-    tiles.on('tileerror', () => {
-        if (tileFailed) return;
-        tileFailed = true;
-        showMapOffline();
-    });
+    // → 모든 타일이 실패하면 재시도 안내를 겹쳐 표시하고 기존 지도는 보존한다. 나머지 기능(검사·문진·리포트·PDF)은 영향 없음.
+    let loaded = 0, failed = 0;
+    _mapTiles = tiles;
+    tiles.on('loading', () => { loaded = 0; failed = 0; });
+    tiles.on('tileload', () => { loaded++; clearMapOffline(); });
+    tiles.on('tileerror', () => { failed++; });
+    tiles.on('load', () => { if (!loaded && failed) showMapOffline(); });
     tiles.addTo(_map);
     _clinicLayer = L.layerGroup().addTo(_map);
 
@@ -49,27 +50,37 @@ function ensureMap() {
     return _map;
 }
 
-const MAP_OFFLINE_ICON = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6.5 6-2.5 6 2.5 6-2.5v13l-6 2.5-6-2.5-6 2.5v-13Z"/><path d="M9 4v13M15 6.5v13"/></svg>';
-
-/** 타일을 못 받아오는 환경(오프라인·발표장 네트워크)에서 지도를 안내로 대체. */
+/** 지도·마커를 보존한 채 연결 실패 안내를 겹쳐 표시한다. */
 function showMapOffline() {
-    const box = document.getElementById('leaflet-map');
+    const box = document.querySelector('.map-embed');
     const t = translations[state.lang];
-    if (!box) return;
-    clearMapExample();
-    box.innerHTML = '';
+    if (!box || document.getElementById('map-recovery')) return;
     const wrap = document.createElement('div');
-    wrap.className = 'map-offline';
-    const icon = document.createElement('div');
-    icon.className = 'map-offline-ico';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = MAP_OFFLINE_ICON;   // 고정 상수 (앱 전체 아이콘 규칙과 동일한 선형 SVG)
+    wrap.id = 'map-recovery';
+    wrap.className = 'map-recovery';
+    wrap.setAttribute('role', 'status');
     const msg = document.createElement('p');
-    msg.textContent = t.map_offline || '지도를 불러올 수 없습니다. 인터넷 연결을 확인해주세요. 나머지 검사 기능은 정상 동작합니다.';
-    wrap.appendChild(icon); wrap.appendChild(msg);
+    msg.setAttribute('data-i18n', 'map_offline');
+    msg.textContent = t.map_offline;
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.setAttribute('data-i18n', 'map_retry');
+    retry.textContent = t.map_retry;
+    retry.onclick = retryMapTiles;
+    wrap.append(msg, retry);
     box.appendChild(wrap);
-    const status = document.getElementById('map-status');
-    if (status) status.innerText = t.map_offline_short || '지도 오프라인';
+}
+
+function clearMapOffline() {
+    const panel = document.getElementById('map-recovery');
+    if (panel) panel.remove();
+}
+
+function retryMapTiles() {
+    const map = ensureMap();
+    if (!map || !_mapTiles) return;
+    map.invalidateSize();
+    _mapTiles.redraw();
 }
 
 function clearMapExample() {
@@ -162,6 +173,7 @@ async function fetchClinics(lat, lng) {
     const status = document.getElementById('map-status');
     const t = translations[state.lang];
     status.innerText = t.map_searching || "주변 안과를 찾는 중...";
+    _lastClinicSearch = null;
     // Once a new location is requested, old pins/list entries are no longer current.
     if (_clinicLayer) _clinicLayer.clearLayers();
     const list = document.getElementById('clinic-list');
@@ -187,12 +199,9 @@ async function fetchClinics(lat, lng) {
             dist: c.dist || haversine(lat, lng, c.lat, c.lng),
             address: c.address || '', phone: c.phone || ''
         }));
-        items.sort((a, b) => a.dist - b.dist);
-        renderClinics(items, lat, lng);
-        const currentT = translations[state.lang];
-        status.innerText = items.length
-            ? (currentT.map_found || "주변 안과 {n}곳을 찾았어요.").replace('{n}', items.length)
-            : (currentT.map_none || "주변에서 안과를 찾지 못했어요. 전체 지도에서 검색해 주세요.");
+        items.sort((a, b) => Number(b.type === 'eye_clinic') - Number(a.type === 'eye_clinic') || a.dist - b.dist);
+        _lastClinicSearch = {items, lat, lng};
+        refreshMapResults();
     } catch (e) {
         if (requestId !== _clinicRequestId) return;
         status.innerText = translations[state.lang].map_search_err || "안과 검색에 실패했어요. 전체 지도에서 검색해 주세요.";
@@ -203,16 +212,27 @@ async function fetchClinics(lat, lng) {
     }
 }
 
+function refreshMapResults() {
+    if (!_lastClinicSearch) return;
+    const {items, lat, lng} = _lastClinicSearch;
+    const include = !!document.getElementById('clinic-include-services')?.checked;
+    const visible = include ? items : items.filter(c => c.type === 'eye_clinic');
+    renderClinics(visible, lat, lng);
+    const t = translations[state.lang];
+    document.getElementById('map-status').innerText = visible.length
+        ? (include ? t.map_found_services : t.map_found).replace('{n}', visible.length) : t.map_none;
+}
+
 function renderClinics(items, lat, lng) {
     const map = ensureMap();
     const t = translations[state.lang], ko = state.lang === 'ko';
-    _clinicLayer.clearLayers();
+    if (_clinicLayer) _clinicLayer.clearLayers();
     const box = document.getElementById('clinic-list');
     box.innerHTML = '';
     if (!items.length) { renderFallbackLinks(lat, lng); return; }
 
     items.forEach(c => {
-        L.marker([c.lat, c.lng]).addTo(_clinicLayer)
+        if (map && _clinicLayer) L.marker([c.lat, c.lng]).addTo(_clinicLayer)
             .bindPopup(`<b>${escapeHTML(c.name)}</b><br>${fmtDist(c.dist)}`);
         const dir = ko
             ? `https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${c.lat},${c.lng}`
@@ -236,15 +256,12 @@ function renderClinics(items, lat, lng) {
         name.textContent = c.name;
         const desc = document.createElement('span');
         desc.className = 'ci-desc';
-        const typeLabel = c.type === 'optician'
-            ? (ko ? '안경원' : 'Optician')
-            : c.type === 'optometrist'
-                ? (ko ? '검안 서비스' : 'Optometrist')
-                : (ko ? '안과' : 'Eye clinic');
-        desc.textContent = c.address || `${typeLabel} · ${ko ? '눌러서 지도에서 보기' : 'tap to view on map'}`;
+        const typeLabel = c.type === 'optician' ? t.clinic_optician
+            : c.type === 'optometrist' ? t.clinic_optometrist : t.clinic_eye;
+        desc.textContent = `${typeLabel}${c.address ? ' · ' + c.address : ''}`;
         info.appendChild(name);
         info.appendChild(desc);
-        info.onclick = () => { map.setView([c.lat, c.lng], 17); map.closePopup(); };
+        info.onclick = () => { if (map) { map.setView([c.lat, c.lng], 17); map.closePopup(); } };
 
         const dist = document.createElement('span');
         dist.className = 'ci-dist';
@@ -261,9 +278,9 @@ function renderClinics(items, lat, lng) {
     });
 
     // 내 위치 + 모든 안과가 한 화면에 보이도록 줌 맞춤
-    const layers = _clinicLayer.getLayers().slice();
+    const layers = _clinicLayer ? _clinicLayer.getLayers().slice() : [];
     if (_userMarker) layers.push(_userMarker);
-    try { map.fitBounds(L.featureGroup(layers).getBounds().pad(0.2)); } catch (e) {}
+    try { if (map && layers.length) map.fitBounds(L.featureGroup(layers).getBounds().pad(0.2)); } catch (e) {}
 }
 
 // Overpass 실패/무결과 시 외부 검색 링크로 폴백
@@ -282,4 +299,9 @@ function renderFallbackLinks(lat, lng) {
         + `<div style="flex:1;min-width:0"><p class="ci-name">${ko ? '구글맵 안과 검색' : 'Google Maps – Eye Clinics'}</p>`
         + `<p class="ci-desc">${ko ? '내 좌표 기준 안과 탐색' : 'Search clinics around you'}</p></div>`
         + `<a href="${google}" target="_blank" rel="noopener">${label}</a></div>`;
+}
+
+if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('offline', () => { if (_map) showMapOffline(); });
+    window.addEventListener('online', () => { if (_map && document.getElementById('map-recovery')) retryMapTiles(); });
 }

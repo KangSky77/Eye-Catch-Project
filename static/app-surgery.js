@@ -424,7 +424,8 @@ function startScreening() {
  state.gateAnswers = {};
  resetScreeningState();
  applyTrack();
- showTab('tab-test'); nextStep('step-surgery');
+ showTab('tab-test');
+ nextStep('step-surgery');
 }
 
 /** 시작 전 단 하나의 질문: 원인과 무관하게 눈 수술을 받은 적이 있는가.

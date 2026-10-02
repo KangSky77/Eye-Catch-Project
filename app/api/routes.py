@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from urllib.parse import urlsplit, urlunsplit
+import httpx
 from fastapi import APIRouter, File, Form, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
@@ -10,8 +12,7 @@ from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, g
 from app.services import questions as followup_questions
 from app.services.clinics import search_eye_clinics
 from app.services.plain_language import rewrite_findings
-from app.services.database import save_diagnosis
-from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, SaveDiagnosisRequest, PlainFindingsRequest, QuestionTranslationRequest
+from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, PlainFindingsRequest, QuestionTranslationRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,6 +34,34 @@ async def readyz():
             or not await run_in_threadpool(eye_validator.is_ready)):
         return JSONResponse(status_code=503, content={"status": "not_ready", "model": "unavailable"})
     return {"status": "ready", "model": "ready"}
+
+
+@router.get("/api/service-status")
+async def service_status():
+    """Presentation checks, separate from photo readiness. No secrets or remote addresses returned."""
+    photo = (vision.weights_loaded
+             and await run_in_threadpool(eye_detector.is_ready)
+             and await run_in_threadpool(eye_validator.is_ready))
+    ollama = False
+    try:
+        parts = urlsplit(settings.ollama_url)
+        tags_url = urlunsplit((parts.scheme, parts.netloc, "/api/tags", "", ""))
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.get(tags_url)
+            response.raise_for_status()
+            models = response.json().get("models", [])
+            names = {m.get("name", m.get("model", "")) for m in models}
+            model = settings.ollama_model
+            ollama = model in names or (":" not in model and model + ":latest" in names)
+    except Exception:
+        pass
+    ready = bool(photo and ollama)
+    return JSONResponse(status_code=200 if ready else 503, content={
+        "status": "ready" if ready else "degraded",
+        "services": {"photo": "ready" if photo else "unavailable",
+                     "ollama": "ready" if ollama else "unavailable"},
+        "note": "Ollama model availability checked; run a real generation before presenting.",
+    })
 
 
 async def _limited_stream(stream):
@@ -140,21 +169,3 @@ async def plain_findings(req: PlainFindingsRequest):
     준비된 표현이 없는 줄은 원문을 유지하며 LLM을 호출하지 않는다.
     """
     return {"lines": await rewrite_findings(req.findings, req.lang)}
-
-
-@router.post("/api/save-diagnosis")
-async def save_diagnosis_endpoint(req: SaveDiagnosisRequest):
-    try:
-        record_id = await save_diagnosis(
-            req.cataract_result,
-            req.amsler_result,
-            req.chat_symptoms,
-            req.gemma_opinion,
-            save_key=req.save_key,
-        )
-        return {"status": "saved", "id": record_id}
-    except Exception:
-        # DB 연결 실패 시 앱 전체가 죽지 않도록 소프트 실패
-        # 내부 에러 상세(호스트명 등)는 클라이언트에 노출하지 않고 서버 로그에만 남김
-        logger.error("⚠️  진단 저장 실패", exc_info=True)
-        return {"status": "skipped"}
