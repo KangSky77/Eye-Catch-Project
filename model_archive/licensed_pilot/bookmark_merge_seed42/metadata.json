@@ -1,0 +1,56 @@
+{
+  "version": "bookmark-merge-reviewed-20261003",
+  "backbone": "efficientnet_b0",
+  "class_to_idx": {
+    "0_normal": 0,
+    "1_cataract": 1
+  },
+  "seed": 42,
+  "batch_size": 16,
+  "manifest_sha256": "547af122003f83c27e6e6b23da3a71c49aca4a13fadcbeb74cdb44cf51eedabe",
+  "baseline_weights_sha256": "044e9f14552131b02857a20d737fa130a50090ca8a6b0161ecb87f1e4a37a2cd",
+  "weights_sha256": "af3fb6b5e19d2a7ea9331a88da2f74914c69bab7abed6c35108a909ade4025e8",
+  "best_val_metrics": {
+    "loss": 0.05768874427978543,
+    "accuracy": 0.9855072463768116,
+    "sensitivity": 0.9767441860465116,
+    "specificity": 1.0,
+    "cataract_precision": 1.0,
+    "cataract_f1": 0.988235294117647,
+    "balanced_accuracy": 0.9883720930232558,
+    "auc": 0.9986583184257602,
+    "cm": {
+      "tn": 52,
+      "fp": 0,
+      "fn": 2,
+      "tp": 84
+    }
+  },
+  "initialization": "torchvision ImageNet1K V1 (educational research; upstream conditions separately recorded)",
+  "deployed": false,
+  "test_evaluated": true,
+  "image_size": 224,
+  "permission_policy": "publisher-declared-research; upstream permissions unresolved",
+  "scope": "research feasibility only; not rights-cleared for presentation/public distribution",
+  "sampler_policy": "class and original-group balanced",
+  "training_recipe": {
+    "head_epochs": 5,
+    "finetune_max_epochs": 20,
+    "lr_finetune": 0.0001
+  },
+  "manifest_path": "data\\cataract-bookmark-merge-reviewed-manifest-2026-10-03.json",
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "comparison_path": "data\\cataract-bookmark-merge-comparison-2026-10-03.json",
+  "comparison_sha256": "955ed49aea4180996534251ce11a8424be936f46542841aced09a89ef3e12ccb"
+}

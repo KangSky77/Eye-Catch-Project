@@ -1,0 +1,47 @@
+{
+  "version": "licensed-commons-pilot-20261002",
+  "backbone": "efficientnet_b0",
+  "class_to_idx": {
+    "0_normal": 0,
+    "1_cataract": 1
+  },
+  "seed": 42,
+  "batch_size": 8,
+  "manifest_sha256": "945e9c167faf1bdd113245749a77fb0ad9a511e347b2562a897604422e74399d",
+  "baseline_weights_sha256": "044e9f14552131b02857a20d737fa130a50090ca8a6b0161ecb87f1e4a37a2cd",
+  "weights_sha256": "9f3b460dd590aac2b568689289565da5e85f8cddc126fd3fe6ecf8f1565066e8",
+  "best_val_metrics": {
+    "loss": 0.14536193438938685,
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0,
+    "cataract_precision": 1.0,
+    "cataract_f1": 1.0,
+    "balanced_accuracy": 1.0,
+    "auc": 1.0,
+    "cm": {
+      "tn": 23,
+      "fp": 0,
+      "fn": 0,
+      "tp": 5
+    }
+  },
+  "initialization": "torchvision ImageNet1K V1 (educational research; upstream conditions separately recorded)",
+  "deployed": false,
+  "test_evaluated": true,
+  "comparison_path": "data/licensed-cataract-comparison-2026-10-02.json",
+  "comparison_sha256": "e0681f422b3b8fe64a5d82dc78b552c6aaf4989baa8df01dd3a7d3e16bfa0da4",
+  "image_size": 224,
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  }
+}

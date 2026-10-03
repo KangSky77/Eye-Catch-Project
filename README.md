@@ -27,7 +27,7 @@
 | [📊 모델 성능](#-모델-성능) | v6/v5/v4/v3 실측 지표와 선택 근거 |
 | [⚠️ 모델의 한계](#️-모델의-한계-읽고-시작하세요) | **먼저 읽어야 할 것** |
 | [🔦 플래시 반사 대응](#-플래시-반사-대응) | 오탐 원인과 차단 방법 |
-| [📜 데이터 출처 및 라이선스](#-데이터-출처-및-라이선스) | 출처별 위험도 전수 공개 |
+| [📜 데이터 출처 및 라이선스](#-데이터-출처-및-라이선스) | 후보 실험 결과와 출처별 확인 상태 |
 | [🔍 API 엔드포인트](#-api-엔드포인트) | 상태 점검 2개 + 기능 6개 라우트 |
 | [🛠️ 개발 팁](#️-개발-팁) | 테스트·CI·캐시·오프라인 |
 | [📱 모바일·접근성](#-모바일접근성) | 글자 크기·카메라·폴더블·시야 체험 |
@@ -683,48 +683,85 @@ OOD 게이트가 안저사진을 '눈'으로 통과시킵니다(실측 eye_score
 
 ## 📜 데이터 출처 및 라이선스
 
-> ⚠️ **저작권은 등록 없이 자동으로 발생합니다.** 라이선스 표시가 없는("Unknown") 데이터는
-> "자유롭게 써도 된다"는 뜻이 아니라 **"아무 허락도 받지 않았다"**는 뜻입니다 — 기본값은
-> 허용이 아니라 금지입니다. 이 표는 그 기준으로 출처별 위험도를 정리한 것입니다.
+### 현재 상태 (2026-10-03)
 
-### 백내장 안구 사진 (9개 출처 + 검증 중 추가로 발견된 1건)
+**앱은 기존 v6를 사용하며, 새 후보는 별도 실험으로 보관합니다.** Commons 사진 177장으로
+후보 3개를 학습한 뒤, 북마크 자료를 합쳐 정리한 961장으로 후보 2개를 추가 학습·비교했습니다.
+961장은 train 797장 · validation 138장 · test 26장으로 나뉘며, 원본·근접 그룹은 총 480개입니다.
 
-| # | 데이터셋 | 라이선스 | 판정 | 왜 그런가 |
-|---|---|---|---|---|
-| 1 | [Cataract (kershrita)](https://www.kaggle.com/datasets/kershrita/cataract) | MIT | 🟢 안전 | 출처 표기만 하면 자유 사용 명시적 허락 |
-| 2 | Cataract Classification Dataset (미확인 출처) | CC BY-SA 4.0 | 🟡 조건부 | ShareAlike — **데이터셋 자체를 재배포**할 때만 동일 라이선스 적용 의무. 학습 전용 사용은 상대적으로 안전 |
-| 3 | [Eye Disease Classifier EfficientNet-B3 (rrohit1289)](https://www.kaggle.com/datasets/rrohit1289/eye-disease-classifier-efficientnet-b3) | CC BY 4.0 | 🟢 안전 | 출처 표기만 하면 자유 사용 명시적 허락 |
-| 4 | [Cataract Classification Dataset (sheemazain)](https://www.kaggle.com/datasets/sheemazain/cataract-classification-dataset-in-ds) | Apache 2.0 | 🟢 안전 | MIT와 동등(+특허 보호 조항), 우리 사용엔 차이 없음. **phash 검증: 410/410(100%) 완전일치** |
-| 5 | [Cataract image (alexandramohammed)](https://www.kaggle.com/datasets/alexandramohammed/cataract-image) | Unknown | 🔴 위험 | 허락 명시 없음 — 기본값은 전부 금지 |
-| 6 | Cataract Classification Dataset (미확인 출처) | Apache 2.0 | 🟢 안전 | 출처 표기만 하면 자유 사용 명시적 허락 |
-| 7 | [cataract (hemooredaoo)](https://www.kaggle.com/datasets/hemooredaoo/cataract) | Unknown | 🔴 위험 | 허락 명시 없음 — 기본값은 전부 금지 |
-| 8 | [Cataract dataset (nandanp6)](https://www.kaggle.com/datasets/nandanp6/cataract-image-dataset) | Data files © Original Authors | 🔴 위험 | 원저작자가 권리 보유를 명시, 사용 허락은 없음. **phash 검증: 306장 실사용 확인, 라벨링 오류 2건 발견·수정함(아래 참고)** |
-| 9 | [Eye Diseases Classification (orvile)](https://www.kaggle.com/datasets/orvile/eye-diseases-classification) | CC BY 4.0 | 🟢 안전 | 출처 표기만 하면 자유 사용 명시적 허락 |
-| 10 | [cataract-classification-dataset (akshayramakrishnan28)](https://www.kaggle.com/datasets/akshayramakrishnan28/cataract-classification-dataset) | Unknown | 🔴 위험 | 제목이 #2·#6과 같아 처음엔 그 중 하나로 추정했으나, 실제 라이선스가 Unknown으로 확인되어 별도 행으로 분리. **phash 검증: 32/32(100%) 완전일치, 실사용 확인** |
+합본에 포함한 MIT·Apache 표기는 **업로더의 선언**입니다. 원본 사진의 저작자와 이용 허락까지
+확인한 것은 아니므로, 실험 완료를 ‘라이선스 문제 해결’이나 ‘공개 배포 권한 확보’로 표현하지 않습니다.
+사진·가중치는 Git에 올리지 않고 출처표, 분할, 해시, 학습 조건과 비교 결과를 보존합니다.
 
-> #1·#3·#4·#5·#7·#8·#9·#10은 링크 확정. **#1·#4·#8·#10은 다운로드해 phash로 직접 대조까지
-> 검증**(실제 사용 확정). **#2·#6("Cataract Classification Dataset", CC BY-SA 4.0 / Apache 2.0)은
-> 여전히 정확한 링크를 못 찾았습니다** — `akshayramakrishnan28`도 같은 제목이라 후보로 봤었으나
-> 라이선스가 Unknown으로 나와 둘 중 어느 쪽도 아닌 것으로 정정, 별도 #10으로 분리했습니다
-> (제목만 보고 출처를 단정하면 안 된다는 사례로 기록해둠).
+### 같은 26장으로 비교한 결과
+
+분류기 단독에 동일 전처리와 현재 앱 설정(TTA 끔, 위험 기준 50점)을 적용한 탐색적 비교입니다.
+
+| 모델 | 백내장 4장 중 위험 점수(≥50) | 정상 연구 라벨 22장 중 위험 오탐 |
+|---|---:|---:|
+| 기존 v6 | 4 | 1 |
+| Commons 177장 전이학습 후보 | 3 | 0 |
+| 합본 961장 전이학습 후보 | **4** | **0** |
+| 합본 961장 무작위 초기화 후보 | 3 | 3 |
+
+앱의 눈 검사·크롭·반사·안정성 검사까지 적용하면 합본 전이학습 후보의 백내장 4장은
+**위험 2장 · 반사 보류 1장 · 입력 거부 1장**입니다. 분류기 점수와 앱의 최종 안내는 구분합니다.
+백내장 test가 4장뿐이고 정상 라벨도 임상 진단이 아니며, 환자 단위 독립성까지 증명되지 않았습니다.
+이 결과는 실제 휴대폰 성능이나 임상 정확도, 기존 모델보다 우수하다는 근거로 사용할 수 없습니다.
+
+| 기록 | 내용 |
+|---|---|
+| [출처·라이선스 검토](docs/data-licensing-review-2026-10-02.md) | 기존 자료의 권한 확인 상태와 남은 조건 |
+| [Commons 177장 실험](docs/licensed-cataract-experiment-2026-10-02.md) | 파일별 조건, 후보 3개와 기존 v6 비교 |
+| [합본 961장 실험](docs/cataract-bookmark-merge-experiment-2026-10-03.md) | 출처 선택, 그룹 분할, 후보 2개와 앱 판독 결과 |
+| [Commons 출처표](data/licensed-cataract-attributions-2026-10-02.csv) · [합본 출처표](data/cataract-bookmark-merge-attributions-2026-10-03.csv) | 파일별 출처·표기·수정 내역; Kaggle author는 업로더 |
+
+### 북마크 출처와 이번 실험의 처리
+
+크롬 북마크에서 백내장 관련 8개 데이터셋과 Human Faces 1개를 확인했습니다.
+아래 조건은 제공자의 확인 당시 표기이며, 개별 사진의 권한 증명과는 구분합니다.
+
+| 출처 | 제공자 표기 | 이번 합본 처리 |
+|---|---|---|
+| [Cataract — kershrita](https://www.kaggle.com/datasets/kershrita/cataract) | MIT | 정리 후 374장 포함; 원본 권한 미확정 |
+| [Cataract Classification — sheemazain](https://www.kaggle.com/datasets/sheemazain/cataract-classification-dataset-in-ds) | Apache 2.0 | 410장 포함; 증강본은 같은 원본 그룹으로 묶음; 원본 권한 미확정 |
+| [Cataract Classification — akshayramakrishnan28](https://www.kaggle.com/datasets/akshayramakrishnan28/cataract-classification-dataset) | CC BY-SA 4.0 | 위 410장과 이미지 바이트 동일; 중복 추가하지 않음 |
+| [EfficientNet-B3 — rrohit1289](https://www.kaggle.com/datasets/rrohit1289/eye-disease-classifier-efficientnet-b3) | CC BY 4.0 | 공개 파일이 가중치·설정뿐이므로 사진 자료로 사용하지 않음 |
+| [Cataract image — alexandramohammed](https://www.kaggle.com/datasets/alexandramohammed/cataract-image) | Unknown | 허락 확인 전 제외 |
+| [cataract — hemooredaoo](https://www.kaggle.com/datasets/hemooredaoo/cataract) | Unknown | 허락 확인 전 제외 |
+| [Cataract dataset — nandanp6](https://www.kaggle.com/datasets/nandanp6/cataract-image-dataset) | © Original Authors | 이용 허락 미확정으로 제외 |
+| [Eye Diseases — orvile](https://www.kaggle.com/datasets/orvile/eye-diseases-classification) | CC BY 4.0 | Google 검색 수집 설명; 원본 권한 미확정으로 제외 |
+| [Human Faces — ashwingupta3012](https://www.kaggle.com/datasets/ashwingupta3012/human-faces) | CC0 | 웹 수집·GAN 사진 혼합; 원본 권한과 임상 정상 라벨 미확정으로 제외 |
+
+동일한 410장에 Apache와 CC BY-SA 표기가 함께 존재합니다. 한 표기가 다른 표기를 대체하거나
+업로더가 원본 사진의 권리를 확보했다는 결론을 내리지 않습니다. Unknown도 연구용 허락으로 간주하지 않습니다.
+Commons 177장의 파일별 조건과 합본의 업로더 선언 연구 정책은 도구와 메타데이터에서도 구분합니다.
+
+과거 README의 출처 미확정 2개 항목은 현재 북마크에 별도 URL이 없습니다. 기존 항목의 중복 기록인지도
+확정하지 않았습니다. 과거 pHash 대조 수치는 현재 제외 대상의 정확한 장수로 재사용하지 않습니다.
+[북마크 대조 기록](data/chrome-dataset-source-review-2026-10-03.json)과
+[공식 API 확인 기록](data/license-review-2026-10-02.json)에 근거를 남겼습니다.
+
+<details>
+<summary>기존 모델·입력 검사기의 데이터 이력</summary>
 
 ### 밝은 홍채 정상 눈 보강 데이터 (v5)
 
 | # | 출처 | 라이선스 | 판정 | 왜 그런가 |
 |---|---|---|---|---|
-| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 125장, FAL·Copyrighted free use 5장 | 🟢 안전 | **201장 전부 자유 라이선스이며 저작자까지 확정**. 파일별 원저작자·라이선스·원본 링크를 [data/brightiris_attributions.csv](data/brightiris_attributions.csv)에 전수 기록 — CC BY(-SA) 조건인 출처 표기를 이 파일이 담당 |
+| 11 | Wikimedia Commons (201장) | Public domain/CC0 34장, CC BY 계열 37장, CC BY-SA 계열 125장, FAL·Copyrighted free use 5장 | 🟡 개별 조건 확인 | 파일별 저작자·표기·원본 링크는 [data/brightiris_attributions.csv](data/brightiris_attributions.csv)에 기록. SA와 기타 5장은 개별 조건 검토; 원본 권한과 수정·공지 조건도 구분 |
 
-> ✅ **귀속 정보 전수 확정(2026-08-19)**: Commons API로 전 파일을 재조회해 비어 있던 항목을
+> ✅ **출처 필드 보완(2026-08-19)**: Commons API로 전 파일을 재조회해 비어 있던 항목을
 > 채웠습니다 — Artist 필드가 공란인 5장은 Commons 관례대로 업로더를 저작자로 기록하고 근거를
 > CSV의 새 `notes` 열에 남겼고, `original_title`이 유실돼 있던 2장(`commons_Amber`,
 > `commons_Hazel`)은 **phash 대조로 출처를 확정**했습니다(둘 다 해밍거리 0).
 > 후자는 원본이 `.png`(File:Hazel eye1.png, CC BY-SA 3.0)라 파일명 기반 `.jpg` 조회로는
 > 안 잡히던 건으로, 이름이 비슷한 `.jpg` 후보들은 거리 16~28로 전부 오답이었습니다 —
-> **이름 유사도가 아니라 픽셀로 대조해야 하는 이유**의 사례입니다(#2·#6·#10 교훈과 동일).
+> **이름 유사도가 아니라 픽셀로 대조해야 하는 이유**의 사례입니다(제목만으로 출처를 확정하지 않는 이유).
 > 검증 방법은 `dedup_dataset.py`와 같은 설정(phash 64비트, 해밍거리 ≤6)이며, 출처를 이미
 > 알고 있던 파일 5건으로 방법 자체를 먼저 검증했습니다(전부 거리 0, 회전본 1건 포함).
 
-> ⚠️ **데이터 품질 수정 기록(2026-06-23)**: #8(nandanp6) 출처와 `dataset/1_cataract`를
+> ⚠️ **데이터 품질 수정 기록(2026-06-23)**: nandanp6 출처와 `dataset/1_cataract`를
 > phash로 대조하다가, 같은 사진(`img (175).png`, `img (246).png`)이 원본 출처에서는
 > "normal"로 분류돼 있는데 우리 쪽엔 "백내장"으로 잘못 들어가 있는 걸 발견함. 육안 확인
 > 결과(수정체 혼탁 없음)도 "정상"에 부합해 두 파일을 `dataset/1_cataract` → `dataset/0_normal`로
@@ -759,13 +796,13 @@ v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 
 
 | 데이터셋 | 라이선스 | 판정 | 비고 |
 |---|---|---|---|
-| [human-faces (ashwingupta3012)](https://www.kaggle.com/datasets/ashwingupta3012/human-faces) | CC0 (Public Domain) | 🟢 안전 | 저작자가 권리를 완전히 포기 — MIT보다도 제약이 적음. 팀원이 이 얼굴 사진에서 눈만 크롭해 정상 안구 데이터로 사용 |
-| [eye-detection-dataset (icebearogo)](https://www.kaggle.com/datasets/icebearogo/eye-detection-dataset?select=Dataset) | CC BY-NC 4.0 | 🟡 조건부 | **NC(NonCommercial) = 상업적 이용 금지.** 비상업적 학술 목적(졸업작품)이면 안전하나, 추후 상업화 시 이 출처로 학습된 가중치는 재학습 필요. **phash로 직접 검증함**: 다운로드한 1,979장 중 655장(33.1%)이 `dataset/0_normal`과 해밍거리 ≤6(대부분 완전 일치, dist=0)로 매칭 — 실제 사용 확인됨 |
+| [human-faces (ashwingupta3012)](https://www.kaggle.com/datasets/ashwingupta3012/human-faces) | CC0 (Public Domain) | 🟡 기존 사용분 확인 필요 | 팀원의 눈 크롭 사용 이력은 별도 확인; 이번 합본에서는 웹 수집·GAN 혼합과 원본 권한 문제로 제외 |
+| [eye-detection-dataset (icebearogo)](https://www.kaggle.com/datasets/icebearogo/eye-detection-dataset?select=Dataset) | CC BY-NC 4.0 | 🟡 비상업 조건 | **NC = 비상업적 사용 조건.** 목적·원본 권한과 표시 조건 확인 필요. 과거 1,979장 중 정상 폴더와 **655장** pHash 매칭 기록. 상업적 사용을 허용하는 자료만 목표라면 새 후보에서 제외 |
 
 ### 눈이 아닌 사진 (게이트 학습·평가용, 2026-09-05 수집)
 
 앱에 올라올 수 있는 '눈이 아닌 사진'을 게이트가 거부하도록 학습시키는 데 씁니다.
-**모델이 보는 이미지가 아니라, 모델에 닿기 전에 걸러내기 위한 데이터입니다.**
+**백내장 분류기 앞의 입력 검사기를 학습·평가하는 데이터입니다.**
 
 | 항목 | 내용 |
 |---|---|
@@ -791,7 +828,7 @@ v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 
 
 감은 눈 얼굴에 백내장 판독이 나가던 문제를 막는 '눈 뜸 여부' 판정기
 (`app/models/eye_open_gate.npz` 커밋, `app/models/eye_open_cnn.pth` 비커밋)를 학습·평가하는 데 씁니다.
-눈이 아닌 사진과 마찬가지로 **모델이 판독하는 이미지가 아니라, 판독 전에 걸러내기 위한 데이터입니다.**
+눈이 아닌 사진과 마찬가지로 **백내장 판독 전 입력 검사기를 학습·평가하는 데이터입니다.**
 
 | 폴더 | 내용 | 수량 | 라이선스 (Wikimedia Commons, 자유 라이선스만) | 전수 기록 |
 |---|---|---|---|---|
@@ -812,40 +849,20 @@ v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 
 - CC BY-SA 사진으로 학습한 가중치를 공개 배포할 계획이 생기면, 학습 결과물에 ShareAlike 조건이 적용되는지
   따로 검토해야 합니다(현재는 학습 전용 사용이고 사진은 재배포하지 않습니다).
 
-### 🔴 위험 등급 출처를 그대로 유지하기로 한 이유
+</details>
 
-`1_cataract`(1,823장) 중 phash로 확인된 위험 등급(Unknown/© Original Authors) 출처 비중만
-최소 **338장(약 18.5%)** — #8 nandanp6 306장 + #10 akshayramakrishnan28 32장 (#5·#7은
-다운로드 전이라 미포함, 합치면 더 늘어날 수 있음). 전부 제거하는 방안도 검토했으나, 아래
-이유로 **그대로 유지하고 투명한 공개로 대응**하기로 결정했습니다:
+### 최종 발표 전에 남은 확인
 
-1. **대체할 데이터가 없습니다.** 공개된 백내장 안구 사진 데이터셋 대다수는 안저(망막)
-   사진이라, 이 모델이 학습한 "눈 클로즈업(세극등 사진과 유사한 각도)" 형식과 맞지 않습니다.
-   백내장은 소수 클래스(1,823장)라 여기서 18%+를 더 빼면 데이터가 더 부족해집니다.
-2. **재배포 리스크가 원천적으로 낮습니다.** 원본 이미지·가중치 파일은 `.gitignore`로
-   GitHub에 올라간 적이 없고, 공개 데모(ngrok)도 "확률" 숫자만 돌려줄 뿐 이미지 자체를
-   배포하지 않습니다.
-3. **비상업적 학술 연구(졸업작품) 목적입니다.** 라이선스 없음 자체가 "절대 금지"를 뜻하는
-   건 맞지만, 학술 연구 목적의 비영리 사용은 상업적 배포와는 위험 수준이 다릅니다.
+원본 사진의 저작자·이용 허락·파일 대응, Commons의 표시·공유 조건과 사전학습 가중치 조건을
+공개 범위에 맞춰 확인해야 합니다. 기존 익상편 자료의 원본 export 식별도 남아 있습니다.
+새 후보의 적용 여부는 이러한 조건과 독립 평가 자료·실제 휴대폰 촬영 검증을 함께 확인한 뒤 판단합니다.
+비상업 발표, 출처 공개, Git 제외만으로 사용 허락을 대신할 수 없습니다.
 
-### 완화 조치 (이미 적용됨)
+발표에서는 현재 진행 상태를 다음처럼 설명할 수 있습니다.
 
-- **`dataset/`(원본 이미지)와 `*.pth`(학습된 가중치)는 처음부터 `.gitignore`** — GitHub 공개
-  저장소에 올라간 적이 없습니다. 배포/재배포 리스크는 낮습니다.
-- ngrok 공개 데모도 사진을 받아 "확률" 숫자만 돌려줄 뿐, 원본 데이터나 가중치 자체를
-  외부에 전달하지 않습니다.
-- 남은 리스크는 **출처를 투명하게 공개하지 않는 것**입니다. 보고서/발표 자료에는 아래 문구를
-  포함하는 것을 권장합니다:
-  > "본 프로젝트는 비상업적 학술 연구 목적의 졸업작품으로, 위 백내장 데이터셋(9개 출처 + 검증
-  > 중 추가로 발견된 1건)과 human-faces(CC0), eye-detection-dataset(CC BY-NC 4.0) 데이터셋을
-  > 학습에 사용했습니다. 라이선스가 불명확한 출처(#5, #7, #8, #10 — 전체 백내장 데이터의
-  > 약 18% 이상)와 NonCommercial 조건의 출처는, 동급의 눈 클로즈업 형식 공개 데이터셋을
-  > 대체할 수 없어 비상업적 학술 연구 목적으로만 사용했으며, 원본 이미지는 어떤 형태로도
-  > 재배포하지 않습니다. 원본 데이터·학습된 가중치는 GitHub 저장소에 포함되어 있지 않습니다."
-
-> 📝 **남은 작업**: #2(CC BY-SA 4.0)·#6(Apache 2.0) "Cataract Classification Dataset"의
-> 정확한 Kaggle 링크는 아직 못 찾았습니다. 앞으로 데이터를 추가할 때는 이미지 단위로 출처를
-> 매니페스트(예: CSV)에 기록해두면, 이런 사후 정리가 필요 없어집니다.
+> “학습 데이터의 출처와 이용 조건을 검토하고 별도 후보 모델을 학습·비교했습니다.
+> 소규모 공개 사진 비교에서 개선을 확인했지만, 일부 원본 사진 권한은 추가 확인이 필요합니다.
+> 실제 휴대폰 촬영 및 임상 성능은 추가 검증이 필요하며 현재 서비스 모델은 유지했습니다.”
 
 ---
 

@@ -1,0 +1,105 @@
+{
+  "method": "AI inspection of 325 added original-group representative photos across six contact sheets; not all augmentation variants or clinical labels",
+  "excluded": [
+    {
+      "id": "kershrita_0949db66f590036a40",
+      "group": "kershrita_dbd5d2276bb223ab82",
+      "reason": "slit-only illustration/presentation unsuitable for phone view"
+    },
+    {
+      "id": "kershrita_10f7ac0adfdcae424f",
+      "group": "kershrita_795c5764be5751ad5b",
+      "reason": "slit-only image without frontal eye"
+    },
+    {
+      "id": "kershrita_36cb1411b5308fbc29",
+      "group": "kershrita_795c5764be5751ad5b",
+      "reason": "slit-only image without frontal eye"
+    },
+    {
+      "id": "kershrita_3f92c70a7b07c3dbf7",
+      "group": "kershrita_dbd5d2276bb223ab82",
+      "reason": "slit-only illustration/presentation unsuitable for phone view"
+    },
+    {
+      "id": "kershrita_54704c5f8fa9eedfad",
+      "group": "kershrita_795c5764be5751ad5b",
+      "reason": "slit-only image without frontal eye"
+    },
+    {
+      "id": "kershrita_5fca873225d695cb6b",
+      "group": "kershrita_5fca873225d695cb6b",
+      "reason": "stock watermark"
+    },
+    {
+      "id": "kershrita_60944d2397cc6861b2",
+      "group": "kershrita_795c5764be5751ad5b",
+      "reason": "slit-only image without frontal eye"
+    },
+    {
+      "id": "kershrita_6dad846fbb9726765a",
+      "group": "kershrita_dbd5d2276bb223ab82",
+      "reason": "slit-only illustration/presentation unsuitable for phone view"
+    },
+    {
+      "id": "kershrita_700b9abc12043fa03e",
+      "group": "kershrita_700b9abc12043fa03e",
+      "reason": "illustration/synthetic-looking image"
+    },
+    {
+      "id": "kershrita_795c5764be5751ad5b",
+      "group": "kershrita_795c5764be5751ad5b",
+      "reason": "slit-only image without frontal eye"
+    },
+    {
+      "id": "kershrita_81ddbcb583732fd366",
+      "group": "kershrita_81ddbcb583732fd366",
+      "reason": "heavily altered colour"
+    },
+    {
+      "id": "kershrita_97fbbb140d88e61755",
+      "group": "kershrita_97fbbb140d88e61755",
+      "reason": "synthetic cyber-eye illustration"
+    },
+    {
+      "id": "kershrita_af49e88c125b07699b",
+      "group": "kershrita_af49e88c125b07699b",
+      "reason": "stock watermark"
+    },
+    {
+      "id": "kershrita_bb85e2dca536daf18b",
+      "group": "kershrita_bb85e2dca536daf18b",
+      "reason": "watermark; source permission not established"
+    },
+    {
+      "id": "kershrita_cebdf98274d4c7e65f",
+      "group": "kershrita_cebdf98274d4c7e65f",
+      "reason": "synthetic/mechanical eye artwork"
+    },
+    {
+      "id": "kershrita_d1a8eeb3657e76e423",
+      "group": "kershrita_795c5764be5751ad5b",
+      "reason": "slit-only image without frontal eye"
+    },
+    {
+      "id": "kershrita_d71498792da227a754",
+      "group": "kershrita_795c5764be5751ad5b",
+      "reason": "slit-only image without frontal eye"
+    },
+    {
+      "id": "kershrita_e59c19d41b9a3d65fe",
+      "group": "kershrita_97fbbb140d88e61755",
+      "reason": "synthetic cyber-eye illustration"
+    },
+    {
+      "id": "kershrita_ebc3716bbd7a3d0417",
+      "group": "kershrita_ebc3716bbd7a3d0417",
+      "reason": "Shutterstock watermark"
+    },
+    {
+      "id": "kershrita_f08ece69cb95c3bc17",
+      "group": "kershrita_f08ece69cb95c3bc17",
+      "reason": "stock-looking watermark"
+    }
+  ]
+}

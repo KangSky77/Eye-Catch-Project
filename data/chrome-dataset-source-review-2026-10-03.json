@@ -1,0 +1,131 @@
+{
+  "checked_date": "2026-10-03",
+  "source_evidence": "Chrome Default/AccountBookmarks, folder: 기타 북마크 / 백내장 데이터 셋",
+  "bookmark_link_count": 10,
+  "distinct_sources": 9,
+  "sources": [
+    {
+      "source": "kershrita/cataract",
+      "url": "https://www.kaggle.com/datasets/kershrita/cataract",
+      "bookmark_titles": [
+        "Cataract"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/kershrita/cataract"
+      ],
+      "license": "MIT",
+      "dataset_version": 1,
+      "metadata_checked": true
+    },
+    {
+      "source": "hemooredaoo/cataract",
+      "url": "https://www.kaggle.com/datasets/hemooredaoo/cataract",
+      "bookmark_titles": [
+        "cataract"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/hemooredaoo/cataract"
+      ],
+      "license": "Unknown",
+      "dataset_version": 1,
+      "metadata_checked": true
+    },
+    {
+      "source": "rrohit1289/eye-disease-classifier-efficientnet-b3",
+      "url": "https://www.kaggle.com/datasets/rrohit1289/eye-disease-classifier-efficientnet-b3",
+      "bookmark_titles": [
+        "Eye Disease Classifier EfficientNet-B3"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/rrohit1289/eye-disease-classifier-efficientnet-b3"
+      ],
+      "license": "Attribution 4.0 International (CC BY 4.0)",
+      "dataset_version": 1,
+      "metadata_checked": true
+    },
+    {
+      "source": "akshayramakrishnan28/cataract-classification-dataset",
+      "url": "https://www.kaggle.com/datasets/akshayramakrishnan28/cataract-classification-dataset",
+      "bookmark_titles": [
+        "Cataract Classification Dataset"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/akshayramakrishnan28/cataract-classification-dataset"
+      ],
+      "license": "CC BY-SA 4.0",
+      "dataset_version": 1,
+      "metadata_checked": true
+    },
+    {
+      "source": "nandanp6/cataract-image-dataset",
+      "url": "https://www.kaggle.com/datasets/nandanp6/cataract-image-dataset",
+      "bookmark_titles": [
+        "Cataract dataset"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/nandanp6/cataract-image-dataset"
+      ],
+      "license": "Data files © Original Authors",
+      "dataset_version": 3,
+      "metadata_checked": true
+    },
+    {
+      "source": "orvile/eye-diseases-classification",
+      "url": "https://www.kaggle.com/datasets/orvile/eye-diseases-classification",
+      "bookmark_titles": [
+        "Eye Diseases Classification"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/orvile/eye-diseases-classification"
+      ],
+      "license": "Attribution 4.0 International (CC BY 4.0)",
+      "dataset_version": 1,
+      "metadata_checked": true
+    },
+    {
+      "source": "sheemazain/cataract-classification-dataset-in-ds",
+      "url": "https://www.kaggle.com/datasets/sheemazain/cataract-classification-dataset-in-ds",
+      "bookmark_titles": [
+        "Cataract Classification Dataset in DS",
+        "Cataract Classification Dataset in DS"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/sheemazain/cataract-classification-dataset-in-ds?select=train",
+        "https://www.kaggle.com/datasets/sheemazain/cataract-classification-dataset-in-ds"
+      ],
+      "license": "Apache 2.0",
+      "dataset_version": 1,
+      "metadata_checked": true
+    },
+    {
+      "source": "alexandramohammed/cataract-image",
+      "url": "https://www.kaggle.com/datasets/alexandramohammed/cataract-image",
+      "bookmark_titles": [
+        "백내장 이미지"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/alexandramohammed/cataract-image"
+      ],
+      "license": "Unknown",
+      "dataset_version": 2,
+      "metadata_checked": true
+    },
+    {
+      "source": "ashwingupta3012/human-faces",
+      "url": "https://www.kaggle.com/datasets/ashwingupta3012/human-faces",
+      "bookmark_titles": [
+        "Human Faces"
+      ],
+      "bookmark_urls": [
+        "https://www.kaggle.com/datasets/ashwingupta3012/human-faces"
+      ],
+      "license": "CC0: Public Domain",
+      "dataset_version": 1,
+      "metadata_checked": true
+    }
+  ],
+  "limits": [
+    "Bookmarks establish saved source URLs, not image-level permission or training membership.",
+    "Historical README #2/#6 have no exact IDs; duplicate entries are plausible, not proven."
+  ]
+}

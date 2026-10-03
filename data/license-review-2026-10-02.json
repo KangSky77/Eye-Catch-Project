@@ -1,0 +1,187 @@
+{
+  "checked_at_utc": "2026-10-02T13:25:36.264476+00:00",
+  "scope": "cataract training sources; this is not certification of the whole application",
+  "active_metadata_version": "v6",
+  "active_weights_sha256": "044e9f14552131b02857a20d737fa130a50090ca8a6b0161ecb87f1e4a37a2cd",
+  "local_inventory": {
+    "0_normal": {
+      "files": 15420,
+      "mapped_files": 15420,
+      "unique_groups": 7549
+    },
+    "1_cataract": {
+      "files": 1823,
+      "mapped_files": 1813,
+      "unique_groups": 1044
+    }
+  },
+  "group_map_entries": 17233,
+  "group_map_unique_groups": 8588,
+  "brightiris_license_counts": {
+    "Public domain": 26,
+    "CC BY 2.0": 20,
+    "CC BY-SA 2.0": 6,
+    "CC BY-SA 3.0": 72,
+    "CC0": 8,
+    "CC BY-SA 4.0": 37,
+    "CC BY-SA 3.0 at": 2,
+    "FAL": 3,
+    "CC BY-SA 2.0 fr": 2,
+    "CC BY 3.0": 8,
+    "CC BY-SA 2.5": 6,
+    "Copyrighted free use": 2,
+    "CC BY 4.0": 7,
+    "CC BY 2.5": 1,
+    "CC BY 2.5 au": 1
+  },
+  "strict_pd_cc0_by_iris_candidate_count": 71,
+  "historical_matches_from_readme_not_recomputed": {
+    "nandanp6": 306,
+    "akshayramakrishnan28": 32,
+    "icebearogo_normal": 655
+  },
+  "sources": [
+    {
+      "source": "kershrita/cataract",
+      "page_url": "https://www.kaggle.com/datasets/kershrita/cataract",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/kershrita/cataract",
+      "title": "Cataract",
+      "license_name": "MIT",
+      "version": 1,
+      "last_updated": "2023-12-26T12:53:23.157Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response"
+    },
+    {
+      "source": "sheemazain/cataract-classification-dataset-in-ds",
+      "page_url": "https://www.kaggle.com/datasets/sheemazain/cataract-classification-dataset-in-ds",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/sheemazain/cataract-classification-dataset-in-ds",
+      "title": "Cataract Classification Dataset in DS",
+      "license_name": "Apache 2.0",
+      "version": 1,
+      "last_updated": "2024-05-17T15:12:38.453Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response"
+    },
+    {
+      "source": "nandanp6/cataract-image-dataset",
+      "page_url": "https://www.kaggle.com/datasets/nandanp6/cataract-image-dataset",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/nandanp6/cataract-image-dataset",
+      "title": "Cataract dataset",
+      "license_name": "Data files © Original Authors",
+      "version": 3,
+      "last_updated": "2023-04-13T08:49:25.867Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response"
+    },
+    {
+      "source": "akshayramakrishnan28/cataract-classification-dataset",
+      "page_url": "https://www.kaggle.com/datasets/akshayramakrishnan28/cataract-classification-dataset",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/akshayramakrishnan28/cataract-classification-dataset",
+      "title": "Cataract Classification Dataset",
+      "license_name": "CC BY-SA 4.0",
+      "version": 1,
+      "last_updated": "2024-05-16T06:46:10.577Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response",
+      "description_observations": [
+        "Current license differs from historical README Unknown record; reason for discrepancy not established."
+      ]
+    },
+    {
+      "source": "icebearogo/eye-detection-dataset",
+      "page_url": "https://www.kaggle.com/datasets/icebearogo/eye-detection-dataset",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/icebearogo/eye-detection-dataset",
+      "title": "Eye Detection Dataset",
+      "license_name": "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)",
+      "version": 1,
+      "last_updated": "2025-05-23T10:03:47.14Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response"
+    },
+    {
+      "source": "ashwingupta3012/human-faces",
+      "page_url": "https://www.kaggle.com/datasets/ashwingupta3012/human-faces",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/ashwingupta3012/human-faces",
+      "title": "Human Faces",
+      "license_name": "CC0: Public Domain",
+      "version": 1,
+      "last_updated": "2020-09-21T04:09:12.927Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response"
+    },
+    {
+      "source": "rrohit1289/eye-disease-classifier-efficientnet-b3",
+      "page_url": "https://www.kaggle.com/datasets/rrohit1289/eye-disease-classifier-efficientnet-b3",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/rrohit1289/eye-disease-classifier-efficientnet-b3",
+      "title": "Eye Disease Classifier EfficientNet-B3",
+      "license_name": "Attribution 4.0 International (CC BY 4.0)",
+      "version": 1,
+      "last_updated": "2026-04-04T04:00:21.963Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response",
+      "description_observations": [
+        "Description focuses on using a pretrained classifier; original image availability and correspondence to local training files remain unverified."
+      ]
+    },
+    {
+      "source": "orvile/eye-diseases-classification",
+      "page_url": "https://www.kaggle.com/datasets/orvile/eye-diseases-classification",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/orvile/eye-diseases-classification",
+      "title": "Eye Diseases Classification",
+      "license_name": "Attribution 4.0 International (CC BY 4.0)",
+      "version": 1,
+      "last_updated": "2026-03-24T19:57:44.277Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response",
+      "description_observations": [
+        "Description states collection from online sources via Google search; individual original-image permissions remain unverified."
+      ]
+    },
+    {
+      "source": "alexandramohammed/cataract-image",
+      "page_url": "https://www.kaggle.com/datasets/alexandramohammed/cataract-image",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/alexandramohammed/cataract-image",
+      "title": "Cataract image",
+      "license_name": "Unknown",
+      "version": 2,
+      "last_updated": "2020-07-18T06:01:54.213Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response"
+    },
+    {
+      "source": "hemooredaoo/cataract",
+      "page_url": "https://www.kaggle.com/datasets/hemooredaoo/cataract",
+      "metadata_url": "https://www.kaggle.com/api/v1/datasets/view/hemooredaoo/cataract",
+      "title": "cataract",
+      "license_name": "Unknown",
+      "version": 1,
+      "last_updated": "2023-05-21T11:05:06.317Z",
+      "status": "metadata_checked_only; image-level provenance and licensor authority not established by this response"
+    }
+  ],
+  "unidentified_historical_sources": [
+    {
+      "readme_id": 2,
+      "claimed_license": "CC BY-SA 4.0",
+      "status": "exact source unresolved"
+    },
+    {
+      "readme_id": 6,
+      "claimed_license": "Apache 2.0",
+      "status": "exact source unresolved"
+    }
+  ],
+  "pterygium": {
+    "local_used_files": 226,
+    "candidate_source": "https://universe.roboflow.com/eyezsmartdet/allwithouttesttow",
+    "candidate_page_license": "CC BY 4.0",
+    "source_identity_status": "candidate only; original export identifiers and notices not preserved"
+  },
+  "limitations": [
+    "Stock file counts are not train split counts.",
+    "Historical pHash counts are not a current unique removal list.",
+    "Kaggle license metadata does not establish upstream image licensing.",
+    "Original corpus preserved. Three isolated pilot candidates trained; live v6 not replaced."
+  ],
+  "followup_experiment": {
+    "report": "docs/licensed-cataract-experiment-2026-10-02.md",
+    "manifest": "data/licensed-cataract-manifest-2026-10-02.json",
+    "comparison": "data/licensed-cataract-comparison-2026-10-02.json",
+    "archive_proof": "data/cataract-archive-provenance-2026-10-02.json",
+    "accepted_photos": 177,
+    "original_groups": 167,
+    "live_replacement": false
+  }
+}

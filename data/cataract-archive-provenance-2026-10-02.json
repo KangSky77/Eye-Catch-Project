@@ -1,0 +1,19 @@
+{
+  "archives": [
+    {
+      "name": "sheemazain__cataract-classification-dataset-in-ds.zip",
+      "sha256": "31e5ded86d159eefcb55a859e499404441873df782270edbe598e429e88a5442",
+      "image_count": 410,
+      "notice_files": []
+    },
+    {
+      "name": "akshayramakrishnan28__cataract-classification-dataset.zip",
+      "sha256": "eb458ed04873e605f00e4883f4b8dc5ad574b863101901d76a5d059e693683dd",
+      "image_count": 410,
+      "notice_files": []
+    }
+  ],
+  "image_hash_multisets_equal": true,
+  "different_image_count": 0,
+  "finding": "All 410 image bytes match despite different uploader license labels; neither archive accepted on uploader label alone."
+}

@@ -1,0 +1,2278 @@
+{
+  "manifest_sha256": "547af122003f83c27e6e6b23da3a71c49aca4a13fadcbeb74cdb44cf51eedabe",
+  "baseline_weights_sha256": "044e9f14552131b02857a20d737fa130a50090ca8a6b0161ecb87f1e4a37a2cd",
+  "tta": "disabled (current runtime setting)",
+  "thresholds": [
+    0.02,
+    0.25,
+    0.5
+  ],
+  "test_images": 26,
+  "test_groups": 25,
+  "metrics": {
+    "baseline_v6": {
+      "tp": 4,
+      "tn": 21,
+      "fn": 0,
+      "fp": 1,
+      "sensitivity": 1.0,
+      "specificity": 0.9545454545454546,
+      "normal_output_on_positive": 0,
+      "normal_at_borderline_or_above": 2
+    },
+    "candidate_bookmark_merge_seed42": {
+      "tp": 4,
+      "tn": 22,
+      "fn": 0,
+      "fp": 0,
+      "sensitivity": 1.0,
+      "specificity": 1.0,
+      "normal_output_on_positive": 0,
+      "normal_at_borderline_or_above": 1
+    },
+    "candidate_bookmark_merge_scratch42": {
+      "tp": 3,
+      "tn": 19,
+      "fn": 1,
+      "fp": 3,
+      "sensitivity": 0.75,
+      "specificity": 0.8636363636363636,
+      "normal_output_on_positive": 0,
+      "normal_at_borderline_or_above": 8
+    },
+    "reference_seed42": {
+      "tp": 3,
+      "tn": 22,
+      "fn": 1,
+      "fp": 0,
+      "sensitivity": 0.75,
+      "specificity": 1.0,
+      "normal_output_on_positive": 0,
+      "normal_at_borderline_or_above": 2
+    },
+    "reference_seed7_scratch": {
+      "tp": 3,
+      "tn": 15,
+      "fn": 1,
+      "fp": 7,
+      "sensitivity": 0.75,
+      "specificity": 0.6818181818181818,
+      "normal_output_on_positive": 0,
+      "normal_at_borderline_or_above": 9
+    }
+  },
+  "predictions": [
+    {
+      "model": "baseline_v6",
+      "id": "commons_105271363",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 1.735428213578416e-06,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_12531632",
+      "group": "commons_12531632",
+      "label": 0,
+      "probability": 0.0003639784990809858,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_12635970",
+      "group": "commons_12635970",
+      "label": 0,
+      "probability": 5.4928277677390724e-05,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_15419080",
+      "group": "commons_15419080",
+      "label": 0,
+      "probability": 0.8998104333877563,
+      "verdict": "risk"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_17395044",
+      "group": "commons_17395044",
+      "label": 0,
+      "probability": 3.903033302776748e-06,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_19343376",
+      "group": "commons_19343376",
+      "label": 1,
+      "probability": 0.9999991655349731,
+      "verdict": "risk"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_2221354",
+      "group": "commons_2221354",
+      "label": 0,
+      "probability": 6.786721655771544e-07,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_22281685",
+      "group": "commons_22281685",
+      "label": 0,
+      "probability": 0.002962627448141575,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_23187179",
+      "group": "commons_23187179",
+      "label": 0,
+      "probability": 6.110179811003036e-07,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_24120793",
+      "group": "commons_24120793",
+      "label": 0,
+      "probability": 6.0990005295025185e-05,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_24322266",
+      "group": "commons_24322266",
+      "label": 0,
+      "probability": 0.3286087214946747,
+      "verdict": "borderline"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_24641895",
+      "group": "commons_24641895",
+      "label": 0,
+      "probability": 4.58032482129056e-05,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_2738664",
+      "group": "commons_2738664",
+      "label": 0,
+      "probability": 5.510532901098486e-06,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_29046411",
+      "group": "commons_29046411",
+      "label": 0,
+      "probability": 0.00992844719439745,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_31091784",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 1.4899164852977265e-06,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_328730",
+      "group": "commons_328730",
+      "label": 0,
+      "probability": 0.0003234722535125911,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_33202972",
+      "group": "commons_33202972",
+      "label": 0,
+      "probability": 1.4264226592786144e-05,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_3490332",
+      "group": "commons_3490332",
+      "label": 0,
+      "probability": 0.0012733503244817257,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_59072960",
+      "group": "commons_59072960",
+      "label": 1,
+      "probability": 1.0,
+      "verdict": "risk"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_59291092",
+      "group": "commons_59291092",
+      "label": 1,
+      "probability": 0.9999994039535522,
+      "verdict": "risk"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_66436125",
+      "group": "commons_66436125",
+      "label": 0,
+      "probability": 0.0016036449233070016,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_7213246",
+      "group": "commons_7213246",
+      "label": 0,
+      "probability": 0.00020745537767652422,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_8051975",
+      "group": "commons_8051975",
+      "label": 0,
+      "probability": 0.1104271188378334,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_82905941",
+      "group": "commons_82905941",
+      "label": 1,
+      "probability": 1.0,
+      "verdict": "risk"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_87788504",
+      "group": "commons_87788504",
+      "label": 0,
+      "probability": 4.381635054784283e-09,
+      "verdict": "normal"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_9465430",
+      "group": "commons_9465430",
+      "label": 0,
+      "probability": 3.065448936467874e-06,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_105271363",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.0003805168089456856,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_12531632",
+      "group": "commons_12531632",
+      "label": 0,
+      "probability": 6.566859519807622e-05,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_12635970",
+      "group": "commons_12635970",
+      "label": 0,
+      "probability": 0.004645610228180885,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_15419080",
+      "group": "commons_15419080",
+      "label": 0,
+      "probability": 0.005620132200419903,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_17395044",
+      "group": "commons_17395044",
+      "label": 0,
+      "probability": 0.0005291954148560762,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_19343376",
+      "group": "commons_19343376",
+      "label": 1,
+      "probability": 0.9985275268554688,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_2221354",
+      "group": "commons_2221354",
+      "label": 0,
+      "probability": 0.0004922265070490539,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_22281685",
+      "group": "commons_22281685",
+      "label": 0,
+      "probability": 0.0005518331308849156,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_23187179",
+      "group": "commons_23187179",
+      "label": 0,
+      "probability": 0.00023395619064103812,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_24120793",
+      "group": "commons_24120793",
+      "label": 0,
+      "probability": 0.08227553218603134,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_24322266",
+      "group": "commons_24322266",
+      "label": 0,
+      "probability": 0.0006668910500593483,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_24641895",
+      "group": "commons_24641895",
+      "label": 0,
+      "probability": 0.001687950105406344,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_2738664",
+      "group": "commons_2738664",
+      "label": 0,
+      "probability": 0.0029604071751236916,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_29046411",
+      "group": "commons_29046411",
+      "label": 0,
+      "probability": 0.2900596559047699,
+      "verdict": "borderline"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_31091784",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.0006358202081173658,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_328730",
+      "group": "commons_328730",
+      "label": 0,
+      "probability": 0.0023304172791540623,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_33202972",
+      "group": "commons_33202972",
+      "label": 0,
+      "probability": 0.0006444117752835155,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_3490332",
+      "group": "commons_3490332",
+      "label": 0,
+      "probability": 0.0005266590742394328,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_59072960",
+      "group": "commons_59072960",
+      "label": 1,
+      "probability": 0.9999918937683105,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_59291092",
+      "group": "commons_59291092",
+      "label": 1,
+      "probability": 0.9993414282798767,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_66436125",
+      "group": "commons_66436125",
+      "label": 0,
+      "probability": 0.0006932321703061461,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_7213246",
+      "group": "commons_7213246",
+      "label": 0,
+      "probability": 0.0003193612501490861,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_8051975",
+      "group": "commons_8051975",
+      "label": 0,
+      "probability": 0.007010945584625006,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_82905941",
+      "group": "commons_82905941",
+      "label": 1,
+      "probability": 0.960739016532898,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_87788504",
+      "group": "commons_87788504",
+      "label": 0,
+      "probability": 0.00048208748921751976,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_9465430",
+      "group": "commons_9465430",
+      "label": 0,
+      "probability": 0.00010241327254334465,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_105271363",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.021139424294233322,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_12531632",
+      "group": "commons_12531632",
+      "label": 0,
+      "probability": 0.01809185929596424,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_12635970",
+      "group": "commons_12635970",
+      "label": 0,
+      "probability": 0.7960728406906128,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_15419080",
+      "group": "commons_15419080",
+      "label": 0,
+      "probability": 0.8787717819213867,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_17395044",
+      "group": "commons_17395044",
+      "label": 0,
+      "probability": 0.44175803661346436,
+      "verdict": "borderline"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_19343376",
+      "group": "commons_19343376",
+      "label": 1,
+      "probability": 0.9857811331748962,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_2221354",
+      "group": "commons_2221354",
+      "label": 0,
+      "probability": 0.0640677735209465,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_22281685",
+      "group": "commons_22281685",
+      "label": 0,
+      "probability": 0.025145672261714935,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_23187179",
+      "group": "commons_23187179",
+      "label": 0,
+      "probability": 0.22185178101062775,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_24120793",
+      "group": "commons_24120793",
+      "label": 0,
+      "probability": 0.05732421576976776,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_24322266",
+      "group": "commons_24322266",
+      "label": 0,
+      "probability": 0.026989001780748367,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_24641895",
+      "group": "commons_24641895",
+      "label": 0,
+      "probability": 0.09578857570886612,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_2738664",
+      "group": "commons_2738664",
+      "label": 0,
+      "probability": 0.2779100239276886,
+      "verdict": "borderline"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_29046411",
+      "group": "commons_29046411",
+      "label": 0,
+      "probability": 0.022711534053087234,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_31091784",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.018727879971265793,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_328730",
+      "group": "commons_328730",
+      "label": 0,
+      "probability": 0.26326245069503784,
+      "verdict": "borderline"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_33202972",
+      "group": "commons_33202972",
+      "label": 0,
+      "probability": 0.3344809114933014,
+      "verdict": "borderline"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_3490332",
+      "group": "commons_3490332",
+      "label": 0,
+      "probability": 0.0046050515957176685,
+      "verdict": "normal"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_59072960",
+      "group": "commons_59072960",
+      "label": 1,
+      "probability": 0.33128613233566284,
+      "verdict": "borderline"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_59291092",
+      "group": "commons_59291092",
+      "label": 1,
+      "probability": 0.9919382929801941,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_66436125",
+      "group": "commons_66436125",
+      "label": 0,
+      "probability": 0.6050090789794922,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_7213246",
+      "group": "commons_7213246",
+      "label": 0,
+      "probability": 0.030621085315942764,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_8051975",
+      "group": "commons_8051975",
+      "label": 0,
+      "probability": 0.13577041029930115,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_82905941",
+      "group": "commons_82905941",
+      "label": 1,
+      "probability": 0.8196884393692017,
+      "verdict": "risk"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_87788504",
+      "group": "commons_87788504",
+      "label": 0,
+      "probability": 0.02921033464372158,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_9465430",
+      "group": "commons_9465430",
+      "label": 0,
+      "probability": 0.4410416781902313,
+      "verdict": "borderline"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_105271363",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.038570892065763474,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_12531632",
+      "group": "commons_12531632",
+      "label": 0,
+      "probability": 0.06805858016014099,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_12635970",
+      "group": "commons_12635970",
+      "label": 0,
+      "probability": 0.0646510049700737,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_15419080",
+      "group": "commons_15419080",
+      "label": 0,
+      "probability": 0.42009732127189636,
+      "verdict": "borderline"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_17395044",
+      "group": "commons_17395044",
+      "label": 0,
+      "probability": 0.1533752977848053,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_19343376",
+      "group": "commons_19343376",
+      "label": 1,
+      "probability": 0.8843926787376404,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_2221354",
+      "group": "commons_2221354",
+      "label": 0,
+      "probability": 0.029873602092266083,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_22281685",
+      "group": "commons_22281685",
+      "label": 0,
+      "probability": 0.20534858107566833,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_23187179",
+      "group": "commons_23187179",
+      "label": 0,
+      "probability": 0.09263376891613007,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_24120793",
+      "group": "commons_24120793",
+      "label": 0,
+      "probability": 0.17586152255535126,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_24322266",
+      "group": "commons_24322266",
+      "label": 0,
+      "probability": 0.2258586287498474,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_24641895",
+      "group": "commons_24641895",
+      "label": 0,
+      "probability": 0.21416884660720825,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_2738664",
+      "group": "commons_2738664",
+      "label": 0,
+      "probability": 0.07631924748420715,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_29046411",
+      "group": "commons_29046411",
+      "label": 0,
+      "probability": 0.1751394122838974,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_31091784",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.04601045697927475,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_328730",
+      "group": "commons_328730",
+      "label": 0,
+      "probability": 0.152929425239563,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_33202972",
+      "group": "commons_33202972",
+      "label": 0,
+      "probability": 0.06452269107103348,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_3490332",
+      "group": "commons_3490332",
+      "label": 0,
+      "probability": 0.11420388519763947,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_59072960",
+      "group": "commons_59072960",
+      "label": 1,
+      "probability": 0.7935422658920288,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_59291092",
+      "group": "commons_59291092",
+      "label": 1,
+      "probability": 0.8648967146873474,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_66436125",
+      "group": "commons_66436125",
+      "label": 0,
+      "probability": 0.0939645916223526,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_7213246",
+      "group": "commons_7213246",
+      "label": 0,
+      "probability": 0.06056177243590355,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_8051975",
+      "group": "commons_8051975",
+      "label": 0,
+      "probability": 0.34615558385849,
+      "verdict": "borderline"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_82905941",
+      "group": "commons_82905941",
+      "label": 1,
+      "probability": 0.4351664185523987,
+      "verdict": "borderline"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_87788504",
+      "group": "commons_87788504",
+      "label": 0,
+      "probability": 0.15614844858646393,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_9465430",
+      "group": "commons_9465430",
+      "label": 0,
+      "probability": 0.03981158509850502,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_105271363",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.012173570692539215,
+      "verdict": "normal"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_12531632",
+      "group": "commons_12531632",
+      "label": 0,
+      "probability": 0.7373501062393188,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_12635970",
+      "group": "commons_12635970",
+      "label": 0,
+      "probability": 0.06057089567184448,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_15419080",
+      "group": "commons_15419080",
+      "label": 0,
+      "probability": 0.409318208694458,
+      "verdict": "borderline"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_17395044",
+      "group": "commons_17395044",
+      "label": 0,
+      "probability": 0.1955576390028,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_19343376",
+      "group": "commons_19343376",
+      "label": 1,
+      "probability": 0.9678903818130493,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_2221354",
+      "group": "commons_2221354",
+      "label": 0,
+      "probability": 0.02105291746556759,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_22281685",
+      "group": "commons_22281685",
+      "label": 0,
+      "probability": 0.11157650500535965,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_23187179",
+      "group": "commons_23187179",
+      "label": 0,
+      "probability": 0.11090995371341705,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_24120793",
+      "group": "commons_24120793",
+      "label": 0,
+      "probability": 0.6994472146034241,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_24322266",
+      "group": "commons_24322266",
+      "label": 0,
+      "probability": 0.7695027589797974,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_24641895",
+      "group": "commons_24641895",
+      "label": 0,
+      "probability": 0.4350309371948242,
+      "verdict": "borderline"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_2738664",
+      "group": "commons_2738664",
+      "label": 0,
+      "probability": 0.15476541221141815,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_29046411",
+      "group": "commons_29046411",
+      "label": 0,
+      "probability": 0.9195305705070496,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_31091784",
+      "group": "commons_31091784",
+      "label": 0,
+      "probability": 0.01347539946436882,
+      "verdict": "normal"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_328730",
+      "group": "commons_328730",
+      "label": 0,
+      "probability": 0.17895443737506866,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_33202972",
+      "group": "commons_33202972",
+      "label": 0,
+      "probability": 0.08813460916280746,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_3490332",
+      "group": "commons_3490332",
+      "label": 0,
+      "probability": 0.92209792137146,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_59072960",
+      "group": "commons_59072960",
+      "label": 1,
+      "probability": 0.9160335063934326,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_59291092",
+      "group": "commons_59291092",
+      "label": 1,
+      "probability": 0.9347103834152222,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_66436125",
+      "group": "commons_66436125",
+      "label": 0,
+      "probability": 0.9822964072227478,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_7213246",
+      "group": "commons_7213246",
+      "label": 0,
+      "probability": 0.14374548196792603,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_8051975",
+      "group": "commons_8051975",
+      "label": 0,
+      "probability": 0.1569109857082367,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_82905941",
+      "group": "commons_82905941",
+      "label": 1,
+      "probability": 0.06329546868801117,
+      "verdict": "uncertain"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_87788504",
+      "group": "commons_87788504",
+      "label": 0,
+      "probability": 0.9994022846221924,
+      "verdict": "risk"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_9465430",
+      "group": "commons_9465430",
+      "label": 0,
+      "probability": 0.059432219713926315,
+      "verdict": "uncertain"
+    }
+  ],
+  "pipeline_metrics": {
+    "baseline_v6": {
+      "codes": {
+        "normal": 18,
+        "risk": 3,
+        "hold": 1,
+        "borderline": 1,
+        "invalid": 2,
+        "uncertain": 1
+      },
+      "by_label": {
+        "0": {
+          "normal": 18,
+          "risk": 1,
+          "borderline": 1,
+          "uncertain": 1,
+          "invalid": 1
+        },
+        "1": {
+          "hold": 1,
+          "invalid": 1,
+          "risk": 2
+        }
+      }
+    },
+    "candidate_bookmark_merge_seed42": {
+      "codes": {
+        "normal": 19,
+        "hold": 1,
+        "uncertain": 1,
+        "borderline": 1,
+        "invalid": 2,
+        "risk": 2
+      },
+      "by_label": {
+        "0": {
+          "normal": 19,
+          "uncertain": 1,
+          "borderline": 1,
+          "invalid": 1
+        },
+        "1": {
+          "hold": 1,
+          "invalid": 1,
+          "risk": 2
+        }
+      }
+    },
+    "candidate_bookmark_merge_scratch42": {
+      "codes": {
+        "uncertain": 10,
+        "normal": 3,
+        "risk": 4,
+        "unstable": 1,
+        "hold": 2,
+        "borderline": 4,
+        "invalid": 2
+      },
+      "by_label": {
+        "0": {
+          "uncertain": 10,
+          "normal": 3,
+          "risk": 2,
+          "unstable": 1,
+          "hold": 1,
+          "borderline": 4,
+          "invalid": 1
+        },
+        "1": {
+          "hold": 1,
+          "invalid": 1,
+          "risk": 2
+        }
+      }
+    },
+    "reference_seed42": {
+      "codes": {
+        "uncertain": 18,
+        "borderline": 3,
+        "hold": 2,
+        "invalid": 2,
+        "risk": 1
+      },
+      "by_label": {
+        "0": {
+          "uncertain": 18,
+          "borderline": 2,
+          "hold": 1,
+          "invalid": 1
+        },
+        "1": {
+          "hold": 1,
+          "invalid": 1,
+          "risk": 1,
+          "borderline": 1
+        }
+      }
+    },
+    "reference_seed7_scratch": {
+      "codes": {
+        "normal": 2,
+        "risk": 7,
+        "uncertain": 11,
+        "borderline": 2,
+        "hold": 2,
+        "invalid": 2
+      },
+      "by_label": {
+        "0": {
+          "normal": 2,
+          "risk": 6,
+          "uncertain": 10,
+          "borderline": 2,
+          "hold": 1,
+          "invalid": 1
+        },
+        "1": {
+          "hold": 1,
+          "invalid": 1,
+          "risk": 1,
+          "uncertain": 1
+        }
+      }
+    }
+  },
+  "pipeline_predictions": [
+    {
+      "model": "baseline_v6",
+      "id": "commons_105271363",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_12531632",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_12635970",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_15419080",
+      "label": 0,
+      "result_code": "risk",
+      "score": 90.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_17395044",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_19343376",
+      "label": 1,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_2221354",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_22281685",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.3,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_23187179",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_24120793",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_24322266",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 32.9,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_24641895",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_2738664",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_29046411",
+      "label": 0,
+      "result_code": "normal",
+      "score": 1.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_31091784",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_328730",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_33202972",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_3490332",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_59072960",
+      "label": 1,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_59291092",
+      "label": 1,
+      "result_code": "risk",
+      "score": 100.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_66436125",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.2,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_7213246",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_8051975",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 11.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_82905941",
+      "label": 1,
+      "result_code": "risk",
+      "score": 100.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_87788504",
+      "label": 0,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "baseline_v6",
+      "id": "commons_9465430",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_105271363",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_12531632",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_12635970",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.5,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_15419080",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.6,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_17395044",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_19343376",
+      "label": 1,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_2221354",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_22281685",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_23187179",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_24120793",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 8.2,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_24322266",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_24641895",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.2,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_2738664",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.3,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_29046411",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 29.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_31091784",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_328730",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.2,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_33202972",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_3490332",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_59072960",
+      "label": 1,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_59291092",
+      "label": 1,
+      "result_code": "risk",
+      "score": 99.9,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_66436125",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_7213246",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_8051975",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.7,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_82905941",
+      "label": 1,
+      "result_code": "risk",
+      "score": 96.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_87788504",
+      "label": 0,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_seed42",
+      "id": "commons_9465430",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_105271363",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 2.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_12531632",
+      "label": 0,
+      "result_code": "normal",
+      "score": 1.8,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_12635970",
+      "label": 0,
+      "result_code": "risk",
+      "score": 79.6,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_15419080",
+      "label": 0,
+      "result_code": "unstable",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_17395044",
+      "label": 0,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_19343376",
+      "label": 1,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_2221354",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 6.4,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_22281685",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 2.5,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_23187179",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 22.2,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_24120793",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 5.7,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_24322266",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 2.7,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_24641895",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 9.6,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_2738664",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 27.8,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_29046411",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 2.3,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_31091784",
+      "label": 0,
+      "result_code": "normal",
+      "score": 1.9,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_328730",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 26.3,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_33202972",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 33.4,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_3490332",
+      "label": 0,
+      "result_code": "normal",
+      "score": 0.5,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_59072960",
+      "label": 1,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_59291092",
+      "label": 1,
+      "result_code": "risk",
+      "score": 99.2,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_66436125",
+      "label": 0,
+      "result_code": "risk",
+      "score": 60.5,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_7213246",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 3.1,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_8051975",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 13.6,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_82905941",
+      "label": 1,
+      "result_code": "risk",
+      "score": 82.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_87788504",
+      "label": 0,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "candidate_bookmark_merge_scratch42",
+      "id": "commons_9465430",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 44.1,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_105271363",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 3.9,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_12531632",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 6.8,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_12635970",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 6.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_15419080",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 42.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_17395044",
+      "label": 0,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_19343376",
+      "label": 1,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_2221354",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 3.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_22281685",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 20.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_23187179",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 9.3,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_24120793",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 17.6,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_24322266",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 22.6,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_24641895",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 21.4,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_2738664",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 7.6,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_29046411",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 17.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_31091784",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 4.6,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_328730",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 15.3,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_33202972",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 6.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_3490332",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 11.4,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_59072960",
+      "label": 1,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_59291092",
+      "label": 1,
+      "result_code": "risk",
+      "score": 86.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_66436125",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 9.4,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_7213246",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 6.1,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_8051975",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 34.6,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_82905941",
+      "label": 1,
+      "result_code": "borderline",
+      "score": 43.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_87788504",
+      "label": 0,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed42",
+      "id": "commons_9465430",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 4.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_105271363",
+      "label": 0,
+      "result_code": "normal",
+      "score": 1.2,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_12531632",
+      "label": 0,
+      "result_code": "risk",
+      "score": 73.7,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_12635970",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 6.1,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_15419080",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 40.9,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_17395044",
+      "label": 0,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_19343376",
+      "label": 1,
+      "result_code": "hold",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_2221354",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 2.1,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_22281685",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 11.2,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_23187179",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 11.1,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_24120793",
+      "label": 0,
+      "result_code": "risk",
+      "score": 69.9,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_24322266",
+      "label": 0,
+      "result_code": "risk",
+      "score": 77.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_24641895",
+      "label": 0,
+      "result_code": "borderline",
+      "score": 43.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_2738664",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 15.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_29046411",
+      "label": 0,
+      "result_code": "risk",
+      "score": 92.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_31091784",
+      "label": 0,
+      "result_code": "normal",
+      "score": 1.3,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_328730",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 17.9,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_33202972",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 8.8,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_3490332",
+      "label": 0,
+      "result_code": "risk",
+      "score": 92.2,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_59072960",
+      "label": 1,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_59291092",
+      "label": 1,
+      "result_code": "risk",
+      "score": 93.5,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_66436125",
+      "label": 0,
+      "result_code": "risk",
+      "score": 98.2,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_7213246",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 14.4,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_8051975",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 15.7,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_82905941",
+      "label": 1,
+      "result_code": "uncertain",
+      "score": 6.3,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_87788504",
+      "label": 0,
+      "result_code": "invalid",
+      "score": 0.0,
+      "mode": "eye"
+    },
+    {
+      "model": "reference_seed7_scratch",
+      "id": "commons_9465430",
+      "label": 0,
+      "result_code": "uncertain",
+      "score": 5.9,
+      "mode": "eye"
+    }
+  ],
+  "limitations": [
+    "Small curated Commons corpus; proxy normal labels are not clinical diagnoses.",
+    "Near-duplicate search does not prove absence of patient-level or heavy-crop overlap.",
+    "Not a clinical or phone validation, and no auto deployment."
+  ]
+}
