@@ -39,7 +39,7 @@ async def test_키없어도_OSM결과로_폴백(monkeypatch):
 
 
 @pytest.mark.anyio
-async def test_eye_clinics_survive_result_limit_even_when_optician_is_closer(monkeypatch):
+async def test_overpass_returns_eye_clinics_only_even_when_optician_is_closer(monkeypatch):
     import httpx
     class FakeClient:
         def __init__(self, **kwargs): pass
@@ -50,5 +50,25 @@ async def test_eye_clinics_survive_result_limit_even_when_optician_is_closer(mon
                 {'lat':37.5, 'lon':127, 'tags':{'name':'Optician', 'shop':'optician'}},
                 {'lat':37.51, 'lon':127, 'tags':{'name':'Clinic', 'healthcare':'ophthalmologist'}}]})
     monkeypatch.setattr(clinics.httpx, 'AsyncClient', FakeClient)
-    result = await clinics._search_overpass(37.5,127,size=1)
+    result = await clinics._search_overpass(37.5,127,size=5)
     assert [c['name'] for c in result] == ['Clinic']
+
+
+@pytest.mark.anyio
+async def test_kakao_keeps_only_places_categorised_as_eye_clinics(monkeypatch):
+    import httpx
+    seen = {}
+    class FakeClient:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def get(self, url, **kwargs):
+            seen.update(kwargs['params'])
+            return httpx.Response(200, request=httpx.Request('GET', url), json={'documents': [
+                {'place_name': 'OO안과병원 주차장', 'category_name': '교통,수송 > 교통시설 > 주차장', 'x': '127', 'y': '37.5'},
+                {'place_name': 'OO안과의원', 'category_name': '의료,건강 > 병원 > 안과', 'x': '127', 'y': '37.5', 'distance': '120'}]})
+    monkeypatch.setattr(settings, 'kakao_rest_key', 'test-key')
+    monkeypatch.setattr(clinics.httpx, 'AsyncClient', FakeClient)
+    out = await clinics.search_eye_clinics(37.5, 127.0)
+    assert seen['category_group_code'] == 'HP8'
+    assert [c['name'] for c in out['clinics']] == ['OO안과의원']

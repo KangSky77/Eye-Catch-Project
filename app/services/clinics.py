@@ -27,13 +27,11 @@ def _haversine(a_lat, a_lng, b_lat, b_lng):
 
 
 async def _search_overpass(lat: float, lng: float, radius: int = 4000, size: int = 15) -> list:
-    """해외 폴백: OSM Overpass로 안과/안경원/안과전문 검색 (전 세계)."""
+    """해외 폴백: OSM Overpass로 안과만 검색 (전 세계). 안경원·검안 서비스는 포함하지 않는다."""
     q = (
         f"[out:json][timeout:20];("
         f'nwr["healthcare:speciality"~"ophthalmology",i](around:{radius},{lat},{lng});'
-        f'nwr["healthcare"="optometrist"](around:{radius},{lat},{lng});'
-        f'nwr["shop"="optician"](around:{radius},{lat},{lng});'
-        f'nwr["name"~"안과|ophthalm|eye clinic|optometr|augenarzt|oculist",i](around:{radius},{lat},{lng});'
+        f'nwr["name"~"안과|ophthalm|eye clinic|augenarzt|oculist",i](around:{radius},{lat},{lng});'
         f");out center {size * 3};"
     )
     try:
@@ -53,19 +51,22 @@ async def _search_overpass(lat: float, lng: float, radius: int = 4000, size: int
         name = tags.get("name")
         if elat is None or elng is None or not name:
             continue
+        # 이름 검색에는 'OO안과 옆 안경원' 같은 곳도 걸린다. 안경원·검안 서비스는 안과가 아니다.
+        if tags.get("shop") == "optician" or tags.get("healthcare") == "optometrist":
+            continue
         key = (name, round(elat, 4), round(elng, 4))
         if key in seen:
             continue
         seen.add(key)
         out.append({
             "name": name, "lat": float(elat), "lng": float(elng),
-            "type": "optician" if tags.get("shop") == "optician" else ("optometrist" if tags.get("healthcare") == "optometrist" else "eye_clinic"),
+            "type": "eye_clinic",
             "dist": _haversine(lat, lng, elat, elng),
             "phone": tags.get("phone") or tags.get("contact:phone") or "",
             "address": tags.get("addr:full") or tags.get("addr:street") or "",
             "url": tags.get("website") or "",
         })
-    out.sort(key=lambda c: (c["type"] != "eye_clinic", c["dist"]))
+    out.sort(key=lambda c: c["dist"])
     return out[:size]
 
 
@@ -85,6 +86,9 @@ async def search_eye_clinics(lat: float, lng: float, radius: int = 5000, size: i
     headers = {"Authorization": f"KakaoAK {settings.kakao_rest_key}"}
     params = {
         "query": "안과",
+        # 병원 분류로 좁힌다. 키워드만 쓰면 이름에 '안과'가 들어간 주차장·카셰어링 지점까지
+        # 안과로 표시됐다(2026-10-07 실측: 'OO안과병원 주차장', '투루카 OO안과의원 뒤').
+        "category_group_code": "HP8",
         "x": lng,            # 카카오는 x=경도, y=위도
         "y": lat,
         "radius": min(max(radius, 0), 20000),   # 최대 20km
@@ -102,6 +106,10 @@ async def search_eye_clinics(lat: float, lng: float, radius: int = 5000, size: i
 
     clinics = []
     for d in docs:
+        # 병원 중에서도 안과로 분류된 곳만 남긴다(분류가 비어 있으면 이름 검색 결과를 믿는다).
+        category = d.get("category_name") or ""
+        if category and "안과" not in category:
+            continue
         try:
             clinics.append({
                 "name": d.get("place_name", "안과"),

@@ -1607,8 +1607,6 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 .map-recovery { position: absolute; z-index: 1000; left: .75rem; right: .75rem; bottom: .75rem; background: #fff; border: 1px solid #e2e8f0; border-radius: .75rem; padding: .75rem; box-shadow: 0 4px 15px #0002; }
 .map-recovery p { font-size: .8rem; line-height: 1.5; margin-bottom: .5rem; }
 .map-recovery button { background: #1d4ed8; color: #fff; padding: .5rem .75rem; border-radius: .5rem; font-weight: 700; min-height: 44px; }
-.clinic-filter { display: flex; gap: .6rem; align-items: center; margin: 1rem 0; font-size: .85rem; min-height: 44px; }
-.clinic-filter input { width: 20px; height: 20px; flex-shrink: 0; }
 
 .pdf-download-help { font-size: .8rem; line-height: 1.7; padding: .75rem; background: #eff6ff; border-radius: .75rem; color: #1e40af; }
 .pdf-download-help a { display: inline-block; font-weight: 700; text-decoration: underline; padding: .4rem; min-height: 44px; }

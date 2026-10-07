@@ -34,7 +34,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20261002final">
+    <link rel="stylesheet" href="/static/style.css?v=20261007map">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -91,7 +91,6 @@
                 <h1 class="hero-title" data-i18n="intro_title">당신의 눈 건강,<br>AI가 지켜드립니다</h1>
                 <p class="hero-description" data-i18n="intro_desc">안구 사진 자동 분석과 전문 문진을 통해 주요 안질환 위험도를 체크합니다.</p>
 
-                <p class="text-sm text-slate-500 leading-relaxed mt-3" data-i18n="intro_limit"></p>
                 <div class="screening-flow" data-i18n-aria="aria_flow" aria-label="검사 진행 과정">
                     <div class="flow-item">
                         <span class="flow-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
@@ -517,7 +516,6 @@
             </div>
         </div>
 
-        <label class="clinic-filter"><input id="clinic-include-services" type="checkbox" onchange="refreshMapResults()"><span data-i18n="map_include_services"></span></label>
         <div id="clinic-list" class="space-y-3"></div>
     </main>
 
@@ -581,7 +579,7 @@
             <button type="button" id="photo-check-retake" data-i18n="review_retake">다른 사진 고르기</button>
         </div>
     </dialog>
-    <script src="/static/data.js?v=20261006pdf"></script>
+    <script src="/static/data.js?v=20261007map"></script>
     <script src="/static/app-photo-review.js?v=20260927a"></script>
     <script src="/static/app-safety-copy.js?v=20261001nostore"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
@@ -597,6 +595,6 @@
     <script src="/static/app-disease.js?v=20260927a"></script>
     <script src="/static/app-assess.js?v=20261001nostore"></script>
     <script src="/static/app-findings.js?v=20260929fix8"></script>
-    <script src="/static/app-map.js?v=20261002review"></script>
+    <script src="/static/app-map.js?v=20261007eye"></script>
 </body>
 </html>
