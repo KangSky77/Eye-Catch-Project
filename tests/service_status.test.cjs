@@ -42,6 +42,25 @@ test('status body timeout unlocks retry and late success cannot claim readiness'
     await retry;
     assert.equal(h.nodes.get('service-photo').dataset.status,'ready');
 });
+test('status box stays hidden when ready and appears only for a confirmed problem',async()=>{
+    const h=setup();
+    h.nodes.set('service-status',{dataset:{},setAttribute(){},hidden:true});
+    const box=h.nodes.get('service-status');
+    let work=h.c.checkServiceStatus();
+    assert.equal(box.hidden,true);   // 첫 확인 중에는 깜빡이지 않는다
+    h.requests[0].resolve({status:200,json:async()=>({services:{photo:'ready',ollama:'ready'}})});
+    await work;
+    assert.equal(box.hidden,true);
+    work=h.c.checkServiceStatus();
+    h.requests[1].resolve({status:503,json:async()=>({services:{photo:'ready',ollama:'unavailable'}})});
+    await work;
+    assert.equal(box.hidden,false);
+    work=h.c.checkServiceStatus();
+    assert.equal(box.hidden,false);  // 다시 확인하는 동안에는 보이던 상태 유지
+    h.requests[2].reject(new Error('offline'));
+    await work;
+    assert.equal(box.hidden,false);  // 서버에 닿지 못한 것도 문제다
+});
 test('malformed or failed service response cannot show ready',async()=>{
     for (const response of [{status:200,json:async()=>({services:{photo:'ready'}})},{status:500}]) {
         const h=setup(),work=h.c.checkServiceStatus();h.requests[0].resolve(response);await work;

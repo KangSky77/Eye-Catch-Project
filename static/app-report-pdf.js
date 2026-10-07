@@ -26,7 +26,9 @@ function toAvoidBreakParagraphs(escapedText) {
 
 // PDF 생성기(저장 전 단계까지)를 반환 — downloadPDF()가 .save() 호출
 function buildReportPdf() {
-    const date = escapeHTML(document.getElementById('report-date').innerText);
+    // 화면의 날짜 줄은 '2026.10.6 발행'처럼 문구가 붙어 있다. PDF는 '발급일자:' 라벨을 따로 쓰므로
+    // 날짜만 넣는다 — 그대로 긁어 오면 '발급일자: 2026.10.6 발행'으로 같은 말이 두 번 찍힌다.
+    const date = escapeHTML(state.reportDate || document.getElementById('report-date').innerText);
     const aiResult = escapeHTML(document.getElementById('pdf-ai-result').innerText);
     const amslerResult = escapeHTML(document.getElementById('pdf-amsler-result').innerText);
     const chatResult = escapeHTML(document.getElementById('pdf-chat-result').innerText);
@@ -52,7 +54,7 @@ function buildReportPdf() {
         s2:      t.pdf_s2        || "2. 황반변성 자가검사 (Amsler Grid)",
         s3:      t.pdf_s3        || "3. AI 문진 주요 소견",
         s4:      triage?.level === 'urgent' ? ('4. ' + t.report_urgent_title)
-                    : (t.pdf_s4 || "4. 종합 AI 소견서 (Powered by Gemma)"),
+                    : (t.pdf_s4 || "4. AI 3줄 요약"),
         triage:  t.tri_title     || "권장 조치",
         finds:   t.find_title    || "검사 요약 해석",
         findNote: t.find_disclaimer || "",

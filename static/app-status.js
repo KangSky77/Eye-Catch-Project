@@ -7,6 +7,12 @@ function refreshServiceStatus() {
     const t = translations[state.lang];
     const box = document.getElementById('service-status');
     if (!box) return;
+    // 준비가 끝났으면 첫 화면에 아무것도 띄우지 않는다. 문제가 확인됐을 때만 보여 주고,
+    // 다시 확인하는 동안에는 보이던 상태를 그대로 둔다(첫 확인 때 깜빡이지 않게).
+    if (!_statusChecking) {
+        const s = _serviceStatus?.services;
+        box.hidden = !!s && s.photo === 'ready' && s.ollama === 'ready';
+    }
     for (const [service, key] of [['photo', 'status_photo'], ['ollama', 'status_ai']]) {
         const el = document.getElementById('service-' + service);
         const value = _statusChecking ? 'checking' : _serviceStatus?.services?.[service] === 'ready' ? 'ready' : 'unavailable';

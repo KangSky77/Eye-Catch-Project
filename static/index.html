@@ -112,7 +112,7 @@
                 <!-- 보조 입구(수술 후 확인·사진 없이 증상 확인)는 여기서 빼고 다음 화면인
                      수술 여부 확인(step-surgery)으로 모았다. 첫 화면에 나란히 놓인 세 입구 중
                      무엇을 골라야 하는지가 사용자에게 설명되지 않았다. -->
-                <div id="service-status" class="service-status" role="status" aria-live="polite">
+                <div id="service-status" class="service-status" role="status" aria-live="polite" hidden>
                     <div class="service-status-row">
                         <span id="service-photo" class="service-badge" data-status="checking"></span>
                         <span id="service-ollama" class="service-badge" data-status="checking"></span>
@@ -254,7 +254,7 @@
                     <p data-i18n="upload_privacy">사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.</p>
                     <details>
                         <summary data-i18n="upload_privacy_title">개인정보 안내</summary>
-                        <p data-i18n="upload_privacy_more">검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.</p>
+                        <p data-i18n="upload_privacy_more">검사 결과는 서버에 저장하지 않습니다. 보관하려면 PDF를 다운로드해 주세요. 탭을 닫거나 새 검사를 시작하면 이전 결과를 다시 불러올 수 없습니다.</p>
                     </details>
                 </div>
                 <!-- 모바일: 카메라 앱을 바로 연다(capture). 값 없는 capture는 기기 기본 카메라이며 카메라 앱에서 전·후면을 바꿀 수 있다.
@@ -581,19 +581,19 @@
             <button type="button" id="photo-check-retake" data-i18n="review_retake">다른 사진 고르기</button>
         </div>
     </dialog>
-    <script src="/static/data.js?v=20261002final"></script>
+    <script src="/static/data.js?v=20261006pdf"></script>
     <script src="/static/app-photo-review.js?v=20260927a"></script>
     <script src="/static/app-safety-copy.js?v=20261001nostore"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-report-text.js?v=20260929tidy"></script>
     <script src="/static/app-surgery.js?v=20261001flow2"></script>
     <script src="/static/app-core.js?v=20261002final"></script>
-    <script src="/static/app-status.js?v=20261002fix"></script>
+    <script src="/static/app-status.js?v=20261006quiet"></script>
     <script src="/static/app-vision.js?v=20260929tidy"></script>
     <script src="/static/app-chat.js?v=20261001flow2"></script>
     <script src="/static/app-report.js?v=20261002review"></script>
     <script src="/static/app-report-chat.js?v=20261002review"></script>
-    <script src="/static/app-report-pdf.js?v=20261002final"></script>
+    <script src="/static/app-report-pdf.js?v=20261006date"></script>
     <script src="/static/app-disease.js?v=20260927a"></script>
     <script src="/static/app-assess.js?v=20261001nostore"></script>
     <script src="/static/app-findings.js?v=20260929fix8"></script>
