@@ -61,6 +61,17 @@ test('urgent reports do not invite or send further AI questions and normal repor
     assert.equal(h.element('followup-box').classList.contains('hidden'), false);
 });
 
+test('editing an answer to an urgent signal shows fixed guidance without entering the waiting room',async()=>{
+ const h=setup(),c=h.context;
+ c.state.triage={level:'urgent'};c.state.opinionRequest=h.request('urgent');
+ c.eyeCatchAdmission={ensure(){throw new Error('Urgent guidance must not queue')},complete(){}};
+ const pending=c.runAiOpinion();
+ assert.equal(h.calls.length,1);
+ h.calls[0].resolve({ok:true,text:'지금 바로 진료를 받으세요.'});
+ await pending;
+ assert.ok(h.element('gemma-opinion-text').innerText.includes('지금 바로'));
+});
+
 test('detail is collapsed and full advice stays available for PDF without a server save', async () => {
     const h = setup(), c = h.context;
     c.state.opinionRequest = h.request('surgery');

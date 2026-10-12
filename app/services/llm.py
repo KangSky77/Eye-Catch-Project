@@ -397,6 +397,11 @@ Do not add any fact in the summary. Output nothing else."""
 async def chat_with_gemma_stream(user_msg: str, context: str, lang: str = "ko", explain_results: bool = False,
                                  facts: list[str] | None = None, explain_required: list[str] | None = None,
                                  explain_fallback: list[str] | None = None):
+    from app.services.service_faq import score_explanation
+    fixed = score_explanation(user_msg, lang) if not explain_results else None
+    if fixed:
+        yield fixed
+        return
     if explain_results:
         # Word presence cannot establish meaning: a negated finding or urgency
         # can contain every required term. Use the same reviewed wording as the

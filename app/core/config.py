@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # 무거운 추론/LLM 작업이 동시에 몰릴 때 CPU·VRAM이 고갈되지 않도록 제한한다.
     max_inference_concurrency: int = 1
     max_llm_concurrency: int = 2
+    # Presentation waiting room. Run one Uvicorn worker (models and queue are local).
+    waiting_room_enabled: bool = True
+    max_active_visitors: int = 2
+    visitor_idle_seconds: int = 120
+    waiting_ticket_seconds: int = 60
+    max_waiting_visitors: int = 500
 
     # 이 API를 호출하도록 허용할 외부 origin 목록(쉼표 구분). 기본은 빈 값 = CORS 미적용.
     # 프론트가 같은 서버(/static)에서 서빙되므로 평소에는 same-origin이라 CORS 헤더 자체가
@@ -132,6 +138,9 @@ class Settings(BaseSettings):
             raise ValueError("MAX_INFERENCE_CONCURRENCY는 0보다 커야 합니다.")
         if self.max_llm_concurrency <= 0:
             raise ValueError("MAX_LLM_CONCURRENCY는 0보다 커야 합니다.")
+        if min(self.max_active_visitors, self.visitor_idle_seconds,
+               self.waiting_ticket_seconds, self.max_waiting_visitors) <= 0:
+            raise ValueError("Waiting room limits must be positive.")
         if not (0 < self.eye_gate_threshold < 1):
             raise ValueError("EYE_GATE_THRESHOLD는 0과 1 사이여야 합니다.")
         return self

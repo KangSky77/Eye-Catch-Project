@@ -242,6 +242,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function changeLanguage(lang) {
+    if (globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.language(lang);
     updateUI(lang);
 }
 
@@ -467,6 +468,14 @@ function renderStepProgress() {
 
 // 로고 클릭 — 새로고침(입력한 내용이 전부 날아감) 대신 첫 화면으로 돌아간다
 function goHome() {
+    if (state.triage) {
+        if (globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
+        nextStep('step-intro');
+        showTab('tab-test');
+        return;
+    }
+    if (screeningInProgress() && !window.confirm(translations[state.lang].leave_screening_confirm)) return;
+    if (globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
     state.gateAnswers = {}; state.hadSurgery = null;   // 새 회차는 수술 여부부터 다시 묻는다
     resetScreeningState();
     if (typeof applyTrack === 'function') applyTrack();
@@ -498,6 +507,9 @@ function resetScreeningState() {
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
     state.dynamicAnswers = []; state.chatBusy = false;
     state.dynamicQuestion = null;
+    state.surveyUndo = [];
+    if (state.questionController) state.questionController.abort();
+    state.questionController = null;
     // 수술 여부는 회차 시작 화면(step-surgery)에서 이미 받았다. 사진을 올릴 때마다
     // 이 초기화가 도는데 여기서 비워버리면, 문진에 닿기도 전에 '수술한 눈'이라는 사실이
     // 사라져 사진 판독이 그대로 적용된다(formatCataractResult·photoAssessmentExcluded).

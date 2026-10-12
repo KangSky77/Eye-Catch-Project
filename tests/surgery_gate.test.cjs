@@ -143,15 +143,15 @@ test('일반 검사로 돌아오면 이전 회차의 수술 답이 남지 않는
  assert.equal(x.steps[x.steps.length-1],'step-surgery');
 });
 
-test('일반 사용자나 수술 여부 미응답자는 사진을 건너뛸 수 없다',()=>{
+test('일반 사용자의 사진 생략은 미측정이며 수술 여부 미응답은 먼저 게이트를 거친다',()=>{
  for(const answer of [false,null]) {
   const x=setup();
   if(answer===false) x.run('answerSurgeryGate(false)');
   else x.run('startScreening()');
   const before=x.steps.length;
   x.run('skipPhotoStep()');
-  assert.equal(x.steps.length,before,'사진 없이 암슬러로 이동했다');
-  assert.equal(x.c.state.aiResultCode,'','술후 회차로 잘못 표시했다');
+  assert.equal(x.steps.length,before+(answer===false?1:0));
+  assert.equal(x.c.state.aiResultCode,answer===false?'skipped':'','사진 생략을 정상이나 술후 판독으로 표시하면 안 된다');
  }
 });
 

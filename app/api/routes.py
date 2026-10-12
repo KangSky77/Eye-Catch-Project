@@ -2,7 +2,7 @@ import asyncio
 import logging
 from urllib.parse import urlsplit, urlunsplit
 import httpx
-from fastapi import APIRouter, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, Request, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from app.core.config import settings
@@ -12,6 +12,8 @@ from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, g
 from app.services import questions as followup_questions
 from app.services.clinics import search_eye_clinics
 from app.services.plain_language import rewrite_findings
+from app.services.admission import require_admission
+from app.services.service_faq import is_score_question
 from app.schemas.ai import GemmaRequest, ChatRequest, QuestionGenRequest, PlainFindingsRequest, QuestionTranslationRequest
 
 logger = logging.getLogger(__name__)
@@ -96,7 +98,7 @@ async def nearby_clinics(
     """현재 위치 주변 안과 검색 (카카오 로컬 REST API, 키 없으면 빈 목록)."""
     return await search_eye_clinics(lat, lng)
 
-@router.post("/api/analyze-eye")
+@router.post("/api/analyze-eye", dependencies=[Depends(require_admission)])
 async def analyze_eye(file: UploadFile = File(...), source_compressed: bool = Form(False)):
     async with _inference_slots:
         img = await validate_and_read_image(file)
@@ -118,7 +120,7 @@ async def analyze_eye(file: UploadFile = File(...), source_compressed: bool = Fo
         **result,
     }
 
-@router.post("/api/get-ai-opinion")
+@router.post("/api/get-ai-opinion", dependencies=[Depends(require_admission)])
 async def get_ai_opinion(req: GemmaRequest):
     stream = get_gemma_opinion_stream(
         req.cataract_res, req.amsler_res, req.chat_symptoms, req.lang,
@@ -137,25 +139,55 @@ async def get_ai_opinion(req: GemmaRequest):
         media_type="text/plain"
     )
 
-@router.post("/api/chat-with-gemma")
+@router.post("/api/chat-with-gemma", dependencies=[Depends(require_admission)])
 async def chat_with_gemma(req: ChatRequest):
     stream = chat_with_gemma_stream(req.user_msg, req.context, req.lang,
                                    explain_results=req.explain_results, facts=req.facts,
                                    explain_required=req.explain_required, explain_fallback=req.explain_fallback)
     return StreamingResponse(
         # 고정 문장 설명은 모델을 부르지 않으므로 줄을 서지 않는다. 실험 모드(ai_checked)는 모델을 부른다.
-        stream if req.explain_results and settings.explain_mode == "fixed" else _limited_stream(stream),
+        stream if (req.explain_results and settings.explain_mode == "fixed")
+        or (not req.explain_results and is_score_question(req.user_msg)) else _limited_stream(stream),
         media_type="text/plain"
     )
 
-@router.post("/api/generate-next-question")
-async def generate_next_question_endpoint(req: QuestionGenRequest):
+async def _question_until_disconnect(req, request):
+    """Stop optional generation promptly when the visitor skips or edits it."""
+    async def generate():
+        async with _llm_slots:
+            return await generate_personalized_question(req)
+    stopping = asyncio.Event()
+    async def disconnected():
+        while not stopping.is_set():
+            if await request.is_disconnected():
+                return
+            try:
+                await asyncio.wait_for(stopping.wait(), timeout=0.1)
+            except asyncio.TimeoutError:
+                pass
+    work = asyncio.create_task(generate())
+    gone = asyncio.create_task(disconnected())
+    try:
+        done, _ = await asyncio.wait({work, gone}, return_when=asyncio.FIRST_COMPLETED)
+        if work in done:
+            return await work
+        raise HTTPException(499, detail="Client disconnected")
+    finally:
+        # is_disconnected uses an AnyIO cancellation scope. Stop the polling loop
+        # cooperatively so an external cancellation cannot be swallowed there.
+        stopping.set()
+        if not work.done():
+            work.cancel()
+        await asyncio.gather(work, gone, return_exceptions=True)
+
+
+@router.post("/api/generate-next-question", dependencies=[Depends(require_admission)])
+async def generate_next_question_endpoint(req: QuestionGenRequest, request: Request):
     if not followup_questions.eligible_ids(req):
         return followup_questions.response()
-    async with _llm_slots:
-        return await generate_personalized_question(req)
+    return await _question_until_disconnect(req, request)
 
-@router.post("/api/translate-question")
+@router.post("/api/translate-question", dependencies=[Depends(require_admission)])
 async def translate_question_endpoint(req: QuestionTranslationRequest):
     async with _llm_slots:
         return await translate_personalized_question(req)

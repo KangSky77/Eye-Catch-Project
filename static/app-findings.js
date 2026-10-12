@@ -232,12 +232,11 @@ function renderFindings(container) {
     }
 
     if (on) {
-        // 준비된 쉬운 표현이 없어 원문으로 남은 줄 수를 함께 밝힌다.
-        const kept = (state_.lines || []).filter(l => !l.rewritten).length;
+        // Retained original lines preserve their meaning; explain the view without implementation details.
         const plainNote = document.createElement('p');
         plainNote.id = 'plain-findings-note';
         plainNote.className = 'text-[10px] text-blue-700 mt-2 leading-relaxed';
-        plainNote.textContent = (t.plain_note || '') + (kept ? ' ' + (t.plain_kept || '').replace('{n}', kept) : '');
+        plainNote.textContent = t.plain_note || '';
         container.appendChild(plainNote);
     }
 

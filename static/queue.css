@@ -1,0 +1,54 @@
+.waiting-entry { margin:0; min-height:100vh; background:radial-gradient(ellipse at 15% 28%,#edf3ff 0,transparent 44%),radial-gradient(ellipse at 88% 75%,#eef7ff 0,transparent 40%),#f8faff; color:#182840; font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+.waiting-entry *,.admission-dialog * { box-sizing:border-box; }
+.queue-header { height:88px; padding:0 36px; display:flex; align-items:center; justify-content:space-between; gap:16px; max-width:1200px; margin:auto; }
+.queue-brand { display:inline-flex; align-items:center; gap:11px; color:#14233c; font-size:25px; font-weight:800; letter-spacing:-1px; text-decoration:none; white-space:nowrap; }
+.queue-brand-mark { display:grid; place-items:center; width:43px; height:43px; border-radius:14px; background:linear-gradient(145deg,#387bff,#1851ec); box-shadow:0 5px 12px #2563eb22,inset 0 1px 0 #ffffff40; }
+.queue-brand-mark svg { width:27px; stroke:white; stroke-width:1.8; }
+.queue-header select { max-width:150px; font:600 13px/1.4 system-ui,sans-serif; padding:11px 14px; border:1px solid #e0e7f1; border-radius:12px; background:#ffffffd9; color:#46556a; cursor:pointer; }
+.queue-shell { display:grid; place-items:center; min-height:calc(100vh - 88px); padding:26px 24px 68px; }
+.queue-card { position:relative; width:min(100%,520px); margin:auto; padding:34px 38px 25px; background:#fff; border:1px solid #e3ebf7; border-radius:28px; box-shadow:0 20px 64px #283e6e08,0 3px 12px #283e6e04; text-align:center; overflow-wrap:anywhere; }
+.queue-status { display:inline-flex; align-items:center; gap:7px; padding:5px 11px; border-radius:100px; background:#f0f5ff; color:#3563aa; font-size:12px; font-weight:650; }
+.queue-status-dot { width:6px; height:6px; background:#3878f8; border-radius:50%; animation:queue-pulse 2s ease-in-out infinite; }
+.queue-visual { width:80px; height:80px; margin:16px auto 12px; }
+.queue-visual svg { display:block; width:100%; height:100%; }
+.queue-card h1 { color:#192942; font-size:28px; font-weight:750; letter-spacing:-1px; margin:0 auto 12px; line-height:1.4; word-break:keep-all; }
+.queue-card #queue-description { color:#607087; font-size:14px; line-height:1.85; max-width:365px; margin:0 auto; white-space:pre-line; word-break:keep-all; }
+.queue-ticket { position:relative; margin:24px 0 0; padding:19px 14px 18px; border:1px solid #dde9ff; border-radius:18px; background:linear-gradient(120deg,#f1f6ff,#f7faff); }
+.queue-ticket[hidden] { display:none; }
+.queue-ticket::before,.queue-ticket::after { content:""; position:absolute; top:50%; width:12px; height:22px; background:white; border:1px solid #dde9ff; }
+.queue-ticket::before { left:-1px; border-left:0; border-radius:0 22px 22px 0; }
+.queue-ticket::after { right:-1px; border-right:0; border-radius:22px 0 0 22px; }
+.queue-ticket-label { display:block; color:#61769a; font-size:13px; font-weight:600; }
+.queue-ticket-value { display:flex; justify-content:center; align-items:baseline; gap:6px; color:#215bea; line-height:1.25; margin-top:4px; }
+.queue-ticket-number { font-size:68px; font-weight:800; letter-spacing:-3px; font-variant-numeric:tabular-nums; }
+.queue-ticket-unit { font-size:20px; font-weight:650; }
+.queue-help { display:flex; align-items:flex-start; gap:9px; margin:22px 3px 0; color:#64748b; text-align:left; }
+.queue-help svg { width:17px; min-width:17px; height:17px; margin-top:3px; }
+.queue-help p { margin:0; font-size:12px; line-height:1.8; word-break:keep-all; }
+.queue-card #queue-cancel { display:block; width:100%; padding:11px 14px; margin:18px auto 0; border:1px solid #e2e8f0; border-radius:12px; background:white; color:#526278; font:600 13px/1.5 system-ui,sans-serif; cursor:pointer; transition:background .15s,border-color .15s; }
+.queue-card #queue-cancel:hover { background:#f7f9fc; border-color:#bdcbe1; }
+.queue-care { border-top:1px solid #eef1f6; margin:21px 0 0; padding:16px 0 0; color:#64748b; font-size:12px; line-height:1.8; word-break:keep-all; }
+.queue-card[data-state="paused"] .queue-status-dot { animation:none; background:#94a3b8; }
+.queue-card[data-state="paused"] #queue-cancel { background:#2563eb; border-color:#2563eb; color:white; }
+.queue-card[data-state="paused"] #queue-cancel:hover { background:#1d4ed8; }
+.queue-header select:focus-visible,.queue-card button:focus-visible,.queue-brand:focus-visible { outline:3px solid #76a7ff; outline-offset:4px; }
+.admission-dialog { border:0; padding:0; width:min(calc(100% - 32px),520px); max-height:calc(100dvh - 32px); overflow:auto; border-radius:28px; background:white; color:#182840; font:16px/1.65 system-ui,sans-serif; }
+.admission-dialog::backdrop { background:#15254480; backdrop-filter:blur(5px); }
+.admission-dialog .queue-card { border:0; box-shadow:none; padding-top:24px; }
+.admission-dialog .queue-brand { display:flex; width:100%; justify-content:center; font-size:19px; letter-spacing:-.5px; margin:0 auto 12px; }
+.admission-dialog .queue-visual { margin-top:12px; }
+@keyframes queue-pulse { 50% { box-shadow:0 0 0 4px #3878f815; } }
+@media (max-width:600px) {
+ .queue-header { height:74px; padding:0 20px; }
+ .queue-brand { font-size:22px; gap:9px; }
+ .queue-brand-mark { width:38px; height:38px; border-radius:12px; }
+ .queue-header select { max-width:118px; padding:10px; }
+ .queue-shell { min-height:calc(100vh - 74px); padding:22px 20px 40px; }
+ .queue-card { padding:28px 24px 21px; border-radius:24px; }
+ .queue-card h1 { font-size:25px; letter-spacing:-.8px; }
+ .queue-visual { margin-top:15px; }
+ .queue-ticket-number { font-size:64px; }
+ .queue-card #queue-description { font-size:13px; }
+}
+@media (max-width:360px) { .queue-header { padding:0 14px; } .queue-shell { padding-left:14px; padding-right:14px; } .queue-card { padding-left:20px; padding-right:20px; } .queue-brand { font-size:20px; } .queue-header select { max-width:110px; } }
+@media (prefers-reduced-motion:reduce) { .queue-status-dot { animation:none; } .queue-card #queue-cancel { transition:none; } }

@@ -105,6 +105,7 @@ async function finish() {
     if (findBox && typeof renderFindings === 'function') renderFindings(findBox);
 
     showTab('tab-report');
+    if (typeof updateSurveyTools === 'function') updateSurveyTools();
 
     // 소견서 생성은 실패해도 처음부터 다시 하지 않고 이 부분만 재시도할 수 있어야 한다.
     // (개발 중 --reload 서버 재시작, ngrok 끊김, Ollama 콜드스타트 등으로 흔히 끊긴다)
@@ -243,9 +244,35 @@ function cancelAiOpinion() {
     if (cancelBtn) cancelBtn.classList.add('hidden');
 }
 
+async function fetchOpinionWhenReady(request, signal) {
+    // Editing/skipping a question can arrive just before its cancelled job releases
+    // the visitor's slot. Retry only that precise transition, within the AI deadline.
+    while (!signal.aborted) {
+        const response = await fetch('/api/get-ai-opinion', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(request), signal
+        });
+        if (response.status !== 409 && response.status !== 429) return response;
+        const error = await response.clone().json().catch(() => null);
+        if (error?.detail?.code !== 'VISITOR_BUSY') return response;
+        await new Promise((resolve, reject) => {
+            const abort = () => { clearTimeout(timer); reject(new DOMException('Cancelled','AbortError')); };
+            const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(); }, 250);
+            signal.addEventListener('abort', abort, {once:true});
+            if (signal.aborted) abort();
+        });
+    }
+    throw new DOMException('Cancelled','AbortError');
+}
+
 async function runAiOpinion() {
-    if (typeof clearPdfDownload === 'function') clearPdfDownload();
     if (!state.opinionRequest) return;
+    const entryGeneration = state.sessionGeneration;
+    if (globalThis.eyeCatchAdmission && state.triage?.level !== 'urgent') {
+        try { await globalThis.eyeCatchAdmission.ensure(); } catch (_) { return; }
+        if (state.sessionGeneration !== entryGeneration) return;
+    }
+    if (typeof clearPdfDownload === 'function') clearPdfDownload();
     cancelAiOpinion();
     const request = JSON.parse(JSON.stringify(state.opinionRequest));
     const active = { controller: new AbortController(), loader: null };
@@ -289,12 +316,7 @@ async function runAiOpinion() {
     if (cancelBtn) cancelBtn.classList.remove('hidden');
     try {
         const { text, hasError } = await withAiDeadline(async () => {
-            const response = await fetch('/api/get-ai-opinion', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(request),
-                signal: active.controller.signal
-            });
+            const response = await fetchOpinionWhenReady(request, active.controller.signal);
 
             if (!isCurrent()) return;
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -355,6 +377,7 @@ async function runAiOpinion() {
         showFailure(t[key], key);
         return;
     } finally {
+        if (isCurrent() && globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
         if (isCurrent()) {
             _activeOpinion = null;
             if (cancelBtn) cancelBtn.classList.add('hidden');

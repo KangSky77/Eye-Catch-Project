@@ -77,13 +77,40 @@ function explainCheckPayload() {
 
 /** '내 결과 쉽게 설명해 줘' 버튼 — 입력 없이 바로 묻는다. */
 function askExplainResults() {
-    const inputEl = document.getElementById('user-followup-input');
-    if (!inputEl || _followupBusy) return;
-    inputEl.value = translations[state.lang].rep_followup_explain || '';
-    askGemmaMore(true);
+    if (typeof togglePlainFindings === 'function') togglePlainFindings();
+    document.getElementById('findings-box')?.scrollIntoView({block: 'start', behavior: 'smooth'});
 }
 
+function isScoreQuestion(message) {
+    const text = String(message).toLowerCase().replace(/\s+/g, ' ');
+    if (/(?<!\d)(?:100|[1-9]?\d)\s*\/\s*100(?!\d)/.test(text)) return true;
+    return ['점수','score','puntuación','puntuacion','puntaje','スコア','点数','评分','分数'].some(term => text.includes(term))
+        && ['ai','ia','특징','feature','rasgos','signes','特徴','特征'].some(term => text.includes(term));
+}
 async function askGemmaMore(explainResults = false) {
+    if (state.triage?.level === 'urgent' || _followupBusy) return;
+    if (!document.getElementById('user-followup-input')?.value.trim()) return;
+    const scoreQuestion = isScoreQuestion(document.getElementById('user-followup-input')?.value || '');
+    if (!explainResults && scoreQuestion) {
+        // Tool definitions are already reviewed and available on the device.
+        // Display them immediately, including while the model/server is unavailable.
+        const input = document.getElementById('user-followup-input');
+        const response = document.getElementById('followup-response');
+        const t = translations[state.lang];
+        if (response && t.score_note && t.score_limit) {
+            response.classList.remove('hidden', 'text-rose-600');
+            response.innerText = `Q: ${input.value.trim()}\nA: ${t.score_note} ${t.score_limit}`;
+            input.value = '';
+            state.followupErrorKey = '';
+            return;
+        }
+    }
+    const requiresSeat = explainResults ? globalThis.eyeCatchAdmission?.explanationRequiresSeat?.() : !scoreQuestion;
+    if (globalThis.eyeCatchAdmission && requiresSeat) {
+        const generationBeforeQueue = state.sessionGeneration;
+        try { await globalThis.eyeCatchAdmission.ensure(); } catch (_) { return; }
+        if (state.sessionGeneration !== generationBeforeQueue) return;
+    }
     if (state.triage?.level === 'urgent') return;
     if (_followupBusy) return;   // 답변 스트리밍 중 재전송 금지 (응답이 뒤섞이는 것 방지)
 
@@ -169,6 +196,7 @@ async function askGemmaMore(explainResults = false) {
         state.followupErrorKey = e.name === 'TimeoutError' ? 'ai_timeout' : active.controller.signal.aborted ? 'ai_cancelled' : 'srv_err';
         responseEl.innerText = t[state.followupErrorKey] || t.srv_err || "서버와 연결할 수 없습니다.";
     } finally {
+        if (isCurrent() && requiresSeat && globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
         if (_activeFollowup === active) cancelFollowup();
     }
 }

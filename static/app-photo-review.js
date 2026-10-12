@@ -89,8 +89,7 @@ function showPhotoCheckFailure(file, checks, reasonCode) {
     const preview = document.getElementById('photo-check-image');
     const body = document.getElementById('photo-check-body');
     const retake = document.getElementById('photo-check-retake');
-    // 사진을 건너뛰는 버튼은 수술한 사람에게만 보인다(안대·보호대로 촬영이 불가능한 경우).
-    // 일반 검사는 사진이 검사의 본체라, 건너뛰면 남는 것이 문진뿐이다.
+    // Anyone unable to obtain a usable photo can continue with the grid and questionnaire.
     const symptoms = document.getElementById('photo-check-symptoms');
     const url = file ? URL.createObjectURL(file) : '';
     const finish = () => {
