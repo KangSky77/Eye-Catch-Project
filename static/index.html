@@ -230,7 +230,7 @@
                 <div class="guide-actions">
                 <button type="button" onclick="nextStep('step-photo')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg btn-pop" data-general-only data-i18n="tips_btn">이해했습니다!</button>
                 <button type="button" onclick="nextStep('step-photo')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg btn-pop" data-surgery-only hidden data-i18n="post_photo_continue">사진으로 진행하기</button>
-                <button type="button" onclick="skipPhotoStep()" class="skip-photo-btn" data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
+                <button type="button" onclick="skipPhotoStep()" class="skip-photo-btn" data-surgery-only hidden data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
                 <button type="button" onclick="nextStep('step-surgery')" class="back-link" data-i18n="back_btn">← 이전</button>
                 </div>
             </div>
@@ -272,7 +272,7 @@
                 <input type="file" id="cataract-file" class="sr-only" accept="image/*" onchange="runAIAnalysis()" aria-describedby="upload-guide">
                 <label for="cataract-file" class="upload-pick block w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-xl btn-pop cursor-pointer" data-i18n="upload_btn">사진 선택 및 전송</label>
                 <p class="dropzone-hint" data-i18n="upload_drop_hint">여기로 사진을 끌어다 놓아도 됩니다.</p>
-                <button type="button" onclick="skipPhotoStep()" class="skip-photo-btn" data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
+                <button type="button" onclick="skipPhotoStep()" class="skip-photo-btn" data-surgery-only hidden data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
                 <button type="button" onclick="nextStep('step-guide')" class="back-link" data-i18n="back_btn">← 이전</button>
             </div>
         </div>
@@ -593,21 +593,21 @@
             <p id="photo-check-body" class="pc-reason"></p>
         </div>
         <div class="pr-actions">
-            <button type="button" id="photo-check-symptoms" data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
+            <button type="button" id="photo-check-symptoms" data-surgery-only hidden data-i18n="post_skip_photo">사진 없이 다음 단계로</button>
             <button type="button" id="photo-check-retake" data-i18n="review_retake">다른 사진 고르기</button>
         </div>
     </dialog>
     <script src="/static/data.js?v=20261007map"></script>
-    <script src="/static/app-photo-review.js?v=20261012firstuse"></script>
+    <script src="/static/app-photo-review.js?v=20261013photorequired"></script>
     <script src="/static/app-safety-copy.js?v=20261001nostore"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-report-text.js?v=20260929tidy"></script>
-    <script src="/static/app-ux-copy.js?v=20261012firstuse"></script>
-    <script src="/static/app-surgery.js?v=20261012firstuse"></script>
+    <script src="/static/app-ux-copy.js?v=20261013photorequired"></script>
+    <script src="/static/app-surgery.js?v=20261013photorequired"></script>
     <script src="/static/app-core.js?v=20261012firstuse"></script>
     <script src="/static/app-admission.js?v=20261008design2"></script>
     <script src="/static/app-status.js?v=20261006quiet"></script>
-    <script src="/static/app-vision.js?v=20261012firstuse"></script>
+    <script src="/static/app-vision.js?v=20261013photorequired"></script>
     <script src="/static/app-chat.js?v=20261012firstuse"></script>
     <script src="/static/app-report.js?v=20261012firstuse"></script>
     <script src="/static/app-report-chat.js?v=20261012firstuse"></script>

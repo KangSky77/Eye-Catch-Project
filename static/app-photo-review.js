@@ -89,7 +89,7 @@ function showPhotoCheckFailure(file, checks, reasonCode) {
     const preview = document.getElementById('photo-check-image');
     const body = document.getElementById('photo-check-body');
     const retake = document.getElementById('photo-check-retake');
-    // Anyone unable to obtain a usable photo can continue with the grid and questionnaire.
+    // 안대·보호대로 촬영이 불가능한 수술 이용자에게만 사진 생략을 허용한다.
     const symptoms = document.getElementById('photo-check-symptoms');
     const url = file ? URL.createObjectURL(file) : '';
     const finish = () => {

@@ -621,7 +621,7 @@ function startAmslerStep(viaHistory = false) {
     // 폭이 0이라 잘못된 크기가 나온다. 그래서 nextStep() 다음에 그린다.
     nextStep('step-amsler', viaHistory);
     const skipped = document.getElementById('photo-skipped-note');
-    if (skipped) skipped.classList.toggle('hidden', !['postop', 'skipped'].includes(state.aiResultCode));
+    if (skipped) skipped.classList.toggle('hidden', state.aiResultCode !== 'postop');
     updateAmslerPrompt();
 }
 

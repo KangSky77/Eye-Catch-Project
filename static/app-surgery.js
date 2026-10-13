@@ -464,11 +464,12 @@ function setGateAnswers(answers) {
  applyTrack();
 }
 
-/** Continue without a photo. Missing photo data must not become a normal verdict. */
+/** 수술 후 안대·보호대로 촬영이 불가능한 경우에만 사진 없이 나머지 단계를 잇는다. */
 function skipPhotoStep() {
- if (state.hadSurgery !== true && state.hadSurgery !== false && !hasSurgery()) return;
+ // 숨겨진 버튼이나 오래된 이벤트로 일반 검사의 필수 사진 단계를 건너뛰지 못한다.
+ if (state.hadSurgery !== true && !hasSurgery()) return;
  cancelEyeAnalysis();
- state.aiResultCode = state.hadSurgery === true || hasSurgery() ? 'postop' : 'skipped';
+ state.aiResultCode = 'postop';
  state.aiResultData = null;
  state.photoChecks = [];
  startAmslerStep();
