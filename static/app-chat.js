@@ -75,11 +75,9 @@ function editLastSurveyAnswer() {
     document.getElementById('chat-current-question')?.focus({preventScroll:true});
     scrollChatToLatest();
 }
-function surveyProgressLabel(n, total) {
+function surveyProgressLabel(n) {
     const t = translations[state.lang];
-    return total && t.survey_progress_full
-        ? t.survey_progress_full.replace('{n}', n).replace('{total}', total)
-        : (t.chat_progress || 'Question {n}').replace('{n}', n);
+    return (t.chat_progress || 'Question {n}').replace('{n}', n);
 }
 function updateSurveyTools() {
     if (typeof document === 'undefined') return;
@@ -89,9 +87,6 @@ function updateSurveyTools() {
     const canUndo = !!state.surveyUndo?.length;
     if (undo) { undo.disabled = !canUndo; undo.textContent = t.survey_undo || ''; }
     if (edit) { edit.hidden = !canUndo; edit.textContent = t.survey_undo || ''; }
-    const progress = document.getElementById('survey-progress-text');
-    if (progress) progress.textContent = (state.stepIdx >= (questions[state.lang]?.length || 0)
-        && !hasSurgery()) ? (t.survey_extra_hint || '') : (t.survey_progress_hint || '');
     const skip = document.getElementById('survey-skip-extra');
     if (skip) skip.hidden = !(state.step === 'step-chat'
         && state.stepIdx >= (questions[state.lang]?.length || 0) && !hasSurgery());
@@ -501,8 +496,7 @@ function addMsg(sender, text, progress) {
         const p = document.createElement('span');
         p.className = 'block text-[10px] font-black text-slate-400 mb-1';
         p.dataset.questionNumber = String(progress).split('/')[0].trim();
-        p.dataset.questionTotal = String(progress).split('/')[1]?.trim() || '';
-        p.textContent = surveyProgressLabel(p.dataset.questionNumber, p.dataset.questionTotal);
+        p.textContent = surveyProgressLabel(p.dataset.questionNumber);
         p.setAttribute('aria-hidden', 'true');
         bubble.appendChild(p);
         bubble.appendChild(document.createTextNode(text));
@@ -538,7 +532,7 @@ function refreshChatLanguage() {
     // The displayed ordinal belongs to its message, not the already-advanced state indices.
     // Translate it even during transitions and optional AI questions.
     box.querySelectorAll('[data-question-number]').forEach(label => {
-        label.textContent = surveyProgressLabel(label.dataset.questionNumber, label.dataset.questionTotal);
+        label.textContent = surveyProgressLabel(label.dataset.questionNumber);
     });
     // 답변 직후 500ms 동안은 riskIdx/symIdx가 이미 '다음 질문'을 가리키는데
     // 화면에는 아직 이전 질문이 떠 있다. 그 틈에 언어를 바꾸면 이전 질문 버블을

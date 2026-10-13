@@ -34,7 +34,7 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20261012firstuse">
+    <link rel="stylesheet" href="/static/style.css?v=20261013survey">
     <link rel="stylesheet" href="/static/queue.css?v=20261008design3">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
@@ -366,7 +366,7 @@
             <div class="glass-card chat-shell flex flex-col overflow-hidden">
                 <div id="survey-mode-banner" class="survey-mode-banner" role="status" aria-live="polite"></div>
                 <div id="chat-box" class="chat-box flex-1 overflow-y-auto space-y-5 bg-slate-50/50 no-scrollbar" role="log" aria-live="polite"></div>
-                <div class="survey-toolbar"><p id="survey-progress-text" role="status" aria-live="polite"></p><button id="survey-undo" type="button" onclick="editLastSurveyAnswer()" disabled data-i18n="survey_undo"></button></div>
+                <div class="survey-toolbar"><button id="survey-undo" type="button" onclick="editLastSurveyAnswer()" disabled data-i18n="survey_undo"></button></div>
                 <div id="chat-controls" class="p-4 bg-white/80 border-t grid grid-cols-2 gap-3 backdrop-blur-md">
                     <!-- 두 선택지의 시각 무게를 같게 둔다(응답 편향 방지) — app-chat.js의 renderChatOptions와 동일 -->
                     <button type="button" id="chat-yes-btn" onclick="handleChatAnswer(true)" class="py-4 bg-white text-blue-700 border-2 border-blue-200 rounded-2xl font-bold text-sm btn-pop" data-i18n="chat_yes">네</button>
@@ -602,13 +602,13 @@
     <script src="/static/app-safety-copy.js?v=20261001nostore"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-report-text.js?v=20260929tidy"></script>
-    <script src="/static/app-ux-copy.js?v=20261013photorequired"></script>
+    <script src="/static/app-ux-copy.js?v=20261013survey"></script>
     <script src="/static/app-surgery.js?v=20261013photorequired"></script>
     <script src="/static/app-core.js?v=20261012firstuse"></script>
     <script src="/static/app-admission.js?v=20261008design2"></script>
     <script src="/static/app-status.js?v=20261006quiet"></script>
     <script src="/static/app-vision.js?v=20261013photorequired"></script>
-    <script src="/static/app-chat.js?v=20261012firstuse"></script>
+    <script src="/static/app-chat.js?v=20261013survey"></script>
     <script src="/static/app-report.js?v=20261012firstuse"></script>
     <script src="/static/app-report-chat.js?v=20261012firstuse"></script>
     <script src="/static/app-report-pdf.js?v=20261006date"></script>

@@ -7,7 +7,7 @@ const read = name => fs.readFileSync(path.join(__dirname,'../static',name),'utf8
 function context() {
  const timers=[],steps=[];
  const box={innerHTML:'before answer',scrollHeight:1,scrollTop:0};
- const nodes={'chat-box':box,'survey-undo':{},'report-edit-answers':{},'survey-progress-text':{},'survey-skip-extra':{},'chat-current-question':{focus(){}}};
+ const nodes={'chat-box':box,'survey-undo':{},'report-edit-answers':{},'survey-skip-extra':{},'chat-current-question':{focus(){}}};
  const c=vm.createContext({console,structuredClone,AbortController,
   setTimeout:f=>{timers.push(f);return timers.length},clearTimeout(){},
   state:{lang:'ko',sessionGeneration:1,hadSurgery:false,gateAnswers:{surgery:'none'},riskIdx:1,symIdx:0,stepIdx:0,
@@ -78,8 +78,10 @@ test('home preserves completed findings; a cancelled new check preserves them to
 test('first-visit controls and progress labels exist in all six languages',()=>{
  const x=context();for(const lang of ['ko','en','es','fr','ja','zh']) {
   x.c.state.lang=lang;const t=x.run('translations[state.lang]');
-  for(const key of ['intro_preparation','intro_limit','new_screening_confirm','leave_screening_confirm','survey_undo','survey_extra_hint','survey_skip_extra','report_details'])assert.ok(t[key],`${lang}:${key}`);
-  const label=x.run('surveyProgressLabel("4","19")');assert.ok(label.includes('4')&&label.includes('19'),lang);
+  for(const key of ['intro_preparation','intro_limit','new_screening_confirm','leave_screening_confirm','survey_undo','survey_skip_extra','report_details'])assert.ok(t[key],`${lang}:${key}`);
+  const label=x.run('surveyProgressLabel("4","19")');
+  assert.equal(label,t.chat_progress.replace('{n}','4'),lang);
+  assert.ok(!label.includes('19'),lang);
  }
 });
 test('score-question recognition is available in every language and unrelated questions remain free chat',()=>{

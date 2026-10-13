@@ -1622,8 +1622,7 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 }
 .scope-details { margin: 1rem 0; text-align: left; }
 .scope-details summary,.report-details summary { cursor: pointer; font-size: .875rem; font-weight: 700; color: #1d4ed8; padding: .75rem 0; }
-.survey-toolbar { padding: .65rem 1rem; display: flex; align-items: center; gap: .65rem; border-top: 1px solid #e2e8f0; background: #f8fafc; }
-.survey-toolbar p { flex: 1; font-size: .75rem; line-height: 1.5; color: #475569; }
+.survey-toolbar { padding: .65rem 1rem; display: flex; align-items: center; justify-content: flex-end; border-top: 1px solid #e2e8f0; background: #f8fafc; }
 .survey-toolbar button { flex: none; min-height: 44px; padding: .5rem; border: 1px solid #cbd5e1; border-radius: .6rem; font-size: .8125rem; color: #1d4ed8; background: white; }
 .survey-toolbar button:disabled { opacity: .45; color: #64748b; }
 .survey-skip-extra { padding: .7rem 1rem; min-height: 44px; font-size: .8125rem; color: #1d4ed8; background: #eff6ff; }
@@ -1646,9 +1645,6 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
  #step-guide .ex-card figcaption { font-size: .75rem; }
  #step-guide .section-icon { margin-bottom: .75rem; width: 40px; height: 40px; }
  #step-guide .guide-actions { padding-top: .75rem; }
- .survey-toolbar { flex-wrap: wrap; }
- .survey-toolbar p { min-width: 9rem; }
- .chat-box { max-height: 34dvh; }
 }
 .pdf-download-help a { display: inline-block; font-weight: 700; text-decoration: underline; padding: .4rem; min-height: 44px; }
 .pdf-download-help.hidden { display: none; }
