@@ -220,3 +220,49 @@ async def test_응급_triage만_전달돼도_모델을_호출하지_않는다(mo
     out = "".join([part async for part in llm.get_gemma_opinion_stream(
         "normal", "normal", [], "ko", triage_level="urgent")])
     assert out.startswith("<<<SUMMARY>>>\n지금 바로 안과 진료를 받으세요.")
+
+
+def test_ollama_urls_정규화_및_라운드로빈_부하분산(monkeypatch):
+    llm.reset_worker_pool_state()
+    monkeypatch.setattr(llm.settings, "ollama_urls", "http://100.64.0.1:11434, http://100.64.0.2:11434/api/generate")
+    assert llm.settings.ollama_url_list == [
+        "http://100.64.0.1:11434/api/generate",
+        "http://100.64.0.2:11434/api/generate",
+    ]
+    first = llm._ordered_ollama_urls()[0]
+    second = llm._ordered_ollama_urls()[0]
+    assert {first, second} == set(llm.settings.ollama_url_list)
+    # 첫 번째 워커가 바쁘면(in_flight=1) 두 번째 워커가 항상 1순위로 선택된다
+    llm._worker_in_flight["http://100.64.0.1:11434/api/generate"] = 1
+    assert llm._ordered_ollama_urls()[0] == "http://100.64.0.2:11434/api/generate"
+    llm.reset_worker_pool_state()
+
+
+@pytest.mark.anyio
+async def test_분산_워커_장애시_다음_워커로_자동_폴백(monkeypatch):
+    import httpx
+    llm.reset_worker_pool_state()
+    monkeypatch.setattr(llm.settings, "ollama_urls", "http://100.64.0.1:11434,http://100.64.0.2:11434")
+    tried = []
+
+    class FakeClient:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def post(self, url, json=None):
+            tried.append(url)
+            if "100.64.0.1" in url:
+                raise httpx.ConnectError("worker 1 offline")
+            return httpx.Response(200, request=httpx.Request("POST", url), json={"response": '{"ok": true}'})
+
+    monkeypatch.setattr(llm.httpx, "AsyncClient", FakeClient)
+    res = await llm.generate_json("test", {"type": "object"})
+    assert res == {"ok": True}
+    assert len(tried) == 2
+    # 실패한 1번 워커는 쿨다운에 들어가므로 다음 요청은 2번 워커로 바로 간다
+    tried.clear()
+    res2 = await llm.generate_json("test", {"type": "object"})
+    assert res2 == {"ok": True}
+    assert tried == ["http://100.64.0.2:11434/api/generate"]
+    llm.reset_worker_pool_state()
+

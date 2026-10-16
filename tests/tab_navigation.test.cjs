@@ -58,6 +58,19 @@ test('닫혀 있는 모달을 괜히 다시 닫지 않는다',()=>{
  assert.ok(!x.closed.includes('disease-modal'));
 });
 
+test('browser history includes surgery and guide before the first photo upload',()=>{
+ const entries=[];const node={classList:{add(){},remove(){}}};
+ const c=vm.createContext({state:{navEpoch:0},renderStepProgress(){},
+  window:{scrollTo(){}},history:{pushState:entry=>entries.push(entry)},
+  document:{querySelectorAll:()=>[],getElementById:()=>node}});
+ vm.runInContext(slice("const STEP_FLOW =",'// 상단 단계 표시'),c);
+ for(const step of ['step-surgery','step-guide','step-photo'])c.nextStep(step);
+ assert.deepEqual(entries.map(e=>e.ecStep),['step-surgery','step-guide','step-photo']);
+ c.nextStep('step-guide',true);
+ assert.equal(entries.length,3,'history restoration must not push another entry');
+ assert.equal(c.state.step,'step-guide');
+});
+
 test('전체 지도는 팝업이 아니라 링크이며 주소가 언어를 따라간다',()=>{
  const x=setup();
  x.run('openMap()');

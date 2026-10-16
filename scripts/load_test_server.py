@@ -108,7 +108,7 @@ class Runner:
         start = time.perf_counter()
         row = {"phase": self.phase, "kind": kind, "user": i, "ok": False}
         try:
-            budget = deadline or (45 if kind == "question" and self.args.respect_browser_timeouts else self.args.deadline)
+            budget = deadline or (60 if kind == "question" and self.args.respect_browser_timeouts else self.args.deadline)
             async with asyncio.timeout(budget):
                 if kind == "page":
                     response = await client.get("/")
@@ -185,7 +185,7 @@ class Runner:
         except Exception as exc:
             row.update(error=type(exc).__name__ + ":" + str(exc)[:200])
         row["seconds"] = round(time.perf_counter() - start, 3)
-        row["frontend_deadline_s"] = 45 if kind == "question" else 180
+        row["frontend_deadline_s"] = 60 if kind == "question" else 180
         row["within_frontend_deadline"] = row["ok"] and row["seconds"] < row["frontend_deadline_s"]
         self.rows.append(row)
         return row
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True)
     parser.add_argument("--deadline", type=float, default=180, help="total per-request deadline including queue, matching frontend")
     parser.add_argument("--think", type=float, default=2)
-    parser.add_argument("--respect-browser-timeouts", action="store_true", help="abort question requests after 45s, as the browser does")
+    parser.add_argument("--respect-browser-timeouts", action="store_true", help="abort question requests after 60s, as the browser does")
     parser.add_argument("--admission", action="store_true", help="use separate visitor cookies, wait for admission, and release after each visit")
     parser.add_argument("--language", choices=("cycle", *LANGS), default="cycle")
     arguments = parser.parse_args()

@@ -18,6 +18,8 @@ function cancelFollowup() {
     if (explainBtn) explainBtn.disabled = false;
     const cancelBtn = document.getElementById('followup-cancel');
     if (cancelBtn) cancelBtn.classList.add('hidden');
+    if (_reportAiOwner?.kind === 'followup') endReportAi(_reportAiOwner);
+    refreshReportAiControls();
 }
 
 /** 챗봇이 '내 결과'를 알 수 있게 넘기는 문맥.
@@ -88,7 +90,7 @@ function isScoreQuestion(message) {
         && ['ai','ia','특징','feature','rasgos','signes','特徴','特征'].some(term => text.includes(term));
 }
 async function askGemmaMore(explainResults = false) {
-    if (state.triage?.level === 'urgent' || _followupBusy) return;
+    if (state.triage?.level === 'urgent' || _followupBusy || _reportAiOwner) return;
     if (!document.getElementById('user-followup-input')?.value.trim()) return;
     const scoreQuestion = isScoreQuestion(document.getElementById('user-followup-input')?.value || '');
     if (!explainResults && scoreQuestion) {
@@ -106,20 +108,23 @@ async function askGemmaMore(explainResults = false) {
         }
     }
     const requiresSeat = explainResults ? globalThis.eyeCatchAdmission?.explanationRequiresSeat?.() : !scoreQuestion;
+    const owner = beginReportAi('followup');
     if (globalThis.eyeCatchAdmission && requiresSeat) {
         const generationBeforeQueue = state.sessionGeneration;
-        try { await globalThis.eyeCatchAdmission.ensure(); } catch (_) { return; }
-        if (state.sessionGeneration !== generationBeforeQueue) return;
+        try { await globalThis.eyeCatchAdmission.ensure(); }
+        catch (_) { endReportAi(owner); return; }
+        if (state.sessionGeneration !== generationBeforeQueue || _reportAiOwner !== owner) {
+            endReportAi(owner); return;
+        }
     }
-    if (state.triage?.level === 'urgent') return;
-    if (_followupBusy) return;   // 답변 스트리밍 중 재전송 금지 (응답이 뒤섞이는 것 방지)
+    if (state.triage?.level === 'urgent' || _followupBusy) { endReportAi(owner); return; }
 
     const inputEl = document.getElementById('user-followup-input');
     const responseEl = document.getElementById('followup-response');
     const sendBtn = document.getElementById('followup-send-btn');
     const userMsg = inputEl.value.trim();
 
-    if (!userMsg) { inputEl.focus(); return; }
+    if (!userMsg) { endReportAi(owner); inputEl.focus(); return; }
     state.followupErrorKey = '';
 
     const context = buildChatContext();
@@ -198,6 +203,7 @@ async function askGemmaMore(explainResults = false) {
     } finally {
         if (isCurrent() && requiresSeat && globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
         if (_activeFollowup === active) cancelFollowup();
+        endReportAi(owner);
     }
 }
 

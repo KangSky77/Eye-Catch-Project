@@ -111,7 +111,7 @@ test('score definition displays without admission or any server/model request',a
   document:{getElementById:id=>id==='user-followup-input'?input:response}});
  const input={value:'AI 특징 점수 0/100이 무슨 뜻인가요?'};
  const response={innerText:'',classList:{remove(){}}};
- for(const file of ['data.js','app-report-text.js','app-ux-copy.js','app-report-chat.js']) vm.runInContext(read(file),c);
+ for(const file of ['data.js','app-report-text.js','app-ux-copy.js','app-report.js','app-report-chat.js']) vm.runInContext(read(file),c);
  await vm.runInContext('askGemmaMore()',c);
  assert.ok(response.innerText.includes('질병에 걸릴 확률이 아니라'));
  assert.ok(response.innerText.includes('눈 전체의 건강 상태를 평가하는 점수도 아닙니다'));

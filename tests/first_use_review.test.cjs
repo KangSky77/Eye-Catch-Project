@@ -201,7 +201,7 @@ test('chat context distinguishes unknown, no and unanswered risk factors',()=>{
 test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async () => {
  // 서버 안전 필터가 "고혈압 아니오인데 혈압 관리" 같은 문장을 지우려면 사실 목록이 필요하다(2026-09-29).
  const sent=[];
- const el={value:'관리 방법',classList:{add(){},remove(){}},appendChild(){},setAttribute(){},removeAttribute(){},focus(){},innerText:''};
+ const el={value:'관리 방법',classList:{add(){},remove(){}},appendChild(){},setAttribute(){},removeAttribute(){},querySelector(){return null},focus(){},innerText:''};
  const c=vm.createContext({state:{lang:'ko',riskAnswers:{hypertension:false,diabetes:true},sessionGeneration:1,triage:{level:'weeks'}},
   translations:{ko:{}},document:{getElementById:()=>el},AbortController,console,
   fetch:(url,opt)=>{sent.push(JSON.parse(opt.body));return Promise.reject(new Error('stop'))},
@@ -209,6 +209,7 @@ test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async ()
  const src=readReportScripts();
  Object.assign(c,{setTimeout,clearTimeout});
  vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
+ vm.runInContext(src.slice(src.indexOf('let _reportAiOwner ='),src.indexOf('async function runAiOpinion()')),c);
  vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf('/** 챗봇이 \'내 결과\'')),c);
  vm.runInContext(src.slice(src.indexOf('function isScoreQuestion('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
  await vm.runInContext('askGemmaMore()',c);
@@ -218,7 +219,7 @@ test('챗봇 요청은 AI 소견과 같은 사실 목록을 보낸다', async ()
 
 test('설명할 소견 문장이 없으면 서버 연결 오류가 아니라 결과 요약을 보라고 안내한다', async () => {
  // 결과 설명은 AI를 부르지 않는다 — EXPLANATION_UNAVAILABLE은 연결 문제가 아니다(2026-09-29).
- const el={value:'설명',classList:{add(){},remove(){}},appendChild(){},setAttribute(){},removeAttribute(){},focus(){},innerText:''};
+ const el={value:'설명',classList:{add(){},remove(){}},appendChild(){},setAttribute(){},removeAttribute(){},querySelector(){return null},focus(){},innerText:''};
  const t={srv_err:'서버와 연결할 수 없습니다.',explain_unavailable:'지금은 결과 설명을 만들 수 없어요.'};
  const c=vm.createContext({state:{lang:'ko',riskAnswers:{},sessionGeneration:1,triage:{level:'monitor'}},
   translations:{ko:t},document:{getElementById:()=>el},AbortController,console,
@@ -227,6 +228,7 @@ test('설명할 소견 문장이 없으면 서버 연결 오류가 아니라 결
  const src=readReportScripts();
  Object.assign(c,{setTimeout,clearTimeout});
  vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
+ vm.runInContext(src.slice(src.indexOf('let _reportAiOwner ='),src.indexOf('async function runAiOpinion()')),c);
  vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf("/** 챗봇이 '내 결과'")),c);
  vm.runInContext(src.slice(src.indexOf('function isScoreQuestion('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
  await vm.runInContext('askGemmaMore(true)',c);
@@ -248,6 +250,7 @@ test('결과 쉬운 말 보기는 같은 요약을 바꾸고 중복 AI 답변을
  const src=readReportScripts();
  Object.assign(c,{setTimeout,clearTimeout});
  vm.runInContext(src.slice(0,src.indexOf('// ==========================================')),c);
+ vm.runInContext(src.slice(src.indexOf('let _reportAiOwner ='),src.indexOf('async function runAiOpinion()')),c);
  vm.runInContext('let _followupBusy=false,_activeFollowup=null;'+src.slice(src.indexOf('function cancelFollowup'),src.indexOf("/** 챗봇이 '내 결과'")),c);
  vm.runInContext(src.slice(src.indexOf('function askExplainResults('),src.indexOf('// 입력창에서 Enter로도 전송')),c);
  vm.runInContext('askExplainResults()',c);

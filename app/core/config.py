@@ -1,10 +1,32 @@
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def normalize_ollama_url(raw: str) -> str:
+    """팀원 PC 주소(http://100.x.x.x:11434)만 적거나 전체 경로(/api/generate)를 적어도 동작하도록 정규화한다."""
+    u = raw.strip()
+    if not u:
+        return ""
+    parts = urlsplit(u)
+    path = parts.path if parts.path and parts.path != "/" else "/api/generate"
+    return urlunsplit((parts.scheme, parts.netloc, path, parts.query, parts.fragment))
+
+
+def normalize_photo_worker_url(raw: str) -> str:
+    """원격 사진 분석 서버 주소(http://100.x.x.x:8003)를 /api/analyze-eye 경로로 정규화한다."""
+    u = raw.strip()
+    if not u:
+        return ""
+    parts = urlsplit(u)
+    path = parts.path if parts.path and parts.path != "/" else "/api/analyze-eye"
+    return urlunsplit((parts.scheme, parts.netloc, path, parts.query, parts.fragment))
+
 
 class Settings(BaseSettings):
     # 현재 배포 모델 = EfficientNet-B0 v6(익상편 정상군 편입). v6도 v4 파일명을 그대로
@@ -14,6 +36,9 @@ class Settings(BaseSettings):
     model_path: str = "cataract_efficientnet_b0_v4.pth"
     model_backbone: str = "efficientnet_b0"   # 가중치와 짝이 맞아야 함 (resnet18 | efficientnet_b0)
     ollama_url: str = "http://localhost:11434/api/generate"
+    ollama_urls: str = ""
+    photo_worker_urls: str = ""
+    worker_cooldown_seconds: float = 15.0
     # 노트북(6GB급 VRAM)에서는 e4b가 120초 타임아웃에 걸린다 — 경량 e2b를 기본으로.
     # VRAM이 넉넉한 실습실 PC에서는 .env의 OLLAMA_MODEL로 e4b를 지정하면 된다.
     ollama_model: str = "gemma4:e2b-it-qat"
@@ -108,6 +133,27 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
     @property
+    def ollama_url_list(self) -> list[str]:
+        """분산 처리용 Ollama 엔드포인트 목록. OLLAMA_URLS가 비어 있으면 OLLAMA_URL(쉼표 구분 지원)을 사용한다."""
+        raw = self.ollama_urls if self.ollama_urls.strip() else self.ollama_url
+        urls: list[str] = []
+        for item in raw.split(","):
+            norm = normalize_ollama_url(item)
+            if norm and norm not in urls:
+                urls.append(norm)
+        return urls or [normalize_ollama_url("http://localhost:11434/api/generate")]
+
+    @property
+    def photo_worker_url_list(self) -> list[str]:
+        """원격 사진 분석 워커(/api/analyze-eye) 엔드포인트 목록."""
+        urls: list[str] = []
+        for item in self.photo_worker_urls.split(","):
+            norm = normalize_photo_worker_url(item)
+            if norm and norm not in urls:
+                urls.append(norm)
+        return urls
+
+    @property
     def model_file(self) -> Path:
         """상대 MODEL_PATH를 프로세스 cwd가 아니라 저장소 루트 기준으로 해석한다."""
         path = Path(self.model_path).expanduser()
@@ -134,6 +180,8 @@ class Settings(BaseSettings):
             raise ValueError("MAX_UPLOAD_SIZE_BYTES는 0보다 커야 합니다.")
         if self.ollama_timeout_seconds <= 0:
             raise ValueError("OLLAMA_TIMEOUT_SECONDS는 0보다 커야 합니다.")
+        if self.worker_cooldown_seconds < 0:
+            raise ValueError("WORKER_COOLDOWN_SECONDS는 0 이상이어야 합니다.")
         if self.max_inference_concurrency <= 0:
             raise ValueError("MAX_INFERENCE_CONCURRENCY는 0보다 커야 합니다.")
         if self.max_llm_concurrency <= 0:

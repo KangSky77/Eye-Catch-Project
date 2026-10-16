@@ -436,7 +436,7 @@ function nextStep(sid, viaHistory = false) {
     // 안드로이드 뒤로가기(가장자리 스와이프)가 검사를 통째로 날리지 않게 단계마다 기록을 남긴다.
     // 기록이 없으면 뒤로가기 한 번에 탭이 닫히고 홈 화면으로 나간다 — 사진·암슬러·문진·
     // 기능검사까지 마친 세션이 경고도 복구도 없이 사라진다(S25 Ultra 실기기 확인).
-    if (!viaHistory && STEP_FLOW.indexOf(sid) > 0) {
+    if (!viaHistory && (sid === 'step-surgery' || STEP_FLOW.includes(sid))) {
         try {
             history.pushState({
                 ecStep: sid,
@@ -704,7 +704,7 @@ function setButtonBusy(btn, busyLabel) {
 //
 // 지금: 단계마다 history 항목을 남겨, 뒤로가기가 '이전 단계'로 이동한다.
 //   실측(S25 Ultra) — 뒤로 1회: step-ai-result -> step-photo (결과 유지)
-//                     뒤로 2회: step-photo -> step-intro   (결과 유지)
+//                     뒤로 2회: step-photo -> step-guide   (결과 유지)
 //
 // ⚠️ beforeunload는 보조 수단일 뿐이다. 안드로이드 크롬은 '탭을 닫는 뒤로가기'에서는
 //    사용자 활성화가 있어도 확인 창을 띄우지 않는다(hasBeenActive=true 상태로 실측).

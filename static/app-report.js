@@ -242,6 +242,7 @@ function cancelAiOpinion() {
     if (retry) retry.classList.add('hidden');
     const cancelBtn = document.getElementById('opinion-cancel');
     if (cancelBtn) cancelBtn.classList.add('hidden');
+    if (_reportAiOwner?.kind === 'opinion') endReportAi(_reportAiOwner);
 }
 
 async function fetchOpinionWhenReady(request, signal) {
@@ -265,15 +266,48 @@ async function fetchOpinionWhenReady(request, signal) {
     throw new DOMException('Cancelled','AbortError');
 }
 
+// Summary and follow-up share one visitor slot, including admission wait time.
+// Only the request holding this reservation may release it.
+let _reportAiOwner = null;
+function refreshReportAiControls() {
+    const busy = !!_reportAiOwner;
+    const send = document.getElementById('followup-send-btn');
+    if (send) {
+        send.disabled = busy;
+        if (busy) send.setAttribute('aria-busy', 'true');
+        else send.removeAttribute('aria-busy');
+    }
+    for (const id of ['opinion-retry', 'opinion-stale']) {
+        const button = document.getElementById(id)?.querySelector('button');
+        if (button) button.disabled = busy;
+    }
+}
+function beginReportAi(kind) {
+    if (_reportAiOwner) return null;
+    const owner = { kind };
+    _reportAiOwner = owner;
+    refreshReportAiControls();
+    return owner;
+}
+function endReportAi(owner) {
+    if (!owner || _reportAiOwner !== owner) return;
+    _reportAiOwner = null;
+    refreshReportAiControls();
+}
+
 async function runAiOpinion() {
-    if (!state.opinionRequest) return;
+    if (!state.opinionRequest || _reportAiOwner) return;
+    cancelAiOpinion();
+    const owner = beginReportAi('opinion');
     const entryGeneration = state.sessionGeneration;
     if (globalThis.eyeCatchAdmission && state.triage?.level !== 'urgent') {
-        try { await globalThis.eyeCatchAdmission.ensure(); } catch (_) { return; }
-        if (state.sessionGeneration !== entryGeneration) return;
+        try { await globalThis.eyeCatchAdmission.ensure(); }
+        catch (_) { endReportAi(owner); return; }
+        if (state.sessionGeneration !== entryGeneration || _reportAiOwner !== owner) {
+            endReportAi(owner); return;
+        }
     }
     if (typeof clearPdfDownload === 'function') clearPdfDownload();
-    cancelAiOpinion();
     const request = JSON.parse(JSON.stringify(state.opinionRequest));
     const active = { controller: new AbortController(), loader: null };
     _activeOpinion = active;
@@ -382,6 +416,7 @@ async function runAiOpinion() {
             _activeOpinion = null;
             if (cancelBtn) cancelBtn.classList.add('hidden');
         }
+        endReportAi(owner);
     }
 
     // ── 여기부터는 소견을 이미 다 받은 뒤의 '부가 동작'이다. 위 try 안에 두면 안 된다:

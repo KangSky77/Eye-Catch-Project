@@ -754,8 +754,8 @@ function isDuplicateQuestion(q) {
     return asked.some(prev => _similarity(prev, q) >= DUP_QUESTION_THRESHOLD);
 }
 
-// 서버 생성·검토 제한(40초)에 대기열·통신 시간을 더한 화면 대기 상한.
-const NEXT_QUESTION_DEADLINE_MS = 45000;
+// 서버 생성·검토는 최대 55초, 화면은 대기열·통신을 포함해 총 60초로 제한한다.
+const NEXT_QUESTION_DEADLINE_MS = 60000;
 
 async function fetchNextQuestion() {
     const generation = state.sessionGeneration;

@@ -1,6 +1,7 @@
 import json
 import logging
 import asyncio
+import time
 import httpx
 from app.core.config import settings
 from app.services import knowledge
@@ -90,16 +91,82 @@ def _ollama_payload(prompt: str, stream: bool, fmt: dict | None = None) -> dict:
     return payload
 
 
+_worker_in_flight: dict[str, int] = {}
+_worker_cooldown_until: dict[str, float] = {}
+_worker_rr_cursor: int = 0
+
+
+def reset_worker_pool_state() -> None:
+    """테스트 격리 및 워커 풀 상태 초기화용."""
+    global _worker_rr_cursor
+    _worker_in_flight.clear()
+    _worker_cooldown_until.clear()
+    _worker_rr_cursor = 0
+
+
+def _ordered_ollama_urls() -> list[str]:
+    """현재 가장 여유 있고 건강한 워커부터 시도하도록 정렬된 URL 목록을 반환한다.
+    1순위: 최근 실패로 쿨다운 중이지 않은 워커
+    2순위: 현재 처리 중인 요청 수(_worker_in_flight)가 가장 적은 워커 (Least-In-Flight)
+    3순위: 라운드로빈 순서 (_worker_rr_cursor)
+    """
+    global _worker_rr_cursor
+    urls = settings.ollama_url_list
+    n = len(urls)
+    if n <= 1:
+        return urls
+    start = _worker_rr_cursor % n
+    _worker_rr_cursor = (_worker_rr_cursor + 1) % n
+    rotated = urls[start:] + urls[:start]
+    now = time.monotonic()
+    return sorted(
+        rotated,
+        key=lambda u: (
+            _worker_cooldown_until.get(u, 0.0) > now,
+            _worker_in_flight.get(u, 0),
+        ),
+    )
+
+
+def _mark_worker_ok(url: str) -> None:
+    _worker_cooldown_until.pop(url, None)
+
+
+def _mark_worker_failed(url: str) -> None:
+    if settings.worker_cooldown_seconds > 0:
+        _worker_cooldown_until[url] = time.monotonic() + settings.worker_cooldown_seconds
+
+
 async def stream_ollama(prompt: str):
-    async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
-        async with client.stream("POST", settings.ollama_url, json=_ollama_payload(prompt, stream=True)) as response:
-            response.raise_for_status()
-            async for line in response.aiter_lines():
-                if not line: continue
-                try:
-                    data = json.loads(line)
-                    if token := data.get("response"): yield token
-                except json.JSONDecodeError: continue
+    urls = _ordered_ollama_urls()
+    last_exc: Exception | None = None
+    for idx, url in enumerate(urls):
+        emitted = False
+        _worker_in_flight[url] = _worker_in_flight.get(url, 0) + 1
+        try:
+            async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
+                async with client.stream("POST", url, json=_ollama_payload(prompt, stream=True)) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if not line: continue
+                        try:
+                            data = json.loads(line)
+                            if token := data.get("response"):
+                                emitted = True
+                                yield token
+                        except json.JSONDecodeError: continue
+            _mark_worker_ok(url)
+            return
+        except Exception as exc:
+            last_exc = exc
+            _mark_worker_failed(url)
+            if emitted or idx == len(urls) - 1:
+                raise
+            logger.warning("⚠️  Ollama 스트림 워커 실패 — 다음 워커로 자동 전환 (%d/%d)", idx + 1, len(urls))
+        finally:
+            _worker_in_flight[url] = max(0, _worker_in_flight.get(url, 1) - 1)
+    if last_exc:
+        raise last_exc
 
 
 async def stream_with_keepalive(prompt: str):
@@ -205,19 +272,40 @@ async def sanitized_stream(prompt: str, facts: list[str] | None = None, night_co
         yield ERROR_MARKER + reason
 
 
+async def _post_ollama(payload: dict) -> dict:
+    urls = _ordered_ollama_urls()
+    last_exc: Exception | None = None
+    for idx, url in enumerate(urls):
+        _worker_in_flight[url] = _worker_in_flight.get(url, 0) + 1
+        try:
+            async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+                data = response.json()
+            _mark_worker_ok(url)
+            return data
+        except Exception as exc:
+            last_exc = exc
+            _mark_worker_failed(url)
+            if idx == len(urls) - 1:
+                raise
+            logger.warning("⚠️  Ollama 생성 워커 실패 — 다음 워커로 자동 전환 (%d/%d)", idx + 1, len(urls))
+        finally:
+            _worker_in_flight[url] = max(0, _worker_in_flight.get(url, 1) - 1)
+    if last_exc:
+        raise last_exc
+    return {}
+
+
 async def generate_ollama(prompt: str) -> str:
-    async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
-        response = await client.post(settings.ollama_url, json=_ollama_payload(prompt, stream=False))
-        response.raise_for_status()
-        return response.json().get("response", "").strip()
+    data = await _post_ollama(_ollama_payload(prompt, stream=False))
+    return data.get("response", "").strip()
 
 
 async def generate_json(prompt: str, schema: dict):
     """JSON 스키마로 출력을 제약한 한 번짜리 호출. 파싱 실패는 None(호출부가 재시도·대체)."""
-    async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
-        response = await client.post(settings.ollama_url, json=_ollama_payload(prompt, stream=False, fmt=schema))
-        response.raise_for_status()
-        text = response.json().get("response", "")
+    data = await _post_ollama(_ollama_payload(prompt, stream=False, fmt=schema))
+    text = data.get("response", "")
     try:
         return json.loads(text)
     except (json.JSONDecodeError, TypeError):
@@ -300,15 +388,23 @@ async def _choice_opinion_stream(facts: "advice.Facts", lang: str):
 
 
 async def warmup_ollama():
-    """서버 시작 시 Gemma 모델을 미리 VRAM에 올려둔다(콜드스타트 제거).
+    """서버 시작 시 등록된 모든 Gemma 워커의 모델을 미리 VRAM에 올려둔다(콜드스타트 제거).
     Ollama가 꺼져 있어도 서버는 정상 기동하도록 실패는 조용히 무시."""
-    try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
-            await client.post(settings.ollama_url, json=_ollama_payload("ok", stream=False))
-        return True
-    except Exception:
-        logger.warning("⚠️  Gemma 워밍업 실패(Ollama 미실행 가능)", exc_info=True)
-        return False
+    urls = settings.ollama_url_list
+
+    async def _warm_one(url: str) -> bool:
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
+                res = await client.post(url, json=_ollama_payload("ok", stream=False))
+                res.raise_for_status()
+            _mark_worker_ok(url)
+            return True
+        except Exception:
+            logger.warning("⚠️  Gemma 워밍업 실패(Ollama 미실행 가능)", exc_info=True)
+            return False
+
+    results = await asyncio.gather(*(_warm_one(u) for u in urls))
+    return any(results)
 
 async def get_gemma_opinion_stream(cataract: str, amsler: str, symptoms: list[str], lang: str = "ko",
                                    cataract_code: str = "", amsler_abnormal: bool = False,
