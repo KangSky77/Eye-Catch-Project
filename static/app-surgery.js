@@ -419,7 +419,14 @@ for (const [lang, copy] of Object.entries(surgeryEntryCopy)) {
 }
 
 /** 첫 화면의 시작 버튼 — 촬영이 아니라 수술 여부 확인으로 간다. */
-function startScreening() {
+function startScreening(resetConfirmed = false) {
+ if (!resetConfirmed && typeof screeningInProgress === 'function' && screeningInProgress()
+     && !window.confirm(translations[state.lang].new_screening_confirm)) return;
+ if (globalThis.eyeCatchAdmission && !globalThis.eyeCatchAdmission.hasSeat()) {
+     const epoch = state.navEpoch;
+     globalThis.eyeCatchAdmission.ensure().then(() => { if (state.navEpoch === epoch) startScreening(true); }).catch(() => {});
+     return;
+ }
  state.hadSurgery = null;    // 초기화가 이 값을 읽는다 — 먼저 비운다
  state.gateAnswers = {};
  resetScreeningState();
@@ -457,10 +464,9 @@ function setGateAnswers(answers) {
  applyTrack();
 }
 
-/** 수술한 눈은 안대·보호대로 촬영이 불가능할 수 있다. 사진 없이 나머지 단계를 잇는다.
- *  사진을 한 장도 받지 않았다는 표시가 'postop'이다(app-surgery.js 위쪽 주석). */
+/** 수술 후 안대·보호대로 촬영이 불가능한 경우에만 사진 없이 나머지 단계를 잇는다. */
 function skipPhotoStep() {
- // 숨겨진 버튼이나 오래된 이벤트로 일반 사용자가 술후 회차에 들어가지 않게 한다.
+ // 숨겨진 버튼이나 오래된 이벤트로 일반 검사의 필수 사진 단계를 건너뛰지 못한다.
  if (state.hadSurgery !== true && !hasSurgery()) return;
  cancelEyeAnalysis();
  state.aiResultCode = 'postop';

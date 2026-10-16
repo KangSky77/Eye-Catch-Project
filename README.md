@@ -27,7 +27,7 @@
 | [📊 모델 성능](#-모델-성능) | v6/v5/v4/v3 실측 지표와 선택 근거 |
 | [⚠️ 모델의 한계](#️-모델의-한계-읽고-시작하세요) | **먼저 읽어야 할 것** |
 | [🔦 플래시 반사 대응](#-플래시-반사-대응) | 오탐 원인과 차단 방법 |
-| [📜 데이터 출처 및 라이선스](#-데이터-출처-및-라이선스) | 후보 실험 결과와 출처별 확인 상태 |
+| [📜 데이터 출처 및 라이선스](#-데이터-출처-및-라이선스) | 현재 v6 모델 자료의 출처와 이용 조건 |
 | [🔍 API 엔드포인트](#-api-엔드포인트) | 상태 점검 2개 + 기능 6개 라우트 |
 | [🛠️ 개발 팁](#️-개발-팁) | 테스트·CI·캐시·오프라인 |
 | [📱 모바일·접근성](#-모바일접근성) | 글자 크기·카메라·폴더블·시야 체험 |
@@ -39,7 +39,7 @@
 
 2026-10-02: 첫 화면에 사진 분석·AI 설명 준비 상태와 재확인을 추가했습니다.
 지도는 연결 실패 시 기존 지도·마커를 유지하고 다시 불러올 수 있습니다.
-안과를 기본 표시하며 안경원·검안 서비스는 선택해서 포함합니다. 결과·PDF의 검사 용어도 통일했습니다.
+병원 찾기는 안과만 표시합니다(안경원·검안 서비스 제외). 결과·PDF의 검사 용어도 통일했습니다.
 실행은 `Start-EyeCatch.cmd` 또는 `./start.ps1`을 사용하고,
 기기 점검·실사진 CSV/JSON 검증 방법은 [발표 점검표](docs/presentation-checklist.md)를 참고하세요.
 
@@ -683,64 +683,15 @@ OOD 게이트가 안저사진을 '눈'으로 통과시킵니다(실측 eye_score
 
 ## 📜 데이터 출처 및 라이선스
 
-### 현재 상태 (2026-10-03)
+### 현재 기준 (2026-10-07)
 
-**앱은 기존 v6를 사용하며, 새 후보는 별도 실험으로 보관합니다.** Commons 사진 177장으로
-후보 3개를 학습한 뒤, 북마크 자료를 합쳐 정리한 961장으로 후보 2개를 추가 학습·비교했습니다.
-961장은 train 797장 · validation 138장 · test 26장으로 나뉘며, 원본·근접 그룹은 총 480개입니다.
+**서비스는 기존 EfficientNet-B0 v6 모델을 계속 사용합니다.** 10월에 학습·비교한 별도 후보 모델은
+서비스에 적용하지 않았으며, 이 README의 현재 모델 성능에도 포함하지 않습니다.
 
-합본에 포함한 MIT·Apache 표기는 **업로더의 선언**입니다. 원본 사진의 저작자와 이용 허락까지
-확인한 것은 아니므로, 실험 완료를 ‘라이선스 문제 해결’이나 ‘공개 배포 권한 확보’로 표현하지 않습니다.
-사진·가중치는 Git에 올리지 않고 출처표, 분할, 해시, 학습 조건과 비교 결과를 보존합니다.
-
-### 같은 26장으로 비교한 결과
-
-분류기 단독에 동일 전처리와 현재 앱 설정(TTA 끔, 위험 기준 50점)을 적용한 탐색적 비교입니다.
-
-| 모델 | 백내장 4장 중 위험 점수(≥50) | 정상 연구 라벨 22장 중 위험 오탐 |
-|---|---:|---:|
-| 기존 v6 | 4 | 1 |
-| Commons 177장 전이학습 후보 | 3 | 0 |
-| 합본 961장 전이학습 후보 | **4** | **0** |
-| 합본 961장 무작위 초기화 후보 | 3 | 3 |
-
-앱의 눈 검사·크롭·반사·안정성 검사까지 적용하면 합본 전이학습 후보의 백내장 4장은
-**위험 2장 · 반사 보류 1장 · 입력 거부 1장**입니다. 분류기 점수와 앱의 최종 안내는 구분합니다.
-백내장 test가 4장뿐이고 정상 라벨도 임상 진단이 아니며, 환자 단위 독립성까지 증명되지 않았습니다.
-이 결과는 실제 휴대폰 성능이나 임상 정확도, 기존 모델보다 우수하다는 근거로 사용할 수 없습니다.
-
-| 기록 | 내용 |
-|---|---|
-| [출처·라이선스 검토](docs/data-licensing-review-2026-10-02.md) | 기존 자료의 권한 확인 상태와 남은 조건 |
-| [Commons 177장 실험](docs/licensed-cataract-experiment-2026-10-02.md) | 파일별 조건, 후보 3개와 기존 v6 비교 |
-| [합본 961장 실험](docs/cataract-bookmark-merge-experiment-2026-10-03.md) | 출처 선택, 그룹 분할, 후보 2개와 앱 판독 결과 |
-| [Commons 출처표](data/licensed-cataract-attributions-2026-10-02.csv) · [합본 출처표](data/cataract-bookmark-merge-attributions-2026-10-03.csv) | 파일별 출처·표기·수정 내역; Kaggle author는 업로더 |
-
-### 북마크 출처와 이번 실험의 처리
-
-크롬 북마크에서 백내장 관련 8개 데이터셋과 Human Faces 1개를 확인했습니다.
-아래 조건은 제공자의 확인 당시 표기이며, 개별 사진의 권한 증명과는 구분합니다.
-
-| 출처 | 제공자 표기 | 이번 합본 처리 |
-|---|---|---|
-| [Cataract — kershrita](https://www.kaggle.com/datasets/kershrita/cataract) | MIT | 정리 후 374장 포함; 원본 권한 미확정 |
-| [Cataract Classification — sheemazain](https://www.kaggle.com/datasets/sheemazain/cataract-classification-dataset-in-ds) | Apache 2.0 | 410장 포함; 증강본은 같은 원본 그룹으로 묶음; 원본 권한 미확정 |
-| [Cataract Classification — akshayramakrishnan28](https://www.kaggle.com/datasets/akshayramakrishnan28/cataract-classification-dataset) | CC BY-SA 4.0 | 위 410장과 이미지 바이트 동일; 중복 추가하지 않음 |
-| [EfficientNet-B3 — rrohit1289](https://www.kaggle.com/datasets/rrohit1289/eye-disease-classifier-efficientnet-b3) | CC BY 4.0 | 공개 파일이 가중치·설정뿐이므로 사진 자료로 사용하지 않음 |
-| [Cataract image — alexandramohammed](https://www.kaggle.com/datasets/alexandramohammed/cataract-image) | Unknown | 허락 확인 전 제외 |
-| [cataract — hemooredaoo](https://www.kaggle.com/datasets/hemooredaoo/cataract) | Unknown | 허락 확인 전 제외 |
-| [Cataract dataset — nandanp6](https://www.kaggle.com/datasets/nandanp6/cataract-image-dataset) | © Original Authors | 이용 허락 미확정으로 제외 |
-| [Eye Diseases — orvile](https://www.kaggle.com/datasets/orvile/eye-diseases-classification) | CC BY 4.0 | Google 검색 수집 설명; 원본 권한 미확정으로 제외 |
-| [Human Faces — ashwingupta3012](https://www.kaggle.com/datasets/ashwingupta3012/human-faces) | CC0 | 웹 수집·GAN 사진 혼합; 원본 권한과 임상 정상 라벨 미확정으로 제외 |
-
-동일한 410장에 Apache와 CC BY-SA 표기가 함께 존재합니다. 한 표기가 다른 표기를 대체하거나
-업로더가 원본 사진의 권리를 확보했다는 결론을 내리지 않습니다. Unknown도 연구용 허락으로 간주하지 않습니다.
-Commons 177장의 파일별 조건과 합본의 업로더 선언 연구 정책은 도구와 메타데이터에서도 구분합니다.
-
-과거 README의 출처 미확정 2개 항목은 현재 북마크에 별도 URL이 없습니다. 기존 항목의 중복 기록인지도
-확정하지 않았습니다. 과거 pHash 대조 수치는 현재 제외 대상의 정확한 장수로 재사용하지 않습니다.
-[북마크 대조 기록](data/chrome-dataset-source-review-2026-10-03.json)과
-[공식 API 확인 기록](data/license-review-2026-10-02.json)에 근거를 남겼습니다.
+v6를 유지한다는 사실이 학습 사진의 이용 권한까지 확인됐다는 뜻은 아닙니다. 기존 백내장 데이터와
+익상편·밝은 홍채 자료 중 원본 권한 또는 파일별 출처 대응을 더 확인해야 하는 항목이 남아 있습니다.
+확인된 범위와 출처별 후속 작업은 [현재 모델 데이터의 출처·라이선스 검토](docs/data-licensing-review-2026-10-02.md)를
+참고하세요. 원본 사진과 가중치는 Git에 포함하지 않습니다.
 
 <details>
 <summary>기존 모델·입력 검사기의 데이터 이력</summary>
@@ -796,8 +747,8 @@ v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 
 
 | 데이터셋 | 라이선스 | 판정 | 비고 |
 |---|---|---|---|
-| [human-faces (ashwingupta3012)](https://www.kaggle.com/datasets/ashwingupta3012/human-faces) | CC0 (Public Domain) | 🟡 기존 사용분 확인 필요 | 팀원의 눈 크롭 사용 이력은 별도 확인; 이번 합본에서는 웹 수집·GAN 혼합과 원본 권한 문제로 제외 |
-| [eye-detection-dataset (icebearogo)](https://www.kaggle.com/datasets/icebearogo/eye-detection-dataset?select=Dataset) | CC BY-NC 4.0 | 🟡 비상업 조건 | **NC = 비상업적 사용 조건.** 목적·원본 권한과 표시 조건 확인 필요. 과거 1,979장 중 정상 폴더와 **655장** pHash 매칭 기록. 상업적 사용을 허용하는 자료만 목표라면 새 후보에서 제외 |
+| [human-faces (ashwingupta3012)](https://www.kaggle.com/datasets/ashwingupta3012/human-faces) | CC0 (Public Domain) | 🟡 기존 사용분 확인 필요 | 팀원의 눈 크롭 사용 이력과 원본 권한을 별도 확인해야 함 |
+| [eye-detection-dataset (icebearogo)](https://www.kaggle.com/datasets/icebearogo/eye-detection-dataset?select=Dataset) | CC BY-NC 4.0 | 🟡 비상업 조건 | **NC = 비상업적 사용 조건.** 목적·원본 권한·표시 조건 확인 필요. 과거 정상 폴더와 655장 pHash 매칭 기록이 있으나, 기존 v6 학습분인지는 별도 확인 필요 |
 
 ### 눈이 아닌 사진 (게이트 학습·평가용, 2026-09-05 수집)
 
@@ -851,18 +802,14 @@ v6 재학습에서 익상편을 '백내장이 아닌 것'으로 가르치려고 
 
 </details>
 
-### 최종 발표 전에 남은 확인
+### 발표 전에 남은 확인
 
-원본 사진의 저작자·이용 허락·파일 대응, Commons의 표시·공유 조건과 사전학습 가중치 조건을
-공개 범위에 맞춰 확인해야 합니다. 기존 익상편 자료의 원본 export 식별도 남아 있습니다.
-새 후보의 적용 여부는 이러한 조건과 독립 평가 자료·실제 휴대폰 촬영 검증을 함께 확인한 뒤 판단합니다.
+v6 학습에 사용한 원본 사진의 저작자·이용 허락·파일별 출처 대응, Commons의 표시·공유 조건,
+사전학습 가중치 조건과 익상편 자료의 원본 export 식별을 공개 범위에 맞춰 확인해야 합니다.
 비상업 발표, 출처 공개, Git 제외만으로 사용 허락을 대신할 수 없습니다.
 
-발표에서는 현재 진행 상태를 다음처럼 설명할 수 있습니다.
-
-> “학습 데이터의 출처와 이용 조건을 검토하고 별도 후보 모델을 학습·비교했습니다.
-> 소규모 공개 사진 비교에서 개선을 확인했지만, 일부 원본 사진 권한은 추가 확인이 필요합니다.
-> 실제 휴대폰 촬영 및 임상 성능은 추가 검증이 필요하며 현재 서비스 모델은 유지했습니다.”
+> “현재 서비스는 v6 모델을 유지하고 있습니다. 학습 데이터의 일부는 원본 출처와 이용 조건을
+> 추가 확인 중이며, 실제 휴대폰 촬영 및 임상 성능은 별도 검증이 필요합니다.”
 
 ---
 
@@ -1024,6 +971,40 @@ Ollama 모델이 목록에 있어도 실제 생성 성공은 별도로 확인해
 ```
 
 사진 AI와 Ollama가 준비되면 종료 코드 0, 준비되지 않으면 1입니다. 사진 업로드·AI 생성·PDF는 실제 발표 장치에서 확인하세요.
+
+### 발표용 입장 대기
+
+처음 접속하면 최대 **2명**까지 검사에 입장하고, 그다음 방문자는 대기 순번을 확인합니다.
+앞사람의 AI 요약이 완료되거나 처음 화면으로 돌아가면 다음 방문자가 자동으로 입장합니다.
+완료된 결과와 PDF 다운로드는 계속 사용할 수 있고, 추가 AI 상담이나 새 검사는 필요하면 다시 대기합니다.
+대기 시간은 AI 요청의 제한 시간에 포함하지 않습니다.
+
+같은 브라우저의 필수 쿠키로 순번을 유지하므로 새로고침해도 유효한 순번은 바뀌지 않습니다.
+사용하지 않는 입장권은 약 2분 뒤 회수하며, 실행 중인 분석·AI 응답은 완료될 때까지 자리를 유지합니다.
+대기 화면은 5초마다 상태를 확인하고, 60초 이상 연결이 끊긴 대기권은 만료됩니다.
+대기 중인 방문자의 사진·AI API 요청도 서버에서 거부합니다.
+
+`.env` 설정은 `.env.example`의 `WAITING_ROOM_ENABLED`, `MAX_ACTIVE_VISITORS`,
+`VISITOR_IDLE_SECONDS`, `WAITING_TICKET_SECONDS`, `MAX_WAITING_VISITORS`를 참고하세요.
+현재 PC의 부하 시험에 따라 동시 입장 기본값은 2명이며, 재시험 없이 숫자만 높이지 않습니다.
+대기 목록은 서버 메모리에 있으므로 **Uvicorn worker는 1개**로 실행합니다.
+서버를 재시작하면 기존 입장·대기권이 초기화되어 화면에서 다시 대기합니다.
+발표 중에는 코드 변경으로 서버가 재시작되지 않도록 `--reload`를 사용하지 않습니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
+.\.venv\Scripts\python.exe scripts/load_test_server.py --url http://127.0.0.1:8000 --admission --respect-browser-timeouts --phase mixed:6:1 --output output/queue-recheck
+```
+
+### 첫 이용자와 발표 시연
+
+- 완료한 결과는 로고로 홈에 갔다가 리포트 탭으로 돌아와도 유지됩니다. 새 검사를 시작할 때만 확인 후 초기화합니다. 진행 중 검사를 종료할 때도 확인합니다.
+- 일반 이용자도 사진을 생략하고 격자 검사·문진을 진행할 수 있습니다. 이 경우 리포트와 PDF에 사진 판독이 없다고 표시하며 정상 판독으로 처리하지 않습니다.
+- 문진의 **이전 답 수정**은 해당 답 이후의 분기·증상 점수·위험 신호·추가 질문을 함께 되돌립니다. 결과 화면에서도 마지막 답부터 수정할 수 있습니다. AI 추가 질문은 선택 사항이며 생성 중에도 결과 보기로 넘어갈 수 있습니다.
+- AI 특징 점수 질문은 6개 언어의 검토된 고정 설명을 즉시 표시합니다. 점수는 사진의 백내장 특징 감지 강도이며 질병 확률이나 눈 전체의 건강 점수가 아닙니다. API도 같은 문장을 사용합니다.
+- 개인정보 보호를 위해 결과는 브라우저 메모리에만 있습니다. 탭을 닫기 전 필요한 결과를 PDF로 보관하세요.
+- 발표 전 **새 휴대폰/새 브라우저**로 QR 접속과 사진 선택, PDF 저장을 확인하세요. 무료 ngrok의 첫 접속 안내는 앱보다 먼저 제공되므로 앱 코드에서 없앨 수 없습니다. QR 옆에 신뢰할 수 있는 발표자·서비스 정보와 처음 안내가 나타날 때의 `Visit Site` 진입 방법을 적어 두세요. 안내 없는 공개 주소가 필요하면 발표 전에 터널/호스팅 구성을 별도로 결정해야 합니다. [ngrok 공식 안내](https://github.com/ngrok/ngrok-docs/blob/main/pricing-limits/free-plan-limits.mdx)
+- 백엔드 코드를 갱신한 후에는 실행 중인 서버 터미널에서 `Ctrl+C`로 종료하고 위의 **단일 worker** 명령으로 다시 실행하세요. 정적 화면 변경만으로 Python 코드가 교체되지는 않습니다.
 
 ### 🗺️ 주변 안과 검색
 ```bash

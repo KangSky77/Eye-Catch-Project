@@ -77,9 +77,8 @@ test('stalled clinic response body falls back and ignores a late completion', as
     assert.equal(h.timers.size, 0);
 });
 
-test('eye clinics are first; opticians are opt-in and never counted as eye clinics', async () => {
+test('only eye clinics are listed; opticians are never shown or counted', async () => {
     const h = setup();
-    h.nodes['clinic-include-services'] = {checked:false};
     const work=h.context.fetchClinics(37,127);
     h.pending[0].resolve({ok:true,json:async()=>({clinics:[
         {name:'optician',type:'optician',lat:37,lng:127,dist:1},
@@ -87,9 +86,9 @@ test('eye clinics are first; opticians are opt-in and never counted as eye clini
     await work;
     assert.deepEqual(h.rendered[0].items.map(x=>x.name),['clinic']);
     assert.equal(h.nodes['map-status'].innerText,vm.runInContext("translations.ko.map_found.replace('{n}',1)",h.context));
-    h.nodes['clinic-include-services'].checked=true;h.context.refreshMapResults();
-    assert.deepEqual(h.rendered[1].items.map(x=>x.name),['clinic','optician']);
-    assert.equal(h.nodes['map-status'].innerText,vm.runInContext("translations.ko.map_found_services.replace('{n}',2)",h.context));
+    h.context.refreshMapResults();
+    assert.deepEqual(h.rendered[1].items.map(x=>x.name),['clinic']);
+    assert.equal(fs.readFileSync('static/index.html','utf8').includes('clinic-include-services'),false);
 });
 
 test('one failed tile keeps the map; complete outage retries without losing markers',()=>{
@@ -121,8 +120,8 @@ test('facility type remains visible alongside its address in every language',()=
     h.context.ensureMap=()=>null;
     for (const lang of ['ko','en','es','fr','ja','zh']) {
         h.context.state.lang=lang;list.children=[];
-        h.actualRender([{name:'sample',type:'optician',address:'Sample street',lat:37,lng:127,dist:1}],37,127);
+        h.actualRender([{name:'sample',type:'eye_clinic',address:'Sample street',lat:37,lng:127,dist:1}],37,127);
         const description=list.children[0].children[1].children[1].textContent;
-        assert.equal(description,vm.runInContext(`translations.${lang}.clinic_optician`,h.context)+' · Sample street');
+        assert.equal(description,vm.runInContext(`translations.${lang}.clinic_eye`,h.context)+' · Sample street');
     }
 });

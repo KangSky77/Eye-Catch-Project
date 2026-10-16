@@ -11,6 +11,8 @@ import os
 # 막고 (2) CUDA 컨텍스트 초기화 비용을 없앤다(실측 6.6s→5.2s).
 # 반드시 app.* 모듈 import 전에 실행돼야 함 (vision.py가 import 시점에 .to(device) 함).
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# Existing service tests isolate admission; test_admission exercises the enabled gate.
+os.environ["WAITING_ROOM_ENABLED"] = "false"
 
 import io
 

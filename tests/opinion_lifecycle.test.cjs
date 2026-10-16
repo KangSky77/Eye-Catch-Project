@@ -61,6 +61,102 @@ test('urgent reports do not invite or send further AI questions and normal repor
     assert.equal(h.element('followup-box').classList.contains('hidden'), false);
 });
 
+test('summary reserves admission before awaiting it; Enter cannot start a competing follow-up', async () => {
+ const h=setup(),c=h.context;let enter;let releases=0;
+ c.eyeCatchAdmission={ensure:()=>new Promise(r=>enter=r),complete:()=>releases++};
+ c.state.opinionRequest=h.request('summary');
+ const summary=c.runAiOpinion();
+ assert.equal(h.element('followup-send-btn').disabled,true);
+ c.translations.ko.pdf_wait_opinion='Wait for summary';
+ const notices=[];c.showToast=message=>notices.push(message);
+ c.buildReportPdf=()=>{throw new Error('Do not export while summary is waiting for admission')};
+ c.downloadPDF();assert.deepEqual(notices,['Wait for summary']);
+ h.element('user-followup-input').value='keep this draft';
+ await c.askGemmaMore();
+ assert.equal(h.calls.length,0);
+ assert.equal(h.element('user-followup-input').value,'keep this draft');
+ assert.equal(releases,0,'blocked follow-up must not release the summary seat');
+ enter();await new Promise(r=>setImmediate(r));
+ assert.equal(h.calls.length,1);
+ await c.askGemmaMore();assert.equal(h.calls.length,1,'streaming summary must also block Enter');
+ h.calls[0].resolve({ok:true,text:'Summary finished'});await summary;
+ assert.equal(releases,1);
+ assert.equal(h.element('followup-send-btn').disabled,false);
+ assert.equal(h.element('user-followup-input').value,'keep this draft');
+});
+
+test('follow-up reserves admission before awaiting it and prevents summary regeneration',async()=>{
+ const h=setup(),c=h.context;let enter;let releases=0;
+ c.eyeCatchAdmission={ensure:()=>new Promise(r=>enter=r),complete:()=>releases++};
+ h.element('user-followup-input').value='question';
+ c.state.opinionRequest=h.request('summary');
+ const followup=c.askGemmaMore();
+ await c.runAiOpinion();assert.equal(h.calls.length,0);
+ enter();await new Promise(r=>setImmediate(r));
+ assert.equal(h.calls.length,1);
+ await c.runAiOpinion();assert.equal(h.calls.length,1);
+ h.calls[0].resolve({ok:true,text:'Answer finished'});await followup;
+ assert.equal(releases,1);
+ assert.equal(h.element('followup-send-btn').disabled,false);
+});
+
+test('reset during admission releases the old reservation without unlocking a newer summary',async()=>{
+ const h=setup(),c=h.context,enter=[];
+ c.state.sessionGeneration=0;
+ c.eyeCatchAdmission={ensure:()=>new Promise(r=>enter.push(r)),complete(){}};
+ c.state.opinionRequest=h.request('old');
+ const old=c.runAiOpinion();c.resetScreeningState();
+ c.state.opinionRequest=h.request('new');
+ const current=c.runAiOpinion();
+ enter[0]();await old;
+ assert.equal(h.element('followup-send-btn').disabled,true);
+ assert.equal(h.calls.length,0);
+ enter[1]();await new Promise(r=>setImmediate(r));
+ h.calls[0].resolve({ok:true,text:'new summary'});await current;
+ assert.equal(h.element('followup-send-btn').disabled,false);
+ assert.equal(c.state.opinionSummaryText,'new summary');
+});
+
+test('cancelled admission restores report controls without sending or releasing another job',async()=>{
+ for(const kind of ['summary','followup']) {
+  const h=setup(),c=h.context;let reject;let released=0;
+  c.eyeCatchAdmission={ensure:()=>new Promise((_,r)=>reject=r),complete:()=>released++};
+  c.state.opinionRequest=h.request('summary');h.element('user-followup-input').value='draft';
+  const work=kind==='summary'?c.runAiOpinion():c.askGemmaMore();
+  reject(new Error('queue cancelled'));await work;
+  assert.equal(h.calls.length,0);assert.equal(released,0);
+  assert.equal(h.element('followup-send-btn').disabled,false);
+  assert.equal(h.element('user-followup-input').value,'draft');
+ }
+});
+
+test('PDF sections come from screening state even when details have no visible text',()=>{
+ const h=setup(),c=h.context;let printed;
+ Object.assign(c,{escapeHTML:String,formatCataractResult:()=> 'photo from state',
+  formatAmslerResult:()=> 'left unable, right clear',formatSymptoms:()=> ['symptom one','symptom two'],
+  computeCurrentTriage:()=>null,buildFindings:()=>[],photoSectionLabel:(_,s)=>s,
+  html2pdf:()=>({set(){return this},from(node){printed=node.innerHTML;return this}})});
+ c.document.createElement=()=>({style:{},appendChild(){},innerHTML:''});
+ c.document.body={appendChild(){}};
+ // A collapsed details element exposes none of its text through innerText.
+ for(const id of ['pdf-ai-result','pdf-amsler-result','pdf-chat-result'])h.element(id).innerText='';
+ c.buildReportPdf();
+ assert.ok(printed.includes('photo from state'));
+ assert.ok(printed.includes('left unable, right clear'));
+ assert.ok(printed.includes('symptom one, symptom two'));
+});
+
+test('editing an answer to an urgent signal shows fixed guidance without entering the waiting room',async()=>{
+ const h=setup(),c=h.context;
+ c.state.triage={level:'urgent'};c.state.opinionRequest=h.request('urgent');
+ c.eyeCatchAdmission={ensure(){throw new Error('Urgent guidance must not queue')},complete(){}};
+ const pending=c.runAiOpinion();
+ assert.equal(h.calls.length,1);
+ h.calls[0].resolve({ok:true,text:'지금 바로 진료를 받으세요.'});
+ await pending;
+ assert.ok(h.element('gemma-opinion-text').innerText.includes('지금 바로'));
+});
+
 test('detail is collapsed and full advice stays available for PDF without a server save', async () => {
     const h = setup(), c = h.context;
     c.state.opinionRequest = h.request('surgery');

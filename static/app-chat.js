@@ -40,6 +40,71 @@ function activeRiskQuestions() {
     return [riskQuestions[0], ...lensQuestions(), ...surgeryRiskQuestions.slice(1)];
 }
 
+// Undo stores the state before an answer, including dependent branches and scores.
+// Nothing is persisted. Re-answering an earlier question discards its later answers.
+const SURVEY_RESTORE_KEYS = ['riskIdx','symIdx','stepIdx','riskAnswers','symptomAnswers',
+    'symptomScore','redFlags','chatSymptoms','symptomCodes','chatHistory','dynamicCount',
+    'dynamicAnswers','dynamicQuestion','freeAnswers','aiResultCode'];
+function rememberSurveyAnswer() {
+    if (typeof document === 'undefined') return;
+    const box = document.getElementById('chat-box');
+    if (!box) return;
+    const saved = {};
+    for (const key of SURVEY_RESTORE_KEYS) {
+        if (state[key] !== undefined) saved[key] = JSON.parse(JSON.stringify(state[key]));
+    }
+    (state.surveyUndo ||= []).push({saved, html: box.innerHTML});
+}
+function editLastSurveyAnswer() {
+    const previous = state.surveyUndo?.pop();
+    if (!previous) return;
+    state.sessionGeneration++;
+    if (state.questionController) state.questionController.abort();
+    state.questionController = null;
+    removeLoadingMsg();
+    invalidateScreeningReport();
+    Object.assign(state, previous.saved);
+    state.chatBusy = false;
+    document.getElementById('chat-box').innerHTML = previous.html;
+    updateSurveyModeBanner();
+    if (typeof refreshAiResultDisplay === 'function') refreshAiResultDisplay();
+    showTab('tab-test');
+    nextStep('step-chat');
+    refreshChatLanguage();
+    updateSurveyTools();
+    document.getElementById('chat-current-question')?.focus({preventScroll:true});
+    scrollChatToLatest();
+}
+function surveyProgressLabel(n) {
+    const t = translations[state.lang];
+    return (t.chat_progress || 'Question {n}').replace('{n}', n);
+}
+function updateSurveyTools() {
+    if (typeof document === 'undefined') return;
+    const t = translations[state.lang];
+    const undo = document.getElementById('survey-undo');
+    const edit = document.getElementById('report-edit-answers');
+    const canUndo = !!state.surveyUndo?.length;
+    if (undo) { undo.disabled = !canUndo; undo.textContent = t.survey_undo || ''; }
+    if (edit) { edit.hidden = !canUndo; edit.textContent = t.survey_undo || ''; }
+    const skip = document.getElementById('survey-skip-extra');
+    if (skip) skip.hidden = !(state.step === 'step-chat'
+        && state.stepIdx >= (questions[state.lang]?.length || 0) && !hasSurgery());
+}
+function skipExtraQuestions() {
+    if (state.step !== 'step-chat' || hasSurgery()
+        || state.stepIdx < questions[state.lang].length) return;
+    state.sessionGeneration++;
+    if (state.questionController) state.questionController.abort();
+    state.questionController = null;
+    removeLoadingMsg();
+    if (state.chatHistory.at(-1)?.a === '') state.chatHistory.pop();
+    state.dynamicQuestion = null;
+    state.chatBusy = true;
+    clearChatControls();
+    finish();
+}
+
 function startChat() {
     // 문진을 다시 시작하면 이전 회차의 맞춤 질문 요청(15~25초)이 아직 날아가고 있을 수 있다.
     // 세대를 올려두지 않으면 그 응답이 fetchNextQuestion의 가드를 통과해, 방금 1번 질문부터
@@ -60,6 +125,9 @@ function startChat() {
     state.freeAnswers = [];
     state.dynamicAnswers = [];
     state.dynamicQuestion = null;
+    state.surveyUndo = [];
+    if (state.questionController) state.questionController.abort();
+    state.questionController = null;
     state.chatBusy = false;
     // 위험요인 문진을 증상 질문보다 먼저 받는다 — 예측력이 크고 비용이 거의 없다
     state.riskIdx = 0;
@@ -216,6 +284,7 @@ function scrollChatToLatest() {
 function handleAnswer(value, label) {
     if (state.chatBusy) return;
     if (state.riskIdx < activeRiskQuestions().length) {
+        rememberSurveyAnswer();
         state.chatBusy = true;
         const q = activeRiskQuestions()[state.riskIdx];
         addMsg('user', label);
@@ -370,6 +439,7 @@ function handleSymptomAnswer(yes) {
     // 잠금을 걸기 전에 빠져나간다 — 걸어놓고 예외로 죽으면 이후 모든 입력이 무시된다.
     if (!q) return;
 
+    rememberSurveyAnswer();
     state.chatBusy = true;
     const t = translations[state.lang];
     const label = yes === 'unknown' ? t.chat_unknown : yes ? t.chat_yes : t.chat_no;
@@ -426,7 +496,7 @@ function addMsg(sender, text, progress) {
         const p = document.createElement('span');
         p.className = 'block text-[10px] font-black text-slate-400 mb-1';
         p.dataset.questionNumber = String(progress).split('/')[0].trim();
-        p.textContent = (translations[state.lang].chat_progress || 'Question {n}').replace('{n}', String(progress).split('/')[0].trim());
+        p.textContent = surveyProgressLabel(p.dataset.questionNumber);
         p.setAttribute('aria-hidden', 'true');
         bubble.appendChild(p);
         bubble.appendChild(document.createTextNode(text));
@@ -449,19 +519,20 @@ function addMsg(sender, text, progress) {
     div.appendChild(bubble);
     if (sender === 'bot') div.dataset.chatBot = '1';
     box.appendChild(div);
+    updateSurveyTools();
     if (sender === 'bot' && progress && typeof bubble.focus === 'function') bubble.focus({ preventScroll: true });
     scrollChatToLatest();
 }
 
 function refreshChatLanguage() {
+    updateSurveyTools();
     const box = document.getElementById('chat-box');
     const chatStep = document.getElementById('step-chat');
     if (!box || !chatStep || !chatStep.classList.contains('active')) return;
     // The displayed ordinal belongs to its message, not the already-advanced state indices.
     // Translate it even during transitions and optional AI questions.
     box.querySelectorAll('[data-question-number]').forEach(label => {
-        label.textContent = (translations[state.lang].chat_progress || 'Question {n}')
-            .replace('{n}', label.dataset.questionNumber);
+        label.textContent = surveyProgressLabel(label.dataset.questionNumber);
     });
     // 답변 직후 500ms 동안은 riskIdx/symIdx가 이미 '다음 질문'을 가리키는데
     // 화면에는 아직 이전 질문이 떠 있다. 그 틈에 언어를 바꾸면 이전 질문 버블을
@@ -539,6 +610,10 @@ function refreshChatLanguage() {
 // Translate the same unanswered question. A stale translation must never replace
 // another question/session, and a failed translation must not change its meaning.
 async function translatePendingQuestion(current) {
+    if (globalThis.eyeCatchAdmission) {
+        try { await globalThis.eyeCatchAdmission.ensure(); } catch (_) { return; }
+        if (state.dynamicQuestion !== current) return;
+    }
     if (current.translating) return;
     const generation = state.sessionGeneration;
     const target = state.lang;
@@ -626,6 +701,7 @@ function addLoadingMsg(text) {
     box.appendChild(div);
     scrollChatToLatest();
     state._chatLoaderStop = loader.stop;
+    updateSurveyTools();
 }
 
 function removeLoadingMsg() {
@@ -678,11 +754,15 @@ function isDuplicateQuestion(q) {
     return asked.some(prev => _similarity(prev, q) >= DUP_QUESTION_THRESHOLD);
 }
 
-// 서버 생성·검토 제한(40초)에 대기열·통신 시간을 더한 화면 대기 상한.
-const NEXT_QUESTION_DEADLINE_MS = 45000;
+// 서버 생성·검토는 최대 55초, 화면은 대기열·통신을 포함해 총 60초로 제한한다.
+const NEXT_QUESTION_DEADLINE_MS = 60000;
 
 async function fetchNextQuestion() {
     const generation = state.sessionGeneration;
+    if (globalThis.eyeCatchAdmission) {
+        try { await globalThis.eyeCatchAdmission.ensure(); } catch (_) { return; }
+        if (state.sessionGeneration !== generation) return;
+    }
     const requestLang = state.lang;
     const cataractRes = formatCataractResult();
     // finish()와 동일하게 선택 언어로 전달 (LLM 프롬프트 컨텍스트 언어 일관성)
@@ -696,6 +776,7 @@ async function fetchNextQuestion() {
     let generated = false;
     const controller = typeof AbortController === 'function' ? new AbortController() : null;
     let deadline;
+    state.questionController = controller;
     try {
         const request = fetch('/api/generate-next-question', {
             method: 'POST',
@@ -746,6 +827,7 @@ async function fetchNextQuestion() {
         // 네트워크 오류는 추가 문진을 끝내며 고정 문진 결과를 바꾸지 않는다.
     } finally {
         clearTimeout(deadline);
+        if (state.questionController === controller) state.questionController = null;
         if (state.sessionGeneration !== generation) return;
         // The response belongs to the language selected when the request began.
         // Catalog replies carry all translations; legacy replies use the generic text.
@@ -782,6 +864,7 @@ async function fetchNextQuestion() {
 /** yes: true / false / 'unknown'('모르겠어요'). 'unknown'은 증상으로 세지 않는다. */
 async function handleChatAnswer(yes) {
     if (state.chatBusy) return;          // 처리 중 중복 클릭 무시 (질문/답변 어긋남·중복 호출 방지)
+    rememberSurveyAnswer();
     state.chatBusy = true;               // 다음 질문이 표시될 때까지 잠금
     const generation = state.sessionGeneration;
 
@@ -853,6 +936,7 @@ function handleChatFreeAnswer(skip) {
     const text = skip ? '' : (input ? input.value.trim() : '');
     if (!skip && !text) { if (input) input.focus(); return; }   // 빈 답변은 전송하지 않는다
 
+    rememberSurveyAnswer();
     state.chatBusy = true;
     const shown = text || (translations[state.lang].chat_free_skip || '건너뛰기');
     addMsg('user', shown);

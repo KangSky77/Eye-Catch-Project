@@ -20,12 +20,12 @@ QUESTIONS = {
         "您的眼睛以前受过伤吗？",
     ),
     "eye_drops": _copy(
-        "최근 한 달 동안 안약을 사용한 적이 있나요?",
-        "Have you used eye drops in the past month?",
-        "¿Ha usado gotas para los ojos en el último mes?",
-        "Avez-vous utilisé des gouttes pour les yeux au cours du dernier mois ?",
-        "この1か月に目薬を使ったことがありますか？",
-        "过去一个月内，您使用过眼药水吗？",
+        "최근 한 달 동안 인공눈물이나 다른 안약을 사용한 적이 있나요?",
+        "Have you used artificial tears or other eye drops in the past month?",
+        "¿Ha usado lágrimas artificiales u otras gotas para los ojos en el último mes?",
+        "Avez-vous utilisé des larmes artificielles ou d’autres gouttes pour les yeux au cours du dernier mois ?",
+        "この1か月に人工涙液やその他の目薬を使ったことがありますか？",
+        "过去一个月内，您使用过人工泪液或其他眼药水吗？",
     ),
     "screen_fatigue": _copy(
         "화면을 오래 보면 눈이 쉽게 피곤해지나요?",

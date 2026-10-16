@@ -69,7 +69,9 @@ function startLoadingProgress() {
 }
 
 /** XHR 업로드 — fetch와 달리 진행률을 받을 수 있다. fetch Response와 비슷한 형태로 돌려준다. */
-function uploadWithProgress(url, formData, onProgress, onUploaded, signal) {
+async function uploadWithProgress(url, formData, onProgress, onUploaded, signal) {
+    if (globalThis.eyeCatchAdmission) await globalThis.eyeCatchAdmission.ensure();
+    if (signal?.aborted) { const error = new Error('aborted'); error.name = 'AbortError'; throw error; }
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);

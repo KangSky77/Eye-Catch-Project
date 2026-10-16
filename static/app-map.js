@@ -215,12 +215,12 @@ async function fetchClinics(lat, lng) {
 function refreshMapResults() {
     if (!_lastClinicSearch) return;
     const {items, lat, lng} = _lastClinicSearch;
-    const include = !!document.getElementById('clinic-include-services')?.checked;
-    const visible = include ? items : items.filter(c => c.type === 'eye_clinic');
+    // 병원 찾기는 안과만 보여 준다. 서버도 안과만 돌려주지만, 안경원·검안 서비스가 섞여 와도 여기서 걸러낸다.
+    const visible = items.filter(c => c.type === 'eye_clinic');
     renderClinics(visible, lat, lng);
     const t = translations[state.lang];
     document.getElementById('map-status').innerText = visible.length
-        ? (include ? t.map_found_services : t.map_found).replace('{n}', visible.length) : t.map_none;
+        ? t.map_found.replace('{n}', visible.length) : t.map_none;
 }
 
 function renderClinics(items, lat, lng) {
@@ -256,9 +256,7 @@ function renderClinics(items, lat, lng) {
         name.textContent = c.name;
         const desc = document.createElement('span');
         desc.className = 'ci-desc';
-        const typeLabel = c.type === 'optician' ? t.clinic_optician
-            : c.type === 'optometrist' ? t.clinic_optometrist : t.clinic_eye;
-        desc.textContent = `${typeLabel}${c.address ? ' · ' + c.address : ''}`;
+        desc.textContent = `${t.clinic_eye}${c.address ? ' · ' + c.address : ''}`;
         info.appendChild(name);
         info.appendChild(desc);
         info.onclick = () => { if (map) { map.setView([c.lat, c.lng], 17); map.closePopup(); } };

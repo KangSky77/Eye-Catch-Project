@@ -12,10 +12,11 @@ from difflib import SequenceMatcher
 from app.services import questions as bank
 
 LANG_NAMES = dict(zip(bank.LANGUAGES, ("Korean", "English", "Spanish", "French", "Japanese", "Chinese")))
-BUDGET_SECONDS = 40
+# Leave room inside the browser's 60-second deadline for queueing and transport.
+BUDGET_SECONDS = 55
 TOPICS = {
     "eye_injury": "previous eye injury, not current pain",
-    "eye_drops": "recent eye drop use",
+    "eye_drops": "eye drop use in the past month, including artificial tears; explicitly name the period and include artificial tears",
     "screen_fatigue": "eye fatigue during screen use, without assuming screen use",
     "outdoor_time": "daytime outdoor exposure, without assuming outdoor activity",
     "symptom_duration": "duration of a confirmed symptom, never ask whether it exists again",

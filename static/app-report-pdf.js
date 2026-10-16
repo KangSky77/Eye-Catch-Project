@@ -26,10 +26,16 @@ function toAvoidBreakParagraphs(escapedText) {
 
 // PDF 생성기(저장 전 단계까지)를 반환 — downloadPDF()가 .save() 호출
 function buildReportPdf() {
-    const date = escapeHTML(document.getElementById('report-date').innerText);
-    const aiResult = escapeHTML(document.getElementById('pdf-ai-result').innerText);
-    const amslerResult = escapeHTML(document.getElementById('pdf-amsler-result').innerText);
-    const chatResult = escapeHTML(document.getElementById('pdf-chat-result').innerText);
+    const t = translations[state.lang] || {};
+    // 화면의 날짜 줄은 '2026.10.6 발행'처럼 문구가 붙어 있다. PDF는 '발급일자:' 라벨을 따로 쓰므로
+    // 날짜만 넣는다 — 그대로 긁어 오면 '발급일자: 2026.10.6 발행'으로 같은 말이 두 번 찍힌다.
+    const date = escapeHTML(state.reportDate || document.getElementById('report-date').innerText);
+    // Closed details have empty innerText. Export from state regardless of
+    // which report sections the visitor has expanded.
+    const aiResult = escapeHTML(formatCataractResult());
+    const amslerResult = escapeHTML(formatAmslerResult());
+    const symptoms = formatSymptoms();
+    const chatResult = escapeHTML(symptoms.length ? symptoms.join(', ') : (t.res_chat_none || '-'));
     // LLM 출력도 escape (다른 필드와 동일하게 — innerHTML 삽입 전 XSS 방지)
     const gemmaOpinion = escapeHTML(state.opinionSummaryText || '');
 
@@ -44,7 +50,6 @@ function buildReportPdf() {
     const findings = (typeof buildFindings === 'function') ? buildFindings() : [];
 
     // PDF 라벨을 선택 언어로 (한국어 폴백)
-    const t = translations[state.lang] || {};
     const L = {
         title:   t.pdf_doc_title || "Eye-Catch 검사 결과 리포트",
         issued:  t.pdf_issued    || "발급일자",
@@ -52,7 +57,7 @@ function buildReportPdf() {
         s2:      t.pdf_s2        || "2. 황반변성 자가검사 (Amsler Grid)",
         s3:      t.pdf_s3        || "3. AI 문진 주요 소견",
         s4:      triage?.level === 'urgent' ? ('4. ' + t.report_urgent_title)
-                    : (t.pdf_s4 || "4. 종합 AI 소견서 (Powered by Gemma)"),
+                    : (t.pdf_s4 || "4. AI 3줄 요약"),
         triage:  t.tri_title     || "권장 조치",
         finds:   t.find_title    || "검사 요약 해석",
         findNote: t.find_disclaimer || "",
@@ -136,8 +141,11 @@ function buildReportPdf() {
     // 떼어놓은(detached) 상태로 캡처하면 브라우저 창 크기·스크롤 위치에 따라
     // 내용이 가로/세로로 밀려 백지·반토막 PDF가 나오는 html2canvas 버그들이 있음.
     // 고정 위치에 부착하면 좌표 계산이 어긋날 여지가 없다.
+    // 단, z-index:-9999만 두면 body 배경 위·카드 여백 바깥으로 700px짜리 캡처 본문이
+    // 1~2초 동안 삐져나와 보인다. 호스트에 opacity:0을 걸면 화면에는 전혀 보이지 않으면서
+    // 자식 printDiv의 computed opacity는 1로 유지되어 html2pdf/html2canvas 캡처에는 영향이 없다.
     const host = document.createElement('div');
-    host.style.cssText = 'position:fixed; top:0; left:0; z-index:-9999; pointer-events:none; background:#ffffff;';
+    host.style.cssText = 'position:fixed; top:0; left:0; z-index:-9999; opacity:0; pointer-events:none; background:#ffffff;';
     host.appendChild(printDiv);
     document.body.appendChild(host);
     _pdfHost = host;
@@ -182,7 +190,7 @@ function downloadPDF() {
     // 소견을 만드는 중이면 기다리게 한다 — 요약이 빠진 PDF가 먼저 저장되지 않게.
     // 하지만 '실패'는 기다린다고 풀리지 않는다. 요약이 없다는 이유로 막았더니 Ollama가 꺼져 있으면
     // PDF를 영영 받을 수 없었다. 권장 조치·검사 해석은 코드가 만든 결정론적 결과라 소견 없이도 본문이 된다.
-    if (_activeOpinion) {
+    if (_activeOpinion || _reportAiOwner?.kind === 'opinion') {
         showToast(t.pdf_wait_opinion, 'info');
         return;
     }

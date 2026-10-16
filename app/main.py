@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
@@ -13,6 +13,7 @@ from app.core.config import PROJECT_ROOT, settings
 from app.core.upload_limit import PhotoUploadBodyLimit
 from app.services import eye_validator, eye_detector
 from app.services.llm import warmup_ollama
+from app.services.admission import Admission, AdmissionUploadGate, COOKIE
 from app.services.vision import load_trained_weights
 
 logging.basicConfig(
@@ -70,7 +71,11 @@ async def lifespan(app: FastAPI):
             await asyncio.gather(*warmup_tasks, return_exceptions=True)
 
 app = FastAPI(lifespan=lifespan)
+app.state.admission = Admission(capacity=settings.max_active_visitors,
+    active_ttl=settings.visitor_idle_seconds, waiting_ttl=settings.waiting_ticket_seconds,
+    max_waiting=settings.max_waiting_visitors, enabled=settings.waiting_room_enabled)
 app.add_middleware(PhotoUploadBodyLimit, max_file_bytes=settings.max_upload_size_bytes)
+app.add_middleware(AdmissionUploadGate, store=app.state.admission)
 
 # CORS 설정 — 화이트리스트 방식(기본은 아예 미적용)
 # 프론트가 같은 서버(/static)에서 서빙되므로 평소에는 same-origin이고, ngrok으로
@@ -99,6 +104,18 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/")
 async def read_index(request: Request):
+    if app.state.admission.enabled:
+        if app.state.admission.status(request.cookies.get(COOKIE), renew=False)["state"] == "active":
+            return RedirectResponse("/app", status_code=303)
+        return HTMLResponse((STATIC_DIR / "waiting.html").read_text(encoding="utf-8"),
+                            headers={"Cache-Control": "no-store"})
+    return await read_app(request)
+
+
+@app.get("/app")
+async def read_app(request: Request):
+    if app.state.admission.enabled and app.state.admission.status(request.cookies.get(COOKIE), renew=False)["state"] != "active":
+        return RedirectResponse("/", status_code=303)
     # index.html은 항상 재검증 → 정적 파일의 ?v= 버전이 바뀌면 즉시 반영됨
     # (모바일은 하드 새로고침이 어려워 캐시 무효화가 중요)
     #
@@ -108,3 +125,23 @@ async def read_index(request: Request):
     html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
     html = html.replace('content="/static/og-card.png', f'content="{str(request.base_url).rstrip("/")}/static/og-card.png')
     return HTMLResponse(html, headers={"Cache-Control": "no-cache, must-revalidate"})
+
+
+@app.post("/api/admission/join")
+async def join_visit(request: Request):
+    token, status = app.state.admission.join(request.cookies.get(COOKIE))
+    response = JSONResponse(status, headers={"Cache-Control": "no-store"})
+    if token:
+        response.set_cookie(COOKIE, token, httponly=True, samesite="lax", secure=request.url.scheme == "https",
+                            max_age=86400, path="/")
+    return response
+
+
+@app.get("/api/admission/status")
+async def visit_status(request: Request):
+    return JSONResponse(app.state.admission.status(request.cookies.get(COOKIE)), headers={"Cache-Control": "no-store"})
+
+
+@app.post("/api/admission/leave")
+async def leave_visit(request: Request):
+    return JSONResponse(app.state.admission.release(request.cookies.get(COOKIE)), headers={"Cache-Control": "no-store"})

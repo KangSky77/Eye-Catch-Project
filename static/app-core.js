@@ -242,6 +242,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function changeLanguage(lang) {
+    if (globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.language(lang);
     updateUI(lang);
 }
 
@@ -435,7 +436,7 @@ function nextStep(sid, viaHistory = false) {
     // 안드로이드 뒤로가기(가장자리 스와이프)가 검사를 통째로 날리지 않게 단계마다 기록을 남긴다.
     // 기록이 없으면 뒤로가기 한 번에 탭이 닫히고 홈 화면으로 나간다 — 사진·암슬러·문진·
     // 기능검사까지 마친 세션이 경고도 복구도 없이 사라진다(S25 Ultra 실기기 확인).
-    if (!viaHistory && STEP_FLOW.indexOf(sid) > 0) {
+    if (!viaHistory && (sid === 'step-surgery' || STEP_FLOW.includes(sid))) {
         try {
             history.pushState({
                 ecStep: sid,
@@ -467,6 +468,14 @@ function renderStepProgress() {
 
 // 로고 클릭 — 새로고침(입력한 내용이 전부 날아감) 대신 첫 화면으로 돌아간다
 function goHome() {
+    if (state.triage) {
+        if (globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
+        nextStep('step-intro');
+        showTab('tab-test');
+        return;
+    }
+    if (screeningInProgress() && !window.confirm(translations[state.lang].leave_screening_confirm)) return;
+    if (globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
     state.gateAnswers = {}; state.hadSurgery = null;   // 새 회차는 수술 여부부터 다시 묻는다
     resetScreeningState();
     if (typeof applyTrack === 'function') applyTrack();
@@ -498,6 +507,9 @@ function resetScreeningState() {
     state.chatSymptoms = []; state.symptomCodes = []; state.freeAnswers = [];
     state.dynamicAnswers = []; state.chatBusy = false;
     state.dynamicQuestion = null;
+    state.surveyUndo = [];
+    if (state.questionController) state.questionController.abort();
+    state.questionController = null;
     // 수술 여부는 회차 시작 화면(step-surgery)에서 이미 받았다. 사진을 올릴 때마다
     // 이 초기화가 도는데 여기서 비워버리면, 문진에 닿기도 전에 '수술한 눈'이라는 사실이
     // 사라져 사진 판독이 그대로 적용된다(formatCataractResult·photoAssessmentExcluded).
@@ -692,7 +704,7 @@ function setButtonBusy(btn, busyLabel) {
 //
 // 지금: 단계마다 history 항목을 남겨, 뒤로가기가 '이전 단계'로 이동한다.
 //   실측(S25 Ultra) — 뒤로 1회: step-ai-result -> step-photo (결과 유지)
-//                     뒤로 2회: step-photo -> step-intro   (결과 유지)
+//                     뒤로 2회: step-photo -> step-guide   (결과 유지)
 //
 // ⚠️ beforeunload는 보조 수단일 뿐이다. 안드로이드 크롬은 '탭을 닫는 뒤로가기'에서는
 //    사용자 활성화가 있어도 확인 창을 띄우지 않는다(hasBeenActive=true 상태로 실측).

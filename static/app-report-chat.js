@@ -18,6 +18,8 @@ function cancelFollowup() {
     if (explainBtn) explainBtn.disabled = false;
     const cancelBtn = document.getElementById('followup-cancel');
     if (cancelBtn) cancelBtn.classList.add('hidden');
+    if (_reportAiOwner?.kind === 'followup') endReportAi(_reportAiOwner);
+    refreshReportAiControls();
 }
 
 /** 챗봇이 '내 결과'를 알 수 있게 넘기는 문맥.
@@ -77,22 +79,52 @@ function explainCheckPayload() {
 
 /** '내 결과 쉽게 설명해 줘' 버튼 — 입력 없이 바로 묻는다. */
 function askExplainResults() {
-    const inputEl = document.getElementById('user-followup-input');
-    if (!inputEl || _followupBusy) return;
-    inputEl.value = translations[state.lang].rep_followup_explain || '';
-    askGemmaMore(true);
+    if (typeof togglePlainFindings === 'function') togglePlainFindings();
+    document.getElementById('findings-box')?.scrollIntoView({block: 'start', behavior: 'smooth'});
 }
 
+function isScoreQuestion(message) {
+    const text = String(message).toLowerCase().replace(/\s+/g, ' ');
+    if (/(?<!\d)(?:100|[1-9]?\d)\s*\/\s*100(?!\d)/.test(text)) return true;
+    return ['점수','score','puntuación','puntuacion','puntaje','スコア','点数','评分','分数'].some(term => text.includes(term))
+        && ['ai','ia','특징','feature','rasgos','signes','特徴','特征'].some(term => text.includes(term));
+}
 async function askGemmaMore(explainResults = false) {
-    if (state.triage?.level === 'urgent') return;
-    if (_followupBusy) return;   // 답변 스트리밍 중 재전송 금지 (응답이 뒤섞이는 것 방지)
+    if (state.triage?.level === 'urgent' || _followupBusy || _reportAiOwner) return;
+    if (!document.getElementById('user-followup-input')?.value.trim()) return;
+    const scoreQuestion = isScoreQuestion(document.getElementById('user-followup-input')?.value || '');
+    if (!explainResults && scoreQuestion) {
+        // Tool definitions are already reviewed and available on the device.
+        // Display them immediately, including while the model/server is unavailable.
+        const input = document.getElementById('user-followup-input');
+        const response = document.getElementById('followup-response');
+        const t = translations[state.lang];
+        if (response && t.score_note && t.score_limit) {
+            response.classList.remove('hidden', 'text-rose-600');
+            response.innerText = `Q: ${input.value.trim()}\nA: ${t.score_note} ${t.score_limit}`;
+            input.value = '';
+            state.followupErrorKey = '';
+            return;
+        }
+    }
+    const requiresSeat = explainResults ? globalThis.eyeCatchAdmission?.explanationRequiresSeat?.() : !scoreQuestion;
+    const owner = beginReportAi('followup');
+    if (globalThis.eyeCatchAdmission && requiresSeat) {
+        const generationBeforeQueue = state.sessionGeneration;
+        try { await globalThis.eyeCatchAdmission.ensure(); }
+        catch (_) { endReportAi(owner); return; }
+        if (state.sessionGeneration !== generationBeforeQueue || _reportAiOwner !== owner) {
+            endReportAi(owner); return;
+        }
+    }
+    if (state.triage?.level === 'urgent' || _followupBusy) { endReportAi(owner); return; }
 
     const inputEl = document.getElementById('user-followup-input');
     const responseEl = document.getElementById('followup-response');
     const sendBtn = document.getElementById('followup-send-btn');
     const userMsg = inputEl.value.trim();
 
-    if (!userMsg) { inputEl.focus(); return; }
+    if (!userMsg) { endReportAi(owner); inputEl.focus(); return; }
     state.followupErrorKey = '';
 
     const context = buildChatContext();
@@ -169,7 +201,9 @@ async function askGemmaMore(explainResults = false) {
         state.followupErrorKey = e.name === 'TimeoutError' ? 'ai_timeout' : active.controller.signal.aborted ? 'ai_cancelled' : 'srv_err';
         responseEl.innerText = t[state.followupErrorKey] || t.srv_err || "서버와 연결할 수 없습니다.";
     } finally {
+        if (isCurrent() && requiresSeat && globalThis.eyeCatchAdmission) globalThis.eyeCatchAdmission.complete();
         if (_activeFollowup === active) cancelFollowup();
+        endReportAi(owner);
     }
 }
 

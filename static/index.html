@@ -34,7 +34,8 @@
     <script src="/static/vendor/html2pdf.bundle.min.js?v=20260820a"></script>
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v=20260820a" />
     <script src="/static/vendor/leaflet/leaflet.js?v=20260820a"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20261002final">
+    <link rel="stylesheet" href="/static/style.css?v=20261016mobile">
+    <link rel="stylesheet" href="/static/queue.css?v=20261008design3">
 </head>
 <body class="text-slate-800 min-h-screen pb-24 md:pb-0">
 
@@ -91,7 +92,9 @@
                 <h1 class="hero-title" data-i18n="intro_title">당신의 눈 건강,<br>AI가 지켜드립니다</h1>
                 <p class="hero-description" data-i18n="intro_desc">안구 사진 자동 분석과 전문 문진을 통해 주요 안질환 위험도를 체크합니다.</p>
 
-                <p class="text-sm text-slate-500 leading-relaxed mt-3" data-i18n="intro_limit"></p>
+                <p class="intro-preparation" data-i18n="intro_preparation"></p>
+                <p class="intro-limit" data-i18n="intro_limit"></p>
+
                 <div class="screening-flow" data-i18n-aria="aria_flow" aria-label="검사 진행 과정">
                     <div class="flow-item">
                         <span class="flow-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h2.2l1.1-2h7.4l1.1 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
@@ -112,7 +115,7 @@
                 <!-- 보조 입구(수술 후 확인·사진 없이 증상 확인)는 여기서 빼고 다음 화면인
                      수술 여부 확인(step-surgery)으로 모았다. 첫 화면에 나란히 놓인 세 입구 중
                      무엇을 골라야 하는지가 사용자에게 설명되지 않았다. -->
-                <div id="service-status" class="service-status" role="status" aria-live="polite">
+                <div id="service-status" class="service-status" role="status" aria-live="polite" hidden>
                     <div class="service-status-row">
                         <span id="service-photo" class="service-badge" data-status="checking"></span>
                         <span id="service-ollama" class="service-badge" data-status="checking"></span>
@@ -166,8 +169,25 @@
                      인트로는 한 줄 요약만 두고, 실제 범위 설명은 촬영 직전인 이 화면에 둔다. -->
                 <div class="guide-scroll">
                 <div data-general-only>
+                <div class="ex-block text-left mb-8">
+                    <p class="ex-title" data-i18n="ex_title">이렇게 찍어주세요 — 예시</p>
+                    <div class="ex-grid">
+                        <figure class="ex-card ex-good">
+                            <img src="/static/assets/examples/face-good.jpg" alt="" loading="lazy" width="480" height="360">
+                            <figcaption><span class="ex-mark" aria-hidden="true">✓</span><span data-i18n="ex_good">좋은 예: 얼굴 정면 — 두 눈이 또렷하게 보여요</span></figcaption>
+                        </figure>
+                        <figure class="ex-card ex-bad">
+                            <img src="/static/assets/examples/face-blurry.jpg" alt="" loading="lazy" width="480" height="360">
+                            <figcaption><span class="ex-mark" aria-hidden="true">✕</span><span data-i18n="ex_bad_blur">흔들린 예: 눈을 읽을 수 없어 재촬영</span></figcaption>
+                        </figure>
+                    </div>
+                    <p class="ex-hint" data-i18n="ex_hint">예시는 퍼블릭 도메인(CC0) 사진을 가공한 것입니다.</p>
+                </div>
+                <details class="scope-details"><summary data-i18n="scope_details"></summary>
                 <p class="scope-note text-left" data-i18n="scope_note"></p>
+                </details>
 
+                <details class="scope-details"><summary data-i18n="tips_more"></summary>
                 <div class="space-y-4 text-left mb-8">
                     <div class="flex items-start gap-3 p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
                         <span class="tip-number">01</span>
@@ -194,20 +214,8 @@
 
                 <!-- 잘 찍은 예 / 잘못 찍은 예 — 글로 된 팁보다 사진 한 장이 빠르다.
                      예시는 CC0 사진 한 장을 가공한 것(static/assets/examples/ATTRIBUTION.md) -->
-                <div class="ex-block text-left mb-8">
-                    <p class="ex-title" data-i18n="ex_title">이렇게 찍어주세요 — 예시</p>
-                    <div class="ex-grid">
-                        <figure class="ex-card ex-good">
-                            <img src="/static/assets/examples/face-good.jpg" alt="" loading="lazy" width="480" height="360">
-                            <figcaption><span class="ex-mark" aria-hidden="true">✓</span><span data-i18n="ex_good">좋은 예: 얼굴 정면 — 두 눈이 또렷하게 보여요</span></figcaption>
-                        </figure>
-                        <figure class="ex-card ex-bad">
-                            <img src="/static/assets/examples/face-blurry.jpg" alt="" loading="lazy" width="480" height="360">
-                            <figcaption><span class="ex-mark" aria-hidden="true">✕</span><span data-i18n="ex_bad_blur">흔들린 예: 눈을 읽을 수 없어 재촬영</span></figcaption>
-                        </figure>
-                    </div>
-                    <p class="ex-hint" data-i18n="ex_hint">예시는 퍼블릭 도메인(CC0) 사진을 가공한 것입니다.</p>
-                </div>
+
+                </details>
                 </div>
 
                 <div class="surgery-guide text-left" data-surgery-only hidden>
@@ -254,7 +262,7 @@
                     <p data-i18n="upload_privacy">사진은 분석을 위해 이 앱의 서버로만 전송되며, 분석이 끝나면 서버에 남기지 않고 AI 학습에도 쓰지 않습니다.</p>
                     <details>
                         <summary data-i18n="upload_privacy_title">개인정보 안내</summary>
-                        <p data-i18n="upload_privacy_more">검사 결과(판정 문구·문진 답변·AI 요약)는 리포트 화면에서 동의한 경우에만 저장되며, 사진 자체는 저장되지 않습니다. 저장된 결과는 팀 서버의 데이터베이스에만 보관됩니다.</p>
+                        <p data-i18n="upload_privacy_more">검사 결과는 서버에 저장하지 않습니다. 보관하려면 PDF를 다운로드해 주세요. 탭을 닫거나 새 검사를 시작하면 이전 결과를 다시 불러올 수 없습니다.</p>
                     </details>
                 </div>
                 <!-- 모바일: 카메라 앱을 바로 연다(capture). 값 없는 capture는 기기 기본 카메라이며 카메라 앱에서 전·후면을 바꿀 수 있다.
@@ -358,12 +366,14 @@
             <div class="glass-card chat-shell flex flex-col overflow-hidden">
                 <div id="survey-mode-banner" class="survey-mode-banner" role="status" aria-live="polite"></div>
                 <div id="chat-box" class="chat-box flex-1 overflow-y-auto space-y-5 bg-slate-50/50 no-scrollbar" role="log" aria-live="polite"></div>
+                <div class="survey-toolbar"><button id="survey-undo" type="button" onclick="editLastSurveyAnswer()" disabled data-i18n="survey_undo"></button></div>
                 <div id="chat-controls" class="p-4 bg-white/80 border-t grid grid-cols-2 gap-3 backdrop-blur-md">
                     <!-- 두 선택지의 시각 무게를 같게 둔다(응답 편향 방지) — app-chat.js의 renderChatOptions와 동일 -->
                     <button type="button" id="chat-yes-btn" onclick="handleChatAnswer(true)" class="py-4 bg-white text-blue-700 border-2 border-blue-200 rounded-2xl font-bold text-sm btn-pop" data-i18n="chat_yes">네</button>
                     <button type="button" id="chat-no-btn" onclick="handleChatAnswer(false)" class="py-4 bg-white text-blue-700 border-2 border-blue-200 rounded-2xl font-bold text-sm btn-pop" data-i18n="chat_no">아니오</button>
                 </div>
 
+                <button id="survey-skip-extra" type="button" class="survey-skip-extra" onclick="skipExtraQuestions()" hidden data-i18n="survey_skip_extra"></button>
                 <!-- 자유 답변 입력칸 — AI가 네/아니오로 답할 수 없는 질문을 냈을 때만 보인다.
                      (답변형식은 서버가 answer_type으로 알려준다) -->
                 <div id="chat-free" class="chat-free hidden p-4 bg-white/80 border-t backdrop-blur-md">
@@ -411,7 +421,7 @@
             <div class="section-icon mx-auto mb-4" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v5h4M9 12h6M9 16h6"/></svg></div>
             <h2 id="report-gate-title" class="text-lg font-black mb-2"></h2>
             <p id="report-gate-desc" class="text-[12px] text-slate-500 leading-relaxed mb-6"></p>
-            <button id="report-gate-btn" onclick="showTab('tab-test')" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm"></button>
+            <button id="report-gate-btn" onclick="startScreening()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold btn-pop text-sm"></button>
         </div>
         <div id="report-content" class="glass-card p-8 rounded-[2rem] mb-6">
             <div class="text-center mb-6 pb-6 border-b border-slate-100">
@@ -420,19 +430,27 @@
             </div>
             <div class="space-y-4" id="report-body">
                 <div id="triage-box"></div>
+            <div class="report-top-actions">
+                <button type="button" onclick="downloadPDF()" data-i18n="pdf_btn"></button>
+                <button type="button" onclick="editLastSurveyAnswer()" id="report-edit-answers" data-i18n="survey_undo"></button>
+            </div>
+            <p class="report-save-note" data-i18n="upload_privacy_more"></p>
                 <div id="findings-box" class="bg-white border border-slate-200 rounded-2xl p-4"></div>
+                <details class="report-details"><summary data-i18n="report_details"></summary>
                 <div class="bg-blue-50 p-4 rounded-2xl">
                     <p id="rep-l1" class="text-[10px] font-black text-blue-700 mb-1" data-i18n="rep_l1">1. 백내장 AI 결과</p>
                     <p id="pdf-ai-result" class="font-black text-blue-800">-</p>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl">
-                    <p class="text-[10px] font-black text-slate-500 mb-1" data-i18n="rep_l2">2. 황반변성 결과</p>
+                    <p class="text-xs font-black text-slate-500 mb-1" data-i18n="rep_l2">2. 황반변성 결과</p>
                     <p id="pdf-amsler-result" class="font-black text-slate-700">-</p>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl">
-                    <p class="text-[10px] font-black text-slate-500 mb-1" data-i18n="rep_l3">3. 문진 소견</p>
+                    <p class="text-xs font-black text-slate-500 mb-1" data-i18n="rep_l3">3. 문진 소견</p>
                     <p id="pdf-chat-result" class="font-black text-slate-700">-</p>
                 </div>
+
+                </details>
 
                 <div class="bg-gradient-to-tr from-indigo-50 to-blue-50 p-5 rounded-2xl border border-blue-100 mt-4">
                     <p id="opinion-section-title" class="text-[10px] font-black text-indigo-400 mb-2" data-i18n="rep_info_title">AI 참고 정보</p>
@@ -474,7 +492,6 @@
                 <p class="text-[11px] text-amber-800 font-bold leading-relaxed" data-i18n="rep_warn">본 리포트는 AI 자가검사 보조 자료입니다. 정확한 진단을 위해 안과 전문의와 상담하시기 바랍니다.</p>
             </div>
 
-            <p class="text-sm text-slate-500 mt-3" data-i18n="result_retention_note"></p>
             <button type="button" id="followup-cancel" class="ai-cancel hidden back-link" onclick="stopFollowupRequest()" data-i18n="ai_cancel"></button>
             <div id="followup-box" class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <p class="text-xs font-bold text-slate-500 mb-2" id="followup-label" data-i18n="rep_followup_title">AI에게 더 궁금한 점 물어보기</p>
@@ -517,7 +534,6 @@
             </div>
         </div>
 
-        <label class="clinic-filter"><input id="clinic-include-services" type="checkbox" onchange="refreshMapResults()"><span data-i18n="map_include_services"></span></label>
         <div id="clinic-list" class="space-y-3"></div>
     </main>
 
@@ -581,22 +597,24 @@
             <button type="button" id="photo-check-retake" data-i18n="review_retake">다른 사진 고르기</button>
         </div>
     </dialog>
-    <script src="/static/data.js?v=20261002final"></script>
-    <script src="/static/app-photo-review.js?v=20260927a"></script>
+    <script src="/static/data.js?v=20261007map"></script>
+    <script src="/static/app-photo-review.js?v=20261013photorequired"></script>
     <script src="/static/app-safety-copy.js?v=20261001nostore"></script>
     <!-- app.js를 기능별로 분리 (923줄 단일파일 → 6개) — app-core.js가 다른 파일들의 공통 의존성이라 항상 먼저 로드 -->
     <script src="/static/app-report-text.js?v=20260929tidy"></script>
-    <script src="/static/app-surgery.js?v=20261001flow2"></script>
-    <script src="/static/app-core.js?v=20261002final"></script>
-    <script src="/static/app-status.js?v=20261002fix"></script>
-    <script src="/static/app-vision.js?v=20260929tidy"></script>
-    <script src="/static/app-chat.js?v=20261001flow2"></script>
-    <script src="/static/app-report.js?v=20261002review"></script>
-    <script src="/static/app-report-chat.js?v=20261002review"></script>
-    <script src="/static/app-report-pdf.js?v=20261002final"></script>
+    <script src="/static/app-ux-copy.js?v=20261013survey"></script>
+    <script src="/static/app-surgery.js?v=20261013photorequired"></script>
+    <script src="/static/app-core.js?v=20261015mobile"></script>
+    <script src="/static/app-admission.js?v=20261008design2"></script>
+    <script src="/static/app-status.js?v=20261006quiet"></script>
+    <script src="/static/app-vision.js?v=20261013photorequired"></script>
+    <script src="/static/app-chat.js?v=20261014question60"></script>
+    <script src="/static/app-report.js?v=20261015mobile"></script>
+    <script src="/static/app-report-chat.js?v=20261015mobile"></script>
+    <script src="/static/app-report-pdf.js?v=20261016mobile"></script>
     <script src="/static/app-disease.js?v=20260927a"></script>
     <script src="/static/app-assess.js?v=20261001nostore"></script>
-    <script src="/static/app-findings.js?v=20260929fix8"></script>
-    <script src="/static/app-map.js?v=20261002review"></script>
+    <script src="/static/app-findings.js?v=20261012firstuse"></script>
+    <script src="/static/app-map.js?v=20261007eye"></script>
 </body>
 </html>
