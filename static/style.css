@@ -1648,3 +1648,12 @@ dialog.photo-review::backdrop { background: rgb(15 23 42 / 65%); }
 }
 .pdf-download-help a { display: inline-block; font-weight: 700; text-decoration: underline; padding: .4rem; min-height: 44px; }
 .pdf-download-help.hidden { display: none; }
+
+/* iOS Safari는 텍스트 입력창의 font-size가 16px 미만이면 포커스 시 화면을 강제 확대한다.
+   모바일·터치 기기에서는 최소 16px을 보장하고, A+ 글자 확대를 켜면 .88rem을 따라 함께 커지게 한다. */
+@media (max-width: 767px), (pointer: coarse) {
+    .chat-free-input,
+    #user-followup-input {
+        font-size: max(16px, .88rem);
+    }
+}

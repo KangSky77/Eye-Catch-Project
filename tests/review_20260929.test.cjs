@@ -26,14 +26,16 @@ test('PDF의 권장 조치는 6개 언어의 일반·수술 후·응급 화면�
   }
   if (profile==='urgent') x.run("state.redFlags=['rf_acute'];");
   for (const id of ['report-date','pdf-ai-result','pdf-amsler-result','pdf-chat-result']) x.nodes.set(id,{innerText:'test'});
+  let attachedHost=null;
   x.c.document.createElement=()=>({style:{},appendChild(){},remove(){},innerHTML:''});
-  x.c.document.body.appendChild=()=>{};
+  x.c.document.body.appendChild=el=>{attachedHost=el;};
   const worker={set(){return worker;},from(el){html=el.innerHTML;return worker;}};
   x.c.html2pdf=()=>worker;
   const triage=x.run('computeCurrentTriage()');
   if (profile.startsWith('post_')) assert.equal(triage.kind,profile.slice(5));
   if (profile==='urgent') assert.equal(triage.level,'urgent');
   x.run('buildReportPdf(); cleanupPdfHost();');
+  assert.ok(attachedHost && String(attachedHost.style.cssText).includes('opacity:0'), 'PDF host must be invisible on screen');
   assert.ok(html.includes(x.c.escapeHTML(triage.label)),`${lang}/${profile}: label`);
   assert.ok(html.includes(x.c.escapeHTML(triage.why)),`${lang}/${profile}: reason`);
  }
