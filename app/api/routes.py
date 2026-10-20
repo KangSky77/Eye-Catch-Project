@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, Request, 
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from app.core.config import settings
+from app.core.http_client import worker_ssl_context
 from app.services.vision import predict_cataract, validate_and_read_image
 from app.services import vision, eye_validator, eye_detector
 from app.services.llm import get_gemma_opinion_stream, chat_with_gemma_stream, generate_personalized_question, translate_personalized_question, KEEPALIVE, KEEPALIVE_INTERVAL
@@ -95,7 +96,7 @@ async def _dispatch_photo_analysis(img) -> dict:
                 out = io.BytesIO()
                 img.save(out, format="PNG")
                 buf = out.getvalue()
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=30.0, verify=worker_ssl_context()) as client:
                 res = await client.post(
                     target,
                     data={"source_compressed": compressed_flag},
@@ -136,7 +137,7 @@ async def _check_ollama_worker(url: str) -> bool:
     try:
         parts = urlsplit(url)
         tags_url = urlunsplit((parts.scheme, parts.netloc, "/api/tags", "", ""))
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        async with httpx.AsyncClient(timeout=3.0, verify=worker_ssl_context()) as client:
             response = await client.get(tags_url)
             response.raise_for_status()
             models = response.json().get("models", [])
@@ -147,13 +148,44 @@ async def _check_ollama_worker(url: str) -> bool:
         return False
 
 
+_SERVICE_STATUS_TTL_SECONDS = 3.0
+_ollama_status_cache: dict = {}
+
+
+async def _cached_ollama_checks() -> list[bool]:
+    """Coalesce visitors' identical readiness probes without delaying inference.
+
+    The loop is part of the key so a pending task is never shared across loops.
+    Shield the shared probe: one disconnected browser must not cancel it for
+    every other visitor. Photo readiness is still checked on every request.
+    """
+    global _ollama_status_cache
+    urls = settings.ollama_url_list
+    key = (asyncio.get_running_loop(), tuple(urls), settings.ollama_model)
+    if _ollama_status_cache.get("key") != key:
+        _ollama_status_cache = {"key": key}
+    cache = _ollama_status_cache
+    if time.monotonic() < cache.get("expires", 0.0):
+        return cache["checks"]
+    task = cache.get("task")
+    if task is None or task.done():
+        async def refresh():
+            checks = await asyncio.gather(*(_check_ollama_worker(url) for url in urls))
+            cache["checks"] = checks
+            cache["expires"] = time.monotonic() + _SERVICE_STATUS_TTL_SECONDS
+            return checks
+        task = asyncio.create_task(refresh())
+        cache["task"] = task
+    return await asyncio.shield(task)
+
+
 @router.get("/api/service-status")
 async def service_status():
     """Presentation checks, separate from photo readiness. No secrets or remote addresses returned."""
     photo = (vision.weights_loaded
              and await run_in_threadpool(eye_detector.is_ready)
              and await run_in_threadpool(eye_validator.is_ready))
-    checks = await asyncio.gather(*(_check_ollama_worker(u) for u in settings.ollama_url_list))
+    checks = await _cached_ollama_checks()
     ollama = any(checks)
     ready = bool(photo and ollama)
     return JSONResponse(status_code=200 if ready else 503, content={

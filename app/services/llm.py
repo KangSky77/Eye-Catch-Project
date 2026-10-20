@@ -3,6 +3,7 @@ import logging
 import asyncio
 import time
 import httpx
+from app.core.http_client import worker_ssl_context
 from app.core.config import settings
 from app.services import knowledge
 from app.services import safety
@@ -144,7 +145,7 @@ async def stream_ollama(prompt: str):
         emitted = False
         _worker_in_flight[url] = _worker_in_flight.get(url, 0) + 1
         try:
-            async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
+            async with httpx.AsyncClient(timeout=_ollama_timeout(), verify=worker_ssl_context()) as client:
                 async with client.stream("POST", url, json=_ollama_payload(prompt, stream=True)) as response:
                     response.raise_for_status()
                     async for line in response.aiter_lines():
@@ -278,7 +279,7 @@ async def _post_ollama(payload: dict) -> dict:
     for idx, url in enumerate(urls):
         _worker_in_flight[url] = _worker_in_flight.get(url, 0) + 1
         try:
-            async with httpx.AsyncClient(timeout=_ollama_timeout()) as client:
+            async with httpx.AsyncClient(timeout=_ollama_timeout(), verify=worker_ssl_context()) as client:
                 response = await client.post(url, json=payload)
                 response.raise_for_status()
                 data = response.json()
@@ -394,7 +395,7 @@ async def warmup_ollama():
 
     async def _warm_one(url: str) -> bool:
         try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(120.0), verify=worker_ssl_context()) as client:
                 res = await client.post(url, json=_ollama_payload("ok", stream=False))
                 res.raise_for_status()
             _mark_worker_ok(url)

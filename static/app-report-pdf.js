@@ -142,8 +142,9 @@ function buildReportPdf() {
     // 내용이 가로/세로로 밀려 백지·반토막 PDF가 나오는 html2canvas 버그들이 있음.
     // 고정 위치에 부착하면 좌표 계산이 어긋날 여지가 없다.
     // 단, z-index:-9999만 두면 body 배경 위·카드 여백 바깥으로 700px짜리 캡처 본문이
-    // 1~2초 동안 삐져나와 보인다. 호스트에 opacity:0을 걸면 화면에는 전혀 보이지 않으면서
-    // 자식 printDiv의 computed opacity는 1로 유지되어 html2pdf/html2canvas 캡처에는 영향이 없다.
+    // 1~2초 동안 삐져나와 보인다(2026-10-16 실기기). 그래서 호스트는 opacity:0으로 숨긴다.
+    // 캡처에는 영향이 없다 — html2pdf는 printDiv를 복제해 자기 overlay 컨테이너에 붙여서
+    // 찍으므로 이 호스트의 opacity가 복제본에 전달되지 않는다(Edge 헤드리스 실측: 캡처 픽셀·PDF 바이트 동일).
     const host = document.createElement('div');
     host.style.cssText = 'position:fixed; top:0; left:0; z-index:-9999; opacity:0; pointer-events:none; background:#ffffff;';
     host.appendChild(printDiv);
